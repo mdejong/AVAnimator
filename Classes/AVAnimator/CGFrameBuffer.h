@@ -55,12 +55,10 @@
 
 - (CGBitmapInfo) getBitmapInfo;
 
-- (NSData*) runLengthEncode;
-
-- (void) runLengthDecode:(NSData*)encoded numEncodedBytes:(NSUInteger)numEncodedBytes;
-
-- (void) runLengthDecodeBytes:(char*)encoded numEncodedBytes:(NSUInteger)numEncodedBytes;
-
 - (BOOL) isLockedByImageRef:(CGImageRef)cgImageRef;
+
+// Copy data from another framebuffer into this one
+
+- (void) copyPixels:(CGFrameBuffer *)anotherFrameBuffer;
 
 @end

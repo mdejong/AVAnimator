@@ -17,23 +17,7 @@
 #include <limits.h>
 #include <unistd.h>
 
-#define DUMP_WHILE_PARSING
-//#define DUMP_WHILE_DECODING
-
-// Contains specific data about a sample. A sample contains
-// info that tells the system how to decompress movie data
-// for a specific frame. But, multiple frames could map to
-// the same sample in the case where no data changes in the
-// video from one frame to the next.
-
-typedef struct MovSample {
-  uint32_t offset; // file offset where sample data is located
-  uint32_t length; // length of sample data in bytes
-  unsigned isKeyframe:1; // true when this frame is self contained
-  // FIXME: If there are no more fields for a sample, make the length
-  // into a 16 bit field and make isKeyframe is 16 bit bool so that
-  // the whole MovSample only takes up 2 words.
-} MovSample;
+#include "movdata.h"
 
 // Chunks of data contain 1 to N samples and are stored in mdat.
 // The chunk contains an array of sample pointers and the
@@ -53,59 +37,6 @@ typedef struct SampleToChunkTableEntry {
   uint32_t first_chunk_id, samples_per_chunk;
 } SampleToChunkTableEntry;
 
-// This structure is filled in by a parse operation.
-
-typedef struct MovData {
-  int width;
-  int height;
-  int numSamples;
-  
-  MovSample *samples;
-  int numFrames;
-  MovSample **frames; // note that the number of frames can be larger than samples.
-
-  int timeScale;
-  int fps;
-  float lengthInSeconds;
-  uint32_t lengthInTicks;
-  int bitDepth; // 16, 24, or 32
-  char fccbuffer[5];
-	uint32_t frameBufferNumWords;
-  int rleDataOffset;
-  int rleDataLength;
-  int errCode; // used to report an error condition
-  char errMsg[1024]; // used to report an error condition
-
-  int timeToSampleTableNumEntries;
-  uint32_t timeToSampleTableOffset;
-  int syncSampleTableNumEntries;
-  uint32_t syncSampleTableOffset;
-  int sampleToChunkTableNumEntries;
-  uint32_t sampleToChunkTableOffset;
-  int sampleSizeCommon; // non-zero if sampleSizeTableNumEntries is zero!
-  int sampleSizeTableNumEntries;
-  uint32_t sampleSizeTableOffset;
-  int chunkOffsetTableNumEntries;
-  uint32_t chunkOffsetTableOffset;  
-  
-  unsigned foundMDAT:1;
-  unsigned foundMVHD:1;
-  unsigned foundTRAK:1;
-  unsigned foundTKHD:1;
-  unsigned foundEDTS:1;
-  unsigned foundELST:1;
-  unsigned foundMDIA:1;
-  unsigned foundMHLR:1;
-  unsigned foundDHLR:1;
-  unsigned foundDREF:1;
-  unsigned foundSTBL:1;
-  unsigned foundSTSD:1;
-  unsigned foundSTTS:1;
-  unsigned foundSTSS:1;
-  unsigned foundSTSC:1;
-  unsigned foundSTSZ:1;
-  unsigned foundSTCO:1;
-} MovData;
 
 static inline
 void movchunk_init(MovChunk *movChunk) {
@@ -120,12 +51,10 @@ void movchunk_free(MovChunk *movChunk) {
   bzero(movChunk, sizeof(MovChunk));
 }
 
-static inline
 void movdata_init(MovData *movData) {
   bzero(movData, sizeof(MovData));
 }
 
-static inline
 void movdata_free(MovData *movData) {
   if (movData->frames) {
     free(movData->frames);
@@ -251,7 +180,7 @@ read_fixed32(FILE *fp, float *ptr)
 // recurse into atoms and process them. Return 0 on success
 // otherwise non-zero to indicate an error.
 
-static int
+int
 process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
 {
   // first 4 bytes indicate the size of the atom
@@ -1240,7 +1169,6 @@ int SampleToChunkTableEntry_read(FILE *movFile, MovData *movData, SampleToChunkT
 // This method is invoked after all the atoms have been read
 // successfully.
 
-static
 int
 process_sample_tables(FILE *movFile, MovData *movData) {
   // All atoms except sync are required at this point
@@ -1554,7 +1482,9 @@ process_sample_tables(FILE *movFile, MovData *movData) {
     
     assert(sample_size > 0);
     samplePtr->length = sample_size;
-    
+    if (sample_size > movData->maxSampleSize) {
+      movData->maxSampleSize = sample_size;
+    }
     if (!movData->foundSTSS) {
       samplePtr->isKeyframe = 1;
     }
@@ -1778,8 +1708,8 @@ byte_read_be_argb24(char *ptr) {
 // Note that the type of frameBuffer you pass in (uint16_t* or uint32_t*) depends
 // on the bit depth of the mov. If NULL is passed as frameBuffer, no pixels are written during decoding.
 
-static int
-process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer)
+int
+process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer, void *sampleBuffer, uint32_t sampleBufferSize)
 {
   const int bytesPerPixel = movData->bitDepth / 8;
   assert(bytesPerPixel == 2 || bytesPerPixel == 3 || bytesPerPixel == 4);
@@ -1790,13 +1720,24 @@ process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *fra
   uint32_t *rowPtr32 = NULL;
   uint16_t *rowPtrMax16 = NULL;
   uint32_t *rowPtrMax32 = NULL;
-  
-  char *samplePtr = malloc(bytesRemaining);
-  if (samplePtr == NULL) {
-    return 1;
+
+  // Optionally use passed in buffer that is known to be large enough to hold the sample.
+
+  char *samplePtr;
+  if (sampleBuffer == NULL) {
+    samplePtr = malloc(bytesRemaining);
+    if (samplePtr == NULL) {
+      movData->errCode = ERR_MALLOC_FAILED;
+      snprintf(movData->errMsg, sizeof(movData->errMsg),
+               "malloc of %d bytes failed for sample buffer", (int) bytesRemaining);
+      return 1;
+    }
+  } else {
+    assert(sampleBufferSize >= bytesRemaining);
+    samplePtr = sampleBuffer;
   }
   
-  // Move the the file offset where the sample data is located
+  // Move to the file offset where the sample data is located
   assert(sample->offset > 0);
   int retval = fseek(movFile, sample->offset, SEEK_SET);
   assert(retval == 0);

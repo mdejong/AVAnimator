@@ -1,16 +1,14 @@
 //
-//  AVTaskLoader.h
-//  iPractice
+//  AVAppResourceLoader.h
 //
 //  Created by Moses DeJong on 7/13/10.
-//  Copyright 2010 __MyCompanyName__. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
 
 #import "AVResourceLoader.h"
 
-@interface AVTaskLoader : AVResourceLoader {
+@interface AVAppResourceLoader : AVResourceLoader {
 	NSString *m_movieFilename;
 	NSString *m_audioFilename;
   BOOL m_isReady;
@@ -19,7 +17,7 @@
 @property (nonatomic, copy) NSString *movieFilename;
 @property (nonatomic, copy) NSString *audioFilename;
 
-+ (AVTaskLoader*) aVTaskLoader;
++ (AVAppResourceLoader*) aVAppResourceLoader;
 
 - (BOOL) isReady;
 

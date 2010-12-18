@@ -10,10 +10,6 @@
 
 #import <QuartzCore/QuartzCore.h>
 
-#include <zlib.h>
-
-#include "runlength.h"
-
 //#define DEBUG_LOGGING
 
 // Pixel format is ARGB with 2 bytes per pixel (alpha is ignored)
@@ -229,41 +225,15 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 
 */
 
-	CGBitmapInfo bitmapInfo = kCGBitmapByteOrder16Little;
-	bitmapInfo |= kCGImageAlphaNoneSkipFirst;
+	CGBitmapInfo bitmapInfo /*= kCGBitmapByteOrder16Little*/;
+  
+//	bitmapInfo |= kCGImageAlphaNoneSkipFirst;
+//	bitmapInfo |= kCGImageAlphaNoneSkipLast;
 
+  // 16 bit
+  bitmapInfo = kCGBitmapByteOrder16Host | kCGImageAlphaNoneSkipFirst;
+  
 	return bitmapInfo;
-}
-
-- (NSData*) runLengthEncode
-{
-	// Create a NSMutableData to contain the encoded data, then
-	// encode to compress duplicate pixels.
-
-	int encodedNumBytes = numBytes + numBytes/2;
-	NSMutableData *buffer = [NSMutableData dataWithCapacity:encodedNumBytes];
-	NSAssert(buffer, @"could not allocate pixel buffer");
-	[buffer setLength:encodedNumBytes];
-
-	uint16_t *buffer_bytes = (uint16_t *) [buffer mutableBytes];
-
-	encodedNumBytes = pp_encode((uint16_t *)pixels, width * height,
-								(char*)[buffer mutableBytes], encodedNumBytes);
-
-	return [NSData dataWithBytes:buffer_bytes length:encodedNumBytes];	
-}
-
-- (void) runLengthDecode:(NSData*)encoded numEncodedBytes:(NSUInteger)numEncodedBytes
-{
-	char *input_bytes = (char *)[encoded bytes];
-	pp_decode(input_bytes, numEncodedBytes, (uint16_t*) pixels, width * height);
-}
-
-- (void) runLengthDecodeBytes:(char*)encoded numEncodedBytes:(NSUInteger)numEncodedBytes
-{
-	assert(encoded);
-	assert(numEncodedBytes > 0);
-	pp_decode(encoded, numEncodedBytes, (uint16_t*) pixels, width * height);
 }
 
 // These properties are implemented explicitly to aid
@@ -311,6 +281,12 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 			[self release]; // release extra ref to self
 		}
 	}
+}
+
+- (void) copyPixels:(CGFrameBuffer *)anotherFrameBuffer
+{
+  assert(self.numBytes == anotherFrameBuffer.numBytes);
+  memcpy(self.pixels, anotherFrameBuffer.pixels, anotherFrameBuffer.numBytes);
 }
 
 - (void)dealloc {
