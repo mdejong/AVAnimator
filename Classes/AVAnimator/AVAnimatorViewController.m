@@ -207,7 +207,7 @@
 	NSAssert(animationAudioURL == nil, @"animationAudioURL must be nil");
 
 // FIXME: may or may not need to set this? Figure out based on what is in header.
-	NSAssert(animationFrameDuration != 0.0, @"animationFrameDuration was not defined");
+//	NSAssert(animationFrameDuration != 0.0, @"animationFrameDuration was not defined");
 
 	// Note that we don't load any data from the movie archive or from the
 	// audio files at load time. Resource loading is done only as a result
@@ -371,9 +371,12 @@
   
 	[self _allocFrameBuffers];
   
-  // Read frame duration from movie
-  
-  self.animationFrameDuration = self.flatMovieFile.frameInterval;
+  // Read frame duration from movie by default. If user explicitly indicated a frame duration
+  // the use it instead of what appears in the movie.
+
+  if (self.animationFrameDuration == 0.0) {
+    self.animationFrameDuration = self.flatMovieFile.frameInterval;    
+  }
     
 	if (TRUE)
 	{

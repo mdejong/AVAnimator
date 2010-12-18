@@ -142,6 +142,10 @@
   
 	NSString *resourceName = @"QuickTimeLogo.mov";
   
+  if (1) {
+    resourceName = @"Sweep30FPS_ANI16BPP.mov";
+  }
+  
 	AVAppResourceLoader *resLoader = [[AVAppResourceLoader alloc] init];
   [resLoader autorelease];
 	animatorViewController.resourceLoader = resLoader;
@@ -154,8 +158,9 @@
 	animatorViewController.animationOrientation = UIImageOrientationUp;
 	animatorViewController.viewFrame = CGRectMake(0, 0, 480, 320);
   
-	animatorViewController.animationFrameDuration = AVAnimator15FPS;
-  //	animatorViewController.animationFrameDuration = AVAnimator30FPS;
+	//  animatorViewController.animationFrameDuration = AVAnimator15FPS;
+  animatorViewController.animationFrameDuration = AVAnimator30FPS;
+  //animatorViewController.animationFrameDuration = 1.0 / 90;
   
   //	animatorViewController.animationRepeatCount = 100;
 	animatorViewController.animationRepeatCount = 20;
