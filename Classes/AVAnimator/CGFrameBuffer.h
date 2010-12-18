@@ -8,6 +8,20 @@
 
 #import <Foundation/Foundation.h>
 
+// Avoid incorrect warnings from clang
+#ifndef __has_feature      // Optional.
+#define __has_feature(x) 0 // Compatibility with non-clang compilers.
+#endif
+
+#ifndef CF_RETURNS_RETAINED
+#if __has_feature(attribute_cf_returns_retained)
+#define CF_RETURNS_RETAINED __attribute__((cf_returns_retained))
+#else
+#define CF_RETURNS_RETAINED
+#endif
+#endif
+
+
 @interface CGFrameBuffer : NSObject {
 
 @public
@@ -48,8 +62,9 @@
 // Create a Core Graphics image from the pixel data
 // in this buffer. The hasDataProvider property
 // will be TRUE while the CGImageRef is in use.
+// This name is upper case to avoid warnings from the analyzer.
 
-- (CGImageRef) createCGImageRef;
+- (CGImageRef) createCGImageRef CF_RETURNS_RETAINED;
 
 // Defines the pixel layout, could be overloaded in a derived class
 

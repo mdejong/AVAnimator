@@ -17,7 +17,7 @@
 #include <limits.h>
 #include <unistd.h>
 
-#define DUMP_WHILE_PARSING
+//#define DUMP_WHILE_PARSING
 //#define DUMP_WHILE_DECODING
 
 // Contains specific data about a sample. A sample contains
@@ -26,13 +26,11 @@
 // the same sample in the case where no data changes in the
 // video from one frame to the next.
 
+#define MOVSAMPLE_IS_KEYFRAME 0x1
+
 typedef struct MovSample {
   uint32_t offset; // file offset where sample data is located
-  uint32_t length; // length of sample data in bytes
-  unsigned isKeyframe:1; // true when this frame is self contained
-  // FIXME: If there are no more fields for a sample, make the length
-  // into a 16 bit field and make isKeyframe is 16 bit bool so that
-  // the whole MovSample only takes up 2 words.
+  uint32_t lengthAndFlags; // length stored in lower 24 bits. Upper 8 bits contain flags.
 } MovSample;
 
 // This structure is filled in by a parse operation.
@@ -94,6 +92,18 @@ typedef struct MovData {
 
 void movdata_init(MovData *movData);
 void movdata_free(MovData *movData);  
+
+static
+inline
+int movsample_iskeyframe(MovSample *movSample) {
+  return (movSample->lengthAndFlags >> 24) & MOVSAMPLE_IS_KEYFRAME;
+}
+
+static
+inline
+int movsample_length(MovSample *movSample) {
+  return movSample->lengthAndFlags & 0xFFFFFF;
+}
 
 // recurse into atoms and process them. Return 0 on success
 // otherwise non-zero to indicate an error.

@@ -17,8 +17,6 @@
 
 #import "CGFrameBuffer.h"
 
-//#import "NSDataExtensions.h"
-
 #import "FlatMovieFile.h"
 
 #import "AVResourceLoader.h"
@@ -95,6 +93,7 @@
 @synthesize animationFrameDuration, animationNumFrames, animationRepeatCount;
 @synthesize imageView, animationOrientation;
 @synthesize avAudioPlayer;
+@synthesize audioSimulatedStartTime = m_audioSimulatedStartTime;
 @synthesize prevFrame, nextFrame, currentFrame;
 @synthesize animationPrepTimer, animationReadyTimer;
 @synthesize animationDecodeTimer, animationDisplayTimer;
@@ -207,6 +206,7 @@
 	NSAssert(animationArchiveURL == nil, @"animationArchiveURL must be nil");
 	NSAssert(animationAudioURL == nil, @"animationAudioURL must be nil");
 
+// FIXME: may or may not need to set this? Figure out based on what is in header.
 	NSAssert(animationFrameDuration != 0.0, @"animationFrameDuration was not defined");
 
 	// Note that we don't load any data from the movie archive or from the
@@ -277,15 +277,12 @@
     return;
   }
   
-	int renderWidth = self->renderSize.width;
-	int renderHeight = self->renderSize.height;
+	int renderWidth = self.flatMovieFile.width;
+	int renderHeight = self.flatMovieFile.height;
   
   NSAssert(renderWidth > 0 && renderHeight > 0, @"renderWidth or renderHeight is zero");
 
-// FIXME: if movie data is at a pixel dimension smaller than the dimensions of the window,
-// then the size of the framebuffers need to be the size of the smaller movie! Software
-// scaling can be done on the image mapping it into the view, but the pixel drawing
-// logic can't know what size it should be.
+  // FIXME: Rewrite allocating of CGFrameBuffer to support static ctor
   
 	CGFrameBuffer *cgFrameBuffer1 = [[CGFrameBuffer alloc] initWithDimensions:renderWidth :renderHeight];
 	CGFrameBuffer *cgFrameBuffer2 = [[CGFrameBuffer alloc] initWithDimensions:renderWidth :renderHeight];
@@ -369,7 +366,15 @@
 	NSAssert(worked, @"flat movie file openForReading failed");
 
 	NSLog(@"%@", [NSString stringWithFormat:@"FlatMovieFile openForReading \"%@\"", [videoPath lastPathComponent]]);
+
+  // Frame buffers need to be allocated after the movie headers have been read, so we know the width and height
   
+	[self _allocFrameBuffers];
+  
+  // Read frame duration from movie
+  
+  self.animationFrameDuration = self.flatMovieFile.frameInterval;
+    
 	if (TRUE)
 	{
 		// Get RLE data for the initial keyframe
@@ -402,8 +407,8 @@
   NSLog(@"AVAnimatorViewController: _cleanupReadyToAnimate");
 }
 
-// When a movie archive needs to be decompressed and turned into a flat
-// movie file, this method is invoked to do the long render operation.
+// When an animaton widget is ready to start loading any
+// resources needed to play video/audio, this method is invoked.
 
 - (void) _loadResourcesCallback:(NSTimer *)timer
 {
@@ -413,11 +418,6 @@
   
   UIView *thisView = self.view;
   NSAssert(thisView != nil, @"view is nil");
-
-  // The resources have to be fully loaded before this method can be
-  // executed.
-
-	[self _allocFrameBuffers];
   
 	// Prepare movie and audio, if needed
 
@@ -643,6 +643,8 @@
   if (avAudioPlayer) {
     [avAudioPlayer play];
     [self _setAudioSessionCategory];
+  } else {
+    self.audioSimulatedStartTime = [NSDate date];
   }
 
   // Turn off the event idle timer so that the screen is not dimmed while playing
@@ -694,8 +696,10 @@
 	[animationDisplayTimer invalidate];
 	self.animationDisplayTimer = nil;
 
-	[avAudioPlayer stop];
-	avAudioPlayer.currentTime = 0.0;
+  if (avAudioPlayer) {
+    [avAudioPlayer stop];
+    avAudioPlayer.currentTime = 0.0;
+  }
 
 	self->repeatedFrameCount = 0;
 
@@ -803,14 +807,21 @@
 }
 
 // Util function that will query the clock time and enforce an upper
-// bound on the current time 
+// bound on the current time.
 
 - (void) _queryCurrentClockTimeAndCalcFrameNow:(NSTimeInterval*)currentTimePtr
 								   frameNowPtr:(NSUInteger*)frameNowPtr
 {
 	// Query audio clock time right now
+  
+	NSTimeInterval currentTime;
 
-	NSTimeInterval currentTime = avAudioPlayer.currentTime;
+  if (avAudioPlayer == nil) {
+    NSAssert(self.audioSimulatedStartTime, @"audioSimulatedStartTime is nil");
+    currentTime = [self.audioSimulatedStartTime timeIntervalSinceNow] * -1;
+  } else {
+    currentTime = avAudioPlayer.currentTime;
+  }
 
 	// Calculate the frame to the left of the time interval
 	// (time/window) based on the current clock time. In the
@@ -885,7 +896,10 @@
 
 	// Audio clock time right now
 
-	NSTimeInterval currentTime = avAudioPlayer.currentTime;
+	NSTimeInterval currentTime;
+	NSUInteger frameNow;
+  
+	[self _queryCurrentClockTimeAndCalcFrameNow:&currentTime frameNowPtr:&frameNow];	
 
 #ifdef DEBUG_OUTPUT
 	if (TRUE) {
@@ -1354,9 +1368,12 @@
 	// released here, so resetting the delegate avoids a
 	// crash invoking delegate method on a now invalid ref.
 
-	avAudioPlayer.delegate = originalAudioDelegate;
-	[retainedAudioDelegate release];
-  self.avAudioPlayer = nil;
+  if (self.avAudioPlayer) {
+    avAudioPlayer.delegate = originalAudioDelegate;
+    [retainedAudioDelegate release];
+    self.avAudioPlayer = nil;
+  }
+  self.audioSimulatedStartTime = nil;
 
 	[flatMovieFile release];
 

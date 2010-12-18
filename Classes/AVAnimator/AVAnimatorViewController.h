@@ -93,6 +93,7 @@ typedef enum AVAnimatorPlayerState {
 	AVAudioPlayer *avAudioPlayer;
 	id originalAudioDelegate;
 	id retainedAudioDelegate;
+  NSDate *m_audioSimulatedStartTime;
 
 	FlatMovieFile *flatMovieFile;
 
@@ -159,6 +160,7 @@ typedef enum AVAnimatorPlayerState {
 @property (nonatomic, retain) NSTimer *animationDisplayTimer;
 
 @property (nonatomic, retain) AVAudioPlayer *avAudioPlayer;
+@property (nonatomic, retain) NSDate *audioSimulatedStartTime;
 
 @property (nonatomic, copy) NSArray *cgFrameBuffers;
 

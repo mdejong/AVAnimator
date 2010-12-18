@@ -66,8 +66,9 @@
 - (void)applicationWillTerminate:(UIApplication *)application {
 	// Application shutting down, return to home screen
   
-	if (self.animatorViewController != nil)
+	if (self.animatorViewController != nil) {
 		[self stopAnimator];
+  }
   
 	self.animatorViewController = nil;
 }
@@ -157,7 +158,7 @@
   //	animatorViewController.animationFrameDuration = AVAnimator30FPS;
   
   //	animatorViewController.animationRepeatCount = 100;
-	animatorViewController.animationRepeatCount = 0;
+	animatorViewController.animationRepeatCount = 20;
   
   //	animatorViewController.animationRepeatCount = 1000;
 }

@@ -70,6 +70,7 @@ int num_words(uint32_t numBytes)
 		[self close];
   if (movData != NULL)
     movdata_free(movData);
+    free(movData);
 	if (inputBuffer != NULL)
 		free(inputBuffer);
 	[super dealloc];
@@ -203,13 +204,13 @@ int num_words(uint32_t numBytes)
       // This frame is a no-op, since it duplicates data from the previous frame.
       fprintf(stdout, "Frame %d NOP\n", actualFrameIndex);
     } else {
-      fprintf(stdout, "Frame %d [%d %d]\n", actualFrameIndex, frame->offset, frame->length);
+      fprintf(stdout, "Frame %d [%d %d]\n", actualFrameIndex, frame->offset, movsample_length(frame));
 			changeFrameData = TRUE;
       
       if (self->currentFrameBuffer != nextFrameBuffer) {
         // Copy the previous frame buffer unless there was not one, or current is a keyframe
 
-        if (self->currentFrameBuffer != nil && !frame->isKeyframe) {
+        if (self->currentFrameBuffer != nil && !movsample_iskeyframe(frame)) {
           [nextFrameBuffer copyPixels:self->currentFrameBuffer];
         }
         self->currentFrameBuffer = nextFrameBuffer;
@@ -244,6 +245,12 @@ int num_words(uint32_t numBytes)
 - (int) frameIndex
 {
   return self->frameIndex;
+}
+
+- (NSTimeInterval) frameInterval
+{
+//  return 1.0 / movData->fps;
+  return 1.0 / 30;
 }
 
 @end

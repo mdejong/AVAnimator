@@ -52,4 +52,8 @@
 
 - (BOOL) advanceToFrame:(NSUInteger)newFrameIndex nextFrameBuffer:(CGFrameBuffer*)nextFrameBuffer;
 
+// Duration of frame in seconds
+
+- (NSTimeInterval) frameInterval;
+
 @end

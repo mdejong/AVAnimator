@@ -51,6 +51,12 @@ void movchunk_free(MovChunk *movChunk) {
   bzero(movChunk, sizeof(MovChunk));
 }
 
+static
+inline
+void movsample_setkeyframe(MovSample *movSample) {
+  movSample->lengthAndFlags |= (0x1 << 24);
+}
+
 void movdata_init(MovData *movData) {
   bzero(movData, sizeof(MovData));
 }
@@ -1481,12 +1487,14 @@ process_sample_tables(FILE *movFile, MovData *movData) {
     }
     
     assert(sample_size > 0);
-    samplePtr->length = sample_size;
+    assert(samplePtr->lengthAndFlags == 0);
+    assert((sample_size & 0xFFFFFF) == sample_size); // sample length must fit in 24 bit value
+    samplePtr->lengthAndFlags = sample_size;
     if (sample_size > movData->maxSampleSize) {
       movData->maxSampleSize = sample_size;
     }
     if (!movData->foundSTSS) {
-      samplePtr->isKeyframe = 1;
+      movsample_setkeyframe(samplePtr);
     }
   }
   
@@ -1497,7 +1505,7 @@ process_sample_tables(FILE *movFile, MovData *movData) {
     MovSample *samplePtr = &movData->samples[i];
     
     fprintf(stdout, "movData->samples[%d] offset %d, length %d, isKeyFrame %d\n", i,
-            samplePtr->offset, samplePtr->length, samplePtr->isKeyframe);
+            samplePtr->offset, movsample_length(samplePtr), movsample_iskeyframe(samplePtr));
   }
 #endif  
   
@@ -1593,8 +1601,9 @@ process_sample_tables(FILE *movFile, MovData *movData) {
       for (int j=0; j < i; j++) {
         MovSample *prevMovSampleInChunk = movChunk->samples[j];
         assert(prevMovSampleInChunk != movSample);
-        assert(prevMovSampleInChunk->length > 0);
-        offsetFromChunk += prevMovSampleInChunk->length;
+        uint32_t length = movsample_length(prevMovSampleInChunk);
+        assert(length > 0);
+        offsetFromChunk += length;
       }
       movSample->offset = movChunk->offset + offsetFromChunk;
       assert(movSample->offset != 0);
@@ -1608,7 +1617,7 @@ process_sample_tables(FILE *movFile, MovData *movData) {
     MovSample *samplePtr = &movData->samples[i];
     
     fprintf(stdout, "movData->samples[%d] offset %d, length %d, isKeyFrame %d\n", i,
-            samplePtr->offset, samplePtr->length, samplePtr->isKeyframe);
+            samplePtr->offset, movsample_length(samplePtr), movsample_iskeyframe(samplePtr));
   }
 #endif  
   
@@ -1635,7 +1644,7 @@ process_sample_tables(FILE *movFile, MovData *movData) {
       uint32_t sample_index = key_frame - 1;
       assert(sample_index < movData->numSamples);
       MovSample *samplePtr = &movData->samples[sample_index];
-      samplePtr->isKeyframe = 1;
+      movsample_setkeyframe(samplePtr);
     }    
   }
   
@@ -1646,14 +1655,14 @@ process_sample_tables(FILE *movFile, MovData *movData) {
     MovSample *samplePtr = &movData->samples[i];
     
     fprintf(stdout, "movData->samples[%d] offset %d, length %d, isKeyFrame %d\n", i,
-            samplePtr->offset, samplePtr->length, samplePtr->isKeyframe);
+            samplePtr->offset, movsample_length(samplePtr), movsample_iskeyframe(samplePtr));
   }
   
   for (int i = 0; i < movData->numFrames; i++) {
     MovSample *samplePtr = movData->frames[i];
     
     fprintf(stdout, "movData->frames[%d] offset %d, length %d, isKeyFrame %d\n", i,
-            samplePtr->offset, samplePtr->length, samplePtr->isKeyframe);
+            samplePtr->offset, movsample_length(samplePtr), movsample_iskeyframe(samplePtr));
   }      
 #endif
   
@@ -1714,7 +1723,7 @@ process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *fra
   const int bytesPerPixel = movData->bitDepth / 8;
   assert(bytesPerPixel == 2 || bytesPerPixel == 3 || bytesPerPixel == 4);
   
-  uint32_t bytesRemaining = sample->length;
+  uint32_t bytesRemaining = movsample_length(sample);
   
   uint16_t *rowPtr16 = NULL;
   uint32_t *rowPtr32 = NULL;
@@ -1850,6 +1859,7 @@ process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *fra
       starting_line = 0;
       lines_to_update = movData->height;
     }
+    assert(lines_to_update > 0);
     
 #ifdef DUMP_WHILE_DECODING
     if (sample->isKeyframe) {
@@ -2078,6 +2088,10 @@ process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *fra
 #ifdef DUMP_WHILE_DECODING
               fprintf(stdout, "copy 16 bit pixel 0x%X to dest\n", pixel);
 #endif // DUMP_WHILE_DECODING
+              
+              // FIXME: optimization available when we know that the output buffer can be written
+              // in terms of whole words. Can read words and then write words with zero
+              // padding. This could be made into a generic util function also.
               
               if (rowPtr16) {
                 assert(rowPtr16 < rowPtrMax16);
