@@ -1,0 +1,2207 @@
+// movdata module
+//
+// This module implements a self contained Quicktime MOV file parser
+// with verification that the MOV contains only a single Animation video track.
+// This file should be #included into an implementation main file
+// so that inline functions are seen as being in the same module.
+
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <math.h>
+#include <assert.h>
+#include <limits.h>
+#include <unistd.h>
+
+#define DUMP_WHILE_PARSING
+//#define DUMP_WHILE_DECODING
+
+// Contains specific data about a sample. A sample contains
+// info that tells the system how to decompress movie data
+// for a specific frame. But, multiple frames could map to
+// the same sample in the case where no data changes in the
+// video from one frame to the next.
+
+typedef struct MovSample {
+  uint32_t offset; // file offset where sample data is located
+  uint32_t length; // length of sample data in bytes
+  unsigned isKeyframe:1; // true when this frame is self contained
+  // FIXME: If there are no more fields for a sample, make the length
+  // into a 16 bit field and make isKeyframe is 16 bit bool so that
+  // the whole MovSample only takes up 2 words.
+} MovSample;
+
+// Chunks of data contain 1 to N samples and are stored in mdat.
+// The chunk contains an array of sample pointers and the
+// offset in the file where the chunk begins.
+
+typedef struct MovChunk {
+  uint32_t numSamples;
+  MovSample **samples;
+  uint32_t offset;
+} MovChunk;
+
+// The chunk table can't be processed until after the
+// total number of chunks is known. Save it until
+// after the chunk offset list has been processed.
+
+typedef struct SampleToChunkTableEntry {
+  uint32_t first_chunk_id, samples_per_chunk;
+} SampleToChunkTableEntry;
+
+// This structure is filled in by a parse operation.
+
+typedef struct MovData {
+  int width;
+  int height;
+  int numSamples;
+  
+  MovSample *samples;
+  int numFrames;
+  MovSample **frames; // note that the number of frames can be larger than samples.
+
+  int timeScale;
+  int fps;
+  float lengthInSeconds;
+  uint32_t lengthInTicks;
+  int bitDepth; // 16, 24, or 32
+  char fccbuffer[5];
+	uint32_t frameBufferNumWords;
+  int rleDataOffset;
+  int rleDataLength;
+  int errCode; // used to report an error condition
+  char errMsg[1024]; // used to report an error condition
+
+  int timeToSampleTableNumEntries;
+  uint32_t timeToSampleTableOffset;
+  int syncSampleTableNumEntries;
+  uint32_t syncSampleTableOffset;
+  int sampleToChunkTableNumEntries;
+  uint32_t sampleToChunkTableOffset;
+  int sampleSizeCommon; // non-zero if sampleSizeTableNumEntries is zero!
+  int sampleSizeTableNumEntries;
+  uint32_t sampleSizeTableOffset;
+  int chunkOffsetTableNumEntries;
+  uint32_t chunkOffsetTableOffset;  
+  
+  unsigned foundMDAT:1;
+  unsigned foundMVHD:1;
+  unsigned foundTRAK:1;
+  unsigned foundTKHD:1;
+  unsigned foundEDTS:1;
+  unsigned foundELST:1;
+  unsigned foundMDIA:1;
+  unsigned foundMHLR:1;
+  unsigned foundDHLR:1;
+  unsigned foundDREF:1;
+  unsigned foundSTBL:1;
+  unsigned foundSTSD:1;
+  unsigned foundSTTS:1;
+  unsigned foundSTSS:1;
+  unsigned foundSTSC:1;
+  unsigned foundSTSZ:1;
+  unsigned foundSTCO:1;
+} MovData;
+
+static inline
+void movchunk_init(MovChunk *movChunk) {
+  bzero(movChunk, sizeof(MovChunk));
+}
+
+static inline
+void movchunk_free(MovChunk *movChunk) {
+  if (movChunk->samples) {
+    free(movChunk->samples);
+  }
+  bzero(movChunk, sizeof(MovChunk));
+}
+
+static inline
+void movdata_init(MovData *movData) {
+  bzero(movData, sizeof(MovData));
+}
+
+static inline
+void movdata_free(MovData *movData) {
+  if (movData->frames) {
+    free(movData->frames);
+  }
+  if (movData->samples) {
+    free(movData->samples);
+  }
+//  for (int i=0; i < movData->numChunks; i++) {
+//    MovChunk *movChunk = &movData->chunks[i];
+//    movchunk_free(movChunk);
+//  }
+//  if (movData->chunks) {
+//    free(movData->chunks);
+//  }
+  bzero(movData, sizeof(MovData));
+}
+
+// errCode values
+#define ERR_READ 1
+#define ERR_UNSUPPORTED_64BIT_FIELD 2
+#define ERR_INVALID_FIELD 3
+#define ERR_MALLOC_FAILED 4
+
+typedef struct Atom {
+  uint32_t asize;
+  uint32_t atype;
+} Atom;
+
+typedef struct DataRefTableEntry
+{
+  uint32_t size;
+  uint32_t type;
+  uint8_t version;
+  uint32_t flags;
+  uint32_t data_offset;
+  uint32_t data_size;
+} DataRefTableEntry;
+
+static inline char *
+moviedata_fcc_tostring(MovData *movData, int i)
+{
+  movData->fccbuffer[0] = ((char) (i & 0xFF)),
+  movData->fccbuffer[1] = ((char) ((i >> 8) & 0xFF)),
+  movData->fccbuffer[2] = ((char) ((i >> 16) & 0xFF)),
+  movData->fccbuffer[3] = ((char) ((i >> 24) & 0xFF)),
+  movData->fccbuffer[4] = '\0';
+  return movData->fccbuffer;  
+}
+
+static inline int
+fcc_toint(char a, char b, char c, char d)
+{
+  return ((a) | ((b) << 8) | ((c) << 16) | ((d) << 24));
+}
+
+// read an unsigned 32 bit number in big endian format, returns 0 on success.
+
+static inline int
+read_be_uint32(FILE *fp, uint32_t *ptr)
+{
+  uint32_t lv;
+  if (fread(&lv, sizeof(lv), 1, fp) != 1) {
+    return 1;
+  }
+  *ptr = ntohl(lv);
+  return 0;
+}
+
+// read an unsigned 16 bit number in big endian format, returns 0 on success.
+
+static inline int
+read_be_int16(FILE *fp, int16_t *ptr)
+{
+  int16_t lv;
+  if (fread(&lv, sizeof(lv), 1, fp) != 1) {
+    return 1;
+  }
+  *ptr = ntohs(lv);
+  return 0;
+}
+
+// read an unsigned 32 bit number, returns 0 on success.
+
+static inline int
+read_uint32(FILE *fp, uint32_t *ptr)
+{
+  uint32_t lv;
+  if (fread(&lv, sizeof(lv), 1, fp) != 1) {
+    return 1;
+  }
+  *ptr = lv;
+  return 0;
+}
+
+// read a quicktime floating point format number, returns 0 on success
+
+static inline int
+read_fixed32(FILE *fp, float *ptr)
+{
+  unsigned long a, b, c, d, r1, r2;
+  unsigned char data[4];
+  
+  if (fread(data, sizeof(data), 1, fp) != 1) {
+    return 1;
+  }
+  a = data[0];
+  b = data[1];
+  c = data[2];
+  d = data[3];
+  
+  r1 = (a << 8) + b;
+  r2 = (c << 8) + d;
+  
+  if (r2) {
+    *ptr = (float)a + (float)b / 65536;
+  } else {
+    *ptr = r1;
+  }
+  
+  return 0;
+}
+
+// recurse into atoms and process them. Return 0 on success
+// otherwise non-zero to indicate an error.
+
+static int
+process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
+{
+  // first 4 bytes indicate the size of the atom
+  
+  Atom atom;
+  int seek_status;
+  
+  while (1) {
+    uint32_t atomOffset = ftell(movFile);
+    
+    if (atomOffset >= maxOffset || feof(movFile)) {
+      // Done reading from atom at this point
+      break;
+    }
+    
+#ifdef DUMP_WHILE_PARSING
+    fprintf(stdout, "read atom at byte %d\n", (int) atomOffset);
+#endif
+    
+    if (read_be_uint32(movFile, &atom.asize) != 0) {
+      movData->errCode = ERR_READ;
+      snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for atom size");
+      return 1;
+    }
+    if (atom.asize == 0x00000001) {
+      movData->errCode = ERR_UNSUPPORTED_64BIT_FIELD;
+      snprintf(movData->errMsg, sizeof(movData->errMsg), "64 bit atoms not supported");
+      return 1;
+    }
+    // an atom with zero size means the atom extends to the end
+    // of the file.
+    if (atom.asize == 0) {
+      break;
+    }
+    uint32_t atomMaxOffset = atomOffset + atom.asize;
+    // If the atom size is larger than the file size, then
+    // this can't be a valid quicktime file.
+    if (atomMaxOffset > maxOffset) {
+      movData->errCode = ERR_INVALID_FIELD;
+      snprintf(movData->errMsg, sizeof(movData->errMsg),
+               "invalid atom size not supported (%d + %d) > %d",
+               (int)atomOffset, (int)atom.asize, (int)maxOffset);
+      return 1;
+    }
+    
+    // Read the "type" as a series of bytes, not a big endian number!
+    
+    if (read_uint32(movFile, &atom.atype) != 0) {
+      movData->errCode = ERR_READ;
+      snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for atom type");
+      return 1;
+    }
+    
+    // FIXME: Read the data for this specific Atom with one read operation, then parse
+    // using the data in the pointer. This is easier than doing feek type operations
+    // each time? Also, less can go wrong since IO handling is in one place. Note, that
+    // this read should not be done for a mdat atom because it is really large! Might
+    // also be good to just memory map the entire file at the start, and then use
+    // a pointer into that memory instead of messing about with specific reads and such.
+    
+#ifdef DUMP_WHILE_PARSING
+    fprintf(stdout, "type \"%s\", size %d\n", moviedata_fcc_tostring(movData, atom.atype), atom.asize);
+#endif
+    if (atom.atype == fcc_toint('s', 't', 'b', 'l')) {
+      atom.asize = -(-atom.asize);
+    }
+    
+    if (atom.atype == fcc_toint('f', 't', 'y', 'p')) {
+      // FILE TYPE : http://ftyps.com/
+      // Major Brand (ftyp code)
+      // Major Brand version
+      // Compatible Brand (ftyp code)
+      // Compatible Brand 2...N
+      
+      uint32_t brand;
+      
+      if (read_uint32(movFile, &brand) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for atom ftyp brand");
+        return 1;
+      }
+      
+#ifdef DUMP_WHILE_PARSING
+      fprintf(stdout, "ftyp brand \"%s\"\n", moviedata_fcc_tostring(movData, brand));
+#endif
+      
+      // FIXME: Fail to load if this does not match "qt  " ???
+    } else if (atom.atype == fcc_toint('m', 'd', 'a', 't')) {
+      // Movie Data container : mdat
+      
+      if (movData->foundMDAT) {
+        // Only a single mdat is supported
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg),
+                 "movie can't contain more than 1 movie data field");
+        return 1;
+      }
+      
+      movData->rleDataOffset = ftell(movFile);
+      movData->rleDataLength = atom.asize - 8;
+      
+#ifdef DUMP_WHILE_PARSING
+      fprintf(stdout, "mdat rle data at offset %d, size is %d bytes\n", movData->rleDataOffset, movData->rleDataLength);
+#endif
+      
+      movData->foundMDAT = 1;
+    } else if (atom.atype == fcc_toint('m', 'o', 'o', 'v')) {
+      // Movie container : toplevel
+      // moov atom contains children mvhd and trak
+      
+      if (process_atoms(movFile, movData, atomMaxOffset) != 0) {
+        return 1;
+      }
+      
+    } else if (atom.atype == fcc_toint('m', 'd', 'a', 't')) {
+      // media data atom : skip
+      
+    } else if (atom.atype == fcc_toint('m', 'v', 'h', 'd')) {
+      // Movie header : moov.mvhd
+      
+      // version : byte
+      
+      char version;
+      
+      if (fread(&version, sizeof(version), 1, movFile) != 1) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for mvhd version");
+        return 1;
+      }
+      
+      if (version == 1) {
+        movData->errCode = ERR_UNSUPPORTED_64BIT_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "64 bit fields in mvhd not supported");
+        return 1;
+      }
+      
+      // flags : 3 bytes
+      // creation time : 4 bytes
+      // modification time : 4 bytes
+      // time scale : 4 bytes
+      // duration : 4 bytes
+      // ...
+      
+      seek_status = fseek(movFile, 3 + 4 + 4, SEEK_CUR);
+      assert(seek_status == 0);
+      
+      uint32_t time_scale;
+      
+      if (read_be_uint32(movFile, &time_scale) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for mvhd time_scale");
+        return 1;
+      }
+      
+      uint32_t duration;
+      
+      if (read_be_uint32(movFile, &duration) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for mvhd duration");
+        return 1;
+      }
+      
+#ifdef DUMP_WHILE_PARSING
+      fprintf(stdout, "mvhd time_scale %d, duration %d\n", time_scale, duration);
+#endif
+      
+      // The time scale is the number of time units per second.
+      // So, if there are 60 "ticks" in a second then the time scale is 60.
+      // The default time scale is 600, meaning 1/600 of a second.
+      
+      movData->lengthInSeconds = ((float)duration) / time_scale;
+      movData->lengthInTicks = duration;
+      
+#ifdef DUMP_WHILE_PARSING
+      fprintf(stdout, "mvhd lengthInSeconds %f\n", movData->lengthInSeconds);
+#endif
+      
+      movData->timeScale = time_scale;
+      
+      movData->foundMVHD = 1;
+      
+    } else if (atom.atype == fcc_toint('t', 'r', 'a', 'k')) {
+      // Track container : moov.trak
+      
+      if (movData->foundTRAK) {
+        // A movie with multiple tracks is not supported
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg),
+                 "movie can't contain more than 1 track");
+        return 1;
+      } else if (process_atoms(movFile, movData, atomMaxOffset) != 0) {
+        return 1;
+      }
+      
+      movData->foundTRAK = 1;
+    } else if (atom.atype == fcc_toint('t', 'k', 'h', 'd')) {
+      // Track header : moov.trak.tkhd
+      
+      // version : byte
+      // flags : 3 bytes
+      // creation time : 4 bytes
+      // modification time : 4 bytes
+      // track id : 4 bytes
+      // reserved : 4 bytes
+      // duration : 4 bytes
+      // reserved : 8 bytes
+      // layer : 2 bytes
+      // alt group : 2 bytes
+      // volume : 2 bytes
+      // reserved : 2 bytes
+      // matrix : 9 * 4 bytes
+      // track width : 4 bytes
+      // track height : 4 bytes
+      
+      // skip ahead to the track id field
+      
+      fseek(movFile, (1 + 3 + 4 + 4), SEEK_CUR);
+      
+      uint32_t track_id;
+      
+      if (read_be_uint32(movFile, &track_id) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for trak id");
+        return 1;
+      }
+      
+      // track id must be 1, can't be 0 or more than 1 track
+      
+      if (track_id != 1) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg),
+                 "invalid track id %d, only a single video track is supported", track_id);
+        return 1;
+      }
+      
+      fseek(movFile, (4 + 4 + 8 + 2 + 2 + 2 + 2 + 9*4), SEEK_CUR);
+      
+      float width;
+      
+      if (read_fixed32(movFile, &width) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for trak track width");
+        return 1;
+      }
+      
+      float height;
+      
+      if (read_fixed32(movFile, &height) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for trak track height");
+        return 1;
+      }
+      
+      // If width and height are zero, this must be an audio track
+      
+      if (width == 0.0 && height == 0.0) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg),
+                 "invalid track width/height of zero, mov can only contain a single video track",
+                 width, height);
+        return 1;
+      }      
+      
+      // width and height must be whole numbers as they will be converted to int
+      
+      if (width <= 0.0 || height <= 0.0 || floor(width) != width || floor(height) != height) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg),
+                 "invalid track width/height (%f / %f)",
+                 width, height);
+        return 1;
+      }
+      
+      movData->foundTKHD = 1;
+      movData->width = (int) width;
+      movData->height = (int) height;
+      
+#ifdef DUMP_WHILE_PARSING
+      fprintf(stdout, "tkhd width / height %d / %d\n", movData->width, movData->height);
+#endif
+      
+    } else if (atom.atype == fcc_toint('e', 'd', 't', 's')) {
+      // Edit container : moov.trak.edts
+      
+      if (movData->foundEDTS) {
+        // Ignore any edit lists other than the first one
+      } else if (process_atoms(movFile, movData, atomMaxOffset) != 0) {
+        return 1;
+      }
+      
+      movData->foundEDTS = 1;
+      
+    } else if (atom.atype == fcc_toint('e', 'l', 's', 't')) {
+      // Edit list : moov.trak.elst
+      
+      // version : byte
+      // flags : 3 bytes
+      // num entries : 4 bytes
+      // table : 12 bytes * num entries
+      //  (track duration, media time, media rate)
+      //  track duration : 4 byte integer
+      //  media time : 4 byte integer
+      //  media rate : 4 byte integer
+      
+      // skip version and flags
+      fseek(movFile, 4, SEEK_CUR);
+      
+      uint32_t num_entries;
+      
+      if (read_be_uint32(movFile, &num_entries) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for elst num entries");
+        return 1;
+      }
+      
+      // The track can only appear on the timeline once, at time = 0.0 to end
+      
+      if (num_entries != 1) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "elst must contain only a single entry");
+        return 1;
+      }
+      
+      uint32_t track_duration, media_time;
+      float media_rate;
+      
+      if (read_be_uint32(movFile, &track_duration) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for elst track duration");
+        return 1;
+      }
+      if (read_be_uint32(movFile, &media_time) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for elst media time");
+        return 1;
+      }
+      if (read_fixed32(movFile, &media_rate) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for elst media rate");
+        return 1;
+      }      
+      
+      if (track_duration != movData->lengthInTicks) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "elst track duration %d does not match mov duration %d", track_duration, movData->lengthInTicks);
+        return 1;
+      }
+      if (media_time != 0) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "elst track media time must begin at 0, not %d", media_time);
+        return 1;
+      }
+      if (media_rate != 1.0) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "elst track media rate must be 1.0, not %d", media_time);
+        return 1;
+      }
+      
+      movData->foundELST = 1;
+    } else if (atom.atype == fcc_toint('m', 'd', 'i', 'a')) {
+      // Media container : moov.trak.mdia
+      
+      if (movData->foundMDIA) {
+        // Ignore any media segments other than the first one
+      } else if (process_atoms(movFile, movData, atomMaxOffset) != 0) {
+        return 1;
+      }
+      
+      movData->foundMDIA = 1;
+    } else if (atom.atype == fcc_toint('m', 'd', 'h', 'd')) {
+      // Media header : moov.trak.mdia.mdhd
+      
+    } else if (atom.atype == fcc_toint('h', 'd', 'l', 'r')) {
+      // Handler Reference Atom : moov.trak.mdia.hdlr
+      // Must contain [mhlr/vide - Apple Video Media Handler]
+      
+      // version : byte
+      // flags : 3 bytes
+      // component type : 4 bytes
+      // component subtype : 4 bytes
+      // component manufacturer : 4 bytes
+      // component name : N bytes (ignored)
+      
+      fseek(movFile, 4, SEEK_CUR);
+      
+      uint32_t component_type;
+      
+      if (read_uint32(movFile, &component_type) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for hdlr component type");
+        return 1;
+      }
+      
+      uint32_t component_subtype;
+      
+      if (read_uint32(movFile, &component_subtype) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for hdlr component subtype");
+        return 1;
+      }
+      
+      uint32_t component_manufacturer;
+      
+      if (read_uint32(movFile, &component_manufacturer) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for hdlr component manufacturer");
+        return 1;
+      }
+      
+#ifdef DUMP_WHILE_PARSING
+      fprintf(stdout, "component type \"%s\"\n", moviedata_fcc_tostring(movData, component_type));
+      fprintf(stdout, "component subtype \"%s\"\n", moviedata_fcc_tostring(movData, component_subtype));
+      fprintf(stdout, "component manufacturer \"%s\"\n", moviedata_fcc_tostring(movData, component_manufacturer));      
+#endif
+      
+      if (component_type == fcc_toint('m', 'h', 'l', 'r')) {
+        // Defines an alias to the data handler
+        
+        if (component_subtype != fcc_toint('v', 'i', 'd', 'e')) {
+          movData->errCode = ERR_INVALID_FIELD;
+          snprintf(movData->errMsg, sizeof(movData->errMsg), "hdlr component subtype is not vide");
+          return 1;
+        }
+        if (component_manufacturer != fcc_toint('a', 'p', 'p', 'l')) {
+          movData->errCode = ERR_INVALID_FIELD;
+          snprintf(movData->errMsg, sizeof(movData->errMsg), "hdlr component manufacturer is not appl");
+          return 1;
+        }
+        
+        movData->foundMHLR = 1;
+      } else if (component_type == fcc_toint('d', 'h', 'l', 'r')) {
+        // Defines the handler in the minf atom (aliased to)
+        
+        if (component_subtype != fcc_toint('a', 'l', 'i', 's')) {
+          movData->errCode = ERR_INVALID_FIELD;
+          snprintf(movData->errMsg, sizeof(movData->errMsg), "dhlr component subtype is not alis");
+          return 1;
+        }
+        if (component_manufacturer != fcc_toint('a', 'p', 'p', 'l')) {
+          movData->errCode = ERR_INVALID_FIELD;
+          snprintf(movData->errMsg, sizeof(movData->errMsg), "dhlr component manufacturer is not appl");
+          return 1;
+        }
+        
+        movData->foundDHLR = 1;
+      } else {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "hdlr component type is not mhlr or dhlr");
+        return 1;
+      }
+    } else if (atom.atype == fcc_toint('m', 'i', 'n', 'f')) {
+      // Sound Media container : moov.trak.mdia.minf
+      
+      if (process_atoms(movFile, movData, atomMaxOffset) != 0) {
+        return 1;
+      }
+    } else if (atom.atype == fcc_toint('d', 'i', 'n', 'f')) {
+      // Data Information container : moov.trak.mdia.minf.dinf
+      
+      if (process_atoms(movFile, movData, atomMaxOffset) != 0) {
+        return 1;
+      }
+    } else if (atom.atype == fcc_toint('d', 'r', 'e', 'f')) {
+      // Data reference: moov.trak.mdia.minf.dinf.dref
+      
+      // version : byte
+      // flags : 3 bytes
+      // num entries : 4 bytes
+      
+      fseek(movFile, 4, SEEK_CUR);
+      
+      uint32_t num_entries;
+      
+      if (read_be_uint32(movFile, &num_entries) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for dref num entres");
+        return 1;
+      }
+      
+      // FIXME: seems like none of this is actually needed!
+      // Is it possible to just avoid parsing the dref completely?
+      
+      // FIXME : Can there only be 1 entry in this data ref table?
+      // what happens if there are zero entries?
+      
+      // Now there are num_entries number of data references to read
+      
+      DataRefTableEntry *table = malloc(sizeof(DataRefTableEntry) * num_entries);
+      if (table == NULL) {
+        movData->errCode = ERR_MALLOC_FAILED;
+        snprintf(movData->errMsg, sizeof(movData->errMsg),
+                 "malloc of %d bytes failed for dref table", (int) (sizeof(DataRefTableEntry) * num_entries));
+        return 1;        
+      }
+      bzero(table, sizeof(DataRefTableEntry) * num_entries);
+      
+      for (int i = 0; i < num_entries; i++) {
+        DataRefTableEntry *entry = &table[i];
+        
+        // size : 4 bytes 
+        // type : 4 bytes
+        // version : 1 byte
+        // flags : 3 bytes
+        
+        if (read_be_uint32(movFile, &entry->size) != 0) {
+          movData->errCode = ERR_READ;
+          snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for dref table entry size");
+          return 1;
+        }
+        
+        if (read_uint32(movFile, &entry->type) != 0) {
+          movData->errCode = ERR_READ;
+          snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for dref table entry type");
+          return 1;
+        }
+        // type must be 'dref' ?
+        
+        // Skip version and flags
+        fseek(movFile, 4, SEEK_CUR);
+        
+        // Record location of data along with the number of bytes.
+        // We don't want to actually read the data since there could
+        // be a lot of data.
+        
+        entry->data_offset = ftell(movFile);
+        entry->data_size = entry->size - (4 + 4 + 1 + 3);
+        
+#ifdef DUMP_WHILE_PARSING
+        fprintf(stdout, "data ref %d, size %d, type \"%s\", data at %d of length %d\n", i,
+                entry->size, moviedata_fcc_tostring(movData, entry->type),
+                entry->data_offset, entry->data_size);
+#endif
+      }
+      
+      free(table);
+      
+      movData->foundDREF = 1;
+    } else if (atom.atype == fcc_toint('s', 't', 'b', 'l')) {
+      // Sample table container : moov.trak.mdia.minf.stbl
+      // Contains the atoms that contain the actual video data to be decoded
+      
+      if (movData->foundSTBL) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "found multiple stbl atoms");
+        return 1;
+      }
+      movData->foundSTBL = 1;
+
+      if (process_atoms(movFile, movData, atomMaxOffset) != 0) {
+        return 1;
+      }
+      
+    } else if (atom.atype == fcc_toint('s', 't', 's', 'd')) {
+      // Sample description : moov.trak.mdia.minf.stbl.stsd
+      // Describes the format of the RLE data that appears in the mdat
+      
+      if (movData->foundSTSD) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "found multiple stsd atoms");
+        return 1;
+      }
+      movData->foundSTSD = 1;
+      
+      // version : byte
+      // flags : 3 bytes
+      // num entries : 4 bytes
+      
+      fseek(movFile, 4, SEEK_CUR);
+      
+      uint32_t num_entries;
+      
+      if (read_be_uint32(movFile, &num_entries) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsd num entres");
+        return 1;
+      }
+      
+      if (num_entries != 1) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg),
+                 "stsd table must contain 1 entry, not %d entries", (int) num_entries);
+        return 1;        
+      }
+      
+      // Read a single "Sample Description" data field
+      
+      // Sample description size : 4 bytes
+      // Data format : 4 bytes
+      // Reserved : 6 bytes
+      // Data reference index : 2 bytes (16 bit integer index)
+      
+      uint32_t sample_description_size, data_format;
+      
+      if (read_be_uint32(movFile, &sample_description_size) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsd sample description size");
+        return 1;
+      }      
+      
+      if (read_uint32(movFile, &data_format) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsd sample data format");
+        return 1;
+      }
+      
+      // Only "Animation" codec is supported
+      
+      if (data_format != fcc_toint('r', 'l', 'e', ' ')) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "stsd table data format must be \"rle \" not \"%s\"",
+                 moviedata_fcc_tostring(movData, data_format));
+        return 1;
+      }
+      
+      // skip reserved
+      fseek(movFile, 6, SEEK_CUR);
+      
+      uint32_t data_ref_size = sample_description_size - (4 + 4 + 6 + 2);
+      
+      if (data_ref_size == 0) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "stsd table data ref size is zero");
+        return 1;        
+      }      
+      
+      int16_t data_ref_index;
+      
+      if (read_be_int16(movFile, &data_ref_index) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsd sample data ref index");
+        return 1;
+      }
+      
+      // Indicates that rle data is contained in the first (and only) mdat
+      
+      if (data_ref_index != 1) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "stsd table data ref index must be 1");
+        return 1;        
+      }
+      
+      // Additional fields for video sample description
+      
+      // version : 2 bytes
+      // revision : 2 bytes
+      // vendor : 4 bytes
+      // temporal quality : 4 bytes
+      // spatial quality : 4 bytes
+      // width : 2 bytes
+      // height : 2 bytes
+      // horizontal resolution : 4 bytes (fixed)
+      // vertical resolution : 4 bytes (fixed)
+      // data size : 4 bytes
+      // frame count : 2 bytes
+      // compressor name : 32 byte string
+      // depth : 2 bytes
+      // color table id : 2 bytes
+      
+      // skip version and revision
+      fseek(movFile, 2 + 2, SEEK_CUR);
+      
+      uint32_t vendor;
+      
+      if (read_uint32(movFile, &vendor) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsd vendor");
+        return 1;
+      }
+      
+      // Only Apple "Animation" codec is supported
+      
+      if (vendor != fcc_toint('a', 'p', 'p', 'l')) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "stsd table data format must be \"appl\" not \"%s\"",
+                 moviedata_fcc_tostring(movData, vendor));
+        return 1;
+      }
+      
+      // FIXME: check the return result of all of the fseek() calls!
+      
+      // skip to frame count field
+      fseek(movFile, 4 + 4 + 2 + 2 + 4 + 4 + 4, SEEK_CUR);
+      
+      // Verify that movie format stores only 1 frame in each sample.
+      
+      int16_t frame_count;
+      
+      if (read_be_int16(movFile, &frame_count) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsd frame count");
+        return 1;
+      }
+      
+      if (frame_count != 1) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "stsd table frame count must be 1, not %d", (int)frame_count);
+        return 1;
+      }
+      
+      uint8_t compressor_name_len;
+      char compressor_name[31];
+      
+      if (fread(&compressor_name_len, sizeof(compressor_name_len), 1, movFile) != 1) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsd compressor name len");
+        return 1;
+      }
+      if (fread(&compressor_name[0], sizeof(compressor_name), 1, movFile) != 1) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsd compressor name");
+        return 1;
+      }
+      compressor_name[30] = '\0';
+      char *animation_name = "Animation";
+      
+      if (compressor_name_len != strlen(animation_name) || strcmp(compressor_name, animation_name) != 0) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "stsd table data compressor name must be \"Animation\" not \"%s\"",
+                 compressor_name);
+        return 1;
+      }
+      
+      // depth == 16 | 24 | 32
+      
+      int16_t depth;
+      
+      if (read_be_int16(movFile, &depth) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsd depth");
+        return 1;
+      }
+      
+      if (depth != 16 && depth != 24 && depth != 32) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "stsd table data ref index must be 16, 24, or 32. Not %d", (int)depth);
+        return 1;
+      }
+      movData->bitDepth = depth;
+      
+      // color table id == -1 
+      
+      int16_t color_table_id;
+      
+      if (read_be_int16(movFile, &color_table_id) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsd color table id");
+        return 1;
+      }
+      
+      if (color_table_id != -1) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "stsd table entry must not make use of a color table");
+        return 1;
+      }
+
+    } else if (atom.atype == fcc_toint('s', 't', 't', 's')) {
+      // Time to sample : moov.trak.mdia.minf.stbl.stts
+      // Table that maps media time to sample number
+
+      if (movData->foundSTTS) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "found multiple stts atoms");
+        return 1;
+      }
+      movData->foundSTTS = 1;
+                  
+      // version : byte
+      // flags : 3 bytes
+      // num entries : 4 bytes
+      // table : 8 bytes * num entries
+      //  (sample count, sample duration)
+      //  sample count : 4 byte integer of # of samples with same duration
+      //  sample duration : 4 byte integer of duration of each sample
+      
+      // skip version and flags
+      fseek(movFile, 4, SEEK_CUR);
+      
+      uint32_t num_entries;
+      
+      if (read_be_uint32(movFile, &num_entries) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stts num entres");
+        return 1;
+      }
+      assert(num_entries > 0);
+
+      // Record the size and locaton of this table
+      movData->timeToSampleTableNumEntries = num_entries;
+      movData->timeToSampleTableOffset = ftell(movFile);
+      
+    } else if (atom.atype == fcc_toint('s', 't', 's', 's')) {
+      // Sync sample : moov.trak.mdia.minf.stbl.stss
+      // Table that defines which samples (not frames) indicate a key frame.
+      // A frame that is a nop (no change) could still be a keyframe (it is a sample property)
+      // Note that if this atom is not defined, then all the frames are key frames!
+      
+      if (movData->foundSTSS) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "found multiple stss atoms");
+        return 1;
+      }
+      movData->foundSTSS = 1;      
+      
+      // version : byte
+      // flags : 3 bytes
+      // num entries : 4 bytes
+      // table : 4 bytes * num entries
+      //  each table entry is in increasing order : (2, 4, 5) indicate that these frames are key frames
+      
+      // skip version and flags
+      fseek(movFile, 4, SEEK_CUR);
+      
+      uint32_t num_entries;
+      
+      if (read_be_uint32(movFile, &num_entries) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stss num entries");
+        return 1;
+      }
+      assert(num_entries > 0);
+      
+      // Record the size and locaton of this table
+      movData->syncSampleTableNumEntries = num_entries;
+      movData->syncSampleTableOffset = ftell(movFile);      
+            
+    } else if (atom.atype == fcc_toint('s', 't', 's', 'c')) {
+      // Sample to chunk : moov.trak.mdia.minf.stbl.stsc
+      // Mapping of sample number to chunk number
+      
+      if (movData->foundSTSC) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "found multiple stsc atoms");
+        return 1;
+      }
+      movData->foundSTSC = 1;      
+      
+      // version : byte
+      // flags : 3 bytes
+      // num entries : 4 bytes
+      // table : 0 or N 12 byte entries
+      //  First chunk : 4 bytes
+      //  Samples per chunk : 4 bytes
+      //  Sample description ID : 4 bytes
+      
+      // skip version and flags
+      fseek(movFile, 4, SEEK_CUR);
+      
+      uint32_t num_entries;
+      
+      if (read_be_uint32(movFile, &num_entries) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsc num entries");
+        return 1;
+      }
+      assert(num_entries > 0);
+      
+      // Record the size and locaton of this table
+      movData->sampleToChunkTableNumEntries = num_entries;
+      movData->sampleToChunkTableOffset = ftell(movFile);      
+            
+    } else if (atom.atype == fcc_toint('s', 't', 's', 'z')) {
+      // Sample size : moov.trak.mdia.minf.stbl.stsz
+      // Table that defines the size of each sample data region (in mdat)
+      
+      if (movData->foundSTSZ) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "found multiple stsc atoms");
+        return 1;
+      }
+      movData->foundSTSZ = 1;
+      
+      // version : byte
+      // flags : 3 bytes
+      // sample size : 4 bytes
+      // num entries : 4 bytes
+      // table : 0 or N 4 byte integers, one for each sample
+      
+      // skip version and flags
+      fseek(movFile, 4, SEEK_CUR);
+      
+      uint32_t sample_size;
+      
+      if (read_be_uint32(movFile, &sample_size) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsz sample size");
+        return 1;
+      }
+      
+      uint32_t num_entries;
+      
+      if (read_be_uint32(movFile, &num_entries) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsz num entres");
+        return 1;
+      }
+
+      movData->sampleSizeCommon = sample_size;
+      movData->sampleSizeTableNumEntries = num_entries;
+      if (num_entries > 0) {
+        movData->sampleSizeTableOffset = ftell(movFile);
+      }
+      
+    } else if (atom.atype == fcc_toint('s', 't', 'c', 'o')) {
+      // Chunk Offset : moov.trak.mdia.minf.stbl.stco
+      // Table that defines the file byte offset for each chunk in the mdat.
+      // Note that a single chunk can contain N samples.
+      
+      if (movData->foundSTCO) {
+        movData->errCode = ERR_INVALID_FIELD;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "found multiple stco atoms");
+        return 1;
+      }
+      movData->foundSTCO = 1;
+            
+      // version : byte
+      // flags : 3 bytes
+      // num entries : 4 bytes
+      // table : 0 or N 4 byte integers
+      
+      // skip version and flags
+      fseek(movFile, 4, SEEK_CUR);
+      
+      uint32_t num_entries;
+      
+      if (read_be_uint32(movFile, &num_entries) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stco num entres");
+        return 1;
+      }
+      
+      assert(num_entries > 0);
+
+      // Record the size and locaton of this table
+      movData->chunkOffsetTableNumEntries = num_entries;
+      movData->chunkOffsetTableOffset = ftell(movFile);      
+      
+    }
+    
+    // Skip the rest of the bytes in this atom
+
+/*
+#ifdef DUMP_WHILE_PARSING
+    fprintf(stdout, "done with atom \"%s\" at byte %d, will seek to %d\n",
+            moviedata_fcc_tostring(movData, atom.atype),
+            (int)ftell(movFile), (int) (atomOffset + atom.asize));
+#endif
+*/
+
+    seek_status = fseek(movFile, atomOffset + atom.asize, SEEK_SET);
+    assert(seek_status == 0);
+  }
+  
+  return 0;
+}
+
+// Util method for reading a SampleToChunkTableEntry 
+
+static inline
+int SampleToChunkTableEntry_read(FILE *movFile, MovData *movData, SampleToChunkTableEntry *sampleToChunkTableEntryPtr)
+{
+  uint32_t first_chunk_id, samples_per_chunk, sample_desc_id;
+  
+  if (read_be_uint32(movFile, &first_chunk_id) != 0) {
+    movData->errCode = ERR_READ;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsc first chunk");
+    return 1;
+  }
+  if (read_be_uint32(movFile, &samples_per_chunk) != 0) {
+    movData->errCode = ERR_READ;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsc samples per chunk");
+    return 1;
+  }
+  if (read_be_uint32(movFile, &sample_desc_id) != 0) {
+    movData->errCode = ERR_READ;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsc sample description id");
+    return 1;
+  }
+  assert(sample_desc_id == 1);
+
+  sampleToChunkTableEntryPtr->first_chunk_id = first_chunk_id;
+  sampleToChunkTableEntryPtr->samples_per_chunk = samples_per_chunk;
+
+  return 0;
+}
+
+// This method is invoked after all the atoms have been read
+// successfully.
+
+static
+int
+process_sample_tables(FILE *movFile, MovData *movData) {
+  // All atoms except sync are required at this point
+  
+  if (!movData->foundMDAT) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "mdat atom was not found");
+    return 1;
+  }
+  if (!movData->foundMVHD) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "mvhd atom was not found");
+    return 1;
+  }
+  if (!movData->foundTRAK) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "trak atom was not found");
+    return 1;
+  }
+  if (!movData->foundTKHD) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "tkhd atom was not found");
+    return 1;
+  }
+  if (!movData->foundEDTS) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "edts atom was not found");
+    return 1;
+  }
+  if (!movData->foundELST) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "elst atom was not found");
+    return 1;
+  }
+  if (!movData->foundMDIA) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "mdia atom was not found");
+    return 1;
+  }  
+  if (!movData->foundMHLR) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "mhlr atom was not found");
+    return 1;
+  }
+  if (!movData->foundDHLR) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "dhlr atom was not found");
+    return 1;
+  }  
+  if (!movData->foundDREF) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "dref atom was not found");
+    return 1;
+  }  
+  if (!movData->foundSTBL) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "stbl atom was not found");
+    return 1;
+  }  
+  if (!movData->foundSTSD) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "stsd atom was not found");
+    return 1;
+  }
+  if (!movData->foundSTTS) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "stts atom was not found");
+    return 1;
+  }
+//  if (!movData->foundSTSS) { 
+//    movData->errCode = ERR_INVALID_FIELD;
+//    snprintf(movData->errMsg, sizeof(movData->errMsg), "stss atom was not found");
+//    return 1;
+//  }
+  if (!movData->foundSTSC) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "stsc atom was not found");
+    return 1;
+  }  
+  if (!movData->foundSTSZ) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "stsz atom was not found");
+    return 1;
+  }
+  if (!movData->foundSTCO) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "stco atom was not found");
+    return 1;
+  }  
+  
+  int status = 1; // err status returned via "goto reterr"
+
+  // pointers that need to be cleaned up when exiting this function
+  MovChunk *chunks = NULL;
+  uint32_t *TimeToSampleTable = NULL;
+
+  int seek_result;
+  
+  // Get the number of chunks in the stco chunk offset table
+  
+  const int numChunks = movData->chunkOffsetTableNumEntries;
+
+  chunks = malloc(sizeof(MovChunk) * numChunks);
+  bzero(chunks, sizeof(sizeof(MovChunk) * numChunks));
+
+  assert(movData->chunkOffsetTableOffset > 0);
+  seek_result = fseek(movFile, movData->chunkOffsetTableOffset, SEEK_SET);
+  if (seek_result != 0) {
+    movData->errCode = ERR_READ;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "seek error for stco table offset");
+    goto reterr;    
+  }
+  
+  for (int chunk_index = 0; chunk_index < numChunks; chunk_index++) {
+    MovChunk *movChunk = &chunks[chunk_index];
+    movchunk_init(movChunk);
+    
+    // Read the file offset and save in the chunk
+    
+    uint32_t offset;
+    
+    if (read_be_uint32(movFile, &offset) != 0) {
+      movData->errCode = ERR_READ;
+      snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stco table offset");
+      goto reterr;
+    }        
+    
+    assert(offset > 0);
+    movChunk->offset = offset;
+  }
+
+  // Next we need to determine how many samples there actually are (may not be in stsz).  
+  // Allocate table of SAMPLE COUNT, SAMPLE DURATION for time to sample info.
+  // Iterate through the time to sample table and find the smallest time
+  // that a sample is displayed. This is the effective frame duration.
+  // It is possible that a movie could be encoded at 10FPS but every 2nd
+  // frame is the same, so that would be an effective frame rate of 5FPS.
+  
+  assert(movData->timeToSampleTableOffset > 0);
+  seek_result = fseek(movFile, movData->timeToSampleTableOffset, SEEK_SET);
+  if (seek_result != 0) {
+    movData->errCode = ERR_READ;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "seek error for stts table offset");
+    goto reterr;    
+  }  
+  
+  TimeToSampleTable = malloc(movData->timeToSampleTableNumEntries * 2 * sizeof(uint32_t));
+  bzero(TimeToSampleTable, movData->timeToSampleTableNumEntries * 2 * sizeof(uint32_t));
+  
+  uint32_t smallest_duration = INT_MAX;
+  uint32_t num_samples = 0;
+    
+  for (int i = 0; i < movData->timeToSampleTableNumEntries; i++) {
+    uint32_t *sampleCountPtr = TimeToSampleTable + (i*2+0);
+    uint32_t *sampleDurationPtr = TimeToSampleTable + (i*2+1);
+    
+    if (read_be_uint32(movFile, sampleCountPtr) != 0) {
+      movData->errCode = ERR_READ;
+      snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stts sample table count");
+      goto reterr;
+    }
+    if (read_be_uint32(movFile, sampleDurationPtr) != 0) {
+      movData->errCode = ERR_READ;
+      snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stts sample table duration");
+      goto reterr;
+    }
+    
+    if (*sampleDurationPtr > 0 && *sampleDurationPtr < smallest_duration) {
+      smallest_duration = *sampleDurationPtr;
+    }
+    num_samples += *sampleCountPtr;
+    
+#ifdef DUMP_WHILE_PARSING
+    fprintf(stdout, "TimeToSampleTable[%d] = (%d %d)\n", i, *sampleCountPtr, *sampleDurationPtr);
+#endif
+  }
+  
+  if (movData->sampleSizeCommon == 0) {
+    // Should match the number of samples from the sample size table.
+    assert(num_samples == movData->sampleSizeTableNumEntries);
+  }
+  
+  movData->samples = malloc(sizeof(MovSample) * num_samples);
+  bzero(movData->samples, sizeof(MovSample) * num_samples);
+  movData->numSamples = num_samples;
+  
+  // Use the effective frame rate to calculate the approx FPS and
+  // the total number of frames in the track.
+  
+  assert(movData->timeScale > 0);
+  float frameDuration = ((float)smallest_duration) / movData->timeScale;
+  float numFrames = movData->lengthInSeconds / frameDuration;
+  float fps = numFrames / movData->lengthInSeconds;
+
+  movData->fps = fps;
+  int numFramesInt = round(numFrames);
+
+#ifdef DUMP_WHILE_PARSING
+  fprintf(stdout, "mov length %f, frameDuration %f, numFrames is %f, FPS is %f\n",
+          movData->lengthInSeconds, frameDuration, numFrames, fps);
+#endif  
+  
+  // This err only seems to show up in odd cases where both audio and
+  // video were included in a movie, but then the audio track was deleted.
+  // Exporting from QT again instead of just deleting the track will
+  // purge the unused samples from the mdat (saving space) and fix this problem.
+
+  if (numFramesInt < num_samples) {
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg),
+             "found %d samples, but only %d frames of video, re-exporting from Quicktime may fix this",
+             num_samples, numFramesInt);
+    return 1;
+  }
+    
+  movData->frames = malloc(sizeof(MovSample*) * numFramesInt);
+  bzero(movData->frames, sizeof(MovSample*) * numFramesInt);
+  movData->numFrames = numFramesInt;
+
+  // Iterate over each entry in the TimeToSampleTable and figure out
+  // which frames map to which samples.
+  
+  uint32_t sample_index = 0;
+  uint32_t frame_index = 0;
+  uint32_t start_time = 0;
+  
+  for (int i = 0; i < movData->timeToSampleTableNumEntries; i++) {
+    uint32_t sampleCount = *(TimeToSampleTable + (i*2+0));
+    uint32_t sampleDuration = *(TimeToSampleTable + (i*2+1));
+    
+#ifdef DUMP_WHILE_PARSING
+    fprintf(stdout, "TimeToSampleTable[%d] = (%d %d)\n", i, (int)sampleCount, (int)sampleDuration);
+#endif
+    
+    for ( ; sampleCount > 0 ; sampleCount--) {
+      uint32_t sample_start_time = start_time;
+      uint32_t sample_end_time = sample_start_time + sampleDuration;
+      
+      assert(sample_index < movData->numSamples);
+      MovSample *samplePtr = &movData->samples[sample_index];
+      
+      while (1) {
+        uint32_t frame_start_time = frame_index * smallest_duration;
+        assert(frame_start_time >= sample_start_time); // always increasing
+        
+        if (frame_start_time < sample_end_time) {
+          // Frame is contained within this sample time
+          
+#ifdef DUMP_WHILE_PARSING
+          fprintf(stdout, "frame %d at sample %d time %f is in sample %d window [%d, %d] [%f, %f]\n",
+                  frame_index, frame_start_time, ((float)frame_start_time) / movData->timeScale, sample_index,
+                  sample_start_time, sample_end_time,
+                  ((float)sample_start_time) / movData->timeScale, ((float)sample_end_time) / movData->timeScale);              
+#endif
+          
+          assert(frame_index < movData->numFrames);
+          movData->frames[frame_index] = samplePtr;
+          frame_index++;
+          if (frame_index >= movData->numFrames) {
+            break;
+          }
+        } else {
+          // Frame is larger than or equal to the sample_end_time
+          
+#ifdef DUMP_WHILE_PARSING
+          fprintf(stdout, "frame %d at sample %d time %f is larger than sample %d window [%d, %d] [%f, %f]\n",
+                  frame_index, frame_start_time, ((float)frame_start_time) / movData->timeScale, sample_index,
+                  sample_start_time, sample_end_time,
+                  ((float)sample_start_time) / movData->timeScale, ((float)sample_end_time) / movData->timeScale);              
+#endif
+          
+          break;
+        }
+      }
+      
+      start_time = sample_end_time;
+      sample_index++;
+    }
+  }
+  
+  assert(movData->numSamples);
+  assert(movData->numFrames);
+  
+  // Update the sample size field by reading the entries in the sample size table stsz.
+  // In the easy case, all the samples are the same size. Also handle the case of
+  // all the frames being key frames while iterating over all the samples.
+  
+  assert(movData->sampleSizeTableOffset > 0);
+  seek_result = fseek(movFile, movData->sampleSizeTableOffset, SEEK_SET);
+  if (seek_result != 0) {
+    movData->errCode = ERR_READ;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "seek error for stsz table offset");
+    goto reterr;    
+  }
+  
+  for (int i=0; i < movData->numSamples; i++) {
+    MovSample *samplePtr = &movData->samples[i];
+    uint32_t sample_size = 0;
+    
+    if (movData->sampleSizeCommon == 0) {
+      // Set the sample size to the value in the table
+      
+      if (read_be_uint32(movFile, &sample_size) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsz table sample size");
+        goto reterr;
+      }
+    } else {
+      sample_size = movData->sampleSizeCommon;
+    }
+    
+    assert(sample_size > 0);
+    samplePtr->length = sample_size;
+    
+    if (!movData->foundSTSS) {
+      samplePtr->isKeyframe = 1;
+    }
+  }
+  
+#ifdef DUMP_WHILE_PARSING
+  fprintf(stdout, "post length and isKeyframe read\n");
+            
+  for (int i = 0; i < movData->numSamples; i++) {
+    MovSample *samplePtr = &movData->samples[i];
+    
+    fprintf(stdout, "movData->samples[%d] offset %d, length %d, isKeyFrame %d\n", i,
+            samplePtr->offset, samplePtr->length, samplePtr->isKeyframe);
+  }
+#endif  
+  
+  // Determine the number of samples that each chunk contains. All the chunks
+  // could contain the same number of samples in the case where there is only
+  // a single entry in the table. Otherwise, search the sample to chunk chunk table.
+  
+  assert(movData->sampleToChunkTableOffset > 0);
+  seek_result = fseek(movFile, movData->sampleToChunkTableOffset, SEEK_SET);
+  if (seek_result != 0) {
+    movData->errCode = ERR_READ;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "seek error for stsc table offset");
+    goto reterr;
+  }  
+  
+  sample_index = 0;
+  uint32_t all_chunks_same_size = 0;
+  uint32_t samples_per_chunk = 0;
+  
+  SampleToChunkTableEntry currentEntry;
+  SampleToChunkTableEntry nextEntry;
+  int sampleToChunkTableNumEntriesRemaining = movData->sampleToChunkTableNumEntries;
+  
+  if (SampleToChunkTableEntry_read(movFile, movData, &currentEntry) != 0) {
+    goto reterr;
+  }
+  sampleToChunkTableNumEntriesRemaining--;
+
+  if (movData->sampleToChunkTableNumEntries == 1) {
+    all_chunks_same_size = 1;
+    samples_per_chunk = currentEntry.samples_per_chunk;
+  } else {
+    // Read the next entry also
+    if (SampleToChunkTableEntry_read(movFile, movData, &nextEntry) != 0) {
+      goto reterr;
+    }
+    sampleToChunkTableNumEntriesRemaining--;
+  }
+    
+  for (int chunk_index = 0; chunk_index < numChunks; chunk_index++) {
+    MovChunk *movChunk = &chunks[chunk_index];
+    
+    if (!all_chunks_same_size) {
+      // If this chunk index is less than the next one, use the current samples per chunk,
+      // otherwise advance to the next row in the table.
+      
+      int chunk_id = chunk_index + 1;
+      
+      fprintf(stdout, "comparing current chunk id %d to next chunk id %d\n",
+              chunk_id, nextEntry.first_chunk_id);
+      
+      if (chunk_id >= nextEntry.first_chunk_id) {
+        currentEntry.first_chunk_id = nextEntry.first_chunk_id;
+        currentEntry.samples_per_chunk = nextEntry.samples_per_chunk;
+        if (sampleToChunkTableNumEntriesRemaining > 0) {
+          if (SampleToChunkTableEntry_read(movFile, movData, &nextEntry) != 0) {
+            goto reterr;
+          }
+          sampleToChunkTableNumEntriesRemaining--;
+        }
+      }
+      samples_per_chunk = currentEntry.samples_per_chunk;
+      
+      fprintf(stdout, "chunk id %d maps to samples_per_chunk %d\n", chunk_id, samples_per_chunk);
+    }
+        
+    assert(samples_per_chunk != 0);
+    movChunk->numSamples = samples_per_chunk;
+    
+    assert(movChunk->samples == NULL);
+    movChunk->samples = malloc(sizeof(MovSample*) * movChunk->numSamples);
+    bzero(movChunk->samples, sizeof(MovSample*) * movChunk->numSamples);
+    
+    // for each sample contained in this chunk, copy the sample pointer
+    // into the chunk samples array.
+    
+    for (int i = 0; i < movChunk->numSamples; i++) {
+      assert(sample_index < movData->numSamples);
+      MovSample *movSample = &movData->samples[sample_index];
+      sample_index++;
+      movChunk->samples[i] = movSample;
+    }
+    
+    // Use the sample lengths to calculate the file offsets for
+    // each sample in this chunk.
+    
+    assert(movChunk->offset);
+    for (int i = 0; i < movChunk->numSamples; i++) {
+      MovSample *movSample = movChunk->samples[i];
+      
+      assert(movSample->offset == 0);
+      uint32_t offsetFromChunk = 0;
+      for (int j=0; j < i; j++) {
+        MovSample *prevMovSampleInChunk = movChunk->samples[j];
+        assert(prevMovSampleInChunk != movSample);
+        assert(prevMovSampleInChunk->length > 0);
+        offsetFromChunk += prevMovSampleInChunk->length;
+      }
+      movSample->offset = movChunk->offset + offsetFromChunk;
+      assert(movSample->offset != 0);
+    }
+  }
+  
+#ifdef DUMP_WHILE_PARSING
+  fprintf(stdout, "post offset update\n");
+  
+  for (int i = 0; i < movData->numSamples; i++) {
+    MovSample *samplePtr = &movData->samples[i];
+    
+    fprintf(stdout, "movData->samples[%d] offset %d, length %d, isKeyFrame %d\n", i,
+            samplePtr->offset, samplePtr->length, samplePtr->isKeyframe);
+  }
+#endif  
+  
+  // Optional Sync sample table
+  
+  if (movData->foundSTSS) {
+    assert(movData->syncSampleTableOffset > 0);
+    seek_result = fseek(movFile, movData->syncSampleTableOffset, SEEK_SET);
+    if (seek_result != 0) {
+      movData->errCode = ERR_READ;
+      snprintf(movData->errMsg, sizeof(movData->errMsg), "seek error for stss table offset");
+      goto reterr;    
+    }  
+    
+    for (int i = 0; i < movData->syncSampleTableNumEntries; i++) {
+      uint32_t key_frame;
+      
+      if (read_be_uint32(movFile, &key_frame) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stss key frame");
+        goto reterr;
+      }
+      
+      uint32_t sample_index = key_frame - 1;
+      assert(sample_index < movData->numSamples);
+      MovSample *samplePtr = &movData->samples[sample_index];
+      samplePtr->isKeyframe = 1;
+    }    
+  }
+  
+#ifdef DUMP_WHILE_PARSING
+  fprintf(stdout, "finished isKeyframe\n");
+  
+  for (int i = 0; i < movData->numSamples; i++) {
+    MovSample *samplePtr = &movData->samples[i];
+    
+    fprintf(stdout, "movData->samples[%d] offset %d, length %d, isKeyFrame %d\n", i,
+            samplePtr->offset, samplePtr->length, samplePtr->isKeyframe);
+  }
+  
+  for (int i = 0; i < movData->numFrames; i++) {
+    MovSample *samplePtr = movData->frames[i];
+    
+    fprintf(stdout, "movData->frames[%d] offset %d, length %d, isKeyFrame %d\n", i,
+            samplePtr->offset, samplePtr->length, samplePtr->isKeyframe);
+  }      
+#endif
+  
+  status = 0;
+  
+reterr:
+  // cleanup dynamic memory on successful or fail return
+  
+  if (chunks) {
+    for (int i=0; i < numChunks; i++) {
+      MovChunk *movChunk = &chunks[i];
+      movchunk_free(movChunk);
+    }
+    free(chunks);
+  }
+  if (TimeToSampleTable) {
+    free(TimeToSampleTable);
+  }
+  
+  return status;
+}
+
+// get unsigned 16 bit value from ptr
+
+static inline
+uint16_t
+byte_read_be_uint16(char *ptr) {
+  uint16_t val = *((uint16_t*) ptr);
+  return ntohs(val);
+}
+
+static inline
+uint32_t
+byte_read_be_uint32(char *ptr) {
+  uint32_t val = *((uint32_t*) ptr);
+  return ntohl(val);
+}
+
+static inline
+uint32_t
+byte_read_be_argb24(char *ptr) {
+  uint8_t red = *ptr++;
+  uint8_t green = *ptr++;
+  uint8_t blue = *ptr++;
+  uint32_t pixel = (0xFF << 24) | (red << 16) | (green << 8) | blue;
+  return pixel;
+}  
+
+// Process a single sample, decode the RLE data contained at the
+// file offset indicated in the sample. Returns 0 on success, otherwise non-zero.
+//
+// Note that the type of frameBuffer you pass in (uint16_t* or uint32_t*) depends
+// on the bit depth of the mov. If NULL is passed as frameBuffer, no pixels are written during decoding.
+
+static int
+process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer)
+{
+  const int bytesPerPixel = movData->bitDepth / 8;
+  assert(bytesPerPixel == 2 || bytesPerPixel == 3 || bytesPerPixel == 4);
+  
+  uint32_t bytesRemaining = sample->length;
+  
+  uint16_t *rowPtr16 = NULL;
+  uint32_t *rowPtr32 = NULL;
+  uint16_t *rowPtrMax16 = NULL;
+  uint32_t *rowPtrMax32 = NULL;
+  
+  char *samplePtr = malloc(bytesRemaining);
+  if (samplePtr == NULL) {
+    return 1;
+  }
+  
+  // Move the the file offset where the sample data is located
+  assert(sample->offset > 0);
+  int retval = fseek(movFile, sample->offset, SEEK_SET);
+  assert(retval == 0);
+  if (fread(samplePtr, bytesRemaining, 1, movFile) != 1) {
+    return 1;
+  }
+  
+  // FIXME: It looks like a single sample can only contain 1 header,
+  // so this while loop for bytesRemaining may not be needed.
+  
+  while (bytesRemaining > 0) {
+    // http://wiki.multimedia.cx/index.php?title=Apple_QuickTime_RLE
+    //
+    // sample size : 4 bytes
+    // header : 2 bytes
+    // optional : 8 bytes
+    //  starting line at which to begin updating frame : 2 bytes
+    //  unknown : 2 bytes
+    //  the number of lines to update : 2 bytes
+    //  unknown    
+    // compressed lines : ?
+    
+    // Dump the bytes that remain at this point in the sample reading process.
+    
+#ifdef DUMP_WHILE_DECODING
+    if (1) {
+      fprintf(stdout, "sample bytes dump : bytesRemaining %d, sample length %d\n", bytesRemaining, sample->length);
+      for (int i = 0; i < bytesRemaining; i++ ) {
+        uint8_t b = *(samplePtr + i);
+        fprintf(stdout, "0x%X ", b);
+      }
+      fprintf(stdout, "\n");
+      
+      uint32_t size = byte_read_be_uint32(samplePtr);
+      uint32_t size_m24 = byte_read_be_uint32(samplePtr) & 0xFFFFFF;
+      uint32_t flags = (byte_read_be_uint32(samplePtr) >> 24) & 0xFF;
+      fprintf(stdout, "sample size : flags %d, size %d, size mask24 %d\n", flags, size, size_m24);
+      for (int i = 0; i < 4; i++ ) {
+        uint8_t b = *(samplePtr + i);
+        fprintf(stdout, "0x%X ", b);
+      }
+      fprintf(stdout, "\n");
+      
+      uint16_t header = byte_read_be_uint16(samplePtr + 4);
+      fprintf(stdout, "header %d\n", header);
+      for (int i = 4; i < 6; i++ ) {
+        uint8_t b = *(samplePtr + i);
+        fprintf(stdout, "0x%X ", b);
+      }
+      fprintf(stdout, "\n");
+      
+      if (header == 0) {
+        // No optional 8 bytes
+        fprintf(stdout, "no optional line info\n");
+      } else {
+        fprintf(stdout, "optional line info\n");
+        for (int i = 6; i < 6+8; i++ ) {
+          uint8_t b = *(samplePtr + i);
+          fprintf(stdout, "0x%X ", b);
+        }
+        fprintf(stdout, "\n");        
+      }
+      
+      uint8_t skip_code = *(samplePtr + 6 + 8);
+      fprintf(stdout, "skip code 0x%X = %d\n", skip_code, skip_code);
+    }
+#endif // DUMP_WHILE_DECODING
+    
+    // Skip sample size, this field looks like a 1 byte flags value and then a 24 bit length
+    // value (size & 0xFFFFFF) results in a correct 24 bit length. The flag element seems to
+    // be 0x1 when set. But, this field is undocumented and can be safely skipped because
+    // the sample length is already known.
+    
+    assert(bytesRemaining >= 4);
+    samplePtr += 4;
+    bytesRemaining -= 4;
+    
+    assert(bytesRemaining >= 2);
+    uint16_t header = byte_read_be_uint16(samplePtr);
+    samplePtr += 2;
+    bytesRemaining -= 2;
+    
+    assert(header == 0x0 || header == 0x0008);
+    
+    int16_t starting_line, lines_to_update;
+    
+    if (header != 0) {
+      // Frame delta
+      
+      assert(bytesRemaining >= 8);
+      
+      starting_line = byte_read_be_uint16(samplePtr);
+      samplePtr += 2;
+      bytesRemaining -= 2;
+      
+      // skip 2 unknown bytes
+      samplePtr += 2;
+      bytesRemaining -= 2;
+      
+      lines_to_update = byte_read_be_uint16(samplePtr);
+      samplePtr += 2;
+      bytesRemaining -= 2;
+      
+      // skip 2 unknown bytes
+      samplePtr += 2;
+      bytesRemaining -= 2;
+    } else {
+      // Keyframe
+      
+      starting_line = 0;
+      lines_to_update = movData->height;
+    }
+    
+#ifdef DUMP_WHILE_DECODING
+    if (sample->isKeyframe) {
+      fprintf(stdout, "key frame!\n");
+    } else {
+      fprintf(stdout, "starting line %d\n", starting_line);
+      fprintf(stdout, "lines to update %d\n", lines_to_update);
+    }
+#endif // DUMP_WHILE_DECODING
+    
+    // FIXME: Put max bounds on movie width/height like 2000 or something, while parsing ?
+    
+    // Get a pointer to the start of a row in the framebuffer based on the starting_line
+    
+    uint32_t current_line = starting_line;
+    assert(current_line < movData->height);
+    
+    if (frameBuffer) {
+      if (bytesPerPixel == 2) {
+        rowPtr16 = ((uint16_t*) frameBuffer) + (current_line * movData->width);
+        rowPtrMax16 = rowPtr16 + movData->width;
+      } else {
+        rowPtr32 = ((uint32_t*) frameBuffer) + (current_line * movData->width);
+        rowPtrMax32 = rowPtr32 + movData->width;
+      }
+    }
+    
+    // Increment the input/output line after seeing a -1 skip byte
+
+    uint32_t incr_current_line = 0;
+    
+    while (1) {
+#ifdef DUMP_WHILE_DECODING
+      if (1) {
+        fprintf(stdout, "skip code bytes dump : bytesRemaining %d, sample length %d\n", bytesRemaining, sample->length);
+        for (int i = 0; i < bytesRemaining; i++ ) {
+          uint8_t b = *(samplePtr + i);
+          fprintf(stdout, "0x%X ", b);
+        }
+        fprintf(stdout, "\n");
+      }
+#endif // DUMP_WHILE_DECODING
+      
+      // Skip code
+      
+      assert(bytesRemaining >= 1);
+      uint8_t skip_code = *samplePtr;
+      samplePtr += 1;
+      bytesRemaining -= 1;
+      
+      if (skip_code == 0) {
+        // Done decoding all lines in this frame
+        // a zero skip code should only be found at the end of the sample
+        assert(bytesRemaining == 0);
+        break;
+      }
+      
+      // Increment the current line once we know that another line
+      // will be written (skip code is non-zero). This is useful
+      // here since we don't want the row pointer to ever point past
+      // the number of valid rows.
+      
+      if (incr_current_line) {
+        incr_current_line = 0;
+        current_line++;
+
+        assert(current_line < movData->height);
+        
+        if (frameBuffer) {
+          if (bytesPerPixel == 2) {
+            rowPtr16 = ((uint16_t*) frameBuffer) + (current_line * movData->width);
+            rowPtrMax16 = rowPtr16 + movData->width;
+          } else {
+            rowPtr32 = ((uint32_t*) frameBuffer) + (current_line * movData->width);
+            rowPtrMax32 = rowPtr32 + movData->width;
+          }
+        }
+      }
+      
+      uint8_t num_to_skip = skip_code - 1;
+      
+      if (num_to_skip > 0) {
+#ifdef DUMP_WHILE_DECODING
+        fprintf(stdout, "skip %d pixels\n", num_to_skip);
+#endif // DUMP_WHILE_DECODING
+        
+        // Advance the row ptr by skip pixels checking that it does
+        // not skip past the end of the row.
+        
+        if (rowPtr16) {
+          assert((rowPtr16 + num_to_skip) < rowPtrMax16);
+          
+          rowPtr16 += num_to_skip;
+        } else if (rowPtr32) {
+          assert((rowPtr32 + num_to_skip) < rowPtrMax32);
+          
+          rowPtr32 += num_to_skip;          
+        }
+      }
+      
+      while (1) {
+        // RLE code (signed)
+        
+        assert(bytesRemaining >= 1);
+        int8_t rle_code = *samplePtr;
+        samplePtr += 1;
+        bytesRemaining -= 1;
+        
+        if (rle_code == 0) {
+          // There is another skip code ahead in the stream, continue with next skip code
+#ifdef DUMP_WHILE_DECODING
+          fprintf(stdout, "rle_code == 0x0 (0) found to indicate another skip code\n");
+#endif // DUMP_WHILE_DECODING
+          break;
+        } else if (rle_code == -1) {
+          // When a RLE line is finished decoding, increment the current line row ptr.
+          // Note that multiple -1 codes can be used to skip multiple unchanged lines.
+          
+#ifdef DUMP_WHILE_DECODING
+          fprintf(stdout, "rle_code == 0xFF (-1) found to indicate end of RLE line %d\n", current_line);
+#endif // DUMP_WHILE_DECODING
+          
+          incr_current_line = 1;
+          
+          break;
+        } else if (rle_code < -1) {
+          // Read pixel value and repeat it -rle_code times in the frame buffer
+          
+          uint32_t numTimesToRepeat = -rle_code;
+          
+          if (bytesPerPixel == 2) {
+            // 16 bit pixels : rgb555
+            
+            assert(bytesRemaining >= 2);
+            uint16_t pixel = byte_read_be_uint16(samplePtr);
+            samplePtr += 2;
+            bytesRemaining -= 2;
+            
+#ifdef DUMP_WHILE_DECODING
+            fprintf(stdout, "repeat 16 bit pixel 0x%X %d times\n", pixel, numTimesToRepeat);
+#endif // DUMP_WHILE_DECODING
+            
+            if (rowPtr16) {
+              assert((rowPtr16 + numTimesToRepeat - 1) < rowPtrMax16);
+              
+              for (int i = 0; i < numTimesToRepeat; i++) {
+                *rowPtr16 = pixel;
+                rowPtr16++;
+              }
+            }
+            
+            //memset_pattern4( buf, &pixel, sizeof(uint32_t) * -rle_code );
+          } else if (bytesPerPixel == 3) {
+            // 24 bit pixels : RGB
+            // write 32 bit pixels : ARGB
+            
+            assert(bytesRemaining >= 3);
+            uint32_t pixel = byte_read_be_argb24(samplePtr);
+            samplePtr += 3;
+            bytesRemaining -= 3;
+            
+#ifdef DUMP_WHILE_DECODING
+            fprintf(stdout, "repeat 24 bit pixel 0x%X %d times\n", pixel, numTimesToRepeat);
+#endif // DUMP_WHILE_DECODING
+            
+            // Write these 24 bit pixels as 32 bit values in the dest memory.
+            //memset_pattern4( buf, pixel, sizeof(uint32_t) * -rle_code );
+            
+            // unclear if memset_pattern4() is defined in iPhone SDK
+            
+            if (rowPtr32) {
+              assert((rowPtr32 + numTimesToRepeat - 1) < rowPtrMax32);
+              
+              for (int i = 0; i < numTimesToRepeat; i++) {
+                *rowPtr32 = pixel;
+                rowPtr32++;
+              }
+            }
+            
+          } else {
+            // 32 bit pixels : ARGB
+            
+            // FIXME: optimization of the BE decode and the write to
+            // the output buffer might speed things up. Possible imps
+            // include vecLib in the "Performance" framework.
+            
+            assert(bytesRemaining >= 4);
+            uint32_t pixel = byte_read_be_uint32(samplePtr);
+            samplePtr += 4;
+            bytesRemaining -= 4;            
+            
+#ifdef DUMP_WHILE_DECODING
+            fprintf(stdout, "repeat 32 bit pixel 0x%X %d times\n", pixel, numTimesToRepeat);
+#endif // DUMP_WHILE_DECODING
+            
+            if (rowPtr32) {
+              assert((rowPtr32 + numTimesToRepeat - 1) < rowPtrMax32);
+              
+              for (int i = 0; i < numTimesToRepeat; i++) {
+                *rowPtr32 = pixel;
+                rowPtr32++;
+              }
+            }            
+            
+            //memset_pattern4( buf, pixel, sizeof(uint32_t) * -rle_code );
+          }
+          
+        } else {
+          // Greater than 0, copy pixels from input to output stream
+          assert(rle_code > 0);
+          
+          // FIXME: fread + memcpy logic for various bit sizes
+          // FIXME: how are reads optimized for 16 and 32 bit values? Unclear how to progress!
+          
+          if (bytesPerPixel == 2) {
+            // 16 bit pixels
+            
+            uint32_t numBytesToCopy = sizeof(uint16_t) * rle_code;
+            
+            assert(bytesRemaining >= numBytesToCopy);
+            
+            for (int i = 0; i < rle_code; i++) {
+              uint16_t pixel = byte_read_be_uint16(samplePtr);
+              samplePtr += 2;
+              
+#ifdef DUMP_WHILE_DECODING
+              fprintf(stdout, "copy 16 bit pixel 0x%X to dest\n", pixel);
+#endif // DUMP_WHILE_DECODING
+              
+              if (rowPtr16) {
+                assert(rowPtr16 < rowPtrMax16);
+                
+                *rowPtr16 = pixel;
+                rowPtr16++;
+              }
+            }
+            
+            bytesRemaining -= numBytesToCopy;
+          } else if (bytesPerPixel == 3) {
+            // 24 bit pixels
+            
+            uint32_t numBytesToCopy = 3 * rle_code;
+            
+            assert(bytesRemaining >= numBytesToCopy);
+            
+            for (int i = 0; i < rle_code; i++) {
+              uint32_t pixel = byte_read_be_argb24(samplePtr);
+              samplePtr += 3;
+              
+#ifdef DUMP_WHILE_DECODING
+              fprintf(stdout, "copy 24 bit pixel 0x%X to dest\n", pixel);
+#endif // DUMP_WHILE_DECODING
+              
+              if (rowPtr32) {
+                assert(rowPtr32 < rowPtrMax32);
+                
+                *rowPtr32 = pixel;
+                rowPtr32++;
+              }
+            }
+            
+            bytesRemaining -= numBytesToCopy;
+          } else if (bytesPerPixel == 4) {
+            // 32 bit pixels
+            
+            uint32_t numBytesToCopy = 4 * rle_code;
+            
+            assert(bytesRemaining >= numBytesToCopy);
+            
+            for (int i = 0; i < rle_code; i++) {
+              uint32_t pixel = byte_read_be_uint32(samplePtr);
+              samplePtr += 4;
+              
+#ifdef DUMP_WHILE_DECODING
+              fprintf(stdout, "copy 32 bit pixel 0x%X to dest\n", pixel);
+#endif // DUMP_WHILE_DECODING
+              
+              if (rowPtr32) {
+                assert(rowPtr32 < rowPtrMax32);
+                
+                *rowPtr32 = pixel;
+                rowPtr32++;
+              }
+            }
+            
+            bytesRemaining -= numBytesToCopy;            
+          }            
+        }        
+      }
+    }
+  }
+  
+  assert(bytesRemaining == 0);
+  
+  return 0;
+}
