@@ -124,14 +124,14 @@ process_sample_tables(FILE *movFile, MovData *movData);
 // on the bit depth of the mov. If NULL is passed as frameBuffer, no pixels are written during decoding.
 
 int
-process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer, void *sampleBuffer, uint32_t sampleBufferSize);
+process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer, const void *sampleBuffer, uint32_t sampleBufferSize);
 
 
 int
-exported_decode_rle_sample(
-                           void *sampleBuffer,
-                           int sampleBufferSize,
-                           int bytesPerPixel,
-                           void *frameBuffer,
-                           int frameBufferWidth,
-                           int frameBufferHeight);
+exported_decode_rle_sample16(
+                             void *sampleBuffer,
+                             int sampleBufferSize,
+                             int isKeyframe,
+                             void *frameBuffer,
+                             int frameBufferWidth,
+                             int frameBufferHeight);
