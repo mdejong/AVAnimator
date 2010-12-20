@@ -142,7 +142,7 @@
   
 	NSString *resourceName = @"QuickTimeLogo.mov";
   
-  if (1) {
+  if (0) {
     resourceName = @"Sweep30FPS_ANI16BPP.mov";
   }
   

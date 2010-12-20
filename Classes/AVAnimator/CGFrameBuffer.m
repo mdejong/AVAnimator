@@ -38,6 +38,13 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 	}
 
 	int inNumBytes = numPixelsToAllocate * BYTES_PER_PIXEL;
+  // FIXME: Use valloc(size) to allocate memory that is always aligned to a whole page.
+  // Also, it might be useful to ensure that some number of whole pages is returned,
+  // so make the size in terms on bytes large enough (round up to the page size).
+  // int getpagesize(void); returns the value. Could a memcpy() then know that whole
+  // pages needed to be copied, would this faster?
+  
+  // Test impl of both of these.
 	char* buffer = (char*) malloc(inNumBytes);
 
 	if (buffer == NULL)

@@ -1711,48 +1711,32 @@ byte_read_be_argb24(char *ptr) {
   return pixel;
 }  
 
-// Process a single sample, decode the RLE data contained at the
-// file offset indicated in the sample. Returns 0 on success, otherwise non-zero.
-//
-// Note that the type of frameBuffer you pass in (uint16_t* or uint32_t*) depends
-// on the bit depth of the mov. If NULL is passed as frameBuffer, no pixels are written during decoding.
+// Decode a buffer of sample data into the frameBuffer.
 
+static inline
 int
-process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer, void *sampleBuffer, uint32_t sampleBufferSize)
+decode_rle_sample(
+                  void *sampleBuffer,
+                  int sampleBufferSize,
+                  int bytesPerPixel,
+                  void *frameBuffer,
+                  int frameBufferWidth,
+                  int frameBufferHeight)
 {
-  const int bytesPerPixel = movData->bitDepth / 8;
   assert(bytesPerPixel == 2 || bytesPerPixel == 3 || bytesPerPixel == 4);
+  assert(sampleBuffer);
+  assert(sampleBufferSize > 0);
   
-  uint32_t bytesRemaining = movsample_length(sample);
+  uint32_t bytesRemaining = sampleBufferSize;
   
   uint16_t *rowPtr16 = NULL;
   uint32_t *rowPtr32 = NULL;
   uint16_t *rowPtrMax16 = NULL;
   uint32_t *rowPtrMax32 = NULL;
-
-  // Optionally use passed in buffer that is known to be large enough to hold the sample.
-
-  char *samplePtr;
-  if (sampleBuffer == NULL) {
-    samplePtr = malloc(bytesRemaining);
-    if (samplePtr == NULL) {
-      movData->errCode = ERR_MALLOC_FAILED;
-      snprintf(movData->errMsg, sizeof(movData->errMsg),
-               "malloc of %d bytes failed for sample buffer", (int) bytesRemaining);
-      return 1;
-    }
-  } else {
-    assert(sampleBufferSize >= bytesRemaining);
-    samplePtr = sampleBuffer;
-  }
   
-  // Move to the file offset where the sample data is located
-  assert(sample->offset > 0);
-  int retval = fseek(movFile, sample->offset, SEEK_SET);
-  assert(retval == 0);
-  if (fread(samplePtr, bytesRemaining, 1, movFile) != 1) {
-    return 1;
-  }
+  // Optionally use passed in buffer that is known to be large enough to hold the sample.
+  
+  char *samplePtr = sampleBuffer;
   
   // FIXME: It looks like a single sample can only contain 1 header,
   // so this while loop for bytesRemaining may not be needed.
@@ -1857,7 +1841,7 @@ process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *fra
       // Keyframe
       
       starting_line = 0;
-      lines_to_update = movData->height;
+      lines_to_update = frameBufferHeight;
     }
     assert(lines_to_update > 0);
     
@@ -1875,20 +1859,20 @@ process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *fra
     // Get a pointer to the start of a row in the framebuffer based on the starting_line
     
     uint32_t current_line = starting_line;
-    assert(current_line < movData->height);
+    assert(current_line < frameBufferHeight);
     
     if (frameBuffer) {
       if (bytesPerPixel == 2) {
-        rowPtr16 = ((uint16_t*) frameBuffer) + (current_line * movData->width);
-        rowPtrMax16 = rowPtr16 + movData->width;
+        rowPtr16 = ((uint16_t*) frameBuffer) + (current_line * frameBufferWidth);
+        rowPtrMax16 = rowPtr16 + frameBufferWidth;
       } else {
-        rowPtr32 = ((uint32_t*) frameBuffer) + (current_line * movData->width);
-        rowPtrMax32 = rowPtr32 + movData->width;
+        rowPtr32 = ((uint32_t*) frameBuffer) + (current_line * frameBufferWidth);
+        rowPtrMax32 = rowPtr32 + frameBufferWidth;
       }
     }
     
     // Increment the input/output line after seeing a -1 skip byte
-
+    
     uint32_t incr_current_line = 0;
     
     while (1) {
@@ -1925,16 +1909,16 @@ process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *fra
       if (incr_current_line) {
         incr_current_line = 0;
         current_line++;
-
-        assert(current_line < movData->height);
+        
+        assert(current_line < frameBufferHeight);
         
         if (frameBuffer) {
           if (bytesPerPixel == 2) {
-            rowPtr16 = ((uint16_t*) frameBuffer) + (current_line * movData->width);
-            rowPtrMax16 = rowPtr16 + movData->width;
+            rowPtr16 = ((uint16_t*) frameBuffer) + (current_line * frameBufferWidth);
+            rowPtrMax16 = rowPtr16 + frameBufferWidth;
           } else {
-            rowPtr32 = ((uint32_t*) frameBuffer) + (current_line * movData->width);
-            rowPtrMax32 = rowPtr32 + movData->width;
+            rowPtr32 = ((uint32_t*) frameBuffer) + (current_line * frameBufferWidth);
+            rowPtrMax32 = rowPtr32 + frameBufferWidth;
           }
         }
       }
@@ -2159,4 +2143,56 @@ process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *fra
   assert(bytesRemaining == 0);
   
   return 0;
+}
+
+// Process a single sample, read and then decode the RLE data contained at the
+// file offset indicated in the sample. Returns 0 on success, otherwise non-zero.
+//
+// Note that the type of frameBuffer you pass in (uint16_t* or uint32_t*) depends
+// on the bit depth of the mov. If NULL is passed as frameBuffer, no pixels are written during decoding.
+
+int
+process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer, void *sampleBuffer, uint32_t sampleBufferSize)
+{  
+  uint32_t bytesRemaining = movsample_length(sample);
+  
+  // Optionally use passed in buffer that is known to be large enough to hold the sample.
+
+  char *samplePtr;
+  if (sampleBuffer == NULL) {
+    samplePtr = malloc(bytesRemaining);
+    if (samplePtr == NULL) {
+      movData->errCode = ERR_MALLOC_FAILED;
+      snprintf(movData->errMsg, sizeof(movData->errMsg),
+               "malloc of %d bytes failed for sample buffer", (int) bytesRemaining);
+      return 1;
+    }
+  } else {
+    assert(sampleBufferSize >= bytesRemaining);
+    samplePtr = sampleBuffer;
+  }
+  
+  // Move to the file offset where the sample data is located
+  assert(sample->offset > 0);
+  int retval = fseek(movFile, sample->offset, SEEK_SET);
+  assert(retval == 0);
+  if (fread(samplePtr, bytesRemaining, 1, movFile) != 1) {
+    return 1;
+  }
+  
+  return decode_rle_sample(samplePtr, bytesRemaining, movData->bitDepth / 8,
+                           frameBuffer, movData->width, movData->height);
+}
+
+int
+exported_decode_rle_sample(
+                  void *sampleBuffer,
+                  int sampleBufferSize,
+                  int bytesPerPixel,
+                  void *frameBuffer,
+                  int frameBufferWidth,
+                  int frameBufferHeight)
+{
+  return decode_rle_sample(sampleBuffer, sampleBufferSize, bytesPerPixel,
+                           frameBuffer, frameBufferWidth, frameBufferHeight);
 }

@@ -125,3 +125,13 @@ process_sample_tables(FILE *movFile, MovData *movData);
 
 int
 process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer, void *sampleBuffer, uint32_t sampleBufferSize);
+
+
+int
+exported_decode_rle_sample(
+                           void *sampleBuffer,
+                           int sampleBufferSize,
+                           int bytesPerPixel,
+                           void *frameBuffer,
+                           int frameBufferWidth,
+                           int frameBufferHeight);
