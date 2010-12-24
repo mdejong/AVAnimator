@@ -155,7 +155,6 @@
   
 	resLoader.movieFilename = resourceName;
 
-  
   //	animatorViewController.animationOrientation = UIImageOrientationLeft; // Rotate 90 deg CCW
   
 	animatorViewController.animationOrientation = UIImageOrientationUp;
@@ -163,10 +162,10 @@
   
 	//  animatorViewController.animationFrameDuration = AVAnimator15FPS;
   //animatorViewController.animationFrameDuration = AVAnimator30FPS;
-  animatorViewController.animationFrameDuration = 1.0 / 40;
+  animatorViewController.animationFrameDuration = 1.0 / 60;
   
   //	animatorViewController.animationRepeatCount = 100;
-	animatorViewController.animationRepeatCount = 20;
+	animatorViewController.animationRepeatCount = 60;
   
   //	animatorViewController.animationRepeatCount = 1000;
 }

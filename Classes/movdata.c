@@ -68,13 +68,6 @@ void movdata_free(MovData *movData) {
   if (movData->samples) {
     free(movData->samples);
   }
-//  for (int i=0; i < movData->numChunks; i++) {
-//    MovChunk *movChunk = &movData->chunks[i];
-//    movchunk_free(movChunk);
-//  }
-//  if (movData->chunks) {
-//    free(movData->chunks);
-//  }
   bzero(movData, sizeof(MovData));
 }
 
@@ -160,24 +153,25 @@ read_uint32(FILE *fp, uint32_t *ptr)
 static inline int
 read_fixed32(FILE *fp, float *ptr)
 {
-  unsigned long a, b, c, d, r1, r2;
-  unsigned char data[4];
+  char bytes[4];
+  uint8_t b1, b2, b3, b4;
+  uint32_t r1, r2;
   
-  if (fread(data, sizeof(data), 1, fp) != 1) {
+  if (fread(bytes, sizeof(bytes), 1, fp) != 1) {
     return 1;
   }
-  a = data[0];
-  b = data[1];
-  c = data[2];
-  d = data[3];
+  b1 = bytes[0];
+  b2 = bytes[1];
+  b3 = bytes[2];
+  b4 = bytes[3];
   
-  r1 = (a << 8) + b;
-  r2 = (c << 8) + d;
+  r1 = (b1 << 8) | b2;
+  r2 = (b3 << 8) | b4;
   
-  if (r2) {
-    *ptr = (float)a + (float)b / 65536;
+  if (r2 == 0) {
+    *ptr = r1;    
   } else {
-    *ptr = r1;
+    *ptr = b1 + (b2 / 65536.0);
   }
   
   return 0;
@@ -1554,8 +1548,10 @@ process_sample_tables(FILE *movFile, MovData *movData) {
       
       int chunk_id = chunk_index + 1;
       
+#ifdef DUMP_WHILE_PARSING
       fprintf(stdout, "comparing current chunk id %d to next chunk id %d\n",
               chunk_id, nextEntry.first_chunk_id);
+#endif
       
       if (chunk_id >= nextEntry.first_chunk_id) {
         currentEntry.first_chunk_id = nextEntry.first_chunk_id;
@@ -1569,7 +1565,9 @@ process_sample_tables(FILE *movFile, MovData *movData) {
       }
       samples_per_chunk = currentEntry.samples_per_chunk;
       
+#ifdef DUMP_WHILE_PARSING
       fprintf(stdout, "chunk id %d maps to samples_per_chunk %d\n", chunk_id, samples_per_chunk);
+#endif
     }
         
     assert(samples_per_chunk != 0);
@@ -2675,6 +2673,49 @@ retstatus:
   
   return status;
 }
+
+// Process sample data contained in an already memory mapped file. Unlike process_rle_sample above
+// this method requires that frameBuffer is not NULL.
+// Returns 0 on success, otherwise non-zero.
+//
+// Note that the type of frameBuffer you pass in (uint16_t* or uint32_t*) depends
+// on the bit depth of the mov.
+
+int
+process_mmap_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, void *frameBuffer)
+{
+  const char *samplePtr = NULL;
+  int status = 1;
+  uint32_t bytesRemaining = movsample_length(sample);
+
+  assert(mappedFilePtr);
+  assert(frameBuffer);
+  
+  // Determine where the sample data starts in the mapped file
+
+  assert(sample->offset > 0);
+  samplePtr = ((char*)mappedFilePtr) + sample->offset;
+  
+  switch (movData->bitDepth) {
+    case 16:
+      status = decode_rle_sample16(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBuffer, movData->width, movData->height);
+      break;
+    case 24:
+      status = decode_rle_sample24(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBuffer, movData->width, movData->height);
+      break;
+    case 32:
+      status = decode_rle_sample32(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBuffer, movData->width, movData->height);
+      break;
+    default:
+      assert(0);
+  }
+  
+  status = 0;
+  
+  return status;
+}
+
+// Decode just 1 sample contained in a buffer
 
 int
 exported_decode_rle_sample16(

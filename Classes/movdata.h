@@ -126,6 +126,18 @@ process_sample_tables(FILE *movFile, MovData *movData);
 int
 process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer, const void *sampleBuffer, uint32_t sampleBufferSize);
 
+// Process sample data contained in an already memory mapped file. Unlike process_rle_sample above
+// this method requires that frameBuffer is not NULL.
+// Returns 0 on success, otherwise non-zero.
+//
+// Note that the type of frameBuffer you pass in (uint16_t* or uint32_t*) depends
+// on the bit depth of the mov.
+
+int
+process_mmap_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, void *frameBuffer);
+
+
+// Use for testing just the decode logic for a single frame
 
 int
 exported_decode_rle_sample16(

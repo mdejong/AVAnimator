@@ -11,6 +11,8 @@
 
 #import "movdata.h"
 
+#define USE_MMAP
+
 //#define LOGGING
 
 // Determine the file size return 0 to indicate success.
@@ -41,6 +43,7 @@ int num_words(uint32_t numBytes)
 @implementation FlatMovieFile
 
 @synthesize isOpen;
+@synthesize mappedData = m_mappedData;
 
 - (id) init
 {
@@ -73,10 +76,11 @@ int num_words(uint32_t numBytes)
     free(movData);
 	if (inputBuffer != NULL)
 		free(inputBuffer);
+  self.mappedData = nil;
 	[super dealloc];
 }	
 
-- (BOOL) _readHeader:(uint32_t)filesize
+- (BOOL) _readHeader:(uint32_t)filesize path:(NSString*)path
 {
 	// opening the file reads the header data
 
@@ -104,15 +108,23 @@ int num_words(uint32_t numBytes)
   
   assert(self->movData->bitDepth == 16); // FIXME: add others later
   
+#ifdef USE_MMAP
+  [self close];
+  self->isOpen = TRUE;
+  self.mappedData = [NSData dataWithContentsOfMappedFile:path];
+  NSAssert(self.mappedData, @"could not map movie file");
+#else
 	// Figure out good size for input buffer.
-
+  
   int maxNumWords = num_words(movData->maxSampleSize);
   
 	[self _allocateInputBuffer:maxNumWords];
-
-#ifdef LOG_MISSED_BUFFER_USAGE
+  
+# ifdef LOG_MISSED_BUFFER_USAGE
 	NSLog(@"allocated input buffer of size %d bytes", maxNumWords*sizeof(int));
-#endif // LOG_MISSED_BUFFER_USAGE	
+# endif // LOG_MISSED_BUFFER_USAGE	  
+  
+#endif // USE_MMAP
 
 	return TRUE;
 }
@@ -135,7 +147,7 @@ int num_words(uint32_t numBytes)
 		return FALSE;
 	}
   
-	if ([self _readHeader:fsize] == FALSE) {
+	if ([self _readHeader:fsize path:flatMoviePath] == FALSE) {
 		[self close];
 		return FALSE;
 	}
@@ -149,8 +161,8 @@ int num_words(uint32_t numBytes)
 	if (self->movFile != NULL) {
 		fclose(self->movFile);
 		self->movFile = NULL;
-		self->isOpen = FALSE;
 	}
+  self->isOpen = FALSE;
 }
 
 - (void) rewind
@@ -193,6 +205,11 @@ int num_words(uint32_t numBytes)
 	BOOL changeFrameData = FALSE;
 	const int newFrameIndexSigned = (int) newFrameIndex;
 
+#ifdef USE_MMAP
+  char *mappedPtr = (char*) [self.mappedData bytes];
+  NSAssert(mappedPtr, @"mappedPtr");
+#endif // USE_MMAP
+  
 	for ( ; frameIndex < newFrameIndexSigned; frameIndex++) {
 		// Read one word from the stream and examine it to determine
 		// the type of the next frame.
@@ -218,7 +235,11 @@ int num_words(uint32_t numBytes)
       
       // FIXME: This logic currently lacks checking for keyframes on skip ahead!
       
+#ifdef USE_MMAP
+      process_mmap_rle_sample(mappedPtr, self->movData, frame, nextFrameBuffer.pixels);
+#else
       process_rle_sample(self->movFile, self->movData, frame, nextFrameBuffer.pixels, inputBuffer, numWordsInputBuffer * sizeof(int));
+#endif // USE_MMAP
     }
 	}
   

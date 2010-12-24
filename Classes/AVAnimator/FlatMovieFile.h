@@ -31,6 +31,8 @@
 
   CGFrameBuffer *currentFrameBuffer;
   
+  NSData *m_mappedData;
+  
 	int frameIndex;
 }
 
@@ -39,6 +41,7 @@
 @property (readonly) NSUInteger numFrames;
 @property (readonly) BOOL isOpen;
 @property (readonly) int frameIndex;
+@property (nonatomic, copy) NSData *mappedData;
 
 - (id) init;
 
