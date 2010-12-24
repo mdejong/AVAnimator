@@ -1878,9 +1878,8 @@ decode_rle_sample16(
       // Skip code
       
       assert(bytesRemaining >= 1);
-      uint8_t skip_code = *samplePtr;
-      samplePtr += 1;
-      bytesRemaining -= 1;
+      uint8_t skip_code = *samplePtr++;
+      bytesRemaining--;
       
       if (skip_code == 0) {
         // Done decoding all lines in this frame
@@ -1922,9 +1921,8 @@ decode_rle_sample16(
         // RLE code (signed)
         
         assert(bytesRemaining >= 1);
-        int8_t rle_code = *samplePtr;
-        samplePtr += 1;
-        bytesRemaining -= 1;
+        int8_t rle_code = *samplePtr++;
+        bytesRemaining--;
         
         if (rle_code == 0) {
           // There is another skip code ahead in the stream, continue with next skip code
@@ -2132,6 +2130,8 @@ decode_rle_sample24(
     }
     assert(lines_to_update > 0);
     
+    // FIXME: lines_to_update is not actually used, we only need starting line
+    
 #ifdef DUMP_WHILE_DECODING
     if (isKeyFrame) {
       fprintf(stdout, "key frame!\n");
@@ -2170,9 +2170,8 @@ decode_rle_sample24(
       // Skip code
       
       assert(bytesRemaining >= 1);
-      uint8_t skip_code = *samplePtr;
-      samplePtr += 1;
-      bytesRemaining -= 1;
+      uint8_t skip_code = *samplePtr++;
+      bytesRemaining--;
       
       if (skip_code == 0) {
         // Done decoding all lines in this frame
@@ -2214,9 +2213,8 @@ decode_rle_sample24(
         // RLE code (signed)
         
         assert(bytesRemaining >= 1);
-        int8_t rle_code = *samplePtr;
-        samplePtr += 1;
-        bytesRemaining -= 1;
+        int8_t rle_code = *samplePtr++;
+        bytesRemaining--;
         
         if (rle_code == 0) {
           // There is another skip code ahead in the stream, continue with next skip code
@@ -2464,9 +2462,8 @@ decode_rle_sample32(
       // Skip code
       
       assert(bytesRemaining >= 1);
-      uint8_t skip_code = *samplePtr;
-      samplePtr += 1;
-      bytesRemaining -= 1;
+      uint8_t skip_code = *samplePtr++;
+      bytesRemaining--;
       
       if (skip_code == 0) {
         // Done decoding all lines in this frame
@@ -2508,9 +2505,8 @@ decode_rle_sample32(
         // RLE code (signed)
         
         assert(bytesRemaining >= 1);
-        int8_t rle_code = *samplePtr;
-        samplePtr += 1;
-        bytesRemaining -= 1;
+        int8_t rle_code = *samplePtr++;
+        bytesRemaining--;
         
         if (rle_code == 0) {
           // There is another skip code ahead in the stream, continue with next skip code
