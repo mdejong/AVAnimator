@@ -30,6 +30,14 @@
 @synthesize rewindImage = m_rewindImage;
 @synthesize hideControlsTimer, hideControlsFromPlayTimer;
 
+// static ctor
++ (MovieControlsViewController*) movieControlsViewController
+{
+  MovieControlsViewController *obj = [[MovieControlsViewController alloc] init];
+  [obj autorelease];
+  return obj;
+}
+
 - (void) _releaseHideControlsTimer
 {
 #ifdef LOGGING

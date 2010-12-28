@@ -86,6 +86,9 @@
 @property (nonatomic, retain) NSTimer *hideControlsTimer;
 @property (nonatomic, retain) NSTimer *hideControlsFromPlayTimer;
 
+// static ctor
++ (MovieControlsViewController*) movieControlsViewController;
+
 - (void) pressPlayPause:(id)sender;
 - (void) pressDone:(id)sender;
 - (void) pressOutsideControls:(id)sender;

@@ -166,7 +166,8 @@ typedef enum AVAnimatorPlayerState {
 
 @property (nonatomic, retain) FlatMovieFile *flatMovieFile;
 
-
+// static ctor
++ (AVAnimatorViewController*) aVAnimatorViewController;
 
 - (void) startAnimating;
 - (void) stopAnimating;

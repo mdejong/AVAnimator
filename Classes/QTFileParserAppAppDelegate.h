@@ -11,15 +11,18 @@
 @class QTFileParserAppViewController;
 @class AVAnimatorViewController;
 @class MovieControlsViewController;
+@class MovieControlsAdaptor;
 
 @interface QTFileParserAppAppDelegate : NSObject <UIApplicationDelegate> {
-  UIWindow *window;
+  UIWindow *m_window;
   
-  QTFileParserAppViewController *viewController;
+  QTFileParserAppViewController *m_viewController;
   
-  MovieControlsViewController *movieControlsViewController;
+  MovieControlsViewController *m_movieControlsViewController;
   
-  AVAnimatorViewController *animatorViewController;
+  AVAnimatorViewController *m_animatorViewController;
+  
+  MovieControlsAdaptor *m_movieControlsAdaptor;
 }
 
 @property (nonatomic, retain) IBOutlet UIWindow *window;
@@ -29,6 +32,8 @@
 @property (nonatomic, retain) MovieControlsViewController *movieControlsViewController;
 
 @property (nonatomic, retain) AVAnimatorViewController *animatorViewController;
+
+@property (nonatomic, retain) MovieControlsAdaptor *movieControlsAdaptor;
 
 - (void) startAnimator;
 

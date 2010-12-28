@@ -101,6 +101,13 @@
 @synthesize flatMovieFile;
 @synthesize viewFrame;
 
++ (AVAnimatorViewController*) aVAnimatorViewController
+{
+  AVAnimatorViewController *obj = [[AVAnimatorViewController alloc] init];
+  [obj autorelease];
+  return obj;
+}
+
 // Note: there is no init method since this class makes use of the default
 // init method in the superclass.
 

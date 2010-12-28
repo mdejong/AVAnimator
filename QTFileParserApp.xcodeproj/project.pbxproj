@@ -29,6 +29,7 @@
 		CD15C35112BC9F3B00A26588 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD15C35012BC9F3B00A26588 /* AVFoundation.framework */; };
 		CD15C54F12BCADA800A26588 /* smiley.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C54E12BCADA800A26588 /* smiley.png */; };
 		CD674CA012BF3DB200A6EACE /* Bounce15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD674C9F12BF3DB200A6EACE /* Bounce15FPS.mov */; };
+		CD83D5EE12CA547300A88ABA /* MovieControlsAdaptor.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */; };
 		CDB8301E12BD6D780078FEC7 /* Sweep30FPS_ANI16BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDB8301D12BD6D780078FEC7 /* Sweep30FPS_ANI16BPP.mov */; };
 		CDECC74112BC6B22001A372F /* QuickTimeLogo.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDECC74012BC6B22001A372F /* QuickTimeLogo.mov */; };
 		CDECC75712BC6CA6001A372F /* AVAnimatorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75012BC6CA6001A372F /* AVAnimatorViewController.m */; };
@@ -70,6 +71,8 @@
 		CD15C35012BC9F3B00A26588 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		CD15C54E12BCADA800A26588 /* smiley.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = smiley.png; sourceTree = "<group>"; };
 		CD674C9F12BF3DB200A6EACE /* Bounce15FPS.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Bounce15FPS.mov; sourceTree = "<group>"; };
+		CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MovieControlsAdaptor.m; sourceTree = "<group>"; };
+		CD83D5F512CA549000A88ABA /* MovieControlsAdaptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MovieControlsAdaptor.h; sourceTree = "<group>"; };
 		CDB8301D12BD6D780078FEC7 /* Sweep30FPS_ANI16BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Sweep30FPS_ANI16BPP.mov; sourceTree = "<group>"; };
 		CDECC74012BC6B22001A372F /* QuickTimeLogo.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = QuickTimeLogo.mov; sourceTree = "<group>"; };
 		CDECC74F12BC6CA6001A372F /* AVAnimatorViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorViewController.h; sourceTree = "<group>"; };
@@ -115,6 +118,8 @@
 				1D3623250D0F684500981E51 /* QTFileParserAppAppDelegate.m */,
 				28D7ACF60DDB3853001CB0EB /* QTFileParserAppViewController.h */,
 				28D7ACF70DDB3853001CB0EB /* QTFileParserAppViewController.m */,
+				CD83D5F512CA549000A88ABA /* MovieControlsAdaptor.h */,
+				CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */,
 				CDECC75B12BC6CBC001A372F /* AutoPropertyRelease.h */,
 				CDECC75C12BC6CBC001A372F /* AutoPropertyRelease.m */,
 				CDECC8FA12BC837D001A372F /* movdata.h */,
@@ -297,6 +302,7 @@
 				CDECC78312BC6DB2001A372F /* FlatMovieFile.m in Sources */,
 				CD15C2CF12BC9BDC00A26588 /* MovieControlsView.m in Sources */,
 				CD15C2D012BC9BDC00A26588 /* MovieControlsViewController.m in Sources */,
+				CD83D5EE12CA547300A88ABA /* MovieControlsAdaptor.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

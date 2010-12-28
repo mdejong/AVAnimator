@@ -13,19 +13,31 @@
 
 #import "MovieControlsViewController.h"
 
+#import "MovieControlsAdaptor.h"
+
 #import "AVAppResourceLoader.h"
 
 @implementation QTFileParserAppAppDelegate
 
-@synthesize window;
-@synthesize viewController;
-@synthesize animatorViewController;
-@synthesize movieControlsViewController;
+@synthesize window = m_window;
+@synthesize viewController = m_viewController;
+@synthesize animatorViewController = m_animatorViewController;
+@synthesize movieControlsViewController = m_movieControlsViewController;
+@synthesize movieControlsAdaptor = m_movieControlsAdaptor;
+
+- (void)dealloc {
+  self.window = nil;
+  self.viewController = nil;
+  self.movieControlsViewController = nil;
+  self.animatorViewController = nil;
+  self.movieControlsAdaptor = nil;
+  [super dealloc];
+}
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
   // Override point for customization after app launch    
-  [window addSubview:viewController.view];
-  [window makeKeyAndVisible];
+  [self.window addSubview:self.viewController.view];
+  [self.window makeKeyAndVisible];
   
 	[self startAnimator];
   
@@ -73,110 +85,45 @@
 	self.animatorViewController = nil;
 }
 
-// Invoked when the Done button in the movie controls is pressed.
-// This action will stop playback and halt any looping operation.
-// This action will inform the animator that it should be done
-// animating, then the animator will kick off a notification
-// indicating that the animation is done.
-
-- (void)movieControlsDoneNotification:(NSNotification*)notification {
-	NSLog( @"movieControlsDoneNotification" );
-  
-	NSAssert(![animatorViewController isInitializing], @"animatorViewController isInitializing");
-  
-	[animatorViewController doneAnimating];
-}
-
-- (void)movieControlsPauseNotification:(NSNotification*)notification {
-	NSLog( @"movieControlsPauseNotification" );
-  
-	NSAssert(![animatorViewController isInitializing], @"animatorViewController isInitializing");
-  
-	[animatorViewController pause];
-}
-
-- (void)movieControlsPlayNotification:(NSNotification*)notification {
-	NSLog( @"movieControlsPlayNotification" );
-  
-	NSAssert(![animatorViewController isInitializing], @"animatorViewController isInitializing");
-  
-	[animatorViewController unpause];
-}
-
-// Notification indicates that all animations in a loop are now finished
-
-- (void)animationDoneNotification:(NSNotification*)notification {
-	NSLog( @"animationDoneNotification" );
-  
-	[self stopAnimator];
-}
-
-// Invoked when the animation is ready to begin, meaning all
-// resources have been initialized.
-
-- (void)animationPreparedNotification:(NSNotification*)notification {
-	NSLog( @"animationPreparedNotification" );
-  
-	[movieControlsViewController enableUserInteraction];
-  
-	[animatorViewController startAnimating];
-}
-
-// Invoked when an animation starts, note that this method
-// can be invoked multiple times for an animation that loops.
-
-- (void)animationDidStartNotification:(NSNotification*)notification {
-	NSLog( @"animationDidStartNotification" );
-}
-
-// Invoked when an animation ends, note that this method
-// can be invoked multiple times for an animation that loops.
-
-- (void)animationDidStopNotification:(NSNotification*)notification {
-	NSLog( @"animationDidStopNotification" );	
-}
-
 - (void) loadDemoArchive
 {
 	// Init animator data
   
 	NSString *resourceName = @"QuickTimeLogo.mov";
   
-  if (0) {
+  if (1) {
     resourceName = @"Sweep30FPS_ANI16BPP.mov";
   }
-  if (1) {
+  if (0) {
     resourceName = @"Bounce15FPS.mov";
   }  
   
 	AVAppResourceLoader *resLoader = [[AVAppResourceLoader alloc] init];
   [resLoader autorelease];
-	animatorViewController.resourceLoader = resLoader;
+	self.animatorViewController.resourceLoader = resLoader;
   
 	resLoader.movieFilename = resourceName;
 
-  //	animatorViewController.animationOrientation = UIImageOrientationLeft; // Rotate 90 deg CCW
+  //	self.animatorViewController.animationOrientation = UIImageOrientationLeft; // Rotate 90 deg CCW
   
-	animatorViewController.animationOrientation = UIImageOrientationUp;
-	animatorViewController.viewFrame = CGRectMake(0, 0, 480, 320);
+	self.animatorViewController.animationOrientation = UIImageOrientationUp;
+	self.animatorViewController.viewFrame = CGRectMake(0, 0, 480, 320);
   
-	//  animatorViewController.animationFrameDuration = AVAnimator15FPS;
-  //animatorViewController.animationFrameDuration = AVAnimator30FPS;
-  animatorViewController.animationFrameDuration = 1.0 / 60;
+	//self.animatorViewController.animationFrameDuration = AVAnimator15FPS;
+  //self.animatorViewController.animationFrameDuration = AVAnimator30FPS;
+  self.animatorViewController.animationFrameDuration = 1.0 / 30;
   
-  //	animatorViewController.animationRepeatCount = 100;
-	animatorViewController.animationRepeatCount = 60;
+  //	self.animatorViewController.animationRepeatCount = 100;
+	self.animatorViewController.animationRepeatCount = 60;
   
-  //	animatorViewController.animationRepeatCount = 1000;
+  //	self.animatorViewController.animationRepeatCount = 1000;
 }
 
 - (void) startAnimator
 {
-	[viewController.view removeFromSuperview];
+	[self.viewController.view removeFromSuperview];
   
-	AVAnimatorViewController *animatorObj = [[AVAnimatorViewController alloc] init];
-	self.animatorViewController = animatorObj;
-	[animatorObj release];
+	self.animatorViewController = [AVAnimatorViewController aVAnimatorViewController];
   
 	[self loadDemoArchive];
 	//	[self loadSweepArchive];
@@ -185,73 +132,43 @@
 	// Create Movie Controls and make the view in the AVAnimatorViewController
 	// the managed view of the Movie Controls controller.
   
-	MovieControlsViewController *movieControlsObj = [[MovieControlsViewController alloc] init];
-	self.movieControlsViewController = movieControlsObj;
-	[movieControlsObj release];
-  
+	self.movieControlsViewController = [MovieControlsViewController movieControlsViewController];
+
 //  movieControlsViewController.overView = viewController.view;
   
-	movieControlsViewController.overView = animatorViewController.view;
+	self.movieControlsViewController.overView = self.animatorViewController.view;
   
-	[movieControlsViewController addNavigationControlerAsSubviewOf:window];
+	[self.movieControlsViewController addNavigationControlerAsSubviewOf:self.window];
   
-	// Put movie controls away (this needs to happen when the
-	// loading is done)
+  self.movieControlsAdaptor = [MovieControlsAdaptor movieControlsAdaptor];
+  self.movieControlsAdaptor.animatorViewController = self.animatorViewController;
+  self.movieControlsAdaptor.movieControlsViewController = self.movieControlsViewController;
   
-	[movieControlsViewController hideControls];
-  
-	// Invoke movieControlsDoneNotification via the Done button
-  
-	[[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(movieControlsDoneNotification:) 
-                                               name:MovieControlsDoneNotification 
-                                             object:movieControlsViewController];	
-  
-	// Invoke pause or play action from movie controls
-  
-	[[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(movieControlsPauseNotification:) 
-                                               name:MovieControlsPauseNotification 
-                                             object:movieControlsViewController];	
-  
-	[[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(movieControlsPlayNotification:) 
-                                               name:MovieControlsPlayNotification 
-                                             object:movieControlsViewController];
-  
-	// Register callbacks to be invoked when the animator changes from
-	// states between start/stop/done. The start/stop notification
-	// is done at the start and end of each loop. When all loops are
-	// finished the done notification is sent.
-  
-	[[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(animationPreparedNotification:) 
-                                               name:AVAnimatorPreparedToAnimateNotification 
-                                             object:animatorViewController];
-  
-	[[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(animationDidStartNotification:) 
-                                               name:AVAnimatorDidStartNotification 
-                                             object:animatorViewController];	
-  
-	[[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(animationDidStopNotification:) 
-                                               name:AVAnimatorDidStopNotification 
-                                             object:animatorViewController];
-  
-	[[NSNotificationCenter defaultCenter] addObserver:self
+  // This object needs to listen for the AVAnimatorDoneNotification to update the GUI
+  // after movie loops are finished playing.
+
+  [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(animationDoneNotification:) 
                                                name:AVAnimatorDoneNotification
-                                             object:animatorViewController];
-  
-	// Kick off loading operation and disable user touch events until
-	// finished loading.
-  
-	[movieControlsViewController disableUserInteraction];
+                                             object:self.animatorViewController];  
 
-	[animatorViewController prepareToAnimate];
+  [self.movieControlsAdaptor startAnimating];
   
-  [animatorViewController startAnimating];
+  return;
+}
+
+// Notification indicates that all animations in a loop are now finished
+
+- (void)animationDoneNotification:(NSNotification*)notification {
+	NSLog( @"animationDoneNotification" );
+  
+  // Unlink the notification
+  
+  [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                  name:AVAnimatorDoneNotification
+                                                object:self.animatorViewController];  
+  
+	[self stopAnimator];  
 }
 
 - (void) testAnimator
@@ -475,58 +392,18 @@
 
 - (void) stopAnimator
 {
-	// Remove notifications from movie controls
+  NSAssert(self.movieControlsAdaptor, @"movieControlsAdaptor is nil");
   
-	[[NSNotificationCenter defaultCenter] removeObserver:self
-                                                  name:MovieControlsDoneNotification
-                                                object:movieControlsViewController];
-	
-	[[NSNotificationCenter defaultCenter] removeObserver:self
-                                                  name:MovieControlsPauseNotification
-                                                object:movieControlsViewController];
-	
-	[[NSNotificationCenter defaultCenter] removeObserver:self
-                                                  name:MovieControlsPlayNotification
-                                                object:movieControlsViewController];	
-  
-	// Remove notifications from animator
-  
-	[[NSNotificationCenter defaultCenter] removeObserver:self
-                                                  name:AVAnimatorPreparedToAnimateNotification
-                                                object:animatorViewController];	
-  
-	[[NSNotificationCenter defaultCenter] removeObserver:self
-                                                  name:AVAnimatorDidStartNotification
-                                                object:animatorViewController];
-  
-	[[NSNotificationCenter defaultCenter] removeObserver:self
-                                                  name:AVAnimatorDidStopNotification
-                                                object:animatorViewController];
-  
-	[[NSNotificationCenter defaultCenter] removeObserver:self
-                                                  name:AVAnimatorDoneNotification
-                                                object:animatorViewController];
-  
-	// Remove MovieControls and contained views, if the animator was just stopped
-	// because all the loops were played then stopAnimating is a no-op.
-  
-	[animatorViewController stopAnimating];		
-  
-  //	[animatorViewController.view removeFromSuperview];
-	[movieControlsViewController removeNavigationControlerAsSubviewOf:window];	
+  [self.movieControlsAdaptor stopAnimating];
+  self.movieControlsAdaptor = nil;
+
+  //	[self.animatorViewController.view removeFromSuperview];
+	[self.movieControlsViewController removeNavigationControlerAsSubviewOf:self.window];	
   
 	self.animatorViewController = nil;
 	self.movieControlsViewController = nil;
   
-	[window addSubview:viewController.view];
-}
-
-- (void)dealloc {
-  [viewController release];
-	[movieControlsViewController release];
-  [animatorViewController release];
-  [window release];
-  [super dealloc];
+	[self.window addSubview:self.viewController.view];
 }
 
 @end
