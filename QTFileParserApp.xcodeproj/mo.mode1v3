@@ -202,24 +202,24 @@
 			<key>Content</key>
 			<dict>
 				<key>PBXProjectModuleGUID</key>
-				<string>CD83D65D12CA588A00A88ABA</string>
+				<string>CDD7486612CA6E12002B7F7F</string>
 				<key>PBXProjectModuleLabel</key>
-				<string>AVAnimatorViewController.h</string>
+				<string>movdata.h</string>
 				<key>PBXSplitModuleInNavigatorKey</key>
 				<dict>
 					<key>Split0</key>
 					<dict>
 						<key>PBXProjectModuleGUID</key>
-						<string>CD83D65E12CA588A00A88ABA</string>
+						<string>CDD7486712CA6E12002B7F7F</string>
 						<key>PBXProjectModuleLabel</key>
-						<string>AVAnimatorViewController.h</string>
+						<string>movdata.h</string>
 						<key>_historyCapacity</key>
 						<integer>0</integer>
 						<key>bookmark</key>
-						<string>CD83D79212CA64C800A88ABA</string>
+						<string>CDD7486812CA6E12002B7F7F</string>
 						<key>history</key>
 						<array>
-							<string>CD83D64812CA583100A88ABA</string>
+							<string>CDD7483F12CA6B54002B7F7F</string>
 						</array>
 					</dict>
 					<key>SplitCount</key>
@@ -235,32 +235,31 @@
 				<key>PBXModuleWindowStatusBarHidden2</key>
 				<false/>
 				<key>RubberWindowFrame</key>
-				<string>2 56 1212 717 0 0 1280 778 </string>
+				<string>12 56 1212 717 0 0 1280 778 </string>
 			</dict>
 		</dict>
 		<dict>
 			<key>Content</key>
 			<dict>
 				<key>PBXProjectModuleGUID</key>
-				<string>CDAAFF7612C4A8AA0054F6D7</string>
+				<string>CD83D65D12CA588A00A88ABA</string>
 				<key>PBXProjectModuleLabel</key>
-				<string>FlatMovieFile.m</string>
+				<string>AVAnimatorViewController.h</string>
 				<key>PBXSplitModuleInNavigatorKey</key>
 				<dict>
 					<key>Split0</key>
 					<dict>
 						<key>PBXProjectModuleGUID</key>
-						<string>CDAAFF7712C4A8AA0054F6D7</string>
+						<string>CD83D65E12CA588A00A88ABA</string>
 						<key>PBXProjectModuleLabel</key>
-						<string>FlatMovieFile.m</string>
+						<string>AVAnimatorViewController.h</string>
 						<key>_historyCapacity</key>
 						<integer>0</integer>
 						<key>bookmark</key>
-						<string>CD83D79312CA64C800A88ABA</string>
+						<string>CDD7486912CA6E12002B7F7F</string>
 						<key>history</key>
 						<array>
-							<string>CDAAFF7812C4A8AA0054F6D7</string>
-							<string>CD52C60312C964E00037D9D4</string>
+							<string>CD83D79212CA64C800A88ABA</string>
 						</array>
 					</dict>
 					<key>SplitCount</key>
@@ -311,8 +310,6 @@
 			<key>Layout</key>
 			<array>
 				<dict>
-					<key>BecomeActive</key>
-					<true/>
 					<key>ContentConfiguration</key>
 					<dict>
 						<key>PBXBottomSmartGroupGIDs</key>
@@ -360,7 +357,8 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>28</integer>
+									<integer>23</integer>
+									<integer>13</integer>
 									<integer>1</integer>
 									<integer>0</integer>
 								</array>
@@ -396,12 +394,14 @@
 					<key>Dock</key>
 					<array>
 						<dict>
+							<key>BecomeActive</key>
+							<true/>
 							<key>ContentConfiguration</key>
 							<dict>
 								<key>PBXProjectModuleGUID</key>
 								<string>1CE0B20306471E060097A5F4</string>
 								<key>PBXProjectModuleLabel</key>
-								<string>AVAnimatorViewController.m</string>
+								<string>MovieControlsAdaptor.h</string>
 								<key>PBXSplitModuleInNavigatorKey</key>
 								<dict>
 									<key>Split0</key>
@@ -409,11 +409,11 @@
 										<key>PBXProjectModuleGUID</key>
 										<string>1CE0B20406471E060097A5F4</string>
 										<key>PBXProjectModuleLabel</key>
-										<string>AVAnimatorViewController.m</string>
+										<string>MovieControlsAdaptor.h</string>
 										<key>_historyCapacity</key>
 										<integer>0</integer>
 										<key>bookmark</key>
-										<string>CD83D79112CA64C800A88ABA</string>
+										<string>CDD7486512CA6E12002B7F7F</string>
 										<key>history</key>
 										<array>
 											<string>CDECC76312BC6CD8001A372F</string>
@@ -436,8 +436,8 @@
 											<string>CD83D65312CA588A00A88ABA</string>
 											<string>CD83D65412CA588A00A88ABA</string>
 											<string>CD83D70112CA601F00A88ABA</string>
+											<string>CDD7483812CA6B33002B7F7F</string>
 											<string>CD83D70212CA601F00A88ABA</string>
-											<string>CD83D6EB12CA5ED300A88ABA</string>
 										</array>
 									</dict>
 									<key>SplitCount</key>
@@ -449,14 +449,14 @@
 							<key>GeometryConfiguration</key>
 							<dict>
 								<key>Frame</key>
-								<string>{{0, 0}, {920, 538}}</string>
+								<string>{{0, 0}, {920, 534}}</string>
 								<key>RubberWindowFrame</key>
 								<string>2 55 1222 723 0 0 1280 778 </string>
 							</dict>
 							<key>Module</key>
 							<string>PBXNavigatorGroup</string>
 							<key>Proportion</key>
-							<string>538pt</string>
+							<string>534pt</string>
 						</dict>
 						<dict>
 							<key>ContentConfiguration</key>
@@ -469,14 +469,14 @@
 							<key>GeometryConfiguration</key>
 							<dict>
 								<key>Frame</key>
-								<string>{{0, 543}, {920, 139}}</string>
+								<string>{{0, 539}, {920, 143}}</string>
 								<key>RubberWindowFrame</key>
 								<string>2 55 1222 723 0 0 1280 778 </string>
 							</dict>
 							<key>Module</key>
 							<string>XCDetailModule</string>
 							<key>Proportion</key>
-							<string>139pt</string>
+							<string>143pt</string>
 						</dict>
 					</array>
 					<key>Proportion</key>
@@ -495,9 +495,9 @@
 			</array>
 			<key>TableOfContents</key>
 			<array>
-				<string>CD83D5E812CA528F00A88ABA</string>
+				<string>CDD747B012CA654C002B7F7F</string>
 				<string>1CE0B1FE06471DED0097A5F4</string>
-				<string>CD83D5E912CA528F00A88ABA</string>
+				<string>CDD747B112CA654C002B7F7F</string>
 				<string>1CE0B20306471E060097A5F4</string>
 				<string>1CE0B20506471E060097A5F4</string>
 			</array>
@@ -635,15 +635,13 @@
 	<integer>5</integer>
 	<key>WindowOrderList</key>
 	<array>
-		<string>CD83D79012CA64C800A88ABA</string>
-		<string>CD83D74912CA614500A88ABA</string>
-		<string>CD83D71112CA601F00A88ABA</string>
+		<string>CDD7486A12CA6E12002B7F7F</string>
+		<string>CDD7483E12CA6B33002B7F7F</string>
 		<string>1C78EAAD065D492600B07095</string>
 		<string>1CD10A99069EF8BA00B06720</string>
-		<string>1C530D57069F1CE1000CFCEE</string>
 		<string>CDECC73912BC6A8C001A372F</string>
-		<string>CDAAFF7612C4A8AA0054F6D7</string>
 		<string>CD83D65D12CA588A00A88ABA</string>
+		<string>CDD7486612CA6E12002B7F7F</string>
 		<string>/Users/mo/Development/QTAnimationiPhone/QTFileParserApp/QTFileParserApp.xcodeproj</string>
 	</array>
 	<key>WindowString</key>
@@ -663,14 +661,12 @@
 					<key>Dock</key>
 					<array>
 						<dict>
-							<key>BecomeActive</key>
-							<true/>
 							<key>ContentConfiguration</key>
 							<dict>
 								<key>PBXProjectModuleGUID</key>
 								<string>1CD0528F0623707200166675</string>
 								<key>PBXProjectModuleLabel</key>
-								<string>AVAnimatorViewController.m</string>
+								<string></string>
 								<key>StatusBarVisibility</key>
 								<true/>
 							</dict>
@@ -687,6 +683,8 @@
 							<string>429pt</string>
 						</dict>
 						<dict>
+							<key>BecomeActive</key>
+							<true/>
 							<key>ContentConfiguration</key>
 							<dict>
 								<key>PBXProjectModuleGUID</key>
@@ -726,7 +724,7 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>CDECC73912BC6A8C001A372F</string>
-				<string>CD83D5EB12CA528F00A88ABA</string>
+				<string>CDD747B412CA654C002B7F7F</string>
 				<string>1CD0528F0623707200166675</string>
 				<string>XCMainBuildResultsModuleGUID</string>
 			</array>
@@ -848,13 +846,13 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>1CD10A99069EF8BA00B06720</string>
-				<string>CD83D6ED12CA5ED300A88ABA</string>
+				<string>CDD747EA12CA6880002B7F7F</string>
 				<string>1C162984064C10D400B95A72</string>
-				<string>CD83D6EE12CA5ED300A88ABA</string>
-				<string>CD83D6EF12CA5ED300A88ABA</string>
-				<string>CD83D6F012CA5ED300A88ABA</string>
-				<string>CD83D6F112CA5ED300A88ABA</string>
-				<string>CD83D6F212CA5ED300A88ABA</string>
+				<string>CDD747EB12CA6880002B7F7F</string>
+				<string>CDD747EC12CA6880002B7F7F</string>
+				<string>CDD747ED12CA6880002B7F7F</string>
+				<string>CDD747EE12CA6880002B7F7F</string>
+				<string>CDD747EF12CA6880002B7F7F</string>
 			</array>
 			<key>ToolbarConfiguration</key>
 			<string>xcode.toolbar.config.debugV3</string>
@@ -1010,7 +1008,7 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>1C78EAAD065D492600B07095</string>
-				<string>CD83D70F12CA601F00A88ABA</string>
+				<string>CDD7483C12CA6B33002B7F7F</string>
 				<string>1C78EAAC065D492600B07095</string>
 			</array>
 			<key>ToolbarConfiguration</key>

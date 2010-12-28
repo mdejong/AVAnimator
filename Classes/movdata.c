@@ -1551,7 +1551,7 @@ process_sample_tables(FILE *movFile, MovData *movData) {
 #ifdef DUMP_WHILE_PARSING
       fprintf(stdout, "comparing current chunk id %d to next chunk id %d\n",
               chunk_id, nextEntry.first_chunk_id);
-#endif
+#endif // DUMP_WHILE_PARSING
       
       if (chunk_id >= nextEntry.first_chunk_id) {
         currentEntry.first_chunk_id = nextEntry.first_chunk_id;
@@ -1567,7 +1567,7 @@ process_sample_tables(FILE *movFile, MovData *movData) {
       
 #ifdef DUMP_WHILE_PARSING
       fprintf(stdout, "chunk id %d maps to samples_per_chunk %d\n", chunk_id, samples_per_chunk);
-#endif
+#endif // DUMP_WHILE_PARSING
     }
         
     assert(samples_per_chunk != 0);
@@ -1685,29 +1685,65 @@ reterr:
 
 // get unsigned 16 bit value from ptr
 
+/*
 static inline
 uint16_t
 byte_read_be_uint16(const char *ptr) {
   uint16_t val = *((uint16_t*) ptr);
   return ntohs(val);
 }
+*/
 
+// Read a big endian uint16_t from a char* and store in result (RBG555, RGB5551, or RGB565)
+
+#define READ_UINT16(result, ptr) \
+{ \
+uint8_t b1 = *ptr++; \
+uint8_t b2 = *ptr++; \
+result = (b1 << 8) | b2; \
+}
+
+/*
+ static inline
+ uint32_t
+ byte_read_be_argb24(const char *ptr) {
+ uint8_t red = *ptr++;
+ uint8_t green = *ptr++;
+ uint8_t blue = *ptr++;
+ uint32_t pixel = (0xFF << 24) | (red << 16) | (green << 8) | blue;
+ return pixel;
+ }
+ */
+
+// Read a big endian uint24_t from a char* and store in result (ARGB).
+
+#define READ_UINT24(result, ptr) \
+{ \
+uint8_t b1 = *ptr++; \
+uint8_t b2 = *ptr++; \
+uint8_t b3 = *ptr++; \
+result = (0xFF << 24) | (b1 << 16) | (b2 << 8) | b3; \
+}
+
+/*
 static inline
 uint32_t
 byte_read_be_uint32(const char *ptr) {
   uint32_t val = *((uint32_t*) ptr);
   return ntohl(val);
 }
+*/
 
-static inline
-uint32_t
-byte_read_be_argb24(const char *ptr) {
-  uint8_t red = *ptr++;
-  uint8_t green = *ptr++;
-  uint8_t blue = *ptr++;
-  uint32_t pixel = (0xFF << 24) | (red << 16) | (green << 8) | blue;
-  return pixel;
-}  
+// Read a big endian uint32_t from a char* and store in result (ARGB).
+
+#define READ_UINT32(result, ptr) \
+{ \
+uint8_t b1 = *ptr++; \
+uint8_t b2 = *ptr++; \
+uint8_t b3 = *ptr++; \
+uint8_t b4 = *ptr++; \
+result = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4; \
+}
 
 // 16 bit rgb555 pixels with no alpha channel
 
@@ -1802,8 +1838,8 @@ decode_rle_sample16(
     bytesRemaining -= 4;
     
     assert(bytesRemaining >= 2);
-    uint16_t header = byte_read_be_uint16(samplePtr);
-    samplePtr += 2;
+    uint16_t header;
+    READ_UINT16(header, samplePtr);
     bytesRemaining -= 2;
     
     assert(header == 0x0 || header == 0x0008);
@@ -1815,16 +1851,14 @@ decode_rle_sample16(
       
       assert(bytesRemaining >= 8);
       
-      starting_line = byte_read_be_uint16(samplePtr);
-      samplePtr += 2;
+      READ_UINT16(starting_line, samplePtr);
       bytesRemaining -= 2;
       
       // skip 2 unknown bytes
       samplePtr += 2;
       bytesRemaining -= 2;
       
-      lines_to_update = byte_read_be_uint16(samplePtr);
-      samplePtr += 2;
+      READ_UINT16(lines_to_update, samplePtr);
       bytesRemaining -= 2;
       
       // skip 2 unknown bytes
@@ -1947,8 +1981,8 @@ decode_rle_sample16(
           // 16 bit pixels : rgb555 or rgb565
             
           assert(bytesRemaining >= 2);
-          uint16_t pixel = byte_read_be_uint16(samplePtr);
-          samplePtr += 2;
+          uint16_t pixel;
+          READ_UINT16(pixel, samplePtr);
           bytesRemaining -= 2;
           
 #ifdef DUMP_WHILE_DECODING
@@ -1981,8 +2015,8 @@ decode_rle_sample16(
           assert((rowPtr + rle_code - 1) < rowPtrMax);
             
           for (int i = 0; i < rle_code; i++) {
-            uint16_t pixel = byte_read_be_uint16(samplePtr);
-            samplePtr += 2;
+            uint16_t pixel;
+            READ_UINT16(pixel, samplePtr);
             
 #ifdef DUMP_WHILE_DECODING
             fprintf(stdout, "copy 16 bit pixel 0x%X to dest\n", pixel);
@@ -2092,8 +2126,8 @@ decode_rle_sample24(
     bytesRemaining -= 4;
     
     assert(bytesRemaining >= 2);
-    uint16_t header = byte_read_be_uint16(samplePtr);
-    samplePtr += 2;
+    uint16_t header;
+    READ_UINT16(header, samplePtr);
     bytesRemaining -= 2;
     
     assert(header == 0x0 || header == 0x0008);
@@ -2105,16 +2139,14 @@ decode_rle_sample24(
       
       assert(bytesRemaining >= 8);
       
-      starting_line = byte_read_be_uint16(samplePtr);
-      samplePtr += 2;
+      READ_UINT16(starting_line, samplePtr);
       bytesRemaining -= 2;
       
       // skip 2 unknown bytes
       samplePtr += 2;
       bytesRemaining -= 2;
       
-      lines_to_update = byte_read_be_uint16(samplePtr);
-      samplePtr += 2;
+      READ_UINT16(lines_to_update, samplePtr);
       bytesRemaining -= 2;
       
       // skip 2 unknown bytes
@@ -2128,8 +2160,6 @@ decode_rle_sample24(
     }
     assert(lines_to_update > 0);
     
-    // FIXME: lines_to_update is not actually used, we only need starting line
-    
 #ifdef DUMP_WHILE_DECODING
     if (isKeyFrame) {
       fprintf(stdout, "key frame!\n");
@@ -2138,7 +2168,7 @@ decode_rle_sample24(
       fprintf(stdout, "lines to update %d\n", lines_to_update);
     }
 #endif // DUMP_WHILE_DECODING
-    
+
     // FIXME: Put max bounds on movie width/height like 2000 or something, while parsing ?
     
     // Get a pointer to the start of a row in the framebuffer based on the starting_line
@@ -2240,8 +2270,8 @@ decode_rle_sample24(
           // write 32 bit pixels : ARGB
           
           assert(bytesRemaining >= 3);
-          uint32_t pixel = byte_read_be_argb24(samplePtr);
-          samplePtr += 3;
+          uint32_t pixel;
+          READ_UINT24(pixel, samplePtr);
           bytesRemaining -= 3;
           
 #ifdef DUMP_WHILE_DECODING
@@ -2275,8 +2305,8 @@ decode_rle_sample24(
           assert((rowPtr + rle_code - 1) < rowPtrMax);
           
           for (int i = 0; i < rle_code; i++) {
-            uint32_t pixel = byte_read_be_argb24(samplePtr);
-            samplePtr += 3;
+            uint32_t pixel;
+            READ_UINT24(pixel, samplePtr);
             
 #ifdef DUMP_WHILE_DECODING
             fprintf(stdout, "copy 24 bit pixel 0x%X to dest\n", pixel);
@@ -2386,8 +2416,8 @@ decode_rle_sample32(
     bytesRemaining -= 4;
     
     assert(bytesRemaining >= 2);
-    uint16_t header = byte_read_be_uint16(samplePtr);
-    samplePtr += 2;
+    uint16_t header;
+    READ_UINT16(header, samplePtr);
     bytesRemaining -= 2;
     
     assert(header == 0x0 || header == 0x0008);
@@ -2399,16 +2429,14 @@ decode_rle_sample32(
       
       assert(bytesRemaining >= 8);
       
-      starting_line = byte_read_be_uint16(samplePtr);
-      samplePtr += 2;
+      READ_UINT16(starting_line, samplePtr);
       bytesRemaining -= 2;
       
       // skip 2 unknown bytes
       samplePtr += 2;
       bytesRemaining -= 2;
       
-      lines_to_update = byte_read_be_uint16(samplePtr);
-      samplePtr += 2;
+      READ_UINT16(lines_to_update, samplePtr);
       bytesRemaining -= 2;
       
       // skip 2 unknown bytes
@@ -2429,7 +2457,7 @@ decode_rle_sample32(
       fprintf(stdout, "starting line %d\n", starting_line);
       fprintf(stdout, "lines to update %d\n", lines_to_update);
     }
-#endif // DUMP_WHILE_DECODING
+#endif // DUMP_WHILE_DECODING    
     
     // FIXME: Put max bounds on movie width/height like 2000 or something, while parsing ?
     
@@ -2531,8 +2559,8 @@ decode_rle_sample32(
           // 32 bit pixels : ARGB
           
           assert(bytesRemaining >= 4);
-          uint32_t pixel = byte_read_be_uint32(samplePtr);
-          samplePtr += 4;
+          uint32_t pixel;
+          READ_UINT32(pixel, samplePtr);
           bytesRemaining -= 4;            
           
 #ifdef DUMP_WHILE_DECODING
@@ -2565,8 +2593,8 @@ decode_rle_sample32(
           assert((rowPtr + rle_code - 1) < rowPtrMax);
           
           for (int i = 0; i < rle_code; i++) {
-            uint32_t pixel = byte_read_be_uint32(samplePtr);
-            samplePtr += 3;
+            uint32_t pixel;
+            READ_UINT32(pixel, samplePtr);
             
 #ifdef DUMP_WHILE_DECODING
             fprintf(stdout, "copy 32 bit pixel 0x%X to dest\n", pixel);
