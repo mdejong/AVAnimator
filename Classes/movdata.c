@@ -643,6 +643,34 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
       if (process_atoms(movFile, movData, atomMaxOffset) != 0) {
         return 1;
       }
+    } else if (atom.atype == fcc_toint('v', 'm', 'h', 'd')) {
+      // Video media information header : moov.trak.mdia.minf.vmhd
+      
+      movData->foundVMHD = 1;
+      
+      // version : byte
+      // flags : 3 bytes
+      // graphics mode : 2 bytes
+      // op color : 6 bytes
+      
+      // skip version + flags
+      
+      fseek(movFile, 4, SEEK_CUR);
+      
+      // Read 16 bit graphics mode flag and support only simple ones
+
+      uint16_t graphics_mode;
+      
+      if (read_be_int16(movFile, (int16_t*)&graphics_mode) != 0) {
+        movData->errCode = ERR_READ;
+        snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for vmhd graphics mode");
+        return 1;
+      }
+
+      // Can't validate graphics mode until bit depth is known
+
+      movData->graphicsMode = graphics_mode;
+      
     } else if (atom.atype == fcc_toint('d', 'r', 'e', 'f')) {
       // Data reference: moov.trak.mdia.minf.dinf.dref
       
@@ -1257,7 +1285,49 @@ process_sample_tables(FILE *movFile, MovData *movData) {
     movData->errCode = ERR_INVALID_FIELD;
     snprintf(movData->errMsg, sizeof(movData->errMsg), "stco atom was not found");
     return 1;
-  }  
+  }
+  if (!movData->foundVMHD) { 
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "vmhd atom was not found");
+    return 1;
+  }
+  
+  // Check graphics mode flag in vmhd header now that bit depth is known.
+  // This step is more strict than it needs to be, for exampe a movie
+  // encoded with 32bpp and no transparency is valid, but what is the
+  // point as it wasted 8 bits per pixel. It could be recoded to 24bpp.
+  
+  // Video graphics modes
+  
+  #define GRAPHICS_MODE_COPY 0
+  #define GRAPHICS_MODE_DITHER_COPY 0x40
+  #define GRAPHICS_MODE_BLEND 0x20
+  #define GRAPHICS_MODE_TRANSPARENT 0x24
+  #define GRAPHICS_MODE_STRAIGHT_ALPHA 0x100
+  #define GRAPHICS_MODE_PREMUL_WHITE_ALPHA 0x101
+  #define GRAPHICS_MODE_PREMUL_BLACK_ALPHA 0x102
+  #define GRAPHICS_MODE_STRAIGHT_ALPHA_BLEND 0x104
+  #define GRAPHICS_MODE_COMPOSITION 0x103
+  
+  // After much testing, it appears that exporting a Quicktime movie with the Animation
+  // codec only works when the GRAPHICS_MODE_COPY or GRAPHICS_MODE_DITHER_COPY mode
+  // is enabled. There seems to be no way to use any other flags, as they interfere
+  // with the alpha channel. The pixels encoded in the Animation codec use straight
+  // alpha, so we always need to premultiply them.
+  
+  // A "Thousands of colors" 16bpp encoding could support a transparency bit,
+  // but CoreGraphics does not support that mode.
+    
+  if (movData->graphicsMode == GRAPHICS_MODE_COPY ||
+      movData->graphicsMode == GRAPHICS_MODE_DITHER_COPY) {
+    // Supported, src pixels replace dest pixels
+  } else {
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg), "unsupported graphics mode (0x%X) in vmhd header, only copy and dither copy are supported", movData->graphicsMode);
+    return 1;
+  }
+  
+  // Begin parsing tables
   
   int status = 1; // err status returned via "goto reterr"
 
@@ -1683,18 +1753,7 @@ reterr:
   return status;
 }
 
-// get unsigned 16 bit value from ptr
-
-/*
-static inline
-uint16_t
-byte_read_be_uint16(const char *ptr) {
-  uint16_t val = *((uint16_t*) ptr);
-  return ntohs(val);
-}
-*/
-
-// Read a big endian uint16_t from a char* and store in result (RBG555, RGB5551, or RGB565)
+// Read a big endian uint16_t from a char* and store in result.
 
 #define READ_UINT16(result, ptr) \
 { \
@@ -1703,49 +1762,51 @@ uint8_t b2 = *ptr++; \
 result = (b1 << 8) | b2; \
 }
 
-/*
- static inline
- uint32_t
- byte_read_be_argb24(const char *ptr) {
- uint8_t red = *ptr++;
- uint8_t green = *ptr++;
- uint8_t blue = *ptr++;
- uint32_t pixel = (0xFF << 24) | (red << 16) | (green << 8) | blue;
- return pixel;
- }
- */
-
-// Read a big endian uint24_t from a char* and store in result (ARGB).
+// Read a big endian uint24_t from a char* and store in result (ARGB) with no alpha.
 
 #define READ_UINT24(result, ptr) \
 { \
 uint8_t b1 = *ptr++; \
 uint8_t b2 = *ptr++; \
 uint8_t b3 = *ptr++; \
-result = (0xFF << 24) | (b1 << 16) | (b2 << 8) | b3; \
+result = (b1 << 16) | (b2 << 8) | b3; \
 }
-
-/*
-static inline
-uint32_t
-byte_read_be_uint32(const char *ptr) {
-  uint32_t val = *((uint32_t*) ptr);
-  return ntohl(val);
-}
-*/
 
 // Read a big endian uint32_t from a char* and store in result (ARGB).
+// Each pixel needs to be multiplied by the alpha channel value.
+// This is not optimal, but CoreGraphics does not accept straight
+// alpha pixels and the Animation codec only supports straight
+// alpha pixels. Clearly, avoiding these 3 floating point operations
+// per pixel is why PNG files are recoded by Xcode.
 
-#define READ_UINT32(result, ptr) \
-{ \
-uint8_t b1 = *ptr++; \
-uint8_t b2 = *ptr++; \
-uint8_t b3 = *ptr++; \
-uint8_t b4 = *ptr++; \
-result = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4; \
+static inline
+uint32_t
+read_ARGB_and_premultiply(const char *ptr) {
+  uint8_t alpha = *ptr++;
+  uint8_t red = *ptr++;
+  uint8_t green = *ptr++;
+  uint8_t blue = *ptr++;
+  uint32_t pixel;
+
+  if (0) {
+    // Skip premultiplication, useful for debugging
+  } else if (alpha == 0) {
+    // Any pixel that is fully transparent can be represented by zero (bzero is fast)
+    return 0;
+  } else if (alpha == 0xFF) {
+    // Any pixel that is fully opaque need not be multiplied by 1.0
+  } else {
+    float alphaf = alpha / 255.0;
+    red = (int) (red * alphaf + 0.5);
+    green = (int) (green * alphaf + 0.5);
+    blue = (int) (blue * alphaf + 0.5);
+  }
+  pixel = (alpha << 24) | (red << 16) | (green << 8) | blue;
+  return pixel;
 }
 
 // 16 bit rgb555 pixels with no alpha channel
+// Works for (RBG555, RGB5551, or RGB565) though only XRRRRRGGGGGBBBBB is supported.
 
 static inline
 int
@@ -2323,7 +2384,7 @@ decode_rle_sample24(
   return 0;
 }
 
-// 32 bit ARGB pixels
+// 32 bit ARGB pixels, always straight alpha
 
 static inline
 int
@@ -2559,10 +2620,10 @@ decode_rle_sample32(
           // 32 bit pixels : ARGB
           
           assert(bytesRemaining >= 4);
-          uint32_t pixel;
-          READ_UINT32(pixel, samplePtr);
+          uint32_t pixel = read_ARGB_and_premultiply(samplePtr);
+          samplePtr += 4;
           bytesRemaining -= 4;            
-          
+                    
 #ifdef DUMP_WHILE_DECODING
           fprintf(stdout, "repeat 32 bit pixel 0x%X %d times\n", pixel, numTimesToRepeat);
 #endif // DUMP_WHILE_DECODING          
@@ -2593,8 +2654,8 @@ decode_rle_sample32(
           assert((rowPtr + rle_code - 1) < rowPtrMax);
           
           for (int i = 0; i < rle_code; i++) {
-            uint32_t pixel;
-            READ_UINT32(pixel, samplePtr);
+            uint32_t pixel = read_ARGB_and_premultiply(samplePtr);
+            samplePtr += 4;
             
 #ifdef DUMP_WHILE_DECODING
             fprintf(stdout, "copy 32 bit pixel 0x%X to dest\n", pixel);
@@ -2612,15 +2673,15 @@ decode_rle_sample32(
 }
 
 
-// Process a single sample, read and then decode the RLE data contained at the
-// file offset indicated in the sample. Returns 0 on success, otherwise non-zero.
+// Read sample data from file and then process the RLE data at a specific file offset.
+// Returns 0 on success, otherwise non-zero.
 //
 // Note that the type of frameBuffer you pass in (uint16_t* or uint32_t*) depends
 // on the bit depth of the mov. If NULL is passed as frameBuffer, then a phony
 // framebuffer will be allocated and then released.
 
 int
-process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer, const void *sampleBuffer, uint32_t sampleBufferSize)
+read_process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer, const void *sampleBuffer, uint32_t sampleBufferSize)
 {
   void* frameBufferPtr = NULL;
   const char *samplePtr = NULL;
@@ -2710,7 +2771,7 @@ retstatus:
 // on the bit depth of the mov.
 
 int
-process_mmap_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, void *frameBuffer)
+process_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, void *frameBuffer)
 {
   const char *samplePtr = NULL;
   int status = 1;

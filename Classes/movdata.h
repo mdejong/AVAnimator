@@ -50,6 +50,7 @@ typedef struct MovData {
   float lengthInSeconds;
   uint32_t lengthInTicks;
   int bitDepth; // 16, 24, or 32
+  uint16_t graphicsMode;
   char fccbuffer[5];
 
   int rleDataOffset;
@@ -78,6 +79,7 @@ typedef struct MovData {
   unsigned foundMDIA:1;
   unsigned foundMHLR:1;
   unsigned foundDHLR:1;
+  unsigned foundVMHD:1;  
   unsigned foundDREF:1;
   unsigned foundSTBL:1;
   unsigned foundSTSD:1;
@@ -124,7 +126,7 @@ process_sample_tables(FILE *movFile, MovData *movData);
 // on the bit depth of the mov. If NULL is passed as frameBuffer, no pixels are written during decoding.
 
 int
-process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer, const void *sampleBuffer, uint32_t sampleBufferSize);
+read_process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer, const void *sampleBuffer, uint32_t sampleBufferSize);
 
 // Process sample data contained in an already memory mapped file. Unlike process_rle_sample above
 // this method requires that frameBuffer is not NULL.
@@ -134,7 +136,7 @@ process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *fra
 // on the bit depth of the mov.
 
 int
-process_mmap_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, void *frameBuffer);
+process_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, void *frameBuffer);
 
 
 // Use for testing just the decode logic for a single frame

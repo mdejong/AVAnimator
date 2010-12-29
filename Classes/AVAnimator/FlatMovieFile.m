@@ -236,9 +236,9 @@ int num_words(uint32_t numBytes)
       // FIXME: This logic currently lacks checking for keyframes on skip ahead!
       
 #ifdef USE_MMAP
-      process_mmap_rle_sample(mappedPtr, self->movData, frame, nextFrameBuffer.pixels);
+      process_rle_sample(mappedPtr, self->movData, frame, nextFrameBuffer.pixels);
 #else
-      process_rle_sample(self->movFile, self->movData, frame, nextFrameBuffer.pixels, inputBuffer, numWordsInputBuffer * sizeof(int));
+      read_process_rle_sample(self->movFile, self->movData, frame, nextFrameBuffer.pixels, inputBuffer, numWordsInputBuffer * sizeof(int));
 #endif // USE_MMAP
     }
 	}
