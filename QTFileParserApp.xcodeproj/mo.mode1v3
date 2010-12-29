@@ -276,7 +276,7 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>25</integer>
+									<integer>33</integer>
 									<integer>1</integer>
 									<integer>0</integer>
 								</array>
@@ -331,7 +331,7 @@
 										<key>_historyCapacity</key>
 										<integer>0</integer>
 										<key>bookmark</key>
-										<string>CD71450012CBB38400E0A725</string>
+										<string>CDC03FE712CBC2F900BEE5FF</string>
 										<key>history</key>
 										<array>
 											<string>CDECC76312BC6CD8001A372F</string>
@@ -355,7 +355,7 @@
 											<string>CDD7483812CA6B33002B7F7F</string>
 											<string>CD7144E412CBB2F700E0A725</string>
 											<string>CD7144ED12CBB31500E0A725</string>
-											<string>CD7144EE12CBB31500E0A725</string>
+											<string>CD71450012CBB38400E0A725</string>
 										</array>
 									</dict>
 									<key>SplitCount</key>
@@ -367,14 +367,14 @@
 							<key>GeometryConfiguration</key>
 							<dict>
 								<key>Frame</key>
-								<string>{{0, 0}, {920, 525}}</string>
+								<string>{{0, 0}, {920, 520}}</string>
 								<key>RubberWindowFrame</key>
 								<string>2 55 1222 723 0 0 1280 778 </string>
 							</dict>
 							<key>Module</key>
 							<string>PBXNavigatorGroup</string>
 							<key>Proportion</key>
-							<string>525pt</string>
+							<string>520pt</string>
 						</dict>
 						<dict>
 							<key>ContentConfiguration</key>
@@ -387,14 +387,14 @@
 							<key>GeometryConfiguration</key>
 							<dict>
 								<key>Frame</key>
-								<string>{{0, 530}, {920, 152}}</string>
+								<string>{{0, 525}, {920, 157}}</string>
 								<key>RubberWindowFrame</key>
 								<string>2 55 1222 723 0 0 1280 778 </string>
 							</dict>
 							<key>Module</key>
 							<string>XCDetailModule</string>
 							<key>Proportion</key>
-							<string>152pt</string>
+							<string>157pt</string>
 						</dict>
 					</array>
 					<key>Proportion</key>
@@ -413,9 +413,9 @@
 			</array>
 			<key>TableOfContents</key>
 			<array>
-				<string>CD7144E712CBB2F700E0A725</string>
+				<string>CDC03FC612CBBFE100BEE5FF</string>
 				<string>1CE0B1FE06471DED0097A5F4</string>
-				<string>CD7144E812CBB2F700E0A725</string>
+				<string>CDC03FC712CBBFE100BEE5FF</string>
 				<string>1CE0B20306471E060097A5F4</string>
 				<string>1CE0B20506471E060097A5F4</string>
 			</array>
@@ -553,11 +553,6 @@
 	<integer>5</integer>
 	<key>WindowOrderList</key>
 	<array>
-		<string>CD7144F912CBB33400E0A725</string>
-		<string>CD7144F212CBB31500E0A725</string>
-		<string>1C78EAAD065D492600B07095</string>
-		<string>1C530D57069F1CE1000CFCEE</string>
-		<string>1CD10A99069EF8BA00B06720</string>
 		<string>CDECC73912BC6A8C001A372F</string>
 		<string>/Users/mo/Development/QTAnimationiPhone/QTFileParserApp/QTFileParserApp.xcodeproj</string>
 	</array>
@@ -641,7 +636,7 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>CDECC73912BC6A8C001A372F</string>
-				<string>CD7144D312CBB2EF00E0A725</string>
+				<string>CDC03FCB12CBBFE100BEE5FF</string>
 				<string>1CD0528F0623707200166675</string>
 				<string>XCMainBuildResultsModuleGUID</string>
 			</array>

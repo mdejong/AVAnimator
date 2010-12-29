@@ -444,9 +444,10 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
         return 1;
       }      
       
-      // width and height must be whole numbers as they will be converted to int
+      // width and height must be whole numbers as they will be converted to int.
+      // Also check for a common sense upper limit on the encoded movie size, 2000x2000 is huge.
       
-      if (width <= 0.0 || height <= 0.0 || floor(width) != width || floor(height) != height) {
+      if (width <= 0.0 || height <= 0.0 || floor(width) != width || floor(height) != height || width > 2000.0 || height > 2000.0) {
         movData->errCode = ERR_INVALID_FIELD;
         snprintf(movData->errMsg, sizeof(movData->errMsg),
                  "invalid track width/height (%f / %f)",
@@ -1831,7 +1832,7 @@ decode_rle_sample16(
   
   const char* restrict samplePtr = sampleBuffer;
   
-  while (bytesRemaining) {
+  if (1) {
     // http://wiki.multimedia.cx/index.php?title=Apple_QuickTime_RLE
     //
     // sample size : 4 bytes
@@ -1941,8 +1942,6 @@ decode_rle_sample16(
       fprintf(stdout, "lines to update %d\n", lines_to_update);
     }
 #endif // DUMP_WHILE_DECODING
-    
-    // FIXME: Put max bounds on movie width/height like 2000 or something, while parsing ?
     
     // Get a pointer to the start of a row in the framebuffer based on the starting_line
     
@@ -2119,7 +2118,7 @@ decode_rle_sample24(
   
   const char* restrict samplePtr = sampleBuffer;
   
-  while (bytesRemaining) {
+  if (1) {
     // http://wiki.multimedia.cx/index.php?title=Apple_QuickTime_RLE
     //
     // sample size : 4 bytes
@@ -2229,8 +2228,6 @@ decode_rle_sample24(
       fprintf(stdout, "lines to update %d\n", lines_to_update);
     }
 #endif // DUMP_WHILE_DECODING
-
-    // FIXME: Put max bounds on movie width/height like 2000 or something, while parsing ?
     
     // Get a pointer to the start of a row in the framebuffer based on the starting_line
     
@@ -2409,7 +2406,7 @@ decode_rle_sample32(
   
   const char* restrict samplePtr = sampleBuffer;
   
-  while (bytesRemaining) {
+  if (1) {
     // http://wiki.multimedia.cx/index.php?title=Apple_QuickTime_RLE
     //
     // sample size : 4 bytes
@@ -2518,9 +2515,7 @@ decode_rle_sample32(
       fprintf(stdout, "starting line %d\n", starting_line);
       fprintf(stdout, "lines to update %d\n", lines_to_update);
     }
-#endif // DUMP_WHILE_DECODING    
-    
-    // FIXME: Put max bounds on movie width/height like 2000 or something, while parsing ?
+#endif // DUMP_WHILE_DECODING
     
     // Get a pointer to the start of a row in the framebuffer based on the starting_line
     
