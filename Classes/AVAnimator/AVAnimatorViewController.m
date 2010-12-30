@@ -17,9 +17,9 @@
 
 #import "CGFrameBuffer.h"
 
-#import "FlatMovieFile.h"
-
 #import "AVResourceLoader.h"
+
+#import "AVFrameDecoder.h"
 
 //#define DEBUG_OUTPUT
 
@@ -89,7 +89,9 @@
 
 @implementation AVAnimatorViewController
 
-@synthesize resourceLoader, animationArchiveURL, animationAudioURL;
+@synthesize resourceLoader = m_resourceLoader;
+@synthesize frameDecoder = m_frameDecoder;
+@synthesize animationAudioURL = m_animationAudioURL;
 @synthesize animationFrameDuration, animationNumFrames, animationRepeatCount;
 @synthesize imageView, animationOrientation;
 @synthesize avAudioPlayer;
@@ -98,7 +100,6 @@
 @synthesize animationPrepTimer, animationReadyTimer;
 @synthesize animationDecodeTimer, animationDisplayTimer;
 @synthesize cgFrameBuffers;
-@synthesize flatMovieFile;
 @synthesize viewFrame;
 
 + (AVAnimatorViewController*) aVAnimatorViewController
@@ -209,9 +210,10 @@
 	
 	[self.view addSubview:imageView];
 
-	NSAssert(resourceLoader, @"resourceLoader must be defined");
-	NSAssert(animationArchiveURL == nil, @"animationArchiveURL must be nil");
-	NSAssert(animationAudioURL == nil, @"animationAudioURL must be nil");
+	NSAssert(self.resourceLoader, @"resourceLoader must be defined");
+	NSAssert(self.frameDecoder, @"frameDecoder must be defined");
+
+	NSAssert(self.animationAudioURL == nil, @"animationAudioURL must be nil");
 
 // FIXME: may or may not need to set this? Figure out based on what is in header.
 //	NSAssert(animationFrameDuration != 0.0, @"animationFrameDuration was not defined");
@@ -232,10 +234,10 @@
 	NSError **errorPtr = &error;
 	AVAudioPlayer *avPlayer = nil;
 
-  if (animationAudioURL == nil) {
+  if (self.animationAudioURL == nil) {
     return;
   }
-	NSURL *audioURL = animationAudioURL;
+	NSURL *audioURL = self.animationAudioURL;
 
 	NSString *audioURLPath = [audioURL path];
 	NSString *audioURLTail = [self _getLastPathComponent:audioURLPath];
@@ -284,8 +286,8 @@
     return;
   }
   
-	int renderWidth = self.flatMovieFile.width;
-	int renderHeight = self.flatMovieFile.height;
+	int renderWidth = [self.frameDecoder width];
+	int renderHeight = [self.frameDecoder height];
   
   NSAssert(renderWidth > 0 && renderHeight > 0, @"renderWidth or renderHeight is zero");
 
@@ -302,15 +304,15 @@
 	[cgFrameBuffer3 release];
 }
 
-// Return a UIImage for the current frame by decoding the current frame data.
-// This method decodes frame data either by applicaton of a delta, or straight
-// decode is the frame is a key frame.
+// Return a UIImage for the current frame using the current frame data.
+// The framebuffer that contains the current frame data is always stored
+// in the frame decoder.
 
-- (UIImage*) _currentFrameImage
+- (UIImage*) _makeFrameImage
 {
   // Get the CGFrameBuffer that represents the "current frame"
   
-	CGFrameBuffer *cgFrameBuffer = flatMovieFile->currentFrameBuffer;
+	CGFrameBuffer *cgFrameBuffer = self.frameDecoder.currentFrameBuffer;
     
 	CGImageRef imgRef = [cgFrameBuffer createCGImageRef];
 	NSAssert(imgRef, @"CGImageRef returned by createCGImageRef is NULL");
@@ -328,6 +330,9 @@
     NSAssert(resPath, @"smiley.png resource not found");
     
     uiImage = [UIImage imageWithContentsOfFile:resPath];
+    
+    // FIXME: Need to mark CGFrameBuffer as used for a frame or two otherwise,
+    // redundant frame check in decoder class fails.
   }
   
   return uiImage;
@@ -340,8 +345,9 @@
 - (BOOL) _loadResources
 {
 	NSLog(@"Started _loadResources");
+  NSAssert(self.resourceLoader, @"resourceLoader");
 
-	BOOL isReady = [resourceLoader isReady];
+	BOOL isReady = [self.resourceLoader isReady];
   if (!isReady) {
     NSLog(@"Not Yet Ready in _loadResources");
     return FALSE;
@@ -349,7 +355,7 @@
 
 	NSLog(@"Ready _loadResources");
 
-	NSArray *resourcePathsArr = [resourceLoader getResources];
+	NSArray *resourcePathsArr = [self.resourceLoader getResources];
 
 	// First path is the movie file, second is the audio
 
@@ -364,15 +370,12 @@
   }
 
 	// Create the flat movie file object to read video frames from disk
+  NSAssert(self.frameDecoder, @"frameDecoder");
 
-	FlatMovieFile *flatMovieFileObj = [[FlatMovieFile alloc] init];
-  [flatMovieFileObj autorelease];
-	self.flatMovieFile = flatMovieFileObj;
+	BOOL worked = [self.frameDecoder openForReading:videoPath];
+	NSAssert(worked, @"frameDecoder openForReading failed");
 
-	BOOL worked = [flatMovieFile openForReading:videoPath];
-	NSAssert(worked, @"flat movie file openForReading failed");
-
-	NSLog(@"%@", [NSString stringWithFormat:@"FlatMovieFile openForReading \"%@\"", [videoPath lastPathComponent]]);
+	NSLog(@"%@", [NSString stringWithFormat:@"frameDecoder openForReading \"%@\"", [videoPath lastPathComponent]]);
 
   // Frame buffers need to be allocated after the movie headers have been read, so we know the width and height
   
@@ -382,7 +385,9 @@
   // the use it instead of what appears in the movie.
 
   if (self.animationFrameDuration == 0.0) {
-    self.animationFrameDuration = self.flatMovieFile.frameInterval;    
+    AVFrameDecoder *decoder = self.frameDecoder;
+    NSTimeInterval duration = [decoder frameDuration];
+    self.animationFrameDuration = duration;
   }
     
 	if (TRUE)
@@ -393,10 +398,10 @@
     CGFrameBuffer *cgFrameBuffer = [cgFrameBuffers objectAtIndex:0];
     assert(!cgFrameBuffer.isLockedByDataProvider);
     
-		BOOL changed = [flatMovieFile advanceToFrame:0 nextFrameBuffer:cgFrameBuffer];
-		assert(changed);
+		BOOL changed = [self.frameDecoder advanceToFrame:0 nextFrameBuffer:cgFrameBuffer];
+		NSAssert(changed, @"frame decoder must advance to first frame");
 						
-		imageView.image = [self _currentFrameImage];
+		imageView.image = [self _makeFrameImage];
 	}
 
 	// Create AVAudioPlayer that plays audio from the file on disk
@@ -448,7 +453,7 @@
 	
 	self.currentFrame = 0;
 
-	self->animationNumFrames = flatMovieFile.numFrames;
+	self->animationNumFrames = [self.frameDecoder numFrames];
 
 	assert(animationNumFrames > 0);
 
@@ -716,7 +721,7 @@
 	self.prevFrame = nil;
 	self.nextFrame = nil;
 
-	[flatMovieFile rewind];
+	[self.frameDecoder rewind];
 
 	// Reset idle timer
 	
@@ -1278,7 +1283,6 @@
   // that the frame data has changed.
 	
 // FIXME: need to deal with case where the advance goes past a keyframe.
-// Should this logic be moved into the FlatMovieFile class?
   
 	CGFrameBuffer *cgFrameBuffer = nil;
 	for (CGFrameBuffer *aBuffer in cgFrameBuffers) {
@@ -1290,8 +1294,8 @@
 	if (cgFrameBuffer == nil) {
 		NSAssert(FALSE, @"no cgFrameBuffer is available");
 	}  
-  
-	BOOL changedFrameData = [flatMovieFile advanceToFrame:nextFrameNum nextFrameBuffer:cgFrameBuffer];
+    
+	BOOL changedFrameData = [self.frameDecoder advanceToFrame:nextFrameNum nextFrameBuffer:cgFrameBuffer];
 
 // FIXME: decode every frame
 //	changedFrameData = TRUE;
@@ -1299,7 +1303,7 @@
 	if (!changedFrameData)
 		return FALSE;
   
-	self.nextFrame = [self _currentFrameImage];
+	self.nextFrame = [self _makeFrameImage];
    
 	return TRUE;
 }
@@ -1321,9 +1325,10 @@
 	NSAssert(state != PAUSED, @"dealloc while paused");
 	NSAssert(state != ANIMATING, @"dealloc while animating");
 
-	[resourceLoader release];
-	[animationArchiveURL release];
-	[animationAudioURL release];
+	self.resourceLoader = nil;
+  self.frameDecoder = nil;
+  
+	self.animationAudioURL = nil;
 
 /*
 	CGImageRef imgRef1 = imageView.image.CGImage;
@@ -1385,9 +1390,7 @@
   }
   self.audioSimulatedStartTime = nil;
 
-	[flatMovieFile release];
-
-    [super dealloc];
+  [super dealloc];
 }
 
 - (void) setViewFrame:(CGRect)inSize

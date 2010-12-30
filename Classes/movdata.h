@@ -141,7 +141,7 @@ process_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, voi
 
 // Use for testing just the decode logic for a single frame
 
-int
+void
 exported_decode_rle_sample16(
                              void *sampleBuffer,
                              int sampleBufferSize,

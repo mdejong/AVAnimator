@@ -40,7 +40,7 @@
 @class EasyArchive;
 @class MovieArchive;
 @class MovieFrameArray;
-@class FlatMovieFile;
+@class AVFrameDecoder;
 @class NSURL;
 @class AVResourceLoader;
 
@@ -58,7 +58,9 @@ typedef enum AVAnimatorPlayerState {
 
 @public
 
-	AVResourceLoader *resourceLoader;
+  // FIXME: why would these members be public?
+	AVResourceLoader *m_resourceLoader;
+	AVFrameDecoder *m_frameDecoder;
 
 	NSTimeInterval animationFrameDuration;
 
@@ -72,8 +74,7 @@ typedef enum AVAnimatorPlayerState {
 
 @private
 
-	NSURL *animationArchiveURL;
-	NSURL *animationAudioURL;	
+	NSURL *m_animationAudioURL;	
 
 	UIImageView *imageView;
 	UIImage *prevFrame;
@@ -94,8 +95,6 @@ typedef enum AVAnimatorPlayerState {
 	id originalAudioDelegate;
 	id retainedAudioDelegate;
   NSDate *m_audioSimulatedStartTime;
-
-	FlatMovieFile *flatMovieFile;
 
 	AVAudioPlayerState state;
 
@@ -123,6 +122,7 @@ typedef enum AVAnimatorPlayerState {
 // public properties
 
 @property (nonatomic, retain) AVResourceLoader *resourceLoader;
+@property (nonatomic, retain) AVFrameDecoder *frameDecoder;
 
 @property (nonatomic, assign) NSTimeInterval animationFrameDuration;
 @property (nonatomic, readonly) NSUInteger animationNumFrames;
@@ -145,7 +145,6 @@ typedef enum AVAnimatorPlayerState {
 
 // private properties
 
-@property (nonatomic, retain) NSURL *animationArchiveURL;
 @property (nonatomic, retain) NSURL *animationAudioURL;
 
 @property (nonatomic, retain) UIImageView *imageView;
@@ -163,8 +162,6 @@ typedef enum AVAnimatorPlayerState {
 @property (nonatomic, retain) NSDate *audioSimulatedStartTime;
 
 @property (nonatomic, copy) NSArray *cgFrameBuffers;
-
-@property (nonatomic, retain) FlatMovieFile *flatMovieFile;
 
 // static ctor
 + (AVAnimatorViewController*) aVAnimatorViewController;

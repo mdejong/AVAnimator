@@ -1810,7 +1810,7 @@ read_ARGB_and_premultiply(const char *ptr) {
 // Works for (RBG555, RGB5551, or RGB565) though only XRRRRRGGGGGBBBBB is supported.
 
 static inline
-int
+void
 decode_rle_sample16(
                   const void* restrict sampleBuffer,
                   int sampleBufferSize,
@@ -2090,13 +2090,13 @@ decode_rle_sample16(
     }
   }
   
-  return 0;
+  return;
 }
 
 // 24 bit RGB pixels with no alpha channel
 
 static inline
-int
+void
 decode_rle_sample24(
                     const void* restrict sampleBuffer,
                     int sampleBufferSize,
@@ -2378,13 +2378,13 @@ decode_rle_sample24(
     }
   }
   
-  return 0;
+  return;
 }
 
 // 32 bit ARGB pixels, always straight alpha
 
 static inline
-int
+void
 decode_rle_sample32(
                     const void* restrict sampleBuffer,
                     int sampleBufferSize,
@@ -2664,7 +2664,7 @@ decode_rle_sample32(
     }
   }
   
-  return 0;
+  return;
 }
 
 
@@ -2733,13 +2733,13 @@ read_process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void
   
   switch (movData->bitDepth) {
     case 16:
-      status = decode_rle_sample16(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBufferPtr, movData->width, movData->height);
+      decode_rle_sample16(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBufferPtr, movData->width, movData->height);
       break;
     case 24:
-      status = decode_rle_sample24(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBufferPtr, movData->width, movData->height);
+      decode_rle_sample24(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBufferPtr, movData->width, movData->height);
       break;
     case 32:
-      status = decode_rle_sample32(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBufferPtr, movData->width, movData->height);
+      decode_rle_sample32(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBufferPtr, movData->width, movData->height);
       break;
     default:
       assert(0);
@@ -2782,13 +2782,13 @@ process_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, voi
   
   switch (movData->bitDepth) {
     case 16:
-      status = decode_rle_sample16(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBuffer, movData->width, movData->height);
+      decode_rle_sample16(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBuffer, movData->width, movData->height);
       break;
     case 24:
-      status = decode_rle_sample24(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBuffer, movData->width, movData->height);
+      decode_rle_sample24(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBuffer, movData->width, movData->height);
       break;
     case 32:
-      status = decode_rle_sample32(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBuffer, movData->width, movData->height);
+      decode_rle_sample32(samplePtr, bytesRemaining, movsample_iskeyframe(sample), frameBuffer, movData->width, movData->height);
       break;
     default:
       assert(0);
@@ -2801,7 +2801,7 @@ process_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, voi
 
 // Decode just 1 sample contained in a buffer
 
-int
+void
 exported_decode_rle_sample16(
                   void *sampleBuffer,
                   int sampleBufferSize,
@@ -2810,6 +2810,6 @@ exported_decode_rle_sample16(
                   int frameBufferWidth,
                   int frameBufferHeight)
 {
-  return decode_rle_sample16(sampleBuffer, sampleBufferSize, isKeyFrame,
+  decode_rle_sample16(sampleBuffer, sampleBufferSize, isKeyFrame,
                            frameBuffer, frameBufferWidth, frameBufferHeight);
 }

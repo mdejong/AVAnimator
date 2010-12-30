@@ -17,6 +17,8 @@
 
 #import "AVAppResourceLoader.h"
 
+#import "AVQTAnimationFrameDecoder.h"
+
 @implementation QTFileParserAppAppDelegate
 
 @synthesize window = m_window;
@@ -94,15 +96,20 @@
   if (0) {
     resourceName = @"Sweep30FPS_ANI16BPP.mov";
   }
-  if (1) {
+  if (0) {
     resourceName = @"Bounce15FPS.mov";
-  }  
+  }
   
-	AVAppResourceLoader *resLoader = [[AVAppResourceLoader alloc] init];
-  [resLoader autorelease];
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
 	self.animatorViewController.resourceLoader = resLoader;
   
-	resLoader.movieFilename = resourceName;
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	self.animatorViewController.frameDecoder = frameDecoder;
 
   //	self.animatorViewController.animationOrientation = UIImageOrientationLeft; // Rotate 90 deg CCW
   

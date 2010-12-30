@@ -28,6 +28,8 @@
 		CD15C33412BC9EE800A26588 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD15C33312BC9EE800A26588 /* AudioToolbox.framework */; };
 		CD15C35112BC9F3B00A26588 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD15C35012BC9F3B00A26588 /* AVFoundation.framework */; };
 		CD15C54F12BCADA800A26588 /* smiley.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C54E12BCADA800A26588 /* smiley.png */; };
+		CD6198BF12CCFC640003AEAA /* AVFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */; };
+		CD61994A12CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD61994912CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m */; };
 		CD674CA012BF3DB200A6EACE /* Bounce15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD674C9F12BF3DB200A6EACE /* Bounce15FPS.mov */; };
 		CD83D5EE12CA547300A88ABA /* MovieControlsAdaptor.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */; };
 		CDB8301E12BD6D780078FEC7 /* Sweep30FPS_ANI16BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDB8301D12BD6D780078FEC7 /* Sweep30FPS_ANI16BPP.mov */; };
@@ -38,7 +40,6 @@
 		CDECC75A12BC6CA6001A372F /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75612BC6CA6001A372F /* CGFrameBuffer.m */; };
 		CDECC75D12BC6CBC001A372F /* AutoPropertyRelease.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75C12BC6CBC001A372F /* AutoPropertyRelease.m */; };
 		CDECC75F12BC6CCC001A372F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75E12BC6CCC001A372F /* movdata.c */; };
-		CDECC78312BC6DB2001A372F /* FlatMovieFile.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC78212BC6DB2001A372F /* FlatMovieFile.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -70,6 +71,10 @@
 		CD15C33312BC9EE800A26588 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		CD15C35012BC9F3B00A26588 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		CD15C54E12BCADA800A26588 /* smiley.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = smiley.png; sourceTree = "<group>"; };
+		CD6198BD12CCFC640003AEAA /* AVFrameDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVFrameDecoder.h; sourceTree = "<group>"; };
+		CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVFrameDecoder.m; sourceTree = "<group>"; };
+		CD61994812CD03FC0003AEAA /* AVQTAnimationFrameDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVQTAnimationFrameDecoder.h; sourceTree = "<group>"; };
+		CD61994912CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVQTAnimationFrameDecoder.m; sourceTree = "<group>"; };
 		CD674C9F12BF3DB200A6EACE /* Bounce15FPS.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Bounce15FPS.mov; sourceTree = "<group>"; };
 		CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MovieControlsAdaptor.m; sourceTree = "<group>"; };
 		CD83D5F512CA549000A88ABA /* MovieControlsAdaptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MovieControlsAdaptor.h; sourceTree = "<group>"; };
@@ -86,8 +91,6 @@
 		CDECC75B12BC6CBC001A372F /* AutoPropertyRelease.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AutoPropertyRelease.h; sourceTree = "<group>"; };
 		CDECC75C12BC6CBC001A372F /* AutoPropertyRelease.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AutoPropertyRelease.m; sourceTree = "<group>"; };
 		CDECC75E12BC6CCC001A372F /* movdata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = movdata.c; sourceTree = "<group>"; };
-		CDECC78112BC6DB2001A372F /* FlatMovieFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FlatMovieFile.h; sourceTree = "<group>"; };
-		CDECC78212BC6DB2001A372F /* FlatMovieFile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FlatMovieFile.m; sourceTree = "<group>"; };
 		CDECC8FA12BC837D001A372F /* movdata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = movdata.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -207,14 +210,16 @@
 			children = (
 				CDECC74F12BC6CA6001A372F /* AVAnimatorViewController.h */,
 				CDECC75012BC6CA6001A372F /* AVAnimatorViewController.m */,
+				CDECC75512BC6CA6001A372F /* CGFrameBuffer.h */,
+				CDECC75612BC6CA6001A372F /* CGFrameBuffer.m */,
 				CDECC75112BC6CA6001A372F /* AVResourceLoader.h */,
 				CDECC75212BC6CA6001A372F /* AVResourceLoader.m */,
 				CDECC75312BC6CA6001A372F /* AVAppResourceLoader.h */,
 				CDECC75412BC6CA6001A372F /* AVAppResourceLoader.m */,
-				CDECC75512BC6CA6001A372F /* CGFrameBuffer.h */,
-				CDECC75612BC6CA6001A372F /* CGFrameBuffer.m */,
-				CDECC78112BC6DB2001A372F /* FlatMovieFile.h */,
-				CDECC78212BC6DB2001A372F /* FlatMovieFile.m */,
+				CD6198BD12CCFC640003AEAA /* AVFrameDecoder.h */,
+				CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */,
+				CD61994812CD03FC0003AEAA /* AVQTAnimationFrameDecoder.h */,
+				CD61994912CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m */,
 			);
 			path = AVAnimator;
 			sourceTree = "<group>";
@@ -299,10 +304,11 @@
 				CDECC75A12BC6CA6001A372F /* CGFrameBuffer.m in Sources */,
 				CDECC75D12BC6CBC001A372F /* AutoPropertyRelease.m in Sources */,
 				CDECC75F12BC6CCC001A372F /* movdata.c in Sources */,
-				CDECC78312BC6DB2001A372F /* FlatMovieFile.m in Sources */,
 				CD15C2CF12BC9BDC00A26588 /* MovieControlsView.m in Sources */,
 				CD15C2D012BC9BDC00A26588 /* MovieControlsViewController.m in Sources */,
 				CD83D5EE12CA547300A88ABA /* MovieControlsAdaptor.m in Sources */,
+				CD6198BF12CCFC640003AEAA /* AVFrameDecoder.m in Sources */,
+				CD61994A12CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
