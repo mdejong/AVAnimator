@@ -29,7 +29,7 @@
   [super dealloc];
 }
 
-- (void) startAnimating
+- (void) startAnimator
 {  
 	// Put movie controls away (this needs to happen when the
 	// loading is done)
@@ -61,17 +61,17 @@
 	// finished the done notification is sent.
   
 	[[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(animationPreparedNotification:) 
+                                           selector:@selector(animatorPreparedNotification:) 
                                                name:AVAnimatorPreparedToAnimateNotification 
                                              object:self.animatorView];
   
 	[[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(animationDidStartNotification:) 
+                                           selector:@selector(animatorDidStartNotification:) 
                                                name:AVAnimatorDidStartNotification 
                                              object:self.animatorView];	
   
 	[[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(animationDidStopNotification:) 
+                                           selector:@selector(animatorDidStopNotification:) 
                                                name:AVAnimatorDidStopNotification 
                                              object:self.animatorView];
     
@@ -82,10 +82,10 @@
   
 	[self.animatorView prepareToAnimate];
   
-  [self.animatorView startAnimating];
+  [self.animatorView startAnimator];
 }
 
-- (void) stopAnimating
+- (void) stopAnimator
 {
 	// Remove notifications from movie controls
   
@@ -118,7 +118,7 @@
 	// Remove MovieControls and contained views, if the animator was just stopped
 	// because all the loops were played then stopAnimating is a no-op.
   
-	[self.animatorView stopAnimating];  
+	[self.animatorView stopAnimator];
 }
 
 // Invoked when the Done button in the movie controls is pressed.
@@ -132,7 +132,7 @@
   
 	NSAssert(![self.animatorView isInitializing], @"animatorView isInitializing");
   
-	[self.animatorView doneAnimating];
+	[self.animatorView doneAnimator];
 }
 
 - (void)movieControlsPauseNotification:(NSNotification*)notification {
@@ -151,29 +151,29 @@
 	[self.animatorView unpause];
 }
 
-// Invoked when the animation is ready to begin, meaning all
+// Invoked when the animator is ready to begin, meaning all
 // resources have been initialized.
 
-- (void)animationPreparedNotification:(NSNotification*)notification {
-	NSLog( @"animationPreparedNotification" );
+- (void)animatorPreparedNotification:(NSNotification*)notification {
+	NSLog( @"animatorPreparedNotification" );
   
 	[self.movieControlsViewController enableUserInteraction];
   
-	[self.animatorView startAnimating];
+	[self.animatorView startAnimator];
 }
 
-// Invoked when an animation starts, note that this method
-// can be invoked multiple times for an animation that loops.
+// Invoked when an animator starts, note that this method
+// can be invoked multiple times for an animator that loops.
 
-- (void)animationDidStartNotification:(NSNotification*)notification {
-	NSLog( @"animationDidStartNotification" );
+- (void)animatorDidStartNotification:(NSNotification*)notification {
+	NSLog( @"animatorDidStartNotification" );
 }
 
 // Invoked when an animation ends, note that this method
-// can be invoked multiple times for an animation that loops.
+// can be invoked multiple times for an animator that loops.
 
-- (void)animationDidStopNotification:(NSNotification*)notification {
-	NSLog( @"animationDidStopNotification" );	
+- (void)animatorDidStopNotification:(NSNotification*)notification {
+	NSLog( @"animatorDidStopNotification" );	
 }
 
 @end

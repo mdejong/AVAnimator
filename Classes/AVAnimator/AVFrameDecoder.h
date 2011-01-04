@@ -26,14 +26,11 @@
 
 - (void) rewind;
 
-// Advance the current frame index to the indicated frame index and store result in nextFrameBuffer
+// Advance the current frame index to the indicated frame index. Return the new frame
+// encoded as a UIImage object, or nil if the frame data was not changed. The UIImage
+// returned is assumed to be in the autorelease pool.
 
-- (BOOL) advanceToFrame:(NSUInteger)newFrameIndex nextFrameBuffer:(CGFrameBuffer*)nextFrameBuffer;
-
-// Return the current frame buffer, this is the buffer that was most recently written to via
-// a call to advanceToFrame. Returns nil on init or after a rewind operation.
-
-- (CGFrameBuffer*) currentFrameBuffer;
+- (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex;
 
 // Properties
 

@@ -35,7 +35,6 @@
 
 @class AVAudioPlayer;
 @class NSURL;
-@class CGFrameBuffer;
 @class AVFrameDecoder;
 @class AVResourceLoader;
 
@@ -55,23 +54,21 @@ typedef enum AVAnimatorPlayerState {
 	AVResourceLoader *m_resourceLoader;
 	AVFrameDecoder *m_frameDecoder;
   
-	NSTimeInterval m_animationFrameDuration;
-	NSUInteger m_animationNumFrames;
-	NSInteger m_animationRepeatCount;
-	UIImageOrientation m_animationOrientation;
+	NSTimeInterval m_animatorFrameDuration;
+	NSUInteger m_animatorNumFrames;
+	NSUInteger m_animatorRepeatCount;
+	UIImageOrientation m_animatorOrientation;
   
 @private
   
-	NSURL *m_animationAudioURL;	
+	NSURL *m_animatorAudioURL;	
 	UIImage *m_prevFrame;
 	UIImage *m_nextFrame;
   
-	NSArray *m_cgFrameBuffers;
-  
-	NSTimer *m_animationPrepTimer;
-	NSTimer *m_animationReadyTimer;
-	NSTimer *m_animationDecodeTimer;
-	NSTimer *m_animationDisplayTimer;
+	NSTimer *m_animatorPrepTimer;
+	NSTimer *m_animatorReadyTimer;
+	NSTimer *m_animatorDecodeTimer;
+	NSTimer *m_animatorDisplayTimer;
 	
 	NSUInteger m_currentFrame;
   
@@ -84,8 +81,8 @@ typedef enum AVAnimatorPlayerState {
   
 	AVAudioPlayerState m_state;
   
-	NSTimeInterval m_animationMaxClockTime;
-	NSTimeInterval m_animationDecodeTimerInterval;
+	NSTimeInterval m_animatorMaxClockTime;
+	NSTimeInterval m_animatorDecodeTimerInterval;
   
 	CGSize m_renderSize;
   
@@ -97,10 +94,10 @@ typedef enum AVAnimatorPlayerState {
   
 	BOOL m_isReadyToAnimate;
   
-	// Set to TRUE if startAnimating is called before the
+	// Set to TRUE if startAnimator is called after the
 	// prepare phase is complete.
   
-	BOOL m_startAnimatingWhenReady;
+	BOOL m_startAnimatorWhenReady;
 }
 
 // public properties
@@ -108,34 +105,35 @@ typedef enum AVAnimatorPlayerState {
 @property (nonatomic, retain) AVResourceLoader *resourceLoader;
 @property (nonatomic, retain) AVFrameDecoder *frameDecoder;
 
-@property (nonatomic, assign) NSTimeInterval animationFrameDuration;
-@property (nonatomic, assign) NSUInteger animationNumFrames;
-@property (nonatomic, assign) NSInteger animationRepeatCount;
-@property (nonatomic, assign) UIImageOrientation animationOrientation;
+@property (nonatomic, assign) NSTimeInterval animatorFrameDuration;
+@property (nonatomic, assign) NSUInteger animatorNumFrames;
+// Be careful not to use animationRepeatCount from the UIImageView super class!
+@property (nonatomic, assign) NSUInteger animatorRepeatCount;
+@property (nonatomic, assign) UIImageOrientation animatorOrientation;
 
 // static ctor : create view that has the screen dimensions
 + (AVAnimatorView*) aVAnimatorView;
 // static ctor : create view with the given dimensions
 + (AVAnimatorView*) aVAnimatorViewWithFrame:(CGRect)viewFrame;
 
-- (void) startAnimating;
-- (void) stopAnimating;
-- (BOOL) isAnimating;
+// Be careful not to invoke startAnimation or startAnimation from the UIImageView super class!
+- (void) startAnimator;
+- (void) stopAnimator;
+
+- (BOOL) isAnimatorRunning;
 - (BOOL) isInitializing;
-- (void) doneAnimating;
+- (void) doneAnimator;
 
 - (void) pause;
 - (void) unpause;
 - (void) rewind;
 
-- (void) animationShowFrame: (NSInteger) frame;
-
-- (void) rotateToPortrait;
-
-- (void) rotateToLandscape;
-
-- (void) rotateToLandscapeRight;
-
 - (void) prepareToAnimate;
+
+// Display the given animator frame, in the range [1 to N]
+// where N is the largest frame number. Note that this method
+// should only be called when the animator is not running.
+
+- (void) showFrame: (NSInteger) frame;
 
 @end

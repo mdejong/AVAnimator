@@ -19,6 +19,8 @@
 
 #import "AVQTAnimationFrameDecoder.h"
 
+#import "AVPNGFrameDecoder.h"
+
 @implementation QTFileParserAppAppDelegate
 
 @synthesize window = m_window;
@@ -87,6 +89,37 @@
 	self.animatorView = nil;
 }
 
+- (void) loadBouncePNGs
+{  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  self.animatorView.animatorOrientation = UIImageOrientationUp;
+  
+  // Create loader that will get a filename from an app resource.
+  // This resource loader is phony, it becomes a no-op because
+  // the AVPNGFrameDecoder ignores it.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = @"BouncingBalls01.png"; // Phony resource name, becomes no-op
+	self.animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from PNG files attached as app resources.
+  
+  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"BouncingBalls"
+                                                            rangeStart:1
+                                                              rangeEnd:30
+                                                          suffixFormat:@"%02i.png"];
+  
+  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  
+  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs];
+	self.animatorView.frameDecoder = frameDecoder;
+  
+	self.animatorView.animatorFrameDuration = 0.25;
+  
+	self.animatorView.animatorRepeatCount = 10;
+}
+
 - (void) loadDemoArchive
 {
 	// Init animator data
@@ -99,10 +132,13 @@
   if (0) {
     resourceName = @"Bounce15FPS.mov";
   }
+  if (0) {
+    resourceName = @"Vertigo30FPS.mov";
+  }
   
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
-  self.animatorView.animationOrientation = UIImageOrientationUp;
+  self.animatorView.animatorOrientation = UIImageOrientationUp;
   
   // Create loader that will read a movie file from app resources.
   
@@ -115,15 +151,15 @@
   AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
 	self.animatorView.frameDecoder = frameDecoder;
 
-	self.animatorView.animationFrameDuration = 1.0;
-	//self.animatorView.animationFrameDuration = AVAnimator15FPS;
-  //self.animatorView.animationFrameDuration = AVAnimator30FPS;
-  //self.animatorView.animationFrameDuration = 1.0 / 30;
+	//self.animatorView.animatorFrameDuration = 1.0;
+	self.animatorView.animatorFrameDuration = AVAnimator15FPS;
+  //self.animatorView.animatorFrameDuration = AVAnimator30FPS;
+  //self.animatorView.animatorFrameDuration = 1.0 / 30;
   
-  //	self.animatorView.animationRepeatCount = 100;
-	self.animatorView.animationRepeatCount = 60;
+  //	self.animatorView.animatorRepeatCount = 100;
+	self.animatorView.animatorRepeatCount = 60;
   
-  //	self.animatorView.animationRepeatCount = 1000;
+  //	self.animatorView.animatorRepeatCount = 1000;
   
   return;
 }
@@ -132,16 +168,12 @@
 {
 	[self.viewController.view removeFromSuperview];
   
+  //[self loadBouncePNGs];
 	[self loadDemoArchive];
-	//	[self loadSweepArchive];
-	//	[self loadVertigoArchive];
 
-	// Create Movie Controls and make the view in the AVAnimatorViewController
-	// the managed view of the Movie Controls controller.
+	// Create Movie Controls and manage AVAnimatorView inside it
   
 	self.movieControlsViewController = [MovieControlsViewController movieControlsViewController];
-
-//  movieControlsViewController.overView = viewController.view;
   
 	self.movieControlsViewController.overView = self.animatorView;
   
@@ -155,19 +187,19 @@
   // after movie loops are finished playing.
 
   [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(animationDoneNotification:) 
+                                           selector:@selector(animatorDoneNotification:) 
                                                name:AVAnimatorDoneNotification
                                              object:self.animatorView];  
 
-  [self.movieControlsAdaptor startAnimating];
+  [self.movieControlsAdaptor startAnimator];
   
   return;
 }
 
 // Notification indicates that all animations in a loop are now finished
 
-- (void)animationDoneNotification:(NSNotification*)notification {
-	NSLog( @"animationDoneNotification" );
+- (void)animatorDoneNotification:(NSNotification*)notification {
+	NSLog( @"animatorDoneNotification" );
   
   // Unlink the notification
   
@@ -178,233 +210,14 @@
 	[self stopAnimator];  
 }
 
-- (void) testAnimator
-{
-  /*
-	[viewController.view removeFromSuperview];
-  
-	[NSThread sleepForTimeInterval:0.5];
-  
-  // --------------------------------------------------------
-	
-	// Test 1: state ALLOCATED -> LOADED
-  
-	self.animatorViewController = [[AVAnimatorViewController alloc] init];
-	[animatorViewController release];
-  
-	[self loadDemoArchive];
-  
-	assert(animatorViewController->state == ALLOCATED);
-	
-	// Show animator view, the first frame of the animation is displayed
-  
-	[window addSubview:animatorViewController.view];
-  
-	assert(animatorViewController->state == LOADED);
-  
-	[animatorViewController.view removeFromSuperview];
-  
-	self.animatorViewController = nil;
-  
-  // --------------------------------------------------------
-  
-	// Test 2: state ALLOCATED -> PREPPING -> READY
-	// Note that the state can't go back to LOADED once it has reached
-	// the READY state.
-  
-	self.animatorViewController = [[AVAnimatorViewController alloc] init];
-	[animatorViewController release];
-	
-	[self loadDemoArchive];
-  
-	assert(animatorViewController->state == ALLOCATED);
-  
-	[animatorViewController prepareToAnimate];
-  
-	// state should be PREPPING after prepareToAnimate,
-	// must not be LOADED!
-  
-	assert(animatorViewController->state == PREPPING);
-  
-	// Process events from the event loop until the
-	// state of the animator has changed to READY.
-  
-	while (animatorViewController->state == PREPPING) {
-		NSRunLoop *current = [NSRunLoop currentRunLoop];
-		[current acceptInputForMode:NSDefaultRunLoopMode
-                     beforeDate:[current limitDateForMode:NSDefaultRunLoopMode]];
-	}
-  
-	// Now add the view, this should not change the state
-	// from READY to LOADED.
-  
-	[window addSubview:animatorViewController.view];
-  
-	assert(animatorViewController->state == READY);
-  
-	[animatorViewController.view removeFromSuperview];
-	
-	self.animatorViewController = nil;	
-  
-  
-  // --------------------------------------------------------
-  
-	// Test 3: state READY -> ANIMATING -> STOPPED
-  
-	self.animatorViewController = [[AVAnimatorViewController alloc] init];
-	[animatorViewController release];
-	
-	[self loadDemoArchive];
-  
-	[animatorViewController prepareToAnimate];
-  
-	// state should be PREPPING after prepareToAnimate,
-	// must not be LOADED!
-  
-	assert(animatorViewController->state == PREPPING);
-	
-	// Process events from the event loop until the
-	// state of the animator has changed to READY.
-	
-	while (animatorViewController->state == PREPPING) {
-		NSRunLoop *current = [NSRunLoop currentRunLoop];
-		[current acceptInputForMode:NSDefaultRunLoopMode
-                     beforeDate:[current limitDateForMode:NSDefaultRunLoopMode]];
-	}
-  
-	[window addSubview:animatorViewController.view];
-  
-	assert(animatorViewController->state == READY);
-  
-	[animatorViewController startAnimating];
-  
-	assert(animatorViewController->state == ANIMATING);
-  
-	[animatorViewController stopAnimating];
-  
-	assert(animatorViewController->state == STOPPED);
-  
-	[animatorViewController.view removeFromSuperview];
-	
-	self.animatorViewController = nil;	
-  
-	
-  
-  // --------------------------------------------------------
-  
-	// Test 4: state PREPPING -> STOPPED
-	// Invoking stopAnimating with pending prep events in queue
-	// must cancel those callbacks and put the animator into
-	// a state where it can be cleaned up safely.
-  
-	self.animatorViewController = [[AVAnimatorViewController alloc] init];
-	[animatorViewController release];
-  
-	[self loadDemoArchive];
-  
-	[animatorViewController prepareToAnimate];
-  
-	assert(animatorViewController->state == PREPPING);
-	assert(animatorViewController->animationPrepTimer != nil);
-	assert(animatorViewController->animationReadyTimer != nil);
-	
-	// Note that we don't process event here before calling stopAnimating
-  
-	[animatorViewController stopAnimating];
-  
-	assert(animatorViewController->state == STOPPED);
-	assert(animatorViewController->isReadyToAnimate == FALSE);
-	assert(animatorViewController->animationPrepTimer == nil);
-	assert(animatorViewController->animationReadyTimer == nil);
-  
-	// Now call startAnimating to check that prepareToAnimate will
-	// be invoked because the animator has not been fully prepared.
-  
-	[animatorViewController startAnimating];
-  
-	assert(animatorViewController->state == PREPPING);
-	assert(animatorViewController->isReadyToAnimate == FALSE);
-	assert(animatorViewController->animationPrepTimer != nil);
-	assert(animatorViewController->animationReadyTimer != nil);
-	assert(animatorViewController->startAnimatingWhenReady == TRUE);
-  
-  //	[animatorViewController.view removeFromSuperview];
-	
-	[animatorViewController stopAnimating];
-  
-	self.animatorViewController = nil;
-  
-  
-  
-  // --------------------------------------------------------
-	
-	// Test 5: state PAUSED -> STOPPED
-	
-	self.animatorViewController = [[AVAnimatorViewController alloc] init];
-	[animatorViewController release];
-	
-	[self loadDemoArchive];
-  
-	[animatorViewController startAnimating];
-  
-	[window addSubview:animatorViewController.view];
-  
-	// Process events from the event loop until the
-	// state of the animator has started playing
-  
-	while (animatorViewController->state != ANIMATING) {
-		NSRunLoop *current = [NSRunLoop currentRunLoop];
-		[current acceptInputForMode:NSDefaultRunLoopMode
-                     beforeDate:[current limitDateForMode:NSDefaultRunLoopMode]];
-	}
-  
-	[NSThread sleepForTimeInterval:0.5];
-  
-	// Now pause the playback, should hear audio for a split second.
-  
-	[animatorViewController pause];
-  
-	assert(animatorViewController->state == PAUSED);
-	assert(animatorViewController->animationDecodeTimer == nil);
-	assert(animatorViewController->animationDisplayTimer == nil);
-  
-	// Invoke stopAnimating while in the PAUSED state
-	
-	[animatorViewController stopAnimating];
-  
-	assert(animatorViewController->state == STOPPED);
-  
-	// start playing again from the begining
-	
-	[animatorViewController startAnimating];
-	assert(animatorViewController->state == ANIMATING);
-	[animatorViewController pause];
-	assert(animatorViewController->state == PAUSED);
-	[animatorViewController unpause];
-	assert(animatorViewController->state == ANIMATING);
-  
-	[animatorViewController stopAnimating];
-	assert(animatorViewController->state == STOPPED);
-  
-	self.animatorViewController = nil;
-  
-  
-	
-	// Reset buttons and return from tests
-  
-	[window addSubview:viewController.view];
-   
-   */
-}
-
 - (void) stopAnimator
 {
   NSAssert(self.movieControlsAdaptor, @"movieControlsAdaptor is nil");
   
-  [self.movieControlsAdaptor stopAnimating];
+  [self.movieControlsAdaptor stopAnimator];
   self.movieControlsAdaptor = nil;
 
-  //	[self.animatorViewController.view removeFromSuperview];
+  //	[self.animatorView.view removeFromSuperview];
 	[self.movieControlsViewController removeNavigationControlerAsSubviewOf:self.window];	
   
 	self.animatorView = nil;

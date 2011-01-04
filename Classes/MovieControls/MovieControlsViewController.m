@@ -665,7 +665,7 @@
     [self _pressPlayPauseImpl];
   }
 
-  // The rewind button sends out a notification that will restart the animation
+  // The rewind button sends out a notification that will restart the animator
   
   [[NSNotificationCenter defaultCenter] postNotificationName:MovieControlsRewindNotification
                                                       object:self];

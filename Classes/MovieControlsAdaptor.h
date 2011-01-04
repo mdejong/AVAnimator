@@ -25,9 +25,9 @@
 
 + (MovieControlsAdaptor*) movieControlsAdaptor;
 
-- (void) startAnimating;
+- (void) startAnimator;
 
-- (void) stopAnimating;
+- (void) stopAnimator;
 
 @end
 

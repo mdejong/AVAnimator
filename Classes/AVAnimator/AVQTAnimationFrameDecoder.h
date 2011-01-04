@@ -27,13 +27,16 @@ typedef struct MovData *MovDataPtr;
 	BOOL isInputBufferLocked;
   
   NSData *m_mappedData;
-  CGFrameBuffer *m_currentFrameBuffer;
+  
+  CGFrameBuffer *m_currentFrameBuffer;  
+	NSArray *m_cgFrameBuffers;
   
 	int frameIndex;  
 }
 
 @property (nonatomic, copy) NSData *mappedData;
 @property (nonatomic, retain) CGFrameBuffer *currentFrameBuffer;
+@property (nonatomic, copy) NSArray *cgFrameBuffers;
 
 + (AVQTAnimationFrameDecoder*) aVQTAnimationFrameDecoder;
 
@@ -51,7 +54,7 @@ typedef struct MovData *MovDataPtr;
 
 // Advance the current frame index to the indicated frame index and store result in nextFrameBuffer
 
-- (BOOL) advanceToFrame:(NSUInteger)newFrameIndex nextFrameBuffer:(CGFrameBuffer*)nextFrameBuffer;
+- (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex;
 
 // Return the current frame buffer, this is the buffer that was most recently written to via
 // a call to advanceToFrame. Returns nil on init or after a rewind operation.

@@ -37,8 +37,6 @@
 
 - (void) startAnimator;
 
-- (void) testAnimator;
-
 - (void) stopAnimator;
 
 - (void) loadDemoArchive;

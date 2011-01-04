@@ -84,17 +84,15 @@
 
 @interface AVAnimatorView ()
 
-@property (nonatomic, retain) NSURL *animationAudioURL;
+@property (nonatomic, retain) NSURL *animatorAudioURL;
 
 @property (nonatomic, retain) UIImage *prevFrame;
 @property (nonatomic, retain) UIImage *nextFrame;
 
-@property (nonatomic, copy) NSArray *cgFrameBuffers;
-
-@property (nonatomic, retain) NSTimer *animationPrepTimer;
-@property (nonatomic, retain) NSTimer *animationReadyTimer;
-@property (nonatomic, retain) NSTimer *animationDecodeTimer;
-@property (nonatomic, retain) NSTimer *animationDisplayTimer;
+@property (nonatomic, retain) NSTimer *animatorPrepTimer;
+@property (nonatomic, retain) NSTimer *animatorReadyTimer;
+@property (nonatomic, retain) NSTimer *animatorDecodeTimer;
+@property (nonatomic, retain) NSTimer *animatorDisplayTimer;
 
 @property (nonatomic, assign) NSUInteger currentFrame;
 @property (nonatomic, assign) NSUInteger repeatedFrameCount;
@@ -106,22 +104,28 @@
 @property (nonatomic, retain) NSDate *audioSimulatedStartTime;
 
 @property (nonatomic, assign) AVAudioPlayerState state;
-@property (nonatomic, assign) NSTimeInterval animationMaxClockTime;
-@property (nonatomic, assign) NSTimeInterval animationDecodeTimerInterval;
+@property (nonatomic, assign) NSTimeInterval animatorMaxClockTime;
+@property (nonatomic, assign) NSTimeInterval animatorDecodeTimerInterval;
 @property (nonatomic, assign) CGSize renderSize;
 
 @property (nonatomic, assign) BOOL isReadyToAnimate;
-@property (nonatomic, assign) BOOL startAnimatingWhenReady;
+@property (nonatomic, assign) BOOL startAnimatorWhenReady;
 
 // private methods
 
-- (BOOL) _animationDecodeNextFrame;
+- (BOOL) _animatorDecodeNextFrame;
 
-- (void) _animationDecodeFrameCallback: (NSTimer *)timer;
+- (void) _animatorDecodeFrameCallback: (NSTimer *)timer;
 
-- (void) _animationDisplayFrameCallback: (NSTimer *)timer;
+- (void) _animatorDisplayFrameCallback: (NSTimer *)timer;
 
 -(void) _setAudioSessionCategory;
+
+- (void) rotateToPortrait;
+
+- (void) rotateToLandscape;
+
+- (void) rotateToLandscapeRight;
 
 @end
 
@@ -134,31 +138,30 @@
 
 @synthesize resourceLoader = m_resourceLoader;
 @synthesize frameDecoder = m_frameDecoder;
-@synthesize animationFrameDuration = m_animationFrameDuration;
-@synthesize animationNumFrames = m_animationNumFrames;
-@synthesize animationRepeatCount = m_animationRepeatCount;
-@synthesize animationOrientation = m_animationOrientation;
+@synthesize animatorFrameDuration = m_animatorFrameDuration;
+@synthesize animatorNumFrames = m_animatorNumFrames;
+@synthesize animatorRepeatCount = m_animatorRepeatCount;
+@synthesize animatorOrientation = m_animatorOrientation;
 
 // private properties
 
-@synthesize animationAudioURL = m_animationAudioURL;
+@synthesize animatorAudioURL = m_animatorAudioURL;
 @synthesize prevFrame = m_prevFrame;
 @synthesize nextFrame = m_nextFrame;
-@synthesize cgFrameBuffers = m_cgFrameBuffers;
-@synthesize animationPrepTimer = m_animationPrepTimer;
-@synthesize animationReadyTimer = m_animationReadyTimer;
-@synthesize animationDecodeTimer = m_animationDecodeTimer;
-@synthesize animationDisplayTimer = m_animationDisplayTimer;
+@synthesize animatorPrepTimer = m_animatorPrepTimer;
+@synthesize animatorReadyTimer = m_animatorReadyTimer;
+@synthesize animatorDecodeTimer = m_animatorDecodeTimer;
+@synthesize animatorDisplayTimer = m_animatorDisplayTimer;
 @synthesize currentFrame = m_currentFrame;
 @synthesize repeatedFrameCount = m_repeatedFrameCount;
 @synthesize avAudioPlayer = m_avAudioPlayer;
 @synthesize audioSimulatedStartTime = m_audioSimulatedStartTime;
 @synthesize state = m_state;
-@synthesize animationMaxClockTime = m_animationMaxClockTime;
-@synthesize animationDecodeTimerInterval = m_animationDecodeTimerInterval;
+@synthesize animatorMaxClockTime = m_animatorMaxClockTime;
+@synthesize animatorDecodeTimerInterval = m_animatorDecodeTimerInterval;
 @synthesize renderSize = m_renderSize;
 @synthesize isReadyToAnimate = m_isReadyToAnimate;
-@synthesize startAnimatingWhenReady = m_startAnimatingWhenReady;
+@synthesize startAnimatorWhenReady = m_startAnimatorWhenReady;
 
 - (void) dealloc {
 	// This object can't be deallocated while animating, this could
@@ -168,11 +171,8 @@
   
 	NSAssert(self.state != PAUSED, @"dealloc while paused");
 	NSAssert(self.state != ANIMATING, @"dealloc while animating");
-  
-	self.resourceLoader = nil;
-  self.frameDecoder = nil;
-  
-	self.animationAudioURL = nil;
+    
+	self.animatorAudioURL = nil;
   
   /*
    CGImageRef imgRef1 = imageView.image.CGImage;
@@ -190,35 +190,18 @@
 	self.prevFrame = nil;
 	self.nextFrame = nil;
   
-  /*
-   for (CGFrameBuffer *aBuffer in self.cgFrameBuffers) {
-   int count = [aBuffer retainCount];
-   count = count;
-   
-   if (aBuffer.isLockedByDataProvider) {
-   NSString *msg = [NSString stringWithFormat:@"%@, count %d",
-   @"CGFrameBuffer is still locked by UIKit", count];
-   NSLog(msg);
-   
-   if ([aBuffer isLockedByImageRef:imgRef1]) {
-   NSLog(@"locked by imgRef1");
-   } else if ([aBuffer isLockedByImageRef:imgRef2]) {
-   NSLog(@"locked by imgRef2");
-   } else if ([aBuffer isLockedByImageRef:imgRef3]) {
-   NSLog(@"locked by imgRef3");
-   } else {
-   NSLog(@"locked by unknown image ref");				
-   }
-   }
-   }
-   */
+  // Release resource loader and frame decoder
+  // after image related objects, in case the image
+  // objects held a ref to frame buffers in the
+  // decoder class.
   
-	self.cgFrameBuffers = nil;
+	self.resourceLoader = nil;
+  self.frameDecoder = nil;
   
-	self.animationPrepTimer = nil;
-  self.animationReadyTimer = nil;
-  self.animationDecodeTimer = nil;
-  self.animationDisplayTimer = nil;
+	self.animatorPrepTimer = nil;
+  self.animatorReadyTimer = nil;
+  self.animatorDecodeTimer = nil;
+  self.animatorDisplayTimer = nil;
   
 	// Reset the delegate state for the audio player object
 	// and release the delegate. The avAudioPlayer object
@@ -303,22 +286,22 @@
   // FIXMEL these settings would need to be available somehow to the caller, but if this method
   // is invoked on init, then they will not be.
   
-	if (self.animationOrientation == UIImageOrientationUp) {
+	if (self.animatorOrientation == UIImageOrientationUp) {
 		isRotatedToLandscape = FALSE;
-	} else if (self.animationOrientation == UIImageOrientationLeft) {
+	} else if (self.animatorOrientation == UIImageOrientationLeft) {
 		// 90 deg CCW for Landscape Orientation
 		isRotatedToLandscape = TRUE;
-	} else if (self.animationOrientation == UIImageOrientationRight) {
+	} else if (self.animatorOrientation == UIImageOrientationRight) {
 		// 90 deg CW for Landscape Right Orientation
 		isRotatedToLandscape = TRUE;
 	} else {
-		NSAssert(FALSE,@"Unsupported animationOrientation");
+		NSAssert(FALSE,@"Unsupported animatorOrientation");
 	}
 	
 	if (!isRotatedToLandscape) {
 		// no-op
 	} else  {
-		if (self.animationOrientation == UIImageOrientationLeft)
+		if (self.animatorOrientation == UIImageOrientationLeft)
 			[self rotateToLandscape];
 		else
 			[self rotateToLandscapeRight];
@@ -355,10 +338,10 @@
 	NSAssert(self.resourceLoader, @"resourceLoader must be defined");
 	NSAssert(self.frameDecoder, @"frameDecoder must be defined");
   
-	NSAssert(self.animationAudioURL == nil, @"animationAudioURL must be nil");
+	NSAssert(self.animatorAudioURL == nil, @"animatorAudioURL must be nil");
   
   // FIXME: may or may not need to set this? Figure out based on what is in header.
-  //	NSAssert(animationFrameDuration != 0.0, @"animationFrameDuration was not defined");
+  //	NSAssert(animatorFrameDuration != 0.0, @"animatorFrameDuration was not defined");
   
 	// Note that we don't load any data from the movie archive or from the
 	// audio files at load time. Resource loading is done only as a result
@@ -383,10 +366,10 @@
 	NSError **errorPtr = &error;
 	AVAudioPlayer *avPlayer = nil;
   
-  if (self.animationAudioURL == nil) {
+  if (self.animatorAudioURL == nil) {
     return;
   }
-	NSURL *audioURL = self.animationAudioURL;
+	NSURL *audioURL = self.animatorAudioURL;
   
 	NSString *audioURLPath = [audioURL path];
 	NSString *audioURLTail = [self _getLastPathComponent:audioURLPath];
@@ -426,67 +409,6 @@
 	[self.avAudioPlayer prepareToPlay];
 }
 
-- (void) _allocFrameBuffers
-{
-	// create buffers used for loading image data
-  
-  if (self.cgFrameBuffers != nil) {
-    // Already allocated the frame buffers
-    return;
-  }
-  
-	int renderWidth = [self.frameDecoder width];
-	int renderHeight = [self.frameDecoder height];
-  
-  NSAssert(renderWidth > 0 && renderHeight > 0, @"renderWidth or renderHeight is zero");
-  
-  // FIXME: Rewrite allocating of CGFrameBuffer to support static ctor
-  
-	CGFrameBuffer *cgFrameBuffer1 = [[CGFrameBuffer alloc] initWithDimensions:renderWidth :renderHeight];
-	CGFrameBuffer *cgFrameBuffer2 = [[CGFrameBuffer alloc] initWithDimensions:renderWidth :renderHeight];
-	CGFrameBuffer *cgFrameBuffer3 = [[CGFrameBuffer alloc] initWithDimensions:renderWidth :renderHeight];
-  
-	self.cgFrameBuffers = [NSArray arrayWithObjects:cgFrameBuffer1, cgFrameBuffer2, cgFrameBuffer3, nil];
-  
-	[cgFrameBuffer1 release];
-	[cgFrameBuffer2 release];
-	[cgFrameBuffer3 release];
-}
-
-// Return a UIImage for the current frame using the current frame data.
-// The framebuffer that contains the current frame data is always stored
-// in the frame decoder.
-
-- (UIImage*) _makeFrameImage
-{
-  // Get the CGFrameBuffer that represents the "current frame"
-  
-	CGFrameBuffer *cgFrameBuffer = self.frameDecoder.currentFrameBuffer;
-  
-	CGImageRef imgRef = [cgFrameBuffer createCGImageRef];
-	NSAssert(imgRef, @"CGImageRef returned by createCGImageRef is NULL");
-  UIImage *uiImage = [UIImage imageWithCGImage:imgRef];
-	CGImageRelease(imgRef);
-  
-  if (0) {
-    // Display smiley face instead of movie frames.
-    
-    NSString *imageFilename;
-    NSString *resPath;
-    
-    imageFilename = @"smiley.png";
-    resPath = [[NSBundle mainBundle] pathForResource:imageFilename ofType:nil];
-    NSAssert(resPath, @"smiley.png resource not found");
-    
-    uiImage = [UIImage imageWithContentsOfFile:resPath];
-    
-    // FIXME: Need to mark CGFrameBuffer as used for a frame or two otherwise,
-    // redundant frame check in decoder class fails.
-  }
-  
-  return uiImage;
-}
-
 // This method is invoked in the prep state via a timer callback
 // while the widget is preparing to animate. This method will
 // load resources once we know the files exist in the tmp dir.
@@ -508,7 +430,7 @@
   
 	// First path is the movie file, second is the audio
   
-	NSAssert([resourcePathsArr count] == 1 || [resourcePathsArr count] == 1, @"expected 1 or 2 resource paths");
+	NSAssert([resourcePathsArr count] == 1 || [resourcePathsArr count] == 2, @"expected 1 or 2 resource paths");
   
 	NSString *videoPath = nil;
 	NSString *audioPath = nil;
@@ -524,41 +446,28 @@
 	NSAssert(worked, @"frameDecoder openForReading failed");
   
 	NSLog(@"%@", [NSString stringWithFormat:@"frameDecoder openForReading \"%@\"", [videoPath lastPathComponent]]);
-  
-  // Frame buffers need to be allocated after the movie headers have been read, so we know the width and height
-  
-	[self _allocFrameBuffers];
-  
+    
   // Read frame duration from movie by default. If user explicitly indicated a frame duration
   // the use it instead of what appears in the movie.
   
-  if (self.animationFrameDuration == 0.0) {
+  if (self.animatorFrameDuration == 0.0) {
     AVFrameDecoder *decoder = self.frameDecoder;
     NSTimeInterval duration = [decoder frameDuration];
-    self.animationFrameDuration = duration;
+    NSAssert(duration != 0.0, @"frame duration can't be zero");
+    self.animatorFrameDuration = duration;
   }
   
-	if (TRUE)
-	{
-		// Get RLE data for the initial keyframe
-		
-    NSAssert(self.cgFrameBuffers != nil, @"cgFrameBuffers is nil");
-    CGFrameBuffer *cgFrameBuffer = [self.cgFrameBuffers objectAtIndex:0];
-    assert(!cgFrameBuffer.isLockedByDataProvider);
+  // Get image data for initial keyframe
     
-		BOOL changed = [self.frameDecoder advanceToFrame:0 nextFrameBuffer:cgFrameBuffer];
-		NSAssert(changed, @"frame decoder must advance to first frame");
-    
-		self.image = [self _makeFrameImage];
-    
-    NSAssert(cgFrameBuffer.isLockedByDataProvider, @"image buffer should be locked on initial frame");
-	}
+  UIImage *img = [self.frameDecoder advanceToFrame:0];
+  NSAssert(img != nil, @"frame decoder must advance to first frame");    
+  self.image = img;
   
 	// Create AVAudioPlayer that plays audio from the file on disk
   
   if (audioPath) {
     NSURL *url = [NSURL fileURLWithPath:audioPath];
-    self.animationAudioURL = url;
+    self.animatorAudioURL = url;
   }
   
 	return TRUE;
@@ -566,8 +475,8 @@
 
 - (void) _cleanupReadyToAnimate
 {
-	[self.animationReadyTimer invalidate];
-	self.animationReadyTimer = nil;
+	[self.animatorReadyTimer invalidate];
+	self.animatorReadyTimer = nil;
   
   NSLog(@"AVAnimatorViewController: _cleanupReadyToAnimate");
 }
@@ -596,8 +505,8 @@
   
 	// Finish up init state
   
-	[self.animationPrepTimer invalidate];
-	self.animationPrepTimer = nil;  
+	[self.animatorPrepTimer invalidate];
+	self.animatorPrepTimer = nil;  
   
 	// Init audio data
 	
@@ -605,9 +514,9 @@
 	
 	self.currentFrame = 0;
   
-	self.animationNumFrames = [self.frameDecoder numFrames];
+	self.animatorNumFrames = [self.frameDecoder numFrames];
   
-	assert(self.animationNumFrames > 0);
+	assert(self.animatorNumFrames > 0);
   
 	self.state = READY;
 	self.isReadyToAnimate = TRUE;
@@ -622,8 +531,8 @@
   [[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorPreparedToAnimateNotification
                                                       object:self];
   
-  if (self.startAnimatingWhenReady) {
-    [self startAnimating];
+  if (self.startAnimatorWhenReady) {
+    [self startAnimator];
   }
   
 	return;
@@ -647,7 +556,7 @@
 }
 
 // Invoke this method to prepare the video and audio data so that it can be played
-// as soon as startAnimating is invoked. If this method is invoked twice, it
+// as soon as startAnimator is invoked. If this method is invoked twice, it
 // does nothing on the second invocation. An activity indicator is shown on screen
 // while the data is getting ready to animate.
 
@@ -681,28 +590,28 @@
   
 	// Schedule a callback that will do the prep operation
   
-	self.animationPrepTimer = [NSTimer timerWithTimeInterval: 0.10
+	self.animatorPrepTimer = [NSTimer timerWithTimeInterval: 0.10
                                                     target: self
                                                   selector: @selector(_loadResourcesCallback:)
                                                   userInfo: NULL
                                                    repeats: TRUE];
   
-	[[NSRunLoop currentRunLoop] addTimer: self.animationPrepTimer forMode: NSDefaultRunLoopMode];
+	[[NSRunLoop currentRunLoop] addTimer: self.animatorPrepTimer forMode: NSDefaultRunLoopMode];
 }
 
-// Invoke this method to start the animation, if the animation is not yet
-// ready to play then this method will return right away and the animation
+// Invoke this method to start the animator, if the animator is not yet
+// ready to play then this method will return right away and the animator
 // will be started when it is ready.
 
-- (void) startAnimating
+- (void) startAnimator
 {
 	[self prepareToAnimate];
   
-	// If still preparing, just set a flag so that the animation
+	// If still preparing, just set a flag so that the animator
 	// will start when the prep operation is finished.
   
 	if (self.state < READY) {
-		self.startAnimatingWhenReady = TRUE;
+		self.startAnimatorWhenReady = TRUE;
 		return;
 	}
   
@@ -721,7 +630,7 @@
 	self.state = ANIMATING;
   
 	// Animation is broken up into two stages. Assume there are two frames that
-	// should be displayed at times T1 and T2. At time T1 + animationFrameDuration/4
+	// should be displayed at times T1 and T2. At time T1 + animatorFrameDuration/4
 	// check the audio clock offset and use that time to schedule a callback to
 	// be fired at time T2. The callback at T2 will simply display the image.
 	// The second thread will be supplying us with rendered buffers in the
@@ -733,30 +642,26 @@
 	// will be displayed and the time when the next frame decode operation
 	// will be invoked.
   
-	self.animationDecodeTimerInterval = self.animationFrameDuration / 4.0;
+	self.animatorDecodeTimerInterval = self.animatorFrameDuration / 4.0;
   
 	// Calculate upper limit for time values that can be reported by
 	// the system clock.
   
-	NSUInteger lastFrameIndex = self.animationNumFrames - 1;
+	NSUInteger lastFrameIndex = self.animatorNumFrames - 1;
   
-	self.animationMaxClockTime = (lastFrameIndex * self.animationFrameDuration) -
-    (self.animationFrameDuration / 10);
+	self.animatorMaxClockTime = (lastFrameIndex * self.animatorFrameDuration) -
+    (self.animatorFrameDuration / 10);
   
 	// Create initial callback that is invoked until the audio clock
 	// has started running.
   
-	self.animationDecodeTimer = [NSTimer timerWithTimeInterval: self.animationFrameDuration / 2.0
+	self.animatorDecodeTimer = [NSTimer timerWithTimeInterval: self.animatorFrameDuration / 2.0
                                                       target: self
-                                                    selector: @selector(_animationDecodeInitialFrameCallback:)
+                                                    selector: @selector(_animatorDecodeInitialFrameCallback:)
                                                     userInfo: NULL
                                                      repeats: FALSE];
   
-  [[NSRunLoop currentRunLoop] addTimer: self.animationDecodeTimer forMode: NSDefaultRunLoopMode];
-  
-  // FIXME: The issue here is that playing an animation with no audio track will mean that time is always 0.0 !
-  // Need to figure out a way to make this player more generic so that time can pass in a standard way.
-  // Perhaps a empty clip that is repeated over and over? Or a phony clock ?
+  [[NSRunLoop currentRunLoop] addTimer: self.animatorDecodeTimer forMode: NSDefaultRunLoopMode];
   
   if (self.avAudioPlayer) {
     [self.avAudioPlayer play];
@@ -789,30 +694,30 @@
 	}
 }
 
-// Invoke this method to stop the animation and cancel all callbacks.
+// Invoke this method to stop the animator and cancel all callbacks.
 
-- (void) stopAnimating
+- (void) stopAnimator
 {
 	if (self.state == STOPPED) {
 		// When already stopped, don't generate another AVAnimatorDidStopNotification
 		return;
 	}
   
-	// stopAnimating can be invoked in any state, it needs to cleanup
+	// stopAnimator can be invoked in any state, it needs to cleanup
 	// any pending callbacks and stop audio playback.
   
 	self.state = STOPPED;
 	
-	[self.animationPrepTimer invalidate];
-	self.animationPrepTimer = nil;
+	[self.animatorPrepTimer invalidate];
+	self.animatorPrepTimer = nil;
   
 	[self _cleanupReadyToAnimate];
   
-	[self.animationDecodeTimer invalidate];
-	self.animationDecodeTimer = nil;
+	[self.animatorDecodeTimer invalidate];
+	self.animatorDecodeTimer = nil;
   
-	[self.animationDisplayTimer invalidate];
-	self.animationDisplayTimer = nil;
+	[self.animatorDisplayTimer invalidate];
+	self.animatorDisplayTimer = nil;
   
   if (self.avAudioPlayer) {
     [self.avAudioPlayer stop];
@@ -839,7 +744,7 @@
 	return;
 }
 
-- (BOOL) isAnimating
+- (BOOL) isAnimatorRunning
 {
 	return (self.state == ANIMATING);
 }
@@ -863,11 +768,11 @@
     return;
   }
   
-	[self.animationDecodeTimer invalidate];
-	self.animationDecodeTimer = nil;
+	[self.animatorDecodeTimer invalidate];
+	self.animatorDecodeTimer = nil;
   
-	[self.animationDisplayTimer invalidate];
-	self.animationDisplayTimer = nil;
+	[self.animatorDisplayTimer invalidate];
+	self.animatorDisplayTimer = nil;
   
 	[self.avAudioPlayer pause];
   
@@ -894,13 +799,13 @@
   
 	// Resume decoding callbacks
   
-	self.animationDecodeTimer = [NSTimer timerWithTimeInterval: self.animationDecodeTimerInterval
+	self.animatorDecodeTimer = [NSTimer timerWithTimeInterval: self.animatorDecodeTimerInterval
                                                       target: self
-                                                    selector: @selector(_animationDecodeFrameCallback:)
+                                                    selector: @selector(_animatorDecodeFrameCallback:)
                                                     userInfo: NULL
                                                      repeats: FALSE];
   
-	[[NSRunLoop currentRunLoop] addTimer: self.animationDecodeTimer forMode: NSDefaultRunLoopMode];
+	[[NSRunLoop currentRunLoop] addTimer: self.animatorDecodeTimer forMode: NSDefaultRunLoopMode];
   
 	// Send notification to object(s) that regestered interest in the unpause action
   
@@ -910,15 +815,15 @@
 
 - (void) rewind
 {
-	[self stopAnimating];
-  [self startAnimating];
+	[self stopAnimator];
+  [self startAnimator];
 }
 
-- (void) doneAnimating
+- (void) doneAnimator
 {
-	[self stopAnimating];
+	[self stopAnimator];
   
-	// Send notification to object(s) that regestered interest in the unpause action
+	// Send notification to object(s) that regestered interest in the done animating action
   
 	[[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorDoneNotification
                                                       object:self];	
@@ -956,38 +861,38 @@
 	if (currentTime <= 0.0) {
 		currentTime = 0.0;
 		frameNow = 0;
-	} else if (currentTime <= self.animationFrameDuration) {
+	} else if (currentTime <= self.animatorFrameDuration) {
 		frameNow = 0;
-	} else if (currentTime > self.animationMaxClockTime) {
-		currentTime = self.animationMaxClockTime;
-		frameNow = self.animationNumFrames - 1 - 1;
+	} else if (currentTime > self.animatorMaxClockTime) {
+		currentTime = self.animatorMaxClockTime;
+		frameNow = self.animatorNumFrames - 1 - 1;
 	} else {
-		frameNow = (NSUInteger) (currentTime / self.animationFrameDuration);
+		frameNow = (NSUInteger) (currentTime / self.animatorFrameDuration);
     
 		// Check for the very tricky case where the currentTime
 		// is very close to the frame interval time. A floating
 		// point value that is very close to the frame interval
 		// should not be truncated.
     
-		NSTimeInterval plusOneTime = (frameNow + 1) * self.animationFrameDuration;
+		NSTimeInterval plusOneTime = (frameNow + 1) * self.animatorFrameDuration;
 		NSAssert(currentTime <= plusOneTime, @"currentTime can't be larger than plusOneTime");
 		NSTimeInterval plusOneDelta = (plusOneTime - currentTime);
     
-		if (plusOneDelta < (self.animationFrameDuration / 100)) {
+		if (plusOneDelta < (self.animatorFrameDuration / 100)) {
 			frameNow++;
 		}
     
     // for testing crash dumps
     //NSAssert(TRUE, @"fake failure");
     
-		NSAssert(frameNow <= self.animationNumFrames - 1 - 1, @"frameNow large than second to last frame");
+		NSAssert(frameNow <= self.animatorNumFrames - 1 - 1, @"frameNow large than second to last frame");
 	}
   
 	// The frameNow value must be within the bounds [0, SIZE-1] but in
 	// this case we want to limit the range to [0, SIZE-2] since the
 	// decode next frame step always decodes the next frame.
   
-  //	NSUInteger secondToLastFrameIndex = animationNumFrames - 1 - 1;
+  //	NSUInteger secondToLastFrameIndex = animatorNumFrames - 1 - 1;
   
   //	if (frameNow > secondToLastFrameIndex) {
   //		frameNow = secondToLastFrameIndex;
@@ -998,18 +903,18 @@
   
   // FIXME: calculated above, remove this later
 	
-	NSAssert(currentTime < ((frameNow + 1) * self.animationFrameDuration),
+	NSAssert(currentTime < ((frameNow + 1) * self.animatorFrameDuration),
            @"maximum reportable currentTime exceeded");
   
 	*frameNowPtr = frameNow;
 	*currentTimePtr = currentTime;
 }
 
-// This callback is invoked as the animation begins. The first
+// This callback is invoked as the animator begins. The first
 // frame or two need to sync to the audio clock before recurring
 // callbacks can be scheduled to decode and paint.
 
-- (void) _animationDecodeInitialFrameCallback: (NSTimer *)timer {
+- (void) _animatorDecodeInitialFrameCallback: (NSTimer *)timer {
 	assert(self.state == ANIMATING);
   
 	// Audio clock time right now
@@ -1021,39 +926,39 @@
   
 #ifdef DEBUG_OUTPUT
 	if (TRUE) {
-		NSLog(@"%@%@%f", @"_animationDecodeInitialFrameCallback: ",
+		NSLog(@"%@%@%f", @"_animatorDecodeInitialFrameCallback: ",
           @"\tcurrentTime: ", currentTime);
 	}
 #endif	
   
-	if (currentTime < (self.animationFrameDuration / 2.0)) {
+	if (currentTime < (self.animatorFrameDuration / 2.0)) {
 		// Ignore reported times until they are at least half way to the
 		// first frame time. The audio could take a moment to start and it
 		// could report a number of zero or less than zero times. Keep
-		// scheduling a non-repeating call to _animationDecodeFrameCallback
+		// scheduling a non-repeating call to _animatorDecodeFrameCallback
 		// until the audio clock is actually running.
     
-		if (self.animationDecodeTimer != nil) {
-			[self.animationDecodeTimer invalidate];
-			//self.animationDecodeTimer = nil;
+		if (self.animatorDecodeTimer != nil) {
+			[self.animatorDecodeTimer invalidate];
+			//self.animatorDecodeTimer = nil;
 		}
     
-		self.animationDecodeTimer = [NSTimer timerWithTimeInterval: self.animationDecodeTimerInterval
+		self.animatorDecodeTimer = [NSTimer timerWithTimeInterval: self.animatorDecodeTimerInterval
                                                         target: self
-                                                      selector: @selector(_animationDecodeInitialFrameCallback:)
+                                                      selector: @selector(_animatorDecodeInitialFrameCallback:)
                                                       userInfo: NULL
                                                        repeats: FALSE];
     
-		[[NSRunLoop currentRunLoop] addTimer: self.animationDecodeTimer forMode: NSDefaultRunLoopMode];
+		[[NSRunLoop currentRunLoop] addTimer: self.animatorDecodeTimer forMode: NSDefaultRunLoopMode];
 	} else {
 		// Reported time is now at least half way to the first frame, so
 		// we are ready to schedule recurring callbacks. Invoking the
 		// decode frame callback will setup the next frame and
 		// schedule the callbacks.
     
-		[self _animationDecodeFrameCallback:nil];
+		[self _animatorDecodeFrameCallback:nil];
     
-		NSAssert(self.animationDecodeTimer != nil, @"should have scheduled a decode callback");
+		NSAssert(self.animatorDecodeTimer != nil, @"should have scheduled a decode callback");
 	}
 }
 
@@ -1064,7 +969,7 @@
 // logic is too slow because the next trip to the event
 // loop will display the next frame as soon as possible.
 
-- (void) _animationDecodeFrameCallback: (NSTimer *)timer {
+- (void) _animatorDecodeFrameCallback: (NSTimer *)timer {
 	assert(self.state == ANIMATING);
   
 	NSTimeInterval currentTime;
@@ -1074,14 +979,14 @@
 	
 #ifdef DEBUG_OUTPUT
 	if (TRUE) {
-		NSUInteger secondToLastFrameIndex = self.animationNumFrames - 1 - 1;
+		NSUInteger secondToLastFrameIndex = self.animatorNumFrames - 1 - 1;
     
-		NSTimeInterval timeExpected = (frameNow * self.animationFrameDuration) +
-      self.animationDecodeTimerInterval;
+		NSTimeInterval timeExpected = (frameNow * self.animatorFrameDuration) +
+      self.animatorDecodeTimerInterval;
 		NSTimeInterval timeDelta = currentTime - timeExpected;
 		NSString *formatted = [NSString stringWithFormat:@"%@%@%d%@%d%@%d%@%@%.4f%@%.4f",
-                           @"_animationDecodeFrameCallback: ",
-                           @"\tanimationFrameNum: ", self.currentFrame,
+                           @"_animatorDecodeFrameCallback: ",
+                           @"\tanimatorFrameNum: ", self.currentFrame,
                            @"\tframeNow: ", frameNow,
                            @" (", secondToLastFrameIndex, @")",
                            @"\tcurrentTime: ", currentTime,
@@ -1093,7 +998,7 @@
   
 	// If the audio clock is reporting nonsense results like time going
 	// backwards, just treat it like the clock is stuck. If a number
-	// of stuck clock callbacks are found then animation will be stopped.
+	// of stuck clock callbacks are found then animator will be stopped.
   
 	if (frameNow < self.currentFrame) {
 		NSString *msg = [NSString stringWithFormat:@"frameNow %d can't be less than currentFrame %d",
@@ -1114,9 +1019,9 @@
 		NSLog(@"%@", [NSString stringWithFormat:@"audio time not progressing: %f", currentTime]);
 	}
 	if (self.repeatedFrameCount > 20) {
-		NSLog(@"%@", [NSString stringWithFormat:@"doneAnimating because audio time not progressing"]);
+		NSLog(@"%@", [NSString stringWithFormat:@"doneAnimator because audio time not progressing"]);
     
-		[self doneAnimating];
+		[self doneAnimator];
 		return;
 	}
   
@@ -1151,22 +1056,22 @@
 		assert(isAudioClockStuck == FALSE);
     
 		nextFrameIndex = frameNow + 1;
-		nextFrameExpectedTime = (nextFrameIndex * self.animationFrameDuration);
+		nextFrameExpectedTime = (nextFrameIndex * self.animatorFrameDuration);
 		delta = nextFrameExpectedTime - currentTime;
 		assert(delta > 0.0);
     
-		if (self.animationDisplayTimer != nil) {
-			[self.animationDisplayTimer invalidate];
-			//self.animationDisplayTimer = nil;
+		if (self.animatorDisplayTimer != nil) {
+			[self.animatorDisplayTimer invalidate];
+			//self.animatorDisplayTimer = nil;
 		}
     
-		self.animationDisplayTimer = [NSTimer timerWithTimeInterval: delta
+		self.animatorDisplayTimer = [NSTimer timerWithTimeInterval: delta
                                                          target: self
-                                                       selector: @selector(_animationDisplayFrameCallback:)
+                                                       selector: @selector(_animatorDisplayFrameCallback:)
                                                        userInfo: NULL
                                                         repeats: FALSE];
     
-		[[NSRunLoop currentRunLoop] addTimer: self.animationDisplayTimer forMode: NSDefaultRunLoopMode];			
+		[[NSRunLoop currentRunLoop] addTimer: self.animatorDisplayTimer forMode: NSDefaultRunLoopMode];			
 	}
   
 	// Schedule the next frame decode operation. Figure out when the
@@ -1176,7 +1081,7 @@
 	// is stuck, just take care of this in the next callback.
   
 	if (!isAudioClockStuck) {
-		NSUInteger secondToLastFrameIndex = self.animationNumFrames - 1 - 1;
+		NSUInteger secondToLastFrameIndex = self.animatorNumFrames - 1 - 1;
     
 		if (frameNow == secondToLastFrameIndex) {
 			// When on the second to last frame, we should schedule
@@ -1190,38 +1095,38 @@
   
 	if (shouldScheduleDecodeCallback || shouldScheduleLastFrameCallback) {
 		if (isAudioClockStuck) {
-			delta = self.animationFrameDuration;
+			delta = self.animatorFrameDuration;
 		} else if (shouldScheduleLastFrameCallback) {
 			// nextFrameIndex was set earlier in this function
       
-			nextFrameExpectedTime = ((nextFrameIndex + 1) * self.animationFrameDuration);
+			nextFrameExpectedTime = ((nextFrameIndex + 1) * self.animatorFrameDuration);
 			delta = nextFrameExpectedTime - currentTime;
 		} else {
 			// nextFrameIndex was set earlier in this function
       
-			nextFrameExpectedTime = (nextFrameIndex * self.animationFrameDuration) + self.animationDecodeTimerInterval;
+			nextFrameExpectedTime = (nextFrameIndex * self.animatorFrameDuration) + self.animatorDecodeTimerInterval;
 			delta = nextFrameExpectedTime - currentTime;
 		}
 		assert(delta > 0.0);
     
-		if (self.animationDecodeTimer != nil) {
-			[self.animationDecodeTimer invalidate];
-			//self.animationDecodeTimer = nil;
+		if (self.animatorDecodeTimer != nil) {
+			[self.animatorDecodeTimer invalidate];
+			//self.animatorDecodeTimer = nil;
 		}
     
-		SEL aSelector = @selector(_animationDecodeFrameCallback:);
+		SEL aSelector = @selector(_animatorDecodeFrameCallback:);
     
 		if (shouldScheduleLastFrameCallback) {
-			aSelector = @selector(_animationDoneLastFrameCallback:);
+			aSelector = @selector(_animatorDoneLastFrameCallback:);
 		}
     
-		self.animationDecodeTimer = [NSTimer timerWithTimeInterval: delta
+		self.animatorDecodeTimer = [NSTimer timerWithTimeInterval: delta
                                                         target: self
                                                       selector: aSelector
                                                       userInfo: NULL
                                                        repeats: FALSE];
     
-		[[NSRunLoop currentRunLoop] addTimer: self.animationDecodeTimer forMode: NSDefaultRunLoopMode];		
+		[[NSRunLoop currentRunLoop] addTimer: self.animatorDecodeTimer forMode: NSDefaultRunLoopMode];		
 	}
   
 	// Decode the next frame, this operation could take some time, so it needs to
@@ -1234,36 +1139,36 @@
 	} else {
 		self.currentFrame = frameNow;
     
-		BOOL wasFrameDecoded = [self _animationDecodeNextFrame];
+		BOOL wasFrameDecoded = [self _animatorDecodeNextFrame];
     
 		if (!wasFrameDecoded) {
 			// Cancel the frame display callback at the end of this interval
       
-			if (self.animationDisplayTimer != nil) {
-				[self.animationDisplayTimer invalidate];
-				self.animationDisplayTimer = nil;
+			if (self.animatorDisplayTimer != nil) {
+				[self.animatorDisplayTimer invalidate];
+				self.animatorDisplayTimer = nil;
 			}	
 		}
 	}
 }
 
-// Invoked after the final animation frame is shown on screen, this callback
-// will stop the animation and set it off on another loop iteration if
+// Invoked after the final animator frame is shown on screen, this callback
+// will stop the animator and set it off on another loop iteration if
 // required.
 
-- (void) _animationDoneLastFrameCallback: (NSTimer *)timer {
+- (void) _animatorDoneLastFrameCallback: (NSTimer *)timer {
 #ifdef DEBUG_OUTPUT
-	NSLog(@"_animationDoneLastFrameCallback");
+	NSLog(@"_animatorDoneLastFrameCallback");
 #endif
-	[self stopAnimating];
+	[self stopAnimator];
 	
-	// Continue to loop animation until loop counter reaches 0
+	// Continue to loop animator until loop counter reaches 0
   
-	if (self.animationRepeatCount > 0) {
-		self.animationRepeatCount = self.animationRepeatCount - 1;
-		[self startAnimating];
+	if (self.animatorRepeatCount > 0) {
+		self.animatorRepeatCount = self.animatorRepeatCount - 1;
+		[self startAnimator];
 	} else {
-		[self doneAnimating];
+		[self doneAnimator];
 	}
 }
 
@@ -1271,7 +1176,7 @@
 // as possible. This method is designed to have low latency,
 // it just changes the frame that is displayed in the imageView
 
-- (void) _animationDisplayFrameCallback: (NSTimer *)timer {
+- (void) _animatorDisplayFrameCallback: (NSTimer *)timer {
 	assert(self.state == ANIMATING);
   
 #ifdef DEBUG_OUTPUT
@@ -1281,13 +1186,13 @@
 	[self _queryCurrentClockTimeAndCalcFrameNow:&currentTime frameNowPtr:&frameNow];		
   
 	if (TRUE) {
-		NSTimeInterval timeExpected = (frameNow * self.animationFrameDuration);
+		NSTimeInterval timeExpected = (frameNow * self.animatorFrameDuration);
     
 		NSTimeInterval timeDelta = currentTime - timeExpected;
     
 		NSString *formatted = [NSString stringWithFormat:@"%@%@%d%@%d%@%.4f%@%.4f",
-                           @"_animationDisplayFrameCallback: ",
-                           @"\tanimationFrameNum: ", self.currentFrame,
+                           @"_animatorDisplayFrameCallback: ",
+                           @"\tanimatorFrameNum: ", self.currentFrame,
                            @"\tframeNow: ", frameNow,
                            @"\tcurrentTime: ", currentTime,
                            @"\tdelta: ", timeDelta
@@ -1312,7 +1217,7 @@
   
 	if (currentImage != self.nextFrame) {
 		self.image = self.nextFrame;
-//    [self setNeedsDisplay];
+    [self setNeedsDisplay];
 	}
   
   // Test release of frame now, instead of in next decode callback. Seems
@@ -1326,16 +1231,17 @@
 	return;
 }
 
-// Display the given animation frame, in the range [1 to N]
-// where N is the largest frame number.
+// Display the given animator frame, in the range [1 to N]
+// where N is the largest frame number. Note that this method
+// should only be called when the animator is not running.
 
-- (void) animationShowFrame: (NSInteger) frame {
-	if ((frame >= self.animationNumFrames) || (frame < 0))
+- (void) showFrame: (NSInteger) frame {
+	if ((frame >= self.animatorNumFrames) || (frame < 0))
 		return;
 	
 	self.currentFrame = frame - 1;
-	[self _animationDecodeNextFrame];
-	[self _animationDisplayFrameCallback:nil];
+	[self _animatorDecodeNextFrame];
+	[self _animatorDisplayFrameCallback:nil];
 	self.currentFrame = frame;
 }
 
@@ -1347,9 +1253,9 @@
 // previous frame, then FALSE is returned to indicate
 // that no update is needed for the next frame.
 
-- (BOOL) _animationDecodeNextFrame {
+- (BOOL) _animatorDecodeNextFrame {
 	NSUInteger nextFrameNum = self.currentFrame + 1;
-	NSAssert(nextFrameNum >= 0 && nextFrameNum < self.animationNumFrames, @"nextFrameNum is invalid");
+	NSAssert(nextFrameNum >= 0 && nextFrameNum < self.animatorNumFrames, @"nextFrameNum is invalid");
   
 	// Deallocate UIImage object for the frame before
 	// the currently displayed one. This will drop the
@@ -1383,33 +1289,16 @@
   
 	// Advance the "current frame" in the movie. In the case where
   // the next frame is exactly the same as the previous frame,
-  // FALSE will be returned. Otherwise TRUE is returned to indicate
-  // that the frame data has changed.
-	
-  // FIXME: need to deal with case where the advance goes past a keyframe.
+  // nil will be returned.
   
-	CGFrameBuffer *cgFrameBuffer = nil;
-	for (CGFrameBuffer *aBuffer in self.cgFrameBuffers) {
-		if (!aBuffer.isLockedByDataProvider) {
-			cgFrameBuffer = aBuffer;
-			break;
-		}
-	}
-	if (cgFrameBuffer == nil) {
-		NSAssert(FALSE, @"no cgFrameBuffer is available");
-	}  
+	UIImage *img = [self.frameDecoder advanceToFrame:nextFrameNum];
   
-	BOOL changedFrameData = [self.frameDecoder advanceToFrame:nextFrameNum nextFrameBuffer:cgFrameBuffer];
-  
-  // FIXME: decode every frame
-  //changedFrameData = TRUE;
-	
-	if (!changedFrameData)
+	if (img == nil) {
 		return FALSE;
-  
-	self.nextFrame = [self _makeFrameImage];
-  
-	return TRUE;
+  } else {
+    self.nextFrame = img;
+    return TRUE;
+  }
 }
 
 // Invoked when UIView is added to a window. This is typically invoked at some idle

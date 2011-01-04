@@ -43,6 +43,7 @@ int num_words(uint32_t numBytes)
 
 @synthesize mappedData = m_mappedData;
 @synthesize currentFrameBuffer = m_currentFrameBuffer;
+@synthesize cgFrameBuffers = m_cgFrameBuffers;
 
 + (AVQTAnimationFrameDecoder*) aVQTAnimationFrameDecoder
 {
@@ -92,8 +93,75 @@ int num_words(uint32_t numBytes)
   [self _freeInputBuffer];
   self.mappedData = nil;
   self.currentFrameBuffer = nil;
+  
+  /*
+   for (CGFrameBuffer *aBuffer in self.cgFrameBuffers) {
+   int count = [aBuffer retainCount];
+   count = count;
+   
+   if (aBuffer.isLockedByDataProvider) {
+   NSString *msg = [NSString stringWithFormat:@"%@, count %d",
+   @"CGFrameBuffer is still locked by UIKit", count];
+   NSLog(msg);
+   
+   if ([aBuffer isLockedByImageRef:imgRef1]) {
+   NSLog(@"locked by imgRef1");
+   } else if ([aBuffer isLockedByImageRef:imgRef2]) {
+   NSLog(@"locked by imgRef2");
+   } else if ([aBuffer isLockedByImageRef:imgRef3]) {
+   NSLog(@"locked by imgRef3");
+   } else {
+   NSLog(@"locked by unknown image ref");				
+   }
+   }
+   }
+   */
+  self.cgFrameBuffers = nil;
+  
 	[super dealloc];
-}	
+}
+
+- (void) _allocFrameBuffers
+{
+	// create buffers used for loading image data
+  
+  if (self.cgFrameBuffers != nil) {
+    // Already allocated the frame buffers
+    return;
+  }
+  
+	int renderWidth = [self width];
+	int renderHeight = [self height];
+  
+  NSAssert(renderWidth > 0 && renderHeight > 0, @"renderWidth or renderHeight is zero");
+  
+  // FIXME: Rewrite allocating of CGFrameBuffer to support static ctor
+  
+	CGFrameBuffer *cgFrameBuffer1 = [[CGFrameBuffer alloc] initWithDimensions:renderWidth :renderHeight];
+	CGFrameBuffer *cgFrameBuffer2 = [[CGFrameBuffer alloc] initWithDimensions:renderWidth :renderHeight];
+	CGFrameBuffer *cgFrameBuffer3 = [[CGFrameBuffer alloc] initWithDimensions:renderWidth :renderHeight];
+  
+	self.cgFrameBuffers = [NSArray arrayWithObjects:cgFrameBuffer1, cgFrameBuffer2, cgFrameBuffer3, nil];
+  
+	[cgFrameBuffer1 release];
+	[cgFrameBuffer2 release];
+	[cgFrameBuffer3 release];
+}
+
+- (CGFrameBuffer*) _getNextFramebuffer
+{
+	CGFrameBuffer *cgFrameBuffer = nil;
+	for (CGFrameBuffer *aBuffer in self.cgFrameBuffers) {
+		if (!aBuffer.isLockedByDataProvider) {
+			cgFrameBuffer = aBuffer;
+			break;
+		}
+	}
+	if (cgFrameBuffer == nil) {
+		NSAssert(FALSE, @"no cgFrameBuffer is available");
+	}
+  return cgFrameBuffer;
+}
 
 - (BOOL) _readHeader:(uint32_t)filesize path:(NSString*)path
 {
@@ -166,6 +234,10 @@ int num_words(uint32_t numBytes)
 		[self close];
 		return FALSE;
 	}
+
+  // Frame buffers need to be allocated after the movie headers have been read, so we know the width and height
+  
+	[self _allocFrameBuffers];  
   
 	self->m_isOpen = TRUE;
 	return TRUE;
@@ -197,8 +269,14 @@ int num_words(uint32_t numBytes)
   self.currentFrameBuffer = nil;
 }
 
-- (BOOL) advanceToFrame:(NSUInteger)newFrameIndex nextFrameBuffer:(CGFrameBuffer*)nextFrameBuffer
+- (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex
 {
+  // Get from queue of frame buffers!
+  
+  CGFrameBuffer *nextFrameBuffer = [self _getNextFramebuffer];
+  
+  // FIXME: need to deal with case where the advance goes past a keyframe.  
+
   // Double check that the current frame is not the exact same object as the one we pass as
   // the next frame buffer. This should not happen, and we can't copy the buffer into itself.
   
@@ -270,7 +348,23 @@ int num_words(uint32_t numBytes)
     }
 	}
   
-	return changeFrameData;
+  if (!changeFrameData) {
+    return nil;
+  } else {
+    // Return a CGImage wrapped in a UIImage
+    
+    CGFrameBuffer *cgFrameBuffer = self.currentFrameBuffer;
+    CGImageRef imgRef = [cgFrameBuffer createCGImageRef];
+    NSAssert(imgRef, @"CGImageRef returned by createCGImageRef is NULL");
+    
+    UIImage *uiImage = [UIImage imageWithCGImage:imgRef];
+    CGImageRelease(imgRef);
+
+    NSAssert(cgFrameBuffer.isLockedByDataProvider, @"image buffer should be locked by frame UIImage");
+    
+    NSAssert(uiImage, @"uiImage is nil");
+    return uiImage;    
+  }
 }
 
 // Return the current frame buffer, this is the buffer that was most recently written to via

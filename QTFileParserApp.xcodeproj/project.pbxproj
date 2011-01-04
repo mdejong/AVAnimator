@@ -40,6 +40,37 @@
 		CDECC75A12BC6CA6001A372F /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75612BC6CA6001A372F /* CGFrameBuffer.m */; };
 		CDECC75D12BC6CBC001A372F /* AutoPropertyRelease.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75C12BC6CBC001A372F /* AutoPropertyRelease.m */; };
 		CDECC75F12BC6CCC001A372F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75E12BC6CCC001A372F /* movdata.c */; };
+		CDECCE7212D30FE80067D2EE /* AVPNGFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECCE7112D30FE80067D2EE /* AVPNGFrameDecoder.m */; };
+		CDECCF4B12D31BBE0067D2EE /* BouncingBalls01.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF2D12D31BBE0067D2EE /* BouncingBalls01.png */; };
+		CDECCF4C12D31BBE0067D2EE /* BouncingBalls02.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF2E12D31BBE0067D2EE /* BouncingBalls02.png */; };
+		CDECCF4D12D31BBE0067D2EE /* BouncingBalls03.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF2F12D31BBE0067D2EE /* BouncingBalls03.png */; };
+		CDECCF4E12D31BBE0067D2EE /* BouncingBalls04.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3012D31BBE0067D2EE /* BouncingBalls04.png */; };
+		CDECCF4F12D31BBE0067D2EE /* BouncingBalls05.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3112D31BBE0067D2EE /* BouncingBalls05.png */; };
+		CDECCF5012D31BBE0067D2EE /* BouncingBalls06.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3212D31BBE0067D2EE /* BouncingBalls06.png */; };
+		CDECCF5112D31BBE0067D2EE /* BouncingBalls07.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3312D31BBE0067D2EE /* BouncingBalls07.png */; };
+		CDECCF5212D31BBE0067D2EE /* BouncingBalls08.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3412D31BBE0067D2EE /* BouncingBalls08.png */; };
+		CDECCF5312D31BBE0067D2EE /* BouncingBalls09.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3512D31BBE0067D2EE /* BouncingBalls09.png */; };
+		CDECCF5412D31BBE0067D2EE /* BouncingBalls10.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3612D31BBE0067D2EE /* BouncingBalls10.png */; };
+		CDECCF5512D31BBE0067D2EE /* BouncingBalls11.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3712D31BBE0067D2EE /* BouncingBalls11.png */; };
+		CDECCF5612D31BBE0067D2EE /* BouncingBalls12.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3812D31BBE0067D2EE /* BouncingBalls12.png */; };
+		CDECCF5712D31BBE0067D2EE /* BouncingBalls13.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3912D31BBE0067D2EE /* BouncingBalls13.png */; };
+		CDECCF5812D31BBE0067D2EE /* BouncingBalls14.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3A12D31BBE0067D2EE /* BouncingBalls14.png */; };
+		CDECCF5912D31BBE0067D2EE /* BouncingBalls15.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3B12D31BBE0067D2EE /* BouncingBalls15.png */; };
+		CDECCF5A12D31BBE0067D2EE /* BouncingBalls16.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3C12D31BBE0067D2EE /* BouncingBalls16.png */; };
+		CDECCF5B12D31BBE0067D2EE /* BouncingBalls17.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3D12D31BBE0067D2EE /* BouncingBalls17.png */; };
+		CDECCF5C12D31BBE0067D2EE /* BouncingBalls18.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3E12D31BBE0067D2EE /* BouncingBalls18.png */; };
+		CDECCF5D12D31BBE0067D2EE /* BouncingBalls19.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF3F12D31BBE0067D2EE /* BouncingBalls19.png */; };
+		CDECCF5E12D31BBE0067D2EE /* BouncingBalls20.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4012D31BBE0067D2EE /* BouncingBalls20.png */; };
+		CDECCF5F12D31BBE0067D2EE /* BouncingBalls21.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4112D31BBE0067D2EE /* BouncingBalls21.png */; };
+		CDECCF6012D31BBE0067D2EE /* BouncingBalls22.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4212D31BBE0067D2EE /* BouncingBalls22.png */; };
+		CDECCF6112D31BBE0067D2EE /* BouncingBalls23.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4312D31BBE0067D2EE /* BouncingBalls23.png */; };
+		CDECCF6212D31BBE0067D2EE /* BouncingBalls24.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4412D31BBE0067D2EE /* BouncingBalls24.png */; };
+		CDECCF6312D31BBE0067D2EE /* BouncingBalls25.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4512D31BBE0067D2EE /* BouncingBalls25.png */; };
+		CDECCF6412D31BBE0067D2EE /* BouncingBalls26.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4612D31BBE0067D2EE /* BouncingBalls26.png */; };
+		CDECCF6512D31BBE0067D2EE /* BouncingBalls27.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4712D31BBE0067D2EE /* BouncingBalls27.png */; };
+		CDECCF6612D31BBE0067D2EE /* BouncingBalls28.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4812D31BBE0067D2EE /* BouncingBalls28.png */; };
+		CDECCF6712D31BBE0067D2EE /* BouncingBalls29.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4912D31BBE0067D2EE /* BouncingBalls29.png */; };
+		CDECCF6812D31BBE0067D2EE /* BouncingBalls30.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4A12D31BBE0067D2EE /* BouncingBalls30.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -92,6 +123,38 @@
 		CDECC75C12BC6CBC001A372F /* AutoPropertyRelease.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AutoPropertyRelease.m; sourceTree = "<group>"; };
 		CDECC75E12BC6CCC001A372F /* movdata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = movdata.c; sourceTree = "<group>"; };
 		CDECC8FA12BC837D001A372F /* movdata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = movdata.h; sourceTree = "<group>"; };
+		CDECCE7012D30FE80067D2EE /* AVPNGFrameDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVPNGFrameDecoder.h; sourceTree = "<group>"; };
+		CDECCE7112D30FE80067D2EE /* AVPNGFrameDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVPNGFrameDecoder.m; sourceTree = "<group>"; };
+		CDECCF2D12D31BBE0067D2EE /* BouncingBalls01.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls01.png; sourceTree = "<group>"; };
+		CDECCF2E12D31BBE0067D2EE /* BouncingBalls02.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls02.png; sourceTree = "<group>"; };
+		CDECCF2F12D31BBE0067D2EE /* BouncingBalls03.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls03.png; sourceTree = "<group>"; };
+		CDECCF3012D31BBE0067D2EE /* BouncingBalls04.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls04.png; sourceTree = "<group>"; };
+		CDECCF3112D31BBE0067D2EE /* BouncingBalls05.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls05.png; sourceTree = "<group>"; };
+		CDECCF3212D31BBE0067D2EE /* BouncingBalls06.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls06.png; sourceTree = "<group>"; };
+		CDECCF3312D31BBE0067D2EE /* BouncingBalls07.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls07.png; sourceTree = "<group>"; };
+		CDECCF3412D31BBE0067D2EE /* BouncingBalls08.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls08.png; sourceTree = "<group>"; };
+		CDECCF3512D31BBE0067D2EE /* BouncingBalls09.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls09.png; sourceTree = "<group>"; };
+		CDECCF3612D31BBE0067D2EE /* BouncingBalls10.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls10.png; sourceTree = "<group>"; };
+		CDECCF3712D31BBE0067D2EE /* BouncingBalls11.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls11.png; sourceTree = "<group>"; };
+		CDECCF3812D31BBE0067D2EE /* BouncingBalls12.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls12.png; sourceTree = "<group>"; };
+		CDECCF3912D31BBE0067D2EE /* BouncingBalls13.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls13.png; sourceTree = "<group>"; };
+		CDECCF3A12D31BBE0067D2EE /* BouncingBalls14.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls14.png; sourceTree = "<group>"; };
+		CDECCF3B12D31BBE0067D2EE /* BouncingBalls15.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls15.png; sourceTree = "<group>"; };
+		CDECCF3C12D31BBE0067D2EE /* BouncingBalls16.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls16.png; sourceTree = "<group>"; };
+		CDECCF3D12D31BBE0067D2EE /* BouncingBalls17.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls17.png; sourceTree = "<group>"; };
+		CDECCF3E12D31BBE0067D2EE /* BouncingBalls18.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls18.png; sourceTree = "<group>"; };
+		CDECCF3F12D31BBE0067D2EE /* BouncingBalls19.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls19.png; sourceTree = "<group>"; };
+		CDECCF4012D31BBE0067D2EE /* BouncingBalls20.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls20.png; sourceTree = "<group>"; };
+		CDECCF4112D31BBE0067D2EE /* BouncingBalls21.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls21.png; sourceTree = "<group>"; };
+		CDECCF4212D31BBE0067D2EE /* BouncingBalls22.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls22.png; sourceTree = "<group>"; };
+		CDECCF4312D31BBE0067D2EE /* BouncingBalls23.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls23.png; sourceTree = "<group>"; };
+		CDECCF4412D31BBE0067D2EE /* BouncingBalls24.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls24.png; sourceTree = "<group>"; };
+		CDECCF4512D31BBE0067D2EE /* BouncingBalls25.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls25.png; sourceTree = "<group>"; };
+		CDECCF4612D31BBE0067D2EE /* BouncingBalls26.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls26.png; sourceTree = "<group>"; };
+		CDECCF4712D31BBE0067D2EE /* BouncingBalls27.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls27.png; sourceTree = "<group>"; };
+		CDECCF4812D31BBE0067D2EE /* BouncingBalls28.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls28.png; sourceTree = "<group>"; };
+		CDECCF4912D31BBE0067D2EE /* BouncingBalls29.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls29.png; sourceTree = "<group>"; };
+		CDECCF4A12D31BBE0067D2EE /* BouncingBalls30.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls30.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,6 +226,7 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				CDECCF2C12D31BBE0067D2EE /* AnimationFrames */,
 				CD674C9F12BF3DB200A6EACE /* Bounce15FPS.mov */,
 				CDB8301D12BD6D780078FEC7 /* Sweep30FPS_ANI16BPP.mov */,
 				CD15C54E12BCADA800A26588 /* smiley.png */,
@@ -220,8 +284,47 @@
 				CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */,
 				CD61994812CD03FC0003AEAA /* AVQTAnimationFrameDecoder.h */,
 				CD61994912CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m */,
+				CDECCE7012D30FE80067D2EE /* AVPNGFrameDecoder.h */,
+				CDECCE7112D30FE80067D2EE /* AVPNGFrameDecoder.m */,
 			);
 			path = AVAnimator;
+			sourceTree = "<group>";
+		};
+		CDECCF2C12D31BBE0067D2EE /* AnimationFrames */ = {
+			isa = PBXGroup;
+			children = (
+				CDECCF2D12D31BBE0067D2EE /* BouncingBalls01.png */,
+				CDECCF2E12D31BBE0067D2EE /* BouncingBalls02.png */,
+				CDECCF2F12D31BBE0067D2EE /* BouncingBalls03.png */,
+				CDECCF3012D31BBE0067D2EE /* BouncingBalls04.png */,
+				CDECCF3112D31BBE0067D2EE /* BouncingBalls05.png */,
+				CDECCF3212D31BBE0067D2EE /* BouncingBalls06.png */,
+				CDECCF3312D31BBE0067D2EE /* BouncingBalls07.png */,
+				CDECCF3412D31BBE0067D2EE /* BouncingBalls08.png */,
+				CDECCF3512D31BBE0067D2EE /* BouncingBalls09.png */,
+				CDECCF3612D31BBE0067D2EE /* BouncingBalls10.png */,
+				CDECCF3712D31BBE0067D2EE /* BouncingBalls11.png */,
+				CDECCF3812D31BBE0067D2EE /* BouncingBalls12.png */,
+				CDECCF3912D31BBE0067D2EE /* BouncingBalls13.png */,
+				CDECCF3A12D31BBE0067D2EE /* BouncingBalls14.png */,
+				CDECCF3B12D31BBE0067D2EE /* BouncingBalls15.png */,
+				CDECCF3C12D31BBE0067D2EE /* BouncingBalls16.png */,
+				CDECCF3D12D31BBE0067D2EE /* BouncingBalls17.png */,
+				CDECCF3E12D31BBE0067D2EE /* BouncingBalls18.png */,
+				CDECCF3F12D31BBE0067D2EE /* BouncingBalls19.png */,
+				CDECCF4012D31BBE0067D2EE /* BouncingBalls20.png */,
+				CDECCF4112D31BBE0067D2EE /* BouncingBalls21.png */,
+				CDECCF4212D31BBE0067D2EE /* BouncingBalls22.png */,
+				CDECCF4312D31BBE0067D2EE /* BouncingBalls23.png */,
+				CDECCF4412D31BBE0067D2EE /* BouncingBalls24.png */,
+				CDECCF4512D31BBE0067D2EE /* BouncingBalls25.png */,
+				CDECCF4612D31BBE0067D2EE /* BouncingBalls26.png */,
+				CDECCF4712D31BBE0067D2EE /* BouncingBalls27.png */,
+				CDECCF4812D31BBE0067D2EE /* BouncingBalls28.png */,
+				CDECCF4912D31BBE0067D2EE /* BouncingBalls29.png */,
+				CDECCF4A12D31BBE0067D2EE /* BouncingBalls30.png */,
+			);
+			path = AnimationFrames;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -285,6 +388,36 @@
 				CD15C54F12BCADA800A26588 /* smiley.png in Resources */,
 				CDB8301E12BD6D780078FEC7 /* Sweep30FPS_ANI16BPP.mov in Resources */,
 				CD674CA012BF3DB200A6EACE /* Bounce15FPS.mov in Resources */,
+				CDECCF4B12D31BBE0067D2EE /* BouncingBalls01.png in Resources */,
+				CDECCF4C12D31BBE0067D2EE /* BouncingBalls02.png in Resources */,
+				CDECCF4D12D31BBE0067D2EE /* BouncingBalls03.png in Resources */,
+				CDECCF4E12D31BBE0067D2EE /* BouncingBalls04.png in Resources */,
+				CDECCF4F12D31BBE0067D2EE /* BouncingBalls05.png in Resources */,
+				CDECCF5012D31BBE0067D2EE /* BouncingBalls06.png in Resources */,
+				CDECCF5112D31BBE0067D2EE /* BouncingBalls07.png in Resources */,
+				CDECCF5212D31BBE0067D2EE /* BouncingBalls08.png in Resources */,
+				CDECCF5312D31BBE0067D2EE /* BouncingBalls09.png in Resources */,
+				CDECCF5412D31BBE0067D2EE /* BouncingBalls10.png in Resources */,
+				CDECCF5512D31BBE0067D2EE /* BouncingBalls11.png in Resources */,
+				CDECCF5612D31BBE0067D2EE /* BouncingBalls12.png in Resources */,
+				CDECCF5712D31BBE0067D2EE /* BouncingBalls13.png in Resources */,
+				CDECCF5812D31BBE0067D2EE /* BouncingBalls14.png in Resources */,
+				CDECCF5912D31BBE0067D2EE /* BouncingBalls15.png in Resources */,
+				CDECCF5A12D31BBE0067D2EE /* BouncingBalls16.png in Resources */,
+				CDECCF5B12D31BBE0067D2EE /* BouncingBalls17.png in Resources */,
+				CDECCF5C12D31BBE0067D2EE /* BouncingBalls18.png in Resources */,
+				CDECCF5D12D31BBE0067D2EE /* BouncingBalls19.png in Resources */,
+				CDECCF5E12D31BBE0067D2EE /* BouncingBalls20.png in Resources */,
+				CDECCF5F12D31BBE0067D2EE /* BouncingBalls21.png in Resources */,
+				CDECCF6012D31BBE0067D2EE /* BouncingBalls22.png in Resources */,
+				CDECCF6112D31BBE0067D2EE /* BouncingBalls23.png in Resources */,
+				CDECCF6212D31BBE0067D2EE /* BouncingBalls24.png in Resources */,
+				CDECCF6312D31BBE0067D2EE /* BouncingBalls25.png in Resources */,
+				CDECCF6412D31BBE0067D2EE /* BouncingBalls26.png in Resources */,
+				CDECCF6512D31BBE0067D2EE /* BouncingBalls27.png in Resources */,
+				CDECCF6612D31BBE0067D2EE /* BouncingBalls28.png in Resources */,
+				CDECCF6712D31BBE0067D2EE /* BouncingBalls29.png in Resources */,
+				CDECCF6812D31BBE0067D2EE /* BouncingBalls30.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -309,6 +442,7 @@
 				CD6198BF12CCFC640003AEAA /* AVFrameDecoder.m in Sources */,
 				CD61994A12CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m in Sources */,
 				CD7A02F012D261A900366AC6 /* AVAnimatorView.m in Sources */,
+				CDECCE7212D30FE80067D2EE /* AVPNGFrameDecoder.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

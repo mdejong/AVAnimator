@@ -31,16 +31,10 @@
 	return;
 }
 
-- (BOOL) advanceToFrame:(NSUInteger)newFrameIndex nextFrameBuffer:(CGFrameBuffer*)nextFrameBuffer
+- (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex
 {
   [self doesNotRecognizeSelector:_cmd];
 	return FALSE;
-}
-
-- (CGFrameBuffer*) currentFrameBuffer;
-{
-  [self doesNotRecognizeSelector:_cmd];
-	return nil;
 }
 
 // Properties
