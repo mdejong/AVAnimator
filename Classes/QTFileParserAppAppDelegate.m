@@ -115,7 +115,8 @@
   AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs];
 	self.animatorView.frameDecoder = frameDecoder;
   
-	self.animatorView.animatorFrameDuration = 0.25;
+	//self.animatorView.animatorFrameDuration = 0.25;
+	self.animatorView.animatorFrameDuration = 1.0 / 15;
   
 	self.animatorView.animatorRepeatCount = 10;
 }
@@ -168,8 +169,8 @@
 {
 	[self.viewController.view removeFromSuperview];
   
-  //[self loadBouncePNGs];
-	[self loadDemoArchive];
+  [self loadBouncePNGs];
+	//[self loadDemoArchive];
 
 	// Create Movie Controls and manage AVAnimatorView inside it
   

@@ -15,10 +15,12 @@
 @interface AVPNGFrameDecoder : AVFrameDecoder {
   NSArray *m_cgFrameBuffers;
   NSArray *m_urls;
+  NSArray *m_dataObjs;
 }
 
 @property (nonatomic, copy) NSArray *cgFrameBuffers;
 @property (nonatomic, copy) NSArray *urls;
+@property (nonatomic, copy) NSArray *dataObjs;
 
 + (NSArray*) arrayWithNumberedNames:(NSString*)filenamePrefix
                          rangeStart:(NSInteger)rangeStart

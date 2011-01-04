@@ -11,6 +11,7 @@
 
 @synthesize cgFrameBuffers = m_cgFrameBuffers;
 @synthesize urls = m_urls;
+@synthesize dataObjs = m_dataObjs;
 
 - (void) dealloc {
   [AutoPropertyRelease releaseProperties:self thisClass:AVPNGFrameDecoder.class];
@@ -56,9 +57,8 @@
 	NSBundle* appBundle = [NSBundle mainBundle];
   
 	for ( NSString* path in inNumberedNames ) {
-		NSString* resPath = [appBundle pathForResource:path ofType:nil];	
+		NSString* resPath = [appBundle pathForResource:path ofType:nil];
 		NSURL* aURL = [NSURL fileURLWithPath:resPath];
-    
 		[URLs addObject:aURL];
 	}
   
@@ -71,14 +71,34 @@
 {
   AVPNGFrameDecoder *obj = [[AVPNGFrameDecoder alloc] init];
   [obj autorelease];
+  if (obj == nil) {
+    return nil;
+  }
   obj.urls = urls;
+  
+  // Load data from URL, if URL is a file then memory map the file
+  
+  NSMutableArray *mArr = [NSMutableArray arrayWithCapacity:[urls count]];
+  for ( NSURL* url in urls ) {
+    NSData *data;
+    if ([url isFileURL]) {
+      data = [NSData dataWithContentsOfMappedFile:[url path]];
+    } else {
+      data = [NSData dataWithContentsOfURL:url];
+    }
+    NSAssert(data, @"URL data is nil");
+    [mArr addObject:data];
+  }
+  obj.dataObjs = [NSArray arrayWithArray:mArr];
+  
   return obj;
 }
 
 - (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex
 {
-  NSURL *url = [self.urls objectAtIndex:newFrameIndex];
-  NSData *data = [NSData dataWithContentsOfURL:url];
+  NSAssert(newFrameIndex >= 0 || newFrameIndex < [self.urls count], @"newFrameIndex is out of range");
+  //NSURL *url = [self.urls objectAtIndex:newFrameIndex];
+  NSData *data = [self.dataObjs objectAtIndex:newFrameIndex];
 	UIImage *img = [UIImage imageWithData:data];
   NSAssert(img, @"img is nil");
   return img;
