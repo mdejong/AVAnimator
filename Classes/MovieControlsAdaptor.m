@@ -6,12 +6,12 @@
 
 #import "MovieControlsAdaptor.h"
 
-#import "AVAnimatorViewController.h"
+#import "AVAnimatorView.h"
 #import "MovieControlsViewController.h"
 
 @implementation MovieControlsAdaptor
 
-@synthesize animatorViewController = m_animatorViewController;
+@synthesize animatorView = m_animatorView;
 @synthesize movieControlsViewController = m_movieControlsViewController;
 
 // static ctor
@@ -24,7 +24,7 @@
 }
 
 - (void)dealloc {
-  self.animatorViewController = nil;
+  self.animatorView = nil;
   self.movieControlsViewController = nil;
   [super dealloc];
 }
@@ -63,26 +63,26 @@
 	[[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(animationPreparedNotification:) 
                                                name:AVAnimatorPreparedToAnimateNotification 
-                                             object:self.animatorViewController];
+                                             object:self.animatorView];
   
 	[[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(animationDidStartNotification:) 
                                                name:AVAnimatorDidStartNotification 
-                                             object:self.animatorViewController];	
+                                             object:self.animatorView];	
   
 	[[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(animationDidStopNotification:) 
                                                name:AVAnimatorDidStopNotification 
-                                             object:self.animatorViewController];
+                                             object:self.animatorView];
     
 	// Kick off loading operation and disable user touch events until
 	// finished loading.
   
 	[self.movieControlsViewController disableUserInteraction];
   
-	[self.animatorViewController prepareToAnimate];
+	[self.animatorView prepareToAnimate];
   
-  [self.animatorViewController startAnimating];
+  [self.animatorView startAnimating];
 }
 
 - (void) stopAnimating
@@ -105,20 +105,20 @@
   
 	[[NSNotificationCenter defaultCenter] removeObserver:self
                                                   name:AVAnimatorPreparedToAnimateNotification
-                                                object:self.animatorViewController];	
+                                                object:self.animatorView];	
   
 	[[NSNotificationCenter defaultCenter] removeObserver:self
                                                   name:AVAnimatorDidStartNotification
-                                                object:self.animatorViewController];
+                                                object:self.animatorView];
   
 	[[NSNotificationCenter defaultCenter] removeObserver:self
                                                   name:AVAnimatorDidStopNotification
-                                                object:self.animatorViewController];
+                                                object:self.animatorView];
     
 	// Remove MovieControls and contained views, if the animator was just stopped
 	// because all the loops were played then stopAnimating is a no-op.
   
-	[self.animatorViewController stopAnimating];  
+	[self.animatorView stopAnimating];  
 }
 
 // Invoked when the Done button in the movie controls is pressed.
@@ -130,25 +130,25 @@
 - (void)movieControlsDoneNotification:(NSNotification*)notification {
 	NSLog( @"movieControlsDoneNotification" );
   
-	NSAssert(![self.animatorViewController isInitializing], @"animatorViewController isInitializing");
+	NSAssert(![self.animatorView isInitializing], @"animatorView isInitializing");
   
-	[self.animatorViewController doneAnimating];
+	[self.animatorView doneAnimating];
 }
 
 - (void)movieControlsPauseNotification:(NSNotification*)notification {
 	NSLog( @"movieControlsPauseNotification" );
   
-	NSAssert(![self.animatorViewController isInitializing], @"animatorViewController isInitializing");
+	NSAssert(![self.animatorView isInitializing], @"animatorView isInitializing");
   
-	[self.animatorViewController pause];
+	[self.animatorView pause];
 }
 
 - (void)movieControlsPlayNotification:(NSNotification*)notification {
 	NSLog( @"movieControlsPlayNotification" );
   
-	NSAssert(![self.animatorViewController isInitializing], @"animatorViewController isInitializing");
+	NSAssert(![self.animatorView isInitializing], @"animatorView isInitializing");
   
-	[self.animatorViewController unpause];
+	[self.animatorView unpause];
 }
 
 // Invoked when the animation is ready to begin, meaning all
@@ -159,7 +159,7 @@
   
 	[self.movieControlsViewController enableUserInteraction];
   
-	[self.animatorViewController startAnimating];
+	[self.animatorView startAnimating];
 }
 
 // Invoked when an animation starts, note that this method

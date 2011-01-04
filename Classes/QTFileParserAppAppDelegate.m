@@ -9,7 +9,7 @@
 #import "QTFileParserAppAppDelegate.h"
 #import "QTFileParserAppViewController.h"
 
-#import "AVAnimatorViewController.h"
+#import "AVAnimatorView.h"
 
 #import "MovieControlsViewController.h"
 
@@ -23,7 +23,7 @@
 
 @synthesize window = m_window;
 @synthesize viewController = m_viewController;
-@synthesize animatorViewController = m_animatorViewController;
+@synthesize animatorView = m_animatorView;
 @synthesize movieControlsViewController = m_movieControlsViewController;
 @synthesize movieControlsAdaptor = m_movieControlsAdaptor;
 
@@ -31,7 +31,7 @@
   self.window = nil;
   self.viewController = nil;
   self.movieControlsViewController = nil;
-  self.animatorViewController = nil;
+  self.animatorView = nil;
   self.movieControlsAdaptor = nil;
   [super dealloc];
 }
@@ -80,11 +80,11 @@
 - (void)applicationWillTerminate:(UIApplication *)application {
 	// Application shutting down, return to home screen
   
-	if (self.animatorViewController != nil) {
+	if (self.movieControlsAdaptor != nil) {
 		[self stopAnimator];
   }
   
-	self.animatorViewController = nil;
+	self.animatorView = nil;
 }
 
 - (void) loadDemoArchive
@@ -93,44 +93,44 @@
   
 	NSString *resourceName = @"QuickTimeLogo.mov";
   
-  if (0) {
+  if (1) {
     resourceName = @"Sweep30FPS_ANI16BPP.mov";
   }
   if (0) {
     resourceName = @"Bounce15FPS.mov";
   }
   
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  self.animatorView.animationOrientation = UIImageOrientationUp;
+  
   // Create loader that will read a movie file from app resources.
   
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
   resLoader.movieFilename = resourceName;
-	self.animatorViewController.resourceLoader = resLoader;
+	self.animatorView.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
   AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-	self.animatorViewController.frameDecoder = frameDecoder;
+	self.animatorView.frameDecoder = frameDecoder;
 
-  //	self.animatorViewController.animationOrientation = UIImageOrientationLeft; // Rotate 90 deg CCW
+	self.animatorView.animationFrameDuration = 1.0;
+	//self.animatorView.animationFrameDuration = AVAnimator15FPS;
+  //self.animatorView.animationFrameDuration = AVAnimator30FPS;
+  //self.animatorView.animationFrameDuration = 1.0 / 30;
   
-	self.animatorViewController.animationOrientation = UIImageOrientationUp;
-	self.animatorViewController.viewFrame = CGRectMake(0, 0, 480, 320);
+  //	self.animatorView.animationRepeatCount = 100;
+	self.animatorView.animationRepeatCount = 60;
   
-	//self.animatorViewController.animationFrameDuration = AVAnimator15FPS;
-  //self.animatorViewController.animationFrameDuration = AVAnimator30FPS;
-  self.animatorViewController.animationFrameDuration = 1.0 / 30;
+  //	self.animatorView.animationRepeatCount = 1000;
   
-  //	self.animatorViewController.animationRepeatCount = 100;
-	self.animatorViewController.animationRepeatCount = 60;
-  
-  //	self.animatorViewController.animationRepeatCount = 1000;
+  return;
 }
 
 - (void) startAnimator
 {
 	[self.viewController.view removeFromSuperview];
-  
-	self.animatorViewController = [AVAnimatorViewController aVAnimatorViewController];
   
 	[self loadDemoArchive];
 	//	[self loadSweepArchive];
@@ -143,12 +143,12 @@
 
 //  movieControlsViewController.overView = viewController.view;
   
-	self.movieControlsViewController.overView = self.animatorViewController.view;
+	self.movieControlsViewController.overView = self.animatorView;
   
 	[self.movieControlsViewController addNavigationControlerAsSubviewOf:self.window];
   
   self.movieControlsAdaptor = [MovieControlsAdaptor movieControlsAdaptor];
-  self.movieControlsAdaptor.animatorViewController = self.animatorViewController;
+  self.movieControlsAdaptor.animatorView = self.animatorView;
   self.movieControlsAdaptor.movieControlsViewController = self.movieControlsViewController;
   
   // This object needs to listen for the AVAnimatorDoneNotification to update the GUI
@@ -157,7 +157,7 @@
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(animationDoneNotification:) 
                                                name:AVAnimatorDoneNotification
-                                             object:self.animatorViewController];  
+                                             object:self.animatorView];  
 
   [self.movieControlsAdaptor startAnimating];
   
@@ -173,7 +173,7 @@
   
   [[NSNotificationCenter defaultCenter] removeObserver:self
                                                   name:AVAnimatorDoneNotification
-                                                object:self.animatorViewController];  
+                                                object:self.animatorView];  
   
 	[self stopAnimator];  
 }
@@ -407,7 +407,7 @@
   //	[self.animatorViewController.view removeFromSuperview];
 	[self.movieControlsViewController removeNavigationControlerAsSubviewOf:self.window];	
   
-	self.animatorViewController = nil;
+	self.animatorView = nil;
 	self.movieControlsViewController = nil;
   
 	[self.window addSubview:self.viewController.view];

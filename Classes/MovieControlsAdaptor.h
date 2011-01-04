@@ -10,15 +10,15 @@
 
 #import <UIKit/UIKit.h>
 
-@class AVAnimatorViewController;
+@class AVAnimatorView;
 @class MovieControlsViewController;
 
 @interface MovieControlsAdaptor : NSObject <UIApplicationDelegate> {
-  AVAnimatorViewController *m_animatorViewController;
+  AVAnimatorView *m_animatorView;
   MovieControlsViewController *m_movieControlsViewController;
 }
 
-@property (nonatomic, retain) AVAnimatorViewController *animatorViewController;
+@property (nonatomic, retain) AVAnimatorView *animatorView;
 @property (nonatomic, retain) MovieControlsViewController *movieControlsViewController;
 
 // static ctor

@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 
 @class QTFileParserAppViewController;
-@class AVAnimatorViewController;
+@class AVAnimatorView;
 @class MovieControlsViewController;
 @class MovieControlsAdaptor;
 
@@ -20,7 +20,7 @@
   
   MovieControlsViewController *m_movieControlsViewController;
   
-  AVAnimatorViewController *m_animatorViewController;
+  AVAnimatorView *m_animatorView;
   
   MovieControlsAdaptor *m_movieControlsAdaptor;
 }
@@ -31,7 +31,7 @@
 
 @property (nonatomic, retain) MovieControlsViewController *movieControlsViewController;
 
-@property (nonatomic, retain) AVAnimatorViewController *animatorViewController;
+@property (nonatomic, retain) AVAnimatorView *animatorView;
 
 @property (nonatomic, retain) MovieControlsAdaptor *movieControlsAdaptor;
 

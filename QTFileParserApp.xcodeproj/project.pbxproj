@@ -31,10 +31,10 @@
 		CD6198BF12CCFC640003AEAA /* AVFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */; };
 		CD61994A12CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD61994912CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m */; };
 		CD674CA012BF3DB200A6EACE /* Bounce15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD674C9F12BF3DB200A6EACE /* Bounce15FPS.mov */; };
+		CD7A02F012D261A900366AC6 /* AVAnimatorView.m in Sources */ = {isa = PBXBuildFile; fileRef = CD7A02EF12D261A900366AC6 /* AVAnimatorView.m */; };
 		CD83D5EE12CA547300A88ABA /* MovieControlsAdaptor.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */; };
 		CDB8301E12BD6D780078FEC7 /* Sweep30FPS_ANI16BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDB8301D12BD6D780078FEC7 /* Sweep30FPS_ANI16BPP.mov */; };
 		CDECC74112BC6B22001A372F /* QuickTimeLogo.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDECC74012BC6B22001A372F /* QuickTimeLogo.mov */; };
-		CDECC75712BC6CA6001A372F /* AVAnimatorViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75012BC6CA6001A372F /* AVAnimatorViewController.m */; };
 		CDECC75812BC6CA6001A372F /* AVResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75212BC6CA6001A372F /* AVResourceLoader.m */; };
 		CDECC75912BC6CA6001A372F /* AVAppResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75412BC6CA6001A372F /* AVAppResourceLoader.m */; };
 		CDECC75A12BC6CA6001A372F /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75612BC6CA6001A372F /* CGFrameBuffer.m */; };
@@ -76,12 +76,12 @@
 		CD61994812CD03FC0003AEAA /* AVQTAnimationFrameDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVQTAnimationFrameDecoder.h; sourceTree = "<group>"; };
 		CD61994912CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVQTAnimationFrameDecoder.m; sourceTree = "<group>"; };
 		CD674C9F12BF3DB200A6EACE /* Bounce15FPS.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Bounce15FPS.mov; sourceTree = "<group>"; };
+		CD7A02EE12D261A900366AC6 /* AVAnimatorView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorView.h; sourceTree = "<group>"; };
+		CD7A02EF12D261A900366AC6 /* AVAnimatorView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorView.m; sourceTree = "<group>"; };
 		CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MovieControlsAdaptor.m; sourceTree = "<group>"; };
 		CD83D5F512CA549000A88ABA /* MovieControlsAdaptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MovieControlsAdaptor.h; sourceTree = "<group>"; };
 		CDB8301D12BD6D780078FEC7 /* Sweep30FPS_ANI16BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Sweep30FPS_ANI16BPP.mov; sourceTree = "<group>"; };
 		CDECC74012BC6B22001A372F /* QuickTimeLogo.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = QuickTimeLogo.mov; sourceTree = "<group>"; };
-		CDECC74F12BC6CA6001A372F /* AVAnimatorViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorViewController.h; sourceTree = "<group>"; };
-		CDECC75012BC6CA6001A372F /* AVAnimatorViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorViewController.m; sourceTree = "<group>"; };
 		CDECC75112BC6CA6001A372F /* AVResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVResourceLoader.h; sourceTree = "<group>"; };
 		CDECC75212BC6CA6001A372F /* AVResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVResourceLoader.m; sourceTree = "<group>"; };
 		CDECC75312BC6CA6001A372F /* AVAppResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAppResourceLoader.h; sourceTree = "<group>"; };
@@ -208,8 +208,8 @@
 		CDECC74E12BC6CA6001A372F /* AVAnimator */ = {
 			isa = PBXGroup;
 			children = (
-				CDECC74F12BC6CA6001A372F /* AVAnimatorViewController.h */,
-				CDECC75012BC6CA6001A372F /* AVAnimatorViewController.m */,
+				CD7A02EE12D261A900366AC6 /* AVAnimatorView.h */,
+				CD7A02EF12D261A900366AC6 /* AVAnimatorView.m */,
 				CDECC75512BC6CA6001A372F /* CGFrameBuffer.h */,
 				CDECC75612BC6CA6001A372F /* CGFrameBuffer.m */,
 				CDECC75112BC6CA6001A372F /* AVResourceLoader.h */,
@@ -298,7 +298,6 @@
 				1D60589B0D05DD56006BFB54 /* main.m in Sources */,
 				1D3623260D0F684500981E51 /* QTFileParserAppAppDelegate.m in Sources */,
 				28D7ACF80DDB3853001CB0EB /* QTFileParserAppViewController.m in Sources */,
-				CDECC75712BC6CA6001A372F /* AVAnimatorViewController.m in Sources */,
 				CDECC75812BC6CA6001A372F /* AVResourceLoader.m in Sources */,
 				CDECC75912BC6CA6001A372F /* AVAppResourceLoader.m in Sources */,
 				CDECC75A12BC6CA6001A372F /* CGFrameBuffer.m in Sources */,
@@ -309,6 +308,7 @@
 				CD83D5EE12CA547300A88ABA /* MovieControlsAdaptor.m in Sources */,
 				CD6198BF12CCFC640003AEAA /* AVFrameDecoder.m in Sources */,
 				CD61994A12CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m in Sources */,
+				CD7A02F012D261A900366AC6 /* AVAnimatorView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
