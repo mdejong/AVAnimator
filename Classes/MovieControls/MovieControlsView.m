@@ -3,7 +3,6 @@
 //  MovieControlsDemo
 //
 //  Created by Moses DeJong on 4/11/09.
-//  Copyright 2009 __MyCompanyName__. All rights reserved.
 //
 
 #import "MovieControlsView.h"
@@ -11,7 +10,7 @@
 
 @implementation MovieControlsView
 
-@synthesize viewController, currentEvent;
+@synthesize viewController;
 
 - (id)initWithFrame:(CGRect)frame {
 	self = [super initWithFrame:frame];
@@ -24,9 +23,9 @@
 }
 
 - (void)dealloc {
-	// Note that we don't release self.viewController here
-
-    [super dealloc];
+	// Note that we don't release self.viewController here because
+	// we don't hold a ref to it.
+	[super dealloc];
 }
 
 // override hitTest so that this view can detect when a

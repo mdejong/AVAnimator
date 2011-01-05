@@ -123,7 +123,9 @@
 
 - (void) loadCachedCountPNGs
 {
-  // FIXME: up is broken, can't work with the movie controls in landscape
+  // FIXME: up is broken, can't work with the movie controls in landscape.
+  // Also, look at runtime execution time of a viw vs a view with a single
+  // 90 degree rotation applied.
   
   // In landscapw because of container in movie controls
   

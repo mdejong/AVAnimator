@@ -21,16 +21,12 @@
 {
 	MovieControlsViewController *viewController;
 
-	UIEvent *currentEvent;
-
 	BOOL eventWasHandledInSubview;
 }
 
 // Assign ref but don't incr the ref count to avoid circular ref
 
 @property (nonatomic, assign) MovieControlsViewController *viewController;
-
-@property (nonatomic, retain) UIEvent *currentEvent;
 
 - (void) dealloc;
 

@@ -451,6 +451,13 @@
 	self.controlsSubview.frame = controlsFrame;
 }
 
+// Override to allow orientations other than the default portrait orientation.
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
+  // Return YES for supported orientations
+  return (interfaceOrientation == UIInterfaceOrientationPortrait);
+  // return (interfaceOrientation == UIInterfaceOrientationLandscapeRight);
+}
+
 // This method is invoked when the view for this view controller is allocated,
 // it will create the navigation controller and its view which contain
 // all the other views. This class uses no .nib file.
