@@ -23,7 +23,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 @implementation CGFrameBuffer
 
 @synthesize pixels, numBytes, width, height;
-@synthesize frameIndex, idc;
+@synthesize idc;
 
 - (id) initWithDimensions:(NSInteger)inWidth :(NSInteger)inHeight
 {
@@ -43,6 +43,9 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   // so make the size in terms on bytes large enough (round up to the page size).
   // int getpagesize(void); returns the value. Could a memcpy() then know that whole
   // pages needed to be copied, would this faster?
+
+  // Mac OS X supports vm_copy() and vm_alloc(), look into an impl that makes use of
+  // defered copy ?
   
   // Test impl of both of these.
 	char* buffer = (char*) malloc(inNumBytes);

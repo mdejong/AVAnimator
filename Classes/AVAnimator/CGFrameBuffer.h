@@ -29,7 +29,6 @@
 	size_t numBytes;
 	size_t width;
 	size_t height;
-	NSUInteger frameIndex;
 	char idc;
 
 @private
@@ -41,7 +40,6 @@
 @property (readonly) size_t numBytes;
 @property (readonly) size_t width;
 @property (readonly) size_t height;
-@property (readonly) NSUInteger frameIndex;
 
 @property (nonatomic, assign) BOOL isLockedByDataProvider;
 

@@ -112,7 +112,7 @@
   
   NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
   
-  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs];
+  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
 	self.animatorView.frameDecoder = frameDecoder;
   
 	//self.animatorView.animatorFrameDuration = 0.25;
@@ -120,6 +120,91 @@
   
 	self.animatorView.animatorRepeatCount = 10;
 }
+
+- (void) loadCachedCountPNGs
+{
+  // FIXME: up is broken, can't work with the movie controls in landscape
+  
+  // In landscapw because of container in movie controls
+  
+//  CGRect frame = CGRectMake(0, 0, 480, 320);
+  CGRect frame = CGRectMake(0, 0, 320, 480);
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+//  self.animatorView.animatorOrientation = UIImageOrientationUp;
+//  self.animatorView.animatorOrientation = UIImageOrientationLeft;
+//  self.animatorView.animatorOrientation = UIImageOrientationRight;
+  
+  // Create loader that will get a filename from an app resource.
+  // This resource loader is phony, it becomes a no-op because
+  // the AVPNGFrameDecoder ignores it.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = @"Counting01.png"; // Phony resource name, becomes no-op
+	self.animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from PNG files attached as app resources.
+  
+  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"Counting"
+                                                  rangeStart:1
+                                                    rangeEnd:8
+                                                suffixFormat:@"%02i.png"];
+  
+  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  
+  // Decode all PNGs into UIImage objects and save in memory, this takes up a lot
+  // of memory but it means that displaying a specific frame is fast because
+  // no image decode needs to be done.
+  
+  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+	self.animatorView.frameDecoder = frameDecoder;
+  
+  // 30 FPS should be easy given that no decoding is going on
+  
+  self.animatorView.animatorFrameDuration = 2.0;
+  
+	//self.animatorView.animatorFrameDuration = 1.0 / 15;
+  
+	self.animatorView.animatorRepeatCount = 1;
+}
+
+- (void) loadCachedCountLandscape
+{
+  CGRect landscapeFrame = CGRectMake(0, 0, 480, 320);
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:landscapeFrame];
+  
+  // Create loader that will get a filename from an app resource.
+  // This resource loader is phony, it becomes a no-op because
+  // the AVPNGFrameDecoder ignores it.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = @"CountingLandscape01.png"; // Phony resource name, becomes no-op
+	self.animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from PNG files attached as app resources.
+  
+  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
+                                                  rangeStart:1
+                                                    rangeEnd:5
+                                                suffixFormat:@"%02i.png"];
+  
+  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  
+  // Decode all PNGs into UIImage objects and save in memory, this takes up a lot
+  // of memory but it means that displaying a specific frame is fast because
+  // no image decode needs to be done.
+  
+  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+	self.animatorView.frameDecoder = frameDecoder;
+  
+  // 30 FPS should be easy given that no decoding is going on
+  
+  self.animatorView.animatorFrameDuration = 2.0;
+  
+	//self.animatorView.animatorFrameDuration = 1.0 / 15;
+  
+	self.animatorView.animatorRepeatCount = 1;
+}
+
 
 - (void) loadDemoArchive
 {
@@ -169,7 +254,9 @@
 {
 	[self.viewController.view removeFromSuperview];
   
-  [self loadBouncePNGs];
+  //[self loadBouncePNGs];
+  //[self loadCachedCountPNGs];
+  [self loadCachedCountLandscape];
 	//[self loadDemoArchive];
 
 	// Create Movie Controls and manage AVAnimatorView inside it

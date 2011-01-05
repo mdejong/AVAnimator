@@ -16,11 +16,13 @@
   NSArray *m_cgFrameBuffers;
   NSArray *m_urls;
   NSArray *m_dataObjs;
+  NSArray *m_cachedImageObjs;
 }
 
 @property (nonatomic, copy) NSArray *cgFrameBuffers;
 @property (nonatomic, copy) NSArray *urls;
 @property (nonatomic, copy) NSArray *dataObjs;
+@property (nonatomic, copy) NSArray *cachedImageObjs;
 
 + (NSArray*) arrayWithNumberedNames:(NSString*)filenamePrefix
                          rangeStart:(NSInteger)rangeStart
@@ -29,7 +31,7 @@
 
 + (NSArray*) arrayWithResourcePrefixedURLs:(NSArray*)inNumberedNames;
 
-+ (AVPNGFrameDecoder*) aVPNGFrameDecoder:(NSArray*)urls;
++ (AVPNGFrameDecoder*) aVPNGFrameDecoder:(NSArray*)urls cacheDecodedImages:(BOOL)cacheDecodedImages;
 
 // Open resource identified by path
 

@@ -12,6 +12,7 @@
 @synthesize cgFrameBuffers = m_cgFrameBuffers;
 @synthesize urls = m_urls;
 @synthesize dataObjs = m_dataObjs;
+@synthesize cachedImageObjs = m_cachedImageObjs;
 
 - (void) dealloc {
   [AutoPropertyRelease releaseProperties:self thisClass:AVPNGFrameDecoder.class];
@@ -58,6 +59,7 @@
   
 	for ( NSString* path in inNumberedNames ) {
 		NSString* resPath = [appBundle pathForResource:path ofType:nil];
+		NSAssert(resPath, @"invalid resource");
 		NSURL* aURL = [NSURL fileURLWithPath:resPath];
 		[URLs addObject:aURL];
 	}
@@ -67,7 +69,7 @@
 	return newArray;
 }
 
-+ (AVPNGFrameDecoder*) aVPNGFrameDecoder:(NSArray*)urls
++ (AVPNGFrameDecoder*) aVPNGFrameDecoder:(NSArray*)urls cacheDecodedImages:(BOOL)cacheDecodedImages
 {
   AVPNGFrameDecoder *obj = [[AVPNGFrameDecoder alloc] init];
   [obj autorelease];
@@ -91,12 +93,35 @@
   }
   obj.dataObjs = [NSArray arrayWithArray:mArr];
   
+  // If the user indicates that the images should be cached, then
+  // decompress each image and save a UIImage object. Caching
+  // the decoded images in memory sucks up all the system memory quickly
+  // so it can only be used for very small animations. This is basically
+  // the same as the UIImageView animation logic.
+  
+  if (cacheDecodedImages) {
+    NSMutableArray *mArr = [NSMutableArray arrayWithCapacity:[urls count]];
+    for ( NSData *data in obj.dataObjs ) {
+      UIImage *img = [UIImage imageWithData:data];
+      NSAssert(img, @"img is nil");
+      [mArr addObject:img];
+    }
+    obj.cachedImageObjs = [NSArray arrayWithArray:mArr];    
+  }
+  
   return obj;
 }
 
 - (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex
 {
   NSAssert(newFrameIndex >= 0 || newFrameIndex < [self.urls count], @"newFrameIndex is out of range");
+  
+  // If decoded images were cached in memory, no need to decode
+  
+  if (self.cachedImageObjs != nil) {
+    return [self.cachedImageObjs objectAtIndex:newFrameIndex];
+  }
+    
   //NSURL *url = [self.urls objectAtIndex:newFrameIndex];
   NSData *data = [self.dataObjs objectAtIndex:newFrameIndex];
 	UIImage *img = [UIImage imageWithData:data];
@@ -146,10 +171,13 @@
   return [self.urls count];
 }
 
+// FIXME: fields like frameIndex don't seem to be used in the animator, can they be removed
+// from the AVFrameDecoder interface?
+
 // Current frame index, can be -1 at init or after rewind
 - (NSInteger) frameIndex
 {
-  return 0;
+  return -1;
 }
 
 // Time each frame shold be displayed

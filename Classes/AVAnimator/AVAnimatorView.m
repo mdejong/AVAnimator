@@ -633,10 +633,6 @@
 	// should be displayed at times T1 and T2. At time T1 + animatorFrameDuration/4
 	// check the audio clock offset and use that time to schedule a callback to
 	// be fired at time T2. The callback at T2 will simply display the image.
-	// The second thread will be supplying us with rendered buffers in the
-	// background.
-	
-	self.currentFrame = 0;
   
 	// Amount of time that will elapse between the expected time that a frame
 	// will be displayed and the time when the next frame decode operation
@@ -678,7 +674,16 @@
 	// Send notification to object(s) that regestered interest in start action
   
 	[[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorDidStartNotification
-                                                      object:self];	
+                                                      object:self];
+  
+  // Display the initial frame right away. The initial frame callback logic
+  // will decode the second frame when the clock starts running, but the
+  // first frames needs to be shown until that callback is invoked.
+  
+  [self showFrame:0];
+  NSAssert(self.currentFrame == 0, @"currentFrame must be zero");
+  
+  return;
 }
 
 -(void)_setAudioSessionCategory {
@@ -878,7 +883,7 @@
 		NSAssert(currentTime <= plusOneTime, @"currentTime can't be larger than plusOneTime");
 		NSTimeInterval plusOneDelta = (plusOneTime - currentTime);
     
-		if (plusOneDelta < (self.animatorFrameDuration / 100)) {
+		if (plusOneDelta < (self.animatorFrameDuration / 100.0)) {
 			frameNow++;
 		}
     
@@ -951,7 +956,7 @@
     
 		[[NSRunLoop currentRunLoop] addTimer: self.animatorDecodeTimer forMode: NSDefaultRunLoopMode];
 	} else {
-		// Reported time is now at least half way to the first frame, so
+		// Reported time is now at least half way to the second frame, so
 		// we are ready to schedule recurring callbacks. Invoking the
 		// decode frame callback will setup the next frame and
 		// schedule the callbacks.
@@ -964,8 +969,8 @@
 
 // Invoked at a time between two frame display times.
 // This callback will queue the next display operation
-// and it will queue the next frame decode operation.
-// This method takes are of the case where the decode
+// and it will do the next frame decode operation.
+// This method takes care of the case where the decode
 // logic is too slow because the next trip to the event
 // loop will display the next frame as soon as possible.
 
@@ -995,7 +1000,7 @@
 		NSLog(@"%@", formatted);
 	}
 #endif
-  
+ 
 	// If the audio clock is reporting nonsense results like time going
 	// backwards, just treat it like the clock is stuck. If a number
 	// of stuck clock callbacks are found then animator will be stopped.
@@ -1007,6 +1012,9 @@
     
 		frameNow = self.currentFrame;
 	}
+  
+// FIXME: make this change to enable checking for decode of next frame
+//  NSUInteger nextFrameIndex = frameNow + 1;
   
 	if (frameNow == self.currentFrame) {
 		self.repeatedFrameCount = self.repeatedFrameCount + 1;
@@ -1190,10 +1198,9 @@
     
 		NSTimeInterval timeDelta = currentTime - timeExpected;
     
-		NSString *formatted = [NSString stringWithFormat:@"%@%@%d%@%d%@%.4f%@%.4f",
+		NSString *formatted = [NSString stringWithFormat:@"%@%@%d%@%.4f%@%.4f",
                            @"_animatorDisplayFrameCallback: ",
-                           @"\tanimatorFrameNum: ", self.currentFrame,
-                           @"\tframeNow: ", frameNow,
+                           @"\tdisplayFrameNum: ", self.currentFrame,
                            @"\tcurrentTime: ", currentTime,
                            @"\tdelta: ", timeDelta
                            ];
@@ -1217,7 +1224,7 @@
   
 	if (currentImage != self.nextFrame) {
 		self.image = self.nextFrame;
-    [self setNeedsDisplay];
+//		[self setNeedsDisplay];
 	}
   
   // Test release of frame now, instead of in next decode callback. Seems
@@ -1241,8 +1248,8 @@
 	
 	self.currentFrame = frame - 1;
 	[self _animatorDecodeNextFrame];
-	[self _animatorDisplayFrameCallback:nil];
 	self.currentFrame = frame;
+	[self _animatorDisplayFrameCallback:nil];
 }
 
 // This method is invoked to decode the next frame

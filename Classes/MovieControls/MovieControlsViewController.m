@@ -495,6 +495,8 @@
 	
 	[self _layoutControlsView];
  
+  // FIXME: does opaque need to be set here? Is this for the containing window, or is opaque on
+  // the contained window?
 	self.view.backgroundColor = [UIColor clearColor];
 	self.view.opaque = FALSE;
 	self.view.alpha = 1.0;
