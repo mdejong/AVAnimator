@@ -94,7 +94,13 @@
 @property (nonatomic, retain) NSTimer *animatorDecodeTimer;
 @property (nonatomic, retain) NSTimer *animatorDisplayTimer;
 
+// currentFrame is the frame index for the frame on the left
+// of a decode time window. When decoding, the frame just
+// before the one to be decoded next will be calculated
+// from the time and saved as currentFrame. Basically this
+// is the index of the frame being displayed "now".
 @property (nonatomic, assign) NSUInteger currentFrame;
+
 @property (nonatomic, assign) NSUInteger repeatedFrameCount;
 
 @property (nonatomic, retain) AVAudioPlayer *avAudioPlayer;
@@ -233,16 +239,6 @@
   return obj;
 }
 
-/*
-- (id)initWithFrame:(CGRect)aRect
-{
-  if (self = [super initWithFrame:aRect]) {
-    // init logic
-  }
-  return self;
-}
-*/
-
 // Note: there is no init method since this class makes use of the default
 // init method in the superclass.
 
@@ -306,6 +302,9 @@
 		else
 			[self rotateToLandscapeRight];
 	}
+  
+  // FIXME: order of operations condition here between container setting frame and
+  // this method getting invoked! Make sure frame change is not processed after this!
   
 	if (isRotatedToLandscape) {
 		renderWidth = self.frame.size.height;
@@ -515,8 +514,7 @@
 	self.currentFrame = 0;
   
 	self.animatorNumFrames = [self.frameDecoder numFrames];
-  
-	assert(self.animatorNumFrames > 0);
+	assert(self.animatorNumFrames >= 2);
   
 	self.state = READY;
 	self.isReadyToAnimate = TRUE;
@@ -640,12 +638,9 @@
   
 	self.animatorDecodeTimerInterval = self.animatorFrameDuration / 4.0;
   
-	// Calculate upper limit for time values that can be reported by
-	// the system clock.
+	// Calculate upper limit for time that maps to specific frames.
   
-	NSUInteger lastFrameIndex = self.animatorNumFrames - 1;
-  
-	self.animatorMaxClockTime = (lastFrameIndex * self.animatorFrameDuration) -
+	self.animatorMaxClockTime = ((self.animatorNumFrames - 1) * self.animatorFrameDuration) -
     (self.animatorFrameDuration / 10);
   
 	// Create initial callback that is invoked until the audio clock
@@ -834,8 +829,10 @@
                                                       object:self];	
 }
 
-// Util function that will query the clock time and enforce an upper
-// bound on the current time.
+// Util function that will query the clock time and map that time to a frame
+// index. The frame index has an upper bound, it will be reported as
+// (self.animatorNumFrames - 2) if the clock time reported is larger
+// than the number of valid frames.
 
 - (void) _queryCurrentClockTimeAndCalcFrameNow:(NSTimeInterval*)currentTimePtr
                                    frameNowPtr:(NSUInteger*)frameNowPtr
@@ -869,7 +866,6 @@
 	} else if (currentTime <= self.animatorFrameDuration) {
 		frameNow = 0;
 	} else if (currentTime > self.animatorMaxClockTime) {
-		currentTime = self.animatorMaxClockTime;
 		frameNow = self.animatorNumFrames - 1 - 1;
 	} else {
 		frameNow = (NSUInteger) (currentTime / self.animatorFrameDuration);
@@ -887,29 +883,8 @@
 			frameNow++;
 		}
     
-    // for testing crash dumps
-    //NSAssert(TRUE, @"fake failure");
-    
-		NSAssert(frameNow <= self.animatorNumFrames - 1 - 1, @"frameNow large than second to last frame");
+		NSAssert(frameNow <= (self.animatorNumFrames - 1 - 1), @"frameNow larger than second to last frame");
 	}
-  
-	// The frameNow value must be within the bounds [0, SIZE-1] but in
-	// this case we want to limit the range to [0, SIZE-2] since the
-	// decode next frame step always decodes the next frame.
-  
-  //	NSUInteger secondToLastFrameIndex = animatorNumFrames - 1 - 1;
-  
-  //	if (frameNow > secondToLastFrameIndex) {
-  //		frameNow = secondToLastFrameIndex;
-  //	}
-  
-	// It should not be possible for (frameNow + 1) to be smaller
-	// than the reported currentTime.
-  
-  // FIXME: calculated above, remove this later
-	
-	NSAssert(currentTime < ((frameNow + 1) * self.animatorFrameDuration),
-           @"maximum reportable currentTime exceeded");
   
 	*frameNowPtr = frameNow;
 	*currentTimePtr = currentTime;
@@ -991,7 +966,7 @@
 		NSTimeInterval timeDelta = currentTime - timeExpected;
 		NSString *formatted = [NSString stringWithFormat:@"%@%@%d%@%d%@%d%@%@%.4f%@%.4f",
                            @"_animatorDecodeFrameCallback: ",
-                           @"\tanimatorFrameNum: ", self.currentFrame,
+                           @"\tanimator current frame: ", self.currentFrame,
                            @"\tframeNow: ", frameNow,
                            @" (", secondToLastFrameIndex, @")",
                            @"\tcurrentTime: ", currentTime,
@@ -1013,35 +988,17 @@
 		frameNow = self.currentFrame;
 	}
   
-// FIXME: make this change to enable checking for decode of next frame
-//  NSUInteger nextFrameIndex = frameNow + 1;
-  
-	if (frameNow == self.currentFrame) {
-		self.repeatedFrameCount = self.repeatedFrameCount + 1;
-	} else {
-		self.repeatedFrameCount = 0;
-	}
-  
-	if (self.repeatedFrameCount > 10) {
-		// Audio clock has stopped reporting progression of time
-		NSLog(@"%@", [NSString stringWithFormat:@"audio time not progressing: %f", currentTime]);
-	}
-	if (self.repeatedFrameCount > 20) {
-		NSLog(@"%@", [NSString stringWithFormat:@"doneAnimator because audio time not progressing"]);
-    
-		[self doneAnimator];
-		return;
-	}
+	NSUInteger nextFrameIndex = frameNow + 1;
   
 	// Figure out which callbacks should be scheduled
   
 	BOOL isAudioClockStuck = FALSE;
 	BOOL shouldScheduleDisplayCallback = TRUE;
 	BOOL shouldScheduleDecodeCallback = TRUE;
-	BOOL shouldScheduleLastFrameCallback = FALSE;
+	BOOL shouldScheduleLastFrameCallback = FALSE;  
   
-	if (frameNow == self.currentFrame) {
-		// The audio clock must be stuck, because there is no change in
+  if ((frameNow > 0) && (frameNow == self.currentFrame)) {
+    // The audio clock must be stuck, because there is no change in
 		// the frame to display. This is basically a no-op, schedule
 		// another frame decode operation but don't schedule a
 		// frame display operation. Because the clock is stuck, we
@@ -1050,20 +1007,34 @@
     
 		isAudioClockStuck = TRUE;
 		shouldScheduleDisplayCallback = FALSE;
+    
+    self.repeatedFrameCount = self.repeatedFrameCount + 1;
+  } else {
+    self.repeatedFrameCount = 0;
+  }
+  
+  self.currentFrame = frameNow;
+  
+	if (self.repeatedFrameCount > 10) {
+		// Audio clock has stopped reporting progression of time
+		NSLog(@"%@", [NSString stringWithFormat:@"audio time not progressing: %f", currentTime]);
+	} else if (self.repeatedFrameCount > 20) {
+		NSLog(@"%@", [NSString stringWithFormat:@"doneAnimator because audio time not progressing"]);
+    
+		[self doneAnimator];
+		return;
 	}
   
 	// Schedule the next frame display callback. In the case where the decode
 	// operation takes longer than the time until the frame interval, the
 	// display operation will be done as soon as the decode is over.	
   
-	NSUInteger nextFrameIndex;
 	NSTimeInterval nextFrameExpectedTime;
 	NSTimeInterval delta;
   
 	if (shouldScheduleDisplayCallback) {
 		assert(isAudioClockStuck == FALSE);
     
-		nextFrameIndex = frameNow + 1;
 		nextFrameExpectedTime = (nextFrameIndex * self.animatorFrameDuration);
 		delta = nextFrameExpectedTime - currentTime;
 		assert(delta > 0.0);
@@ -1105,13 +1076,9 @@
 		if (isAudioClockStuck) {
 			delta = self.animatorFrameDuration;
 		} else if (shouldScheduleLastFrameCallback) {
-			// nextFrameIndex was set earlier in this function
-      
 			nextFrameExpectedTime = ((nextFrameIndex + 1) * self.animatorFrameDuration);
 			delta = nextFrameExpectedTime - currentTime;
 		} else {
-			// nextFrameIndex was set earlier in this function
-      
 			nextFrameExpectedTime = (nextFrameIndex * self.animatorFrameDuration) + self.animatorDecodeTimerInterval;
 			delta = nextFrameExpectedTime - currentTime;
 		}
@@ -1145,8 +1112,6 @@
 	if (isAudioClockStuck) {
 		// no-op
 	} else {
-		self.currentFrame = frameNow;
-    
 		BOOL wasFrameDecoded = [self _animatorDecodeNextFrame];
     
 		if (!wasFrameDecoded) {
@@ -1162,11 +1127,23 @@
 
 // Invoked after the final animator frame is shown on screen, this callback
 // will stop the animator and set it off on another loop iteration if
-// required.
+// required. Note that this method is invoked at the exact time the
+// last frame in the animation would have stopped displaying. If the
+// animation loops and the first frame is shown again right away, then
+// it will be displayed as close to the exact time as possible.
 
 - (void) _animatorDoneLastFrameCallback: (NSTimer *)timer {
 #ifdef DEBUG_OUTPUT
-	NSLog(@"_animatorDoneLastFrameCallback");
+	NSTimeInterval currentTime;
+	NSUInteger frameNow;
+  
+  [self _queryCurrentClockTimeAndCalcFrameNow:&currentTime frameNowPtr:&frameNow];
+  
+  NSTimeInterval timeExpected = ((self.currentFrame+2) * self.animatorFrameDuration);
+  
+  NSTimeInterval timeDelta = currentTime - timeExpected;  
+  
+  NSLog(@"_animatorDoneLastFrameCallback currentTime: %.4f delta: %.4f", currentTime, timeDelta);
 #endif
 	[self stopAnimator];
 	
@@ -1181,8 +1158,13 @@
 }
 
 // Invoked at a time as close to the actual display time
-// as possible. This method is designed to have low latency,
-// it just changes the frame that is displayed in the imageView
+// as possible. This method is designed to have as low a
+// latency as possible. This method changes the UIImage
+// inside the UIImageView. It does not deallocate the
+// currently displayed image or do any other possibly
+// resource intensive operations. The run loop is returned
+// to as soon as possible so that the frame will be rendered
+// as soon as possible.
 
 - (void) _animatorDisplayFrameCallback: (NSTimer *)timer {
 	assert(self.state == ANIMATING);
@@ -1194,13 +1176,13 @@
 	[self _queryCurrentClockTimeAndCalcFrameNow:&currentTime frameNowPtr:&frameNow];		
   
 	if (TRUE) {
-		NSTimeInterval timeExpected = (frameNow * self.animatorFrameDuration);
+		NSTimeInterval timeExpected = ((self.currentFrame+1) * self.animatorFrameDuration);
     
 		NSTimeInterval timeDelta = currentTime - timeExpected;
     
 		NSString *formatted = [NSString stringWithFormat:@"%@%@%d%@%.4f%@%.4f",
                            @"_animatorDisplayFrameCallback: ",
-                           @"\tdisplayFrameNum: ", self.currentFrame,
+                           @"\tdisplayFrame: ", self.currentFrame+1,
                            @"\tcurrentTime: ", currentTime,
                            @"\tdelta: ", timeDelta
                            ];
@@ -1218,6 +1200,8 @@
 	// will not change the value of nextFrame so
 	// this method can just avoid updating the display.
   
+  /*
+  
 	UIImage *currentImage = self.image;
   
 	self.prevFrame = currentImage;
@@ -1226,6 +1210,11 @@
 		self.image = self.nextFrame;
 //		[self setNeedsDisplay];
 	}
+   
+  */
+
+  self.prevFrame = self.image;
+  self.image = self.nextFrame;
   
   // Test release of frame now, instead of in next decode callback. Seems
   // that holding until the next decode does not actually release sometimes.
@@ -1248,8 +1237,11 @@
 	
 	self.currentFrame = frame - 1;
 	[self _animatorDecodeNextFrame];
-	self.currentFrame = frame;
+  // _animatorDisplayFrameCallback expects currentFrame
+  // to be set to the frame index just before the one
+  // to be displayed, so invoke and then set currentFrame.
 	[self _animatorDisplayFrameCallback:nil];
+  self.currentFrame = frame;
 }
 
 // This method is invoked to decode the next frame

@@ -71,7 +71,6 @@ typedef enum AVAnimatorPlayerState {
 	NSTimer *m_animatorDisplayTimer;
 	
 	NSUInteger m_currentFrame;
-  
 	NSUInteger m_repeatedFrameCount;
   
 	AVAudioPlayer *m_avAudioPlayer;
