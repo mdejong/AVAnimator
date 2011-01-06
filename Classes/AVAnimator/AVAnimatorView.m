@@ -17,7 +17,7 @@
 #import "AVResourceLoader.h"
 #import "AVFrameDecoder.h"
 
-#define DEBUG_OUTPUT
+//#define DEBUG_OUTPUT
 
 // util class AVAnimatorViewAudioPlayerDelegate declaration
 
@@ -477,7 +477,7 @@
 	[self.animatorReadyTimer invalidate];
 	self.animatorReadyTimer = nil;
   
-  NSLog(@"AVAnimatorViewController: _cleanupReadyToAnimate");
+  //NSLog(@"AVAnimatorViewController: _cleanupReadyToAnimate");
 }
 
 // When an animaton widget is ready to start loading any

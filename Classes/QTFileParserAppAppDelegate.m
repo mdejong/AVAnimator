@@ -89,6 +89,33 @@
 	self.animatorView = nil;
 }
 
+- (void) loadIntoMovieControls
+{
+  // Create Movie Controls and manage AVAnimatorView inside it
+  
+	self.movieControlsViewController = [MovieControlsViewController movieControlsViewController];
+  
+	self.movieControlsViewController.overView = self.animatorView;
+  
+	[self.movieControlsViewController addNavigationControlerAsSubviewOf:self.window];
+  
+  self.movieControlsAdaptor = [MovieControlsAdaptor movieControlsAdaptor];
+  self.movieControlsAdaptor.animatorView = self.animatorView;
+  self.movieControlsAdaptor.movieControlsViewController = self.movieControlsViewController;
+  
+  // This object needs to listen for the AVAnimatorDoneNotification to update the GUI
+  // after movie loops are finished playing.
+  
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(animatorDoneNotification:) 
+                                               name:AVAnimatorDoneNotification
+                                             object:self.animatorView];  
+  
+  [self.movieControlsAdaptor startAnimator];
+  
+  return;  
+}
+
 - (void) loadBouncePNGs
 {  
   CGRect frame = CGRectMake(0, 0, 480, 320);
@@ -119,22 +146,19 @@
 	self.animatorView.animatorFrameDuration = 1.0 / 15;
   
 	self.animatorView.animatorRepeatCount = 10;
+
+  [self loadIntoMovieControls];
 }
 
 - (void) loadCachedCountPNGs
 {
-  // FIXME: up is broken, can't work with the movie controls in landscape.
-  // Also, look at runtime execution time of a viw vs a view with a single
-  // 90 degree rotation applied.
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
   
-  // In landscapw because of container in movie controls
-  
-//  CGRect frame = CGRectMake(0, 0, 480, 320);
   CGRect frame = CGRectMake(0, 0, 320, 480);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
-//  self.animatorView.animatorOrientation = UIImageOrientationUp;
-//  self.animatorView.animatorOrientation = UIImageOrientationLeft;
-//  self.animatorView.animatorOrientation = UIImageOrientationRight;
+  self.animatorView.animatorOrientation = UIImageOrientationUp;
   
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
@@ -162,11 +186,20 @@
   
   // 30 FPS should be easy given that no decoding is going on
   
-  self.animatorView.animatorFrameDuration = 2.0;
+//  self.animatorView.animatorFrameDuration = 2.0;
+	self.animatorView.animatorFrameDuration = 1.0 / 60;
   
-	//self.animatorView.animatorFrameDuration = 1.0 / 15;
+//	self.animatorView.animatorRepeatCount = 1;
+	self.animatorView.animatorRepeatCount = 100;
   
-	self.animatorView.animatorRepeatCount = 1;
+  [self.window addSubview:self.animatorView];
+
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(animatorDoneNotification:) 
+                                               name:AVAnimatorDoneNotification
+                                             object:self.animatorView];  
+  
+  [self.animatorView startAnimator];
 }
 
 - (void) loadCachedCountLandscape
@@ -205,6 +238,8 @@
 	//self.animatorView.animatorFrameDuration = 1.0 / 15;
   
 	self.animatorView.animatorRepeatCount = 1;
+
+  [self loadIntoMovieControls];
 }
 
 
@@ -249,6 +284,8 @@
   
   //	self.animatorView.animatorRepeatCount = 1000;
   
+  [self loadIntoMovieControls];
+  
   return;
 }
 
@@ -257,33 +294,9 @@
 	[self.viewController.view removeFromSuperview];
   
   //[self loadBouncePNGs];
-  //[self loadCachedCountPNGs];
-  [self loadCachedCountLandscape];
+  [self loadCachedCountPNGs];
+  //[self loadCachedCountLandscape];
 	//[self loadDemoArchive];
-
-	// Create Movie Controls and manage AVAnimatorView inside it
-  
-	self.movieControlsViewController = [MovieControlsViewController movieControlsViewController];
-  
-	self.movieControlsViewController.overView = self.animatorView;
-  
-	[self.movieControlsViewController addNavigationControlerAsSubviewOf:self.window];
-  
-  self.movieControlsAdaptor = [MovieControlsAdaptor movieControlsAdaptor];
-  self.movieControlsAdaptor.animatorView = self.animatorView;
-  self.movieControlsAdaptor.movieControlsViewController = self.movieControlsViewController;
-  
-  // This object needs to listen for the AVAnimatorDoneNotification to update the GUI
-  // after movie loops are finished playing.
-
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(animatorDoneNotification:) 
-                                               name:AVAnimatorDoneNotification
-                                             object:self.animatorView];  
-
-  [self.movieControlsAdaptor startAnimator];
-  
-  return;
 }
 
 // Notification indicates that all animations in a loop are now finished
@@ -302,13 +315,14 @@
 
 - (void) stopAnimator
 {
-  NSAssert(self.movieControlsAdaptor, @"movieControlsAdaptor is nil");
-  
-  [self.movieControlsAdaptor stopAnimator];
-  self.movieControlsAdaptor = nil;
+  if (self.movieControlsAdaptor == nil) {
+    [self.animatorView removeFromSuperview];    
+  } else {
+    [self.movieControlsAdaptor stopAnimator];
+    self.movieControlsAdaptor = nil;
 
-  //	[self.animatorView.view removeFromSuperview];
-	[self.movieControlsViewController removeNavigationControlerAsSubviewOf:self.window];	
+    [self.movieControlsViewController removeNavigationControlerAsSubviewOf:self.window];	
+  }
   
 	self.animatorView = nil;
 	self.movieControlsViewController = nil;

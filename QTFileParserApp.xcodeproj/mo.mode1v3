@@ -202,7 +202,47 @@
 			<key>Content</key>
 			<dict>
 				<key>PBXProjectModuleGUID</key>
-				<string>CD822F7D12D5919900897606</string>
+				<string>CD82308E12D5A5A800897606</string>
+				<key>PBXProjectModuleLabel</key>
+				<string>QTFileParserAppAppDelegate.m</string>
+				<key>PBXSplitModuleInNavigatorKey</key>
+				<dict>
+					<key>Split0</key>
+					<dict>
+						<key>PBXProjectModuleGUID</key>
+						<string>CD82308F12D5A5A800897606</string>
+						<key>PBXProjectModuleLabel</key>
+						<string>QTFileParserAppAppDelegate.m</string>
+						<key>_historyCapacity</key>
+						<integer>0</integer>
+						<key>bookmark</key>
+						<string>CD8230B912D5A61A00897606</string>
+						<key>history</key>
+						<array>
+							<string>CD82309B12D5A5C600897606</string>
+						</array>
+					</dict>
+					<key>SplitCount</key>
+					<string>1</string>
+				</dict>
+				<key>StatusBarVisibility</key>
+				<true/>
+			</dict>
+			<key>Geometry</key>
+			<dict>
+				<key>Frame</key>
+				<string>{{0, 20}, {1212, 601}}</string>
+				<key>PBXModuleWindowStatusBarHidden2</key>
+				<false/>
+				<key>RubberWindowFrame</key>
+				<string>15 136 1212 642 0 0 1280 778 </string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Content</key>
+			<dict>
+				<key>PBXProjectModuleGUID</key>
+				<string>CD82308B12D5A5A800897606</string>
 				<key>PBXProjectModuleLabel</key>
 				<string>AVAnimatorView.m</string>
 				<key>PBXSplitModuleInNavigatorKey</key>
@@ -210,17 +250,16 @@
 					<key>Split0</key>
 					<dict>
 						<key>PBXProjectModuleGUID</key>
-						<string>CD822F7E12D5919900897606</string>
+						<string>CD82308C12D5A5A800897606</string>
 						<key>PBXProjectModuleLabel</key>
 						<string>AVAnimatorView.m</string>
 						<key>_historyCapacity</key>
 						<integer>0</integer>
 						<key>bookmark</key>
-						<string>CD82305E12D5A22200897606</string>
+						<string>CD8230BA12D5A61A00897606</string>
 						<key>history</key>
 						<array>
-							<string>CD82301612D59C6800897606</string>
-							<string>CD82301712D59C6800897606</string>
+							<string>CD82308512D5A59F00897606</string>
 						</array>
 					</dict>
 					<key>SplitCount</key>
@@ -236,7 +275,7 @@
 				<key>PBXModuleWindowStatusBarHidden2</key>
 				<false/>
 				<key>RubberWindowFrame</key>
-				<string>-2 58 1227 720 0 0 1280 778 </string>
+				<string>0 58 1227 720 0 0 1280 778 </string>
 			</dict>
 		</dict>
 		<dict>
@@ -257,7 +296,7 @@
 						<key>_historyCapacity</key>
 						<integer>0</integer>
 						<key>bookmark</key>
-						<string>CD82305F12D5A22200897606</string>
+						<string>CD8230BB12D5A61A00897606</string>
 						<key>history</key>
 						<array>
 							<string>CD9B78B012D51A100062175A</string>
@@ -360,8 +399,7 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>15</integer>
-									<integer>13</integer>
+									<integer>29</integer>
 									<integer>1</integer>
 									<integer>0</integer>
 								</array>
@@ -414,7 +452,7 @@
 										<key>_historyCapacity</key>
 										<integer>0</integer>
 										<key>bookmark</key>
-										<string>CD82305D12D5A22200897606</string>
+										<string>CD8230B812D5A61A00897606</string>
 										<key>history</key>
 										<array>
 											<string>CDECC76312BC6CD8001A372F</string>
@@ -920,15 +958,16 @@
 	<integer>5</integer>
 	<key>WindowOrderList</key>
 	<array>
+		<string>1C530D57069F1CE1000CFCEE</string>
 		<string>CD822F8E12D5919900897606</string>
 		<string>CD822F8F12D5919900897606</string>
+		<string>1C78EAAD065D492600B07095</string>
 		<string>1CD10A99069EF8BA00B06720</string>
 		<string>CDECC73912BC6A8C001A372F</string>
 		<string>CD1B9E5B12D46DA500B9157C</string>
+		<string>CD82308B12D5A5A800897606</string>
 		<string>/Users/mo/Development/QTAnimationiPhone/QTFileParserApp/QTFileParserApp.xcodeproj</string>
-		<string>1C530D57069F1CE1000CFCEE</string>
-		<string>1C78EAAD065D492600B07095</string>
-		<string>CD822F7D12D5919900897606</string>
+		<string>CD82308E12D5A5A800897606</string>
 	</array>
 	<key>WindowString</key>
 	<string>3 128 1222 643 0 0 1280 778 </string>
@@ -1163,6 +1202,8 @@
 							<key>Dock</key>
 							<array>
 								<dict>
+									<key>BecomeActive</key>
+									<true/>
 									<key>ContentConfiguration</key>
 									<dict>
 										<key>PBXProjectModuleGUID</key>
@@ -1189,8 +1230,6 @@
 							<string>357pt</string>
 						</dict>
 						<dict>
-							<key>BecomeActive</key>
-							<true/>
 							<key>ContentConfiguration</key>
 							<dict>
 								<key>PBXProjectModuleGUID</key>
@@ -1236,7 +1275,7 @@
 			<key>WindowToolGUID</key>
 			<string>1C530D57069F1CE1000CFCEE</string>
 			<key>WindowToolIsVisible</key>
-			<true/>
+			<false/>
 		</dict>
 		<dict>
 			<key>Identifier</key>
@@ -1302,7 +1341,7 @@
 			<key>WindowToolGUID</key>
 			<string>1C78EAAD065D492600B07095</string>
 			<key>WindowToolIsVisible</key>
-			<true/>
+			<false/>
 		</dict>
 		<dict>
 			<key>Identifier</key>
