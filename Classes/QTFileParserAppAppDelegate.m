@@ -184,16 +184,76 @@
   AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
 	self.animatorView.frameDecoder = frameDecoder;
   
-  // 30 FPS should be easy given that no decoding is going on
-  
 //  self.animatorView.animatorFrameDuration = 2.0;
-	self.animatorView.animatorFrameDuration = 1.0 / 60;
+//  self.animatorView.animatorFrameDuration = 1.0 / 15;
+//  self.animatorView.animatorFrameDuration = 1.0 / 30;
+//	self.animatorView.animatorFrameDuration = 1.0 / 60;
+  
+  // Testing on iPhone 3g indicates that 60 FPS is the the upper limit.
+  // This impl likely uses CGImage data cached in the video card.
+  self.animatorView.animatorFrameDuration = 1.0 / 90;
   
 //	self.animatorView.animatorRepeatCount = 1;
-	self.animatorView.animatorRepeatCount = 100;
+	self.animatorView.animatorRepeatCount = 400;
   
   [self.window addSubview:self.animatorView];
 
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(animatorDoneNotification:) 
+                                               name:AVAnimatorDoneNotification
+                                             object:self.animatorView];  
+  
+  [self.animatorView startAnimator];
+}
+
+- (void) loadCachedCountPNGsUpsidedown
+{
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 320, 480);
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  self.animatorView.animatorOrientation = UIImageOrientationDown;
+  
+  // Create loader that will get a filename from an app resource.
+  // This resource loader is phony, it becomes a no-op because
+  // the AVPNGFrameDecoder ignores it.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = @"Counting01.png"; // Phony resource name, becomes no-op
+	self.animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from PNG files attached as app resources.
+  
+  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"Counting"
+                                                  rangeStart:1
+                                                    rangeEnd:8
+                                                suffixFormat:@"%02i.png"];
+  
+  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  
+  // Decode all PNGs into UIImage objects and save in memory, this takes up a lot
+  // of memory but it means that displaying a specific frame is fast because
+  // no image decode needs to be done.
+  
+  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+	self.animatorView.frameDecoder = frameDecoder;
+  
+  //  self.animatorView.animatorFrameDuration = 2.0;
+  //  self.animatorView.animatorFrameDuration = 1.0 / 15;
+  //  self.animatorView.animatorFrameDuration = 1.0 / 30;
+  //	self.animatorView.animatorFrameDuration = 1.0 / 60;
+  
+  // Passing view through one transformation matrix seems to have little
+  // effect on FPS, seeing consistent 60 FPS with this example.
+  self.animatorView.animatorFrameDuration = 1.0 / 90;
+  
+  //	self.animatorView.animatorRepeatCount = 1;
+	self.animatorView.animatorRepeatCount = 400;
+  
+  [self.window addSubview:self.animatorView];
+  
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(animatorDoneNotification:) 
                                                name:AVAnimatorDoneNotification
@@ -210,6 +270,9 @@
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
   // the AVPNGFrameDecoder ignores it.
+  
+  // FIXME: should be able to set loader to nil, or perhaps pass the loader to the render
+  // so that the animator code need not know how these are structured.
   
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
   resLoader.movieFilename = @"CountingLandscape01.png"; // Phony resource name, becomes no-op
@@ -231,13 +294,14 @@
   AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
 	self.animatorView.frameDecoder = frameDecoder;
   
-  // 30 FPS should be easy given that no decoding is going on
+  // Using a rotation and putting it inside an opaque window seems to limit the FPS to about 40.
+  // The image is already setup in landscape, so this is likely caused by the fact that the
+  // animator view is inside another set of views.
   
-  self.animatorView.animatorFrameDuration = 2.0;
+//  self.animatorView.animatorFrameDuration = 2.0;
+	self.animatorView.animatorFrameDuration = 1.0 / 90;
   
-	//self.animatorView.animatorFrameDuration = 1.0 / 15;
-  
-	self.animatorView.animatorRepeatCount = 1;
+	self.animatorView.animatorRepeatCount = 1000;
 
   [self loadIntoMovieControls];
 }
@@ -294,8 +358,9 @@
 	[self.viewController.view removeFromSuperview];
   
   //[self loadBouncePNGs];
-  [self loadCachedCountPNGs];
-  //[self loadCachedCountLandscape];
+  //[self loadCachedCountPNGs];
+  //[self loadCachedCountPNGsUpsidedown];
+  [self loadCachedCountLandscape];
 	//[self loadDemoArchive];
 }
 

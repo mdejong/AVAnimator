@@ -133,6 +133,8 @@
 
 - (void) rotateToLandscapeRight;
 
+- (void) rotateToUpsidedown;
+
 @end
 
 
@@ -290,17 +292,23 @@
 	} else if (self.animatorOrientation == UIImageOrientationRight) {
 		// 90 deg CW for Landscape Right Orientation
 		isRotatedToLandscape = TRUE;
+	} else if (self.animatorOrientation == UIImageOrientationDown) {
+		// 180 deg CW rotation
+		isRotatedToLandscape = FALSE;    
 	} else {
 		NSAssert(FALSE,@"Unsupported animatorOrientation");
 	}
 	
 	if (!isRotatedToLandscape) {
-		// no-op
+		if (self.animatorOrientation == UIImageOrientationDown) {
+      [self rotateToUpsidedown];
+    }
 	} else  {
-		if (self.animatorOrientation == UIImageOrientationLeft)
+		if (self.animatorOrientation == UIImageOrientationLeft) {
 			[self rotateToLandscape];
-		else
+		} else {
 			[self rotateToLandscapeRight];
+    }
 	}
   
   // FIXME: order of operations condition here between container setting frame and
@@ -539,6 +547,12 @@
 - (void) rotateToPortrait
 {
 	self.layer.transform = CATransform3DIdentity;
+}
+
+- (void) rotateToUpsidedown
+{
+  float angle = M_PI;  //rotate CCW 180°, or π radians
+	self.layer.transform = CATransform3DMakeRotation(angle, 0, 0.0, 1.0);
 }
 
 - (void) rotateToLandscape
@@ -950,7 +964,9 @@
 // loop will display the next frame as soon as possible.
 
 - (void) _animatorDecodeFrameCallback: (NSTimer *)timer {
-	assert(self.state == ANIMATING);
+  if (self.state != ANIMATING) {
+    NSAssert(FALSE, @"state is not ANIMATING");
+  }
   
 	NSTimeInterval currentTime;
 	NSUInteger frameNow;
@@ -1033,11 +1049,19 @@
 	NSTimeInterval delta;
   
 	if (shouldScheduleDisplayCallback) {
-		assert(isAudioClockStuck == FALSE);
+    if (isAudioClockStuck != FALSE) {
+      NSAssert(FALSE, @"isAudioClockStuck is FALSE");
+    }
     
 		nextFrameExpectedTime = (nextFrameIndex * self.animatorFrameDuration);
 		delta = nextFrameExpectedTime - currentTime;
-		assert(delta > 0.0);
+    //if (delta <= 0.0) {
+    //  NSAssert(FALSE, @"display delta is not a positive number");
+    //}
+    if (delta < 0.001) {
+      // Display frame right away when running behind schedule.
+      delta = 0.001;
+    }
     
 		if (self.animatorDisplayTimer != nil) {
 			[self.animatorDisplayTimer invalidate];
@@ -1082,7 +1106,13 @@
 			nextFrameExpectedTime = (nextFrameIndex * self.animatorFrameDuration) + self.animatorDecodeTimerInterval;
 			delta = nextFrameExpectedTime - currentTime;
 		}
-		assert(delta > 0.0);
+    //if (delta <= 0.0) {
+    //  NSAssert(FALSE, @"decode delta is not a positive number");
+    //}
+    if (delta < 0.002) {
+      // Decode next frame right away when running behind schedule.
+      delta = 0.002;
+    }    
     
 		if (self.animatorDecodeTimer != nil) {
 			[self.animatorDecodeTimer invalidate];
@@ -1167,7 +1197,9 @@
 // as soon as possible.
 
 - (void) _animatorDisplayFrameCallback: (NSTimer *)timer {
-	assert(self.state == ANIMATING);
+  if (self->m_state != ANIMATING) {
+    NSAssert(FALSE, @"state is not ANIMATING");
+  }
   
 #ifdef DEBUG_OUTPUT
 	NSTimeInterval currentTime;
@@ -1200,21 +1232,12 @@
 	// will not change the value of nextFrame so
 	// this method can just avoid updating the display.
   
-  /*
-  
 	UIImage *currentImage = self.image;
-  
 	self.prevFrame = currentImage;
   
-	if (currentImage != self.nextFrame) {
-		self.image = self.nextFrame;
-//		[self setNeedsDisplay];
+	if (currentImage != self->m_nextFrame) {
+		self.image = self->m_nextFrame;
 	}
-   
-  */
-
-  self.prevFrame = self.image;
-  self.image = self.nextFrame;
   
   // Test release of frame now, instead of in next decode callback. Seems
   // that holding until the next decode does not actually release sometimes.

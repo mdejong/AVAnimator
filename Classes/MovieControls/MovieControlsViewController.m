@@ -487,6 +487,16 @@
 
 	NSAssert(overView, @"overView must be set");
 
+  // FIXME: putting the AVAnimatorView inside the MovieControlsView may not be useful because
+  // it may be limiting total FPS throughput to have an opaque window inside a non-opaque one.
+  // If the views were siblings, were the controls were simply over the main window, then
+  // when the controls go away, the controls could be hidden but the overview would still
+  // be in the normal layout. This might be the cause of the slowdown seen when a 60 FPS
+  // example is slowed down when put into the movie controls widget. Another approach could
+  // be to reparent the animator view into the toplevel window once the controls are put away.
+  // This would mean reduced FPS playback while the controls are showing, but max performance
+  // while the controls are hidden.
+  
     [self.view insertSubview:overView atIndex:0];
 	overView.userInteractionEnabled = FALSE;
 
