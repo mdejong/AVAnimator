@@ -3,6 +3,8 @@
 //
 //  Created by Moses DeJong on 12/30/10.
 //
+//  License terms defined in License.txt.
+//
 //  This abstract superclass defines the interface that needs to be implemented by
 //  a class that implements frame decoding logic. A frame is 2D image decoded from
 //  video data from a file or other resource.
@@ -49,5 +51,8 @@
 
 // Time each frame shold be displayed
 - (NSTimeInterval) frameDuration;
+
+// TRUE if the decoded frame supports and alpha channel.
+- (BOOL) hasAlphaChannel;
 
 @end

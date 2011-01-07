@@ -3,6 +3,7 @@
 //
 //  Created by Moses DeJong on 12/30/10.
 //
+//  License terms defined in License.txt.
 
 #import "AVQTAnimationFrameDecoder.h"
 
@@ -274,8 +275,6 @@ int num_words(uint32_t numBytes)
   // Get from queue of frame buffers!
   
   CGFrameBuffer *nextFrameBuffer = [self _getNextFramebuffer];
-  
-  // FIXME: need to deal with case where the advance goes past a keyframe.  
 
   // Double check that the current frame is not the exact same object as the one we pass as
   // the next frame buffer. This should not happen, and we can't copy the buffer into itself.
@@ -304,25 +303,49 @@ int num_words(uint32_t numBytes)
 		NSAssert(FALSE, msg);
 	}
   
-	// Return TRUE when a patch has been applied or a new keyframe was
-	// read. Return FALSE when 1 or more duplicate frames were read.
-	
 	BOOL changeFrameData = FALSE;
 	const int newFrameIndexSigned = (int) newFrameIndex;
+  MovSample **frames = movData->frames;
   
 #ifdef USE_MMAP
   char *mappedPtr = (char*) [self.mappedData bytes];
   NSAssert(mappedPtr, @"mappedPtr");
 #endif // USE_MMAP
   
+  // Check for the case where multiple frames need to be processed,
+  // if one of the frames between the current frame and the target
+  // frame is a keyframe, then save time by skipping directly to
+  // that keyframe (avoids memcpy when not needed) and then
+  // applying deltas from the keyframe to the target frame.
+  
+  if ((newFrameIndexSigned > 0) && ((newFrameIndexSigned - frameIndex) > 1)) {
+    int lastKeyframeIndex = -1;
+    
+    for ( int i = frameIndex ; i < newFrameIndexSigned; i++) {
+      int actualFrameIndex = i + 1;
+      MovSample *frame = frames[actualFrameIndex];
+      
+      if ((actualFrameIndex > 0) && (frame == frames[actualFrameIndex-1])) {
+        // This frame is a no-op, since it duplicates data from the previous frame.
+      } else {
+        if (movsample_iskeyframe(frame)) {
+          lastKeyframeIndex = i;
+        }
+      }
+    }
+    // Don't set frameIndex for the first frame (frameIndex == -1)
+    if (lastKeyframeIndex > -1) {
+      frameIndex = lastKeyframeIndex;
+    }
+  }
+  
+  // loop from current frame to target frame, applying deltas as we go.
+  
 	for ( ; frameIndex < newFrameIndexSigned; frameIndex++) {
-		// Read one word from the stream and examine it to determine
-		// the type of the next frame.
-    
     int actualFrameIndex = frameIndex + 1;
-    MovSample *frame = movData->frames[actualFrameIndex];
+    MovSample *frame = frames[actualFrameIndex];
     
-    if ((actualFrameIndex > 0) && (frame == movData->frames[actualFrameIndex-1])) {
+    if ((actualFrameIndex > 0) && (frame == frames[actualFrameIndex-1])) {
       // This frame is a no-op, since it duplicates data from the previous frame.
       //      fprintf(stdout, "Frame %d NOP\n", actualFrameIndex);
     } else {
@@ -337,8 +360,6 @@ int num_words(uint32_t numBytes)
         }
         self.currentFrameBuffer = nextFrameBuffer;
       }
-      
-      // FIXME: This logic currently lacks checking for keyframes on skip ahead!
       
 #ifdef USE_MMAP
       process_rle_sample(mappedPtr, self->movData, frame, nextFrameBuffer.pixels);
@@ -405,6 +426,17 @@ int num_words(uint32_t numBytes)
 - (NSTimeInterval) frameDuration
 {
   return 1.0 / movData->fps;
+}
+
+- (BOOL) hasAlphaChannel
+{
+  if (movData->bitDepth == 16 || movData->bitDepth == 24) {
+    return FALSE;
+  } else if (movData->bitDepth == 32) {
+    return TRUE;
+  } else {
+    assert(0);
+  }
 }
 
 @end

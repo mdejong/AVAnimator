@@ -3,6 +3,7 @@
 //
 //  Created by Moses DeJong on 7/13/10.
 //
+//  License terms defined in License.txt.
 
 #import <Foundation/Foundation.h>
 

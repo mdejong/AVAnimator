@@ -3,6 +3,7 @@
 //
 //  Created by Moses DeJong on 3/18/09.
 //
+//  License terms defined in License.txt.
 
 #import <UIKit/UIKit.h>
 

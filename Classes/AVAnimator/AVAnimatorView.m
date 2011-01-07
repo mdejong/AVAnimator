@@ -3,6 +3,7 @@
 //
 //  Created by Moses DeJong on 3/18/09.
 //
+//  License terms defined in License.txt.
 
 #import "AVAnimatorView.h"
 
@@ -330,11 +331,14 @@
 	rs.height = renderHeight;
 	self.renderSize = rs;
   
-// FIXME: do alpha blending if movie if 32 bpp!
-  
-	// This view layer does no alpha blending
-	
-	self.opaque = TRUE;
+  NSAssert(self.frameDecoder, @"frameDecoder is nil");
+  if ([self.frameDecoder hasAlphaChannel]) {
+    // This view will blend with other views
+    self.opaque = FALSE;
+  } else {
+    // This view draws all its pixels, it does not blend
+    self.opaque = TRUE;
+  }
   
 	// User events to this layer are ignored
   
@@ -469,6 +473,7 @@
   UIImage *img = [self.frameDecoder advanceToFrame:0];
   NSAssert(img != nil, @"frame decoder must advance to first frame");    
   self.image = img;
+	self.currentFrame = 0;
   
 	// Create AVAudioPlayer that plays audio from the file on disk
   
@@ -518,8 +523,6 @@
 	// Init audio data
 	
 	[self _createAudioPlayer];
-	
-	self.currentFrame = 0;
   
 	self.animatorNumFrames = [self.frameDecoder numFrames];
 	assert(self.animatorNumFrames >= 2);
@@ -1255,7 +1258,7 @@
 // should only be called when the animator is not running.
 
 - (void) showFrame: (NSInteger) frame {
-	if ((frame >= self.animatorNumFrames) || (frame < 0))
+	if ((frame >= self.animatorNumFrames) || (frame < 0) || frame == self.currentFrame)
 		return;
 	
 	self.currentFrame = frame - 1;

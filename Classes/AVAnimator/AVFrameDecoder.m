@@ -3,6 +3,7 @@
 //
 //  Created by Moses DeJong on 12/30/10.
 //
+//  License terms defined in License.txt.
 
 #import "AVFrameDecoder.h"
 
@@ -73,6 +74,12 @@
 {
   [self doesNotRecognizeSelector:_cmd];
 	return 0;
+}
+
+- (BOOL) hasAlphaChannel
+{
+  [self doesNotRecognizeSelector:_cmd];
+	return FALSE;
 }
 
 @end

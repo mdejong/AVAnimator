@@ -4,6 +4,8 @@
 //
 //  Created by Moses DeJong on 1/4/11.
 //
+//  License terms defined in License.txt.
+//
 //  This class implements the AVFrameDecoder such that PNG files can be
 //  loaded and played in an AVAnimatorView. This implementation is not
 //  meant to work all that well, it is only a simple demonstration of
@@ -66,5 +68,7 @@
 
 // Time each frame shold be displayed
 - (NSTimeInterval) frameDuration;
+
+- (BOOL) hasAlphaChannel;
 
 @end

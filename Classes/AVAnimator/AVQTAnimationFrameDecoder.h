@@ -3,6 +3,8 @@
 //
 //  Created by Moses DeJong on 12/30/10.
 //
+//  License terms defined in License.txt.
+//
 //  This class implements the AVFrameDecoder interface and provides
 //  decoding of Quicktime Animation video frames from a MOV file.
 //  The mov to be decoded must be stored on the filesystem.

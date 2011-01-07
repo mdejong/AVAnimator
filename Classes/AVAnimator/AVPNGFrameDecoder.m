@@ -3,6 +3,7 @@
 //
 //  Created by Moses DeJong on 1/4/11.
 //
+//  License terms defined in License.txt.
 
 #import "AVPNGFrameDecoder.h"
 #import "AutoPropertyRelease.h"
@@ -184,6 +185,13 @@
 - (NSTimeInterval) frameDuration
 {
   return 0.0;
+}
+
+- (BOOL) hasAlphaChannel
+{
+  // Return FALSE for maximum speed while rendering, if the alpha channel
+  // is enabled for a specific PNG, explicitly set view.opaque to FALSE.
+	return FALSE;
 }
 
 @end

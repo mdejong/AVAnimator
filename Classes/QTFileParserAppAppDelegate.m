@@ -313,7 +313,7 @@
   
 	NSString *resourceName = @"QuickTimeLogo.mov";
   
-  if (1) {
+  if (0) {
     resourceName = @"Sweep30FPS_ANI16BPP.mov";
   }
   if (0) {
@@ -339,9 +339,9 @@
 	self.animatorView.frameDecoder = frameDecoder;
 
 	//self.animatorView.animatorFrameDuration = 1.0;
-	self.animatorView.animatorFrameDuration = AVAnimator15FPS;
+	//self.animatorView.animatorFrameDuration = AVAnimator15FPS;
   //self.animatorView.animatorFrameDuration = AVAnimator30FPS;
-  //self.animatorView.animatorFrameDuration = 1.0 / 30;
+  self.animatorView.animatorFrameDuration = 1.0 / 60;
   
   //	self.animatorView.animatorRepeatCount = 100;
 	self.animatorView.animatorRepeatCount = 60;
@@ -360,8 +360,8 @@
   //[self loadBouncePNGs];
   //[self loadCachedCountPNGs];
   //[self loadCachedCountPNGsUpsidedown];
-  [self loadCachedCountLandscape];
-	//[self loadDemoArchive];
+  //[self loadCachedCountLandscape];
+	[self loadDemoArchive];
 }
 
 // Notification indicates that all animations in a loop are now finished

@@ -3,8 +3,8 @@
 //  AVAnimatorDemo
 //
 //  Created by Moses DeJong on 4/7/09.
-//  Copyright 2009 __MyCompanyName__. All rights reserved.
 //
+//  License terms defined in License.txt.
 
 #import <Foundation/Foundation.h>
 
