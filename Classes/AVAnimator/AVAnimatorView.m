@@ -82,62 +82,7 @@
 @end // class AVAnimatorViewAudioPlayerDelegate implementation
 
 // private properties declaration for AVAnimatorView class
-
-@interface AVAnimatorView ()
-
-@property (nonatomic, retain) NSURL *animatorAudioURL;
-
-@property (nonatomic, retain) UIImage *prevFrame;
-@property (nonatomic, retain) UIImage *nextFrame;
-
-@property (nonatomic, retain) NSTimer *animatorPrepTimer;
-@property (nonatomic, retain) NSTimer *animatorReadyTimer;
-@property (nonatomic, retain) NSTimer *animatorDecodeTimer;
-@property (nonatomic, retain) NSTimer *animatorDisplayTimer;
-
-// currentFrame is the frame index for the frame on the left
-// of a decode time window. When decoding, the frame just
-// before the one to be decoded next will be calculated
-// from the time and saved as currentFrame. Basically this
-// is the index of the frame being displayed "now".
-@property (nonatomic, assign) NSUInteger currentFrame;
-
-@property (nonatomic, assign) NSUInteger repeatedFrameCount;
-
-@property (nonatomic, retain) AVAudioPlayer *avAudioPlayer;
-
-// originalAudioDelegate and retainedAudioDelegate are not properties
-
-@property (nonatomic, retain) NSDate *audioSimulatedStartTime;
-
-@property (nonatomic, assign) AVAudioPlayerState state;
-@property (nonatomic, assign) NSTimeInterval animatorMaxClockTime;
-@property (nonatomic, assign) NSTimeInterval animatorDecodeTimerInterval;
-@property (nonatomic, assign) CGSize renderSize;
-
-@property (nonatomic, assign) BOOL isReadyToAnimate;
-@property (nonatomic, assign) BOOL startAnimatorWhenReady;
-
-// private methods
-
-- (BOOL) _animatorDecodeNextFrame;
-
-- (void) _animatorDecodeFrameCallback: (NSTimer *)timer;
-
-- (void) _animatorDisplayFrameCallback: (NSTimer *)timer;
-
--(void) _setAudioSessionCategory;
-
-- (void) rotateToPortrait;
-
-- (void) rotateToLandscape;
-
-- (void) rotateToLandscapeRight;
-
-- (void) rotateToUpsidedown;
-
-@end
-
+#include "AVAnimatorViewPrivate.h"
 
 // AVAnimatorView class
 
@@ -282,7 +227,7 @@
 	BOOL isRotatedToLandscape = FALSE;
 	size_t renderWidth, renderHeight;
 
-  // FIXMEL these settings would need to be available somehow to the caller, but if this method
+  // FIXME: these settings would need to be available somehow to the caller, but if this method
   // is invoked on init, then they will not be.
   
 	if (self.animatorOrientation == UIImageOrientationUp) {
@@ -331,18 +276,18 @@
 	rs.height = renderHeight;
 	self.renderSize = rs;
   
-  NSAssert(self.frameDecoder, @"frameDecoder is nil");
-  if ([self.frameDecoder hasAlphaChannel]) {
-    // This view will blend with other views
-    self.opaque = FALSE;
-  } else {
-    // This view draws all its pixels, it does not blend
-    self.opaque = TRUE;
-  }
+  // View defaults to opaque, decoder might know
+  // that there is an alpha channel, but not
+  // until the frame source data has been read.
+  
+  self.opaque = TRUE;
   
 	// User events to this layer are ignored
   
 	self.userInteractionEnabled = FALSE;
+  
+  // FIXME: If opaque, does background color need
+  // to be set to clear instead of black?
   
 	self.backgroundColor = [UIColor blackColor];
   
@@ -467,6 +412,13 @@
     NSAssert(duration != 0.0, @"frame duration can't be zero");
     self.animatorFrameDuration = duration;
   }
+
+  // Query alpha channel support in frame decoder
+  
+   if ([self.frameDecoder hasAlphaChannel]) {
+     // This view will blend with other views
+     self.opaque = FALSE;
+   }
   
   // Get image data for initial keyframe
     

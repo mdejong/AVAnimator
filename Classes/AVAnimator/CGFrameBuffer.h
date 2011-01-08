@@ -3,10 +3,12 @@
 //  AVAnimatorDemo
 //
 //  Created by Moses DeJong on 2/13/09.
-//  Copyright 2009 __MyCompanyName__. All rights reserved.
 //
+//  License terms defined in License.txt.
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#import <CoreGraphics/CoreGraphics.h>
 
 // Avoid incorrect warnings from clang
 #ifndef __has_feature      // Optional.
@@ -23,29 +25,30 @@
 
 
 @interface CGFrameBuffer : NSObject {
-
-@public
-	char *pixels;
-	size_t numBytes;
-	size_t width;
-	size_t height;
-	char idc;
-
-@private
-	int32_t _isLockedByDataProvider;
-	CGImageRef lockedByImageRef;
+@protected
+	char *m_pixels;
+	size_t m_numBytes;
+	size_t m_width;
+	size_t m_height;
+	size_t m_bitsPerPixel;
+	size_t m_bytesPerPixel;
+	int32_t m_isLockedByDataProvider;
+	CGImageRef m_lockedByImageRef;
 }
 
 @property (readonly) char *pixels;
 @property (readonly) size_t numBytes;
 @property (readonly) size_t width;
 @property (readonly) size_t height;
+@property (readonly) size_t bitsPerPixel;
+@property (readonly) size_t bytesPerPixel;
 
 @property (nonatomic, assign) BOOL isLockedByDataProvider;
+@property (nonatomic, readonly) CGImageRef lockedByImageRef;
 
-@property (nonatomic, assign) char idc;
++ (CGFrameBuffer*) cGFrameBufferWithBppDimensions:(NSInteger)bitsPerPixel width:(NSInteger)width height:(NSInteger)height;
 
-- (id) initWithDimensions:(NSInteger)inWidth :(NSInteger)inHeight;
+- (id) initWithBppDimensions:(NSInteger)bitsPerPixel width:(NSInteger)width height:(NSInteger)height;
 
 // Render the contents of a view as pixels. Returns TRUE
 // is successful, otherwise FALSE. Note that the view

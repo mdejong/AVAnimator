@@ -1,5 +1,7 @@
 // movdata module
 //
+//  License terms defined in License.txt.
+//
 // This module implements a self contained Quicktime MOV file parser
 // with verification that the MOV contains only a single Animation video track.
 // This file should be #included into an implementation main file

@@ -10,6 +10,7 @@
 //  video data from a file or other resource.
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 @class CGFrameBuffer;
 

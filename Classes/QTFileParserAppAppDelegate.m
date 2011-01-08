@@ -21,6 +21,10 @@
 
 #import "AVPNGFrameDecoder.h"
 
+#if defined(REGRESSION_TESTS)
+#import "RegressionTests.h"
+#endif
+
 @implementation QTFileParserAppAppDelegate
 
 @synthesize window = m_window;
@@ -43,8 +47,13 @@
   [self.window addSubview:self.viewController.view];
   [self.window makeKeyAndVisible];
   
-	[self startAnimator];
-  
+#if defined(REGRESSION_TESTS)
+  // Execute regression tests when app is launched
+  [RegressionTests testApp];
+#else
+  [self startAnimator];
+#endif // REGRESSION_TESTS    
+
   return YES;
 }
 
@@ -306,6 +315,47 @@
   [self loadIntoMovieControls];
 }
 
+// FIXME: add load targets for 24bpp and 32bpp targets!
+
+- (void) loadBounce24BPPAnimation
+{
+  NSString *resourceName = @"Bounce_24BPP_15FPS.mov";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	self.animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	self.animatorView.frameDecoder = frameDecoder;
+  
+	//self.animatorView.animatorFrameDuration = 1.0;
+	//self.animatorView.animatorFrameDuration = AVAnimator15FPS;
+  //self.animatorView.animatorFrameDuration = AVAnimator30FPS;
+  self.animatorView.animatorFrameDuration = 1.0 / 60;
+  
+	self.animatorView.animatorRepeatCount = 400;
+  
+  [self.window addSubview:self.animatorView];
+  
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(animatorDoneNotification:) 
+                                               name:AVAnimatorDoneNotification
+                                             object:self.animatorView];
+  
+  [self.animatorView startAnimator];
+}
 
 - (void) loadDemoArchive
 {
@@ -313,11 +363,11 @@
   
 	NSString *resourceName = @"QuickTimeLogo.mov";
   
-  if (0) {
+  if (1) {
     resourceName = @"Sweep30FPS_ANI16BPP.mov";
   }
   if (0) {
-    resourceName = @"Bounce15FPS.mov";
+    resourceName = @"Bounce_16BPP_15FPS.mov";
   }
   if (0) {
     resourceName = @"Vertigo30FPS.mov";
@@ -361,7 +411,9 @@
   //[self loadCachedCountPNGs];
   //[self loadCachedCountPNGsUpsidedown];
   //[self loadCachedCountLandscape];
-	[self loadDemoArchive];
+  // FIXME: add a test case for a 16bpp animation in a plain window, not in the controls! (to test FPS)
+  [self loadBounce24BPPAnimation];
+	//[self loadDemoArchive];
 }
 
 // Notification indicates that all animations in a loop are now finished

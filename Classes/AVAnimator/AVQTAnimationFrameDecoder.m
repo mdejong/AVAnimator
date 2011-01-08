@@ -136,17 +136,23 @@ int num_words(uint32_t numBytes)
   
   NSAssert(renderWidth > 0 && renderHeight > 0, @"renderWidth or renderHeight is zero");
   
-  // FIXME: Rewrite allocating of CGFrameBuffer to support static ctor
+  int bitsPerPixel = movData->bitDepth;
   
-	CGFrameBuffer *cgFrameBuffer1 = [[CGFrameBuffer alloc] initWithDimensions:renderWidth :renderHeight];
-	CGFrameBuffer *cgFrameBuffer2 = [[CGFrameBuffer alloc] initWithDimensions:renderWidth :renderHeight];
-	CGFrameBuffer *cgFrameBuffer3 = [[CGFrameBuffer alloc] initWithDimensions:renderWidth :renderHeight];
+	CGFrameBuffer *cgFrameBuffer1 = [CGFrameBuffer cGFrameBufferWithBppDimensions:bitsPerPixel width:renderWidth height:renderHeight];
+  CGFrameBuffer *cgFrameBuffer2 = [CGFrameBuffer cGFrameBufferWithBppDimensions:bitsPerPixel width:renderWidth height:renderHeight];
+  CGFrameBuffer *cgFrameBuffer3 = [CGFrameBuffer cGFrameBufferWithBppDimensions:bitsPerPixel width:renderWidth height:renderHeight];
   
 	self.cgFrameBuffers = [NSArray arrayWithObjects:cgFrameBuffer1, cgFrameBuffer2, cgFrameBuffer3, nil];
   
-	[cgFrameBuffer1 release];
-	[cgFrameBuffer2 release];
-	[cgFrameBuffer3 release];
+  // Double check size assumptions
+  
+  if (bitsPerPixel == 16) {
+    NSAssert(cgFrameBuffer1.bytesPerPixel == 2, @"invalid bytesPerPixel");
+  } else if (bitsPerPixel == 24 || bitsPerPixel == 32) {
+    NSAssert(cgFrameBuffer1.bytesPerPixel == 4, @"invalid bytesPerPixel");
+  } else {
+    NSAssert(FALSE, @"invalid bitsPerPixel");
+  }
 }
 
 - (CGFrameBuffer*) _getNextFramebuffer
@@ -190,7 +196,7 @@ int num_words(uint32_t numBytes)
   
   assert(self->movData->maxSampleSize > 0);
   
-  assert(self->movData->bitDepth == 16); // FIXME: add others later
+  assert(self->movData->bitDepth == 16 || self->movData->bitDepth == 24 || self->movData->bitDepth == 32);
   
 #ifdef USE_MMAP
   [self close];
@@ -430,6 +436,7 @@ int num_words(uint32_t numBytes)
 
 - (BOOL) hasAlphaChannel
 {
+  NSAssert(movData, @"movData is NULL");
   if (movData->bitDepth == 16 || movData->bitDepth == 24) {
     return FALSE;
   } else if (movData->bitDepth == 32) {
