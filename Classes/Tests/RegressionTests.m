@@ -20,8 +20,72 @@
 // Get array of classes named "*Test" that extend NSObject and implement "testApp" class method
 
 + (BOOL) _classRespondsToSelector:(Class)c sel:(SEL)sel {
-	Method m = class_getClassMethod(c, @selector(testApp));	
+	Method m = class_getClassMethod(c, sel);	
 	return (m != NULL);
+}
+
+// Return TRUE for class test method.
+// TRUE for "test1" "testABC".
+// FALSE for "test" "testWithArgs:..."
+
++ (BOOL) _isClassTestMethod:(SEL)selector
+{
+  const char* methodName = sel_getName(selector);
+  char *pat = "test";
+  if ((strlen(methodName) > strlen(pat)) &&
+      (strncmp(methodName, pat, strlen(pat)) == 0) &&
+      (strchr(methodName, ':') == NULL)) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+// Return array of Method pointers that match the class method "test*"
+// with no arguments.
+
++ (Method*) _classTestMethods:(Class)c
+                     outCount:(unsigned int*)outCount
+{
+  unsigned int classCount;
+  unsigned int matchCount = 0;
+  Method *methods = class_copyMethodList(object_getClass(c), &classCount);
+  
+  for (int i=0; i < classCount; i++) {
+    SEL selector = method_getName(methods[i]);
+    if ([self _isClassTestMethod:selector]) {
+      matchCount++;
+    }
+  }
+  
+  if (matchCount == 0) {
+    return NULL;
+  }
+  
+  Method *testMethods = malloc(sizeof(Method*) * matchCount);
+  int j = 0;
+  for (int i=0; i < classCount; i++) {
+    SEL selector = method_getName(methods[i]);
+    if ([self _isClassTestMethod:selector]) {
+      testMethods[j++] = methods[i];
+    }
+  }  
+  
+  free(methods);
+  *outCount = matchCount;
+  return testMethods;  
+}
+
+// Returns TRUE if 1 or more methods named "test*"
+
++ (BOOL) _classHasTestMethods:(Class)c {
+  unsigned int count;
+  Method *methods = [self _classTestMethods:c outCount:&count];
+  if (methods == NULL) {
+    return FALSE;
+  }
+  free(methods);
+  return TRUE;
 }
 
 + (void) _invokeIfClassRespondsToSelector:(Class)c sel:(SEL)sel {
@@ -31,7 +95,7 @@
 }
 
 + (NSArray*) _getTestClasses {
-	// Find classes named "*Test" that extend NSObject and implement "testApp"
+	// Find classes named "*Test" that extend NSObject and implement "test*"
   
 	NSMutableArray *muArr = [NSMutableArray arrayWithCapacity:64];
   
@@ -69,8 +133,11 @@
 				// Ignore this class
 				continue;
 			}
+  
+      // Iterate over each selector and see if there is at least 1
+      // class method that matches "test*".
       
-			if ([self _classRespondsToSelector:aClass sel:@selector(testApp)]) {
+			if ([self _classHasTestMethods:aClass]) {
 				[muArr addObject:aClass];
 			}
 		}
@@ -120,26 +187,44 @@
 	}
 }
 
-// Find classes named "*Test" that extend NSObject and implement "testApp" and
-// invoke testApp on each one.
+// Find classes named "*Test" that extend NSObject and implement
+// 1 to N methods that match "test*".
 
 + (void) _testApp {
   for (Class c in [self _getTestClasses]) {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    NSAutoreleasePool *outer_pool = [[NSAutoreleasePool alloc] init];
     
     const char *className = class_getName(c);
     NSString *classNameStr = [NSString stringWithFormat:@"%s", className];
-    NSLog(@"%@.testApp:", classNameStr);
+
+    unsigned int count;
+    Method *methods = [self _classTestMethods:c outCount:&count];
+      
+    for (int i=0; i < count; i++) {
+      NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
+      
+      SEL selector = method_getName(methods[i]);
+      
+      NSString *methodNameStr = [NSString stringWithFormat:@"%s", sel_getName(selector)];
+      
+      NSLog(@"RegressionTest %@.%@:", classNameStr, methodNameStr);
+      
+      [self _invokeIfClassRespondsToSelector:c sel:selector];
+      
+      [self cleanupAfterTest];
+      
+      [inner_pool drain];
+    }
     
-    [self _invokeIfClassRespondsToSelector:c sel:@selector(testApp)];
+    free(methods);
     
-    [pool release];
-    
-    [self cleanupAfterTest];
+    [outer_pool drain];
 	}
   
-  id appDelegate = [[UIApplication sharedApplication] delegate];
-	NSAssert(appDelegate, @"appDelegate is nil");
+  NSLog(@"RegressionTest DONE");
+  
+//  id appDelegate = [[UIApplication sharedApplication] delegate];
+//	NSAssert(appDelegate, @"appDelegate is nil");
     
 	return;
 }

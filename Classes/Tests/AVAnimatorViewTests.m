@@ -14,13 +14,18 @@
 #import "AVQTAnimationFrameDecoder.h"
 
 @interface AVAnimatorViewTests : NSObject {}
-+ (void) testApp;
 @end
 
 @implementation AVAnimatorViewTests
 
-+ (void) test24BPP:(UIWindow*)window
+// Each test case method is invoked by the RegressionTests harness.
+
++ (void) test24BPP
 {
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
   NSString *resourceName = @"Bounce_24BPP_15FPS.mov";
   
   // Create a plain AVAnimatorView without a movie controls and display
@@ -95,23 +100,6 @@
   NSAssert(pixel == 0x0, @"pixel");
   
   return;
-}
-
-// Define a method named "testApp", it will be invoked dynamically from
-// RegressionTest.m at runtime
-
-+ (void) testApp {
-	id appDelegate = [[UIApplication sharedApplication] delegate];	
-	UIWindow *window = [appDelegate window];
-	NSAssert(window, @"window");
-  
-  // Run each test case in the test class
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  [self test24BPP:window];
-  [RegressionTests cleanupAfterTest];
-  [pool drain];
-  
-	return;
 }
 
 @end
