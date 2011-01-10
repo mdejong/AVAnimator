@@ -510,16 +510,39 @@
 	self.layer.transform = CATransform3DMakeRotation(angle, 0, 0.0, 1.0);
 }
 
+- (void) landscapeCenterAndRotate:(UIView*)viewToRotate
+                            angle:(float)angle
+{
+  float portraitWidth = self.frame.size.height;
+  float portraitHeight = self.frame.size.width;
+  float landscapeWidth = portraitHeight;
+  float landscapeHeight = portraitWidth;
+  
+	float landscapeHalfWidth = landscapeWidth / 2.0;
+	float landscapeHalfHeight = landscapeHeight / 2.0;
+	
+	int portraitHalfWidth = portraitWidth / 2.0;
+	int portraitHalfHeight = portraitHeight / 2.0;
+	
+	int xoff = landscapeHalfWidth - portraitHalfWidth;
+	int yoff = landscapeHalfHeight - portraitHalfHeight;	
+  
+	CGRect frame = CGRectMake(-xoff, -yoff, landscapeWidth, landscapeHeight);
+	viewToRotate.frame = frame;
+
+  viewToRotate.layer.transform = CATransform3DMakeRotation(angle, 0, 0.0, 1.0);
+}
+
 - (void) rotateToLandscape
 {
 	float angle = M_PI / 2;  //rotate CCW 90°, or π/2 radians
-	self.layer.transform = CATransform3DMakeRotation(angle, 0, 0.0, 1.0);
+  [self landscapeCenterAndRotate:self angle:angle];
 }
 
 - (void) rotateToLandscapeRight
 {
 	float angle = -1 * (M_PI / 2);  //rotate CW 90°, or -π/2 radians
-	self.layer.transform = CATransform3DMakeRotation(angle, 0, 0.0, 1.0);
+  [self landscapeCenterAndRotate:self angle:angle];
 }
 
 // Invoke this method to prepare the video and audio data so that it can be played

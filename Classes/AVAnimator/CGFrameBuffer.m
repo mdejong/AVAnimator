@@ -10,7 +10,7 @@
 
 #import <QuartzCore/QuartzCore.h>
 
-#define DEBUG_LOGGING
+//#define DEBUG_LOGGING
 
 void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size);
 

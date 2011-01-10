@@ -315,12 +315,19 @@
   [self loadIntoMovieControls];
 }
 
-// FIXME: add load targets for 24bpp and 32bpp targets!
-
-- (void) loadBounce24BPPAnimation
+- (void) loadBounceLandscapeAnimation:(int)bpp
 {
-  NSString *resourceName = @"Bounce_24BPP_15FPS.mov";
-  
+  NSString *resourceName;
+  if (bpp == 16) {
+  resourceName = @"Bounce_16BPP_15FPS.mov";
+  } else if (bpp == 24) {
+  resourceName = @"Bounce_24BPP_15FPS.mov";
+  } else if (bpp == 32) {
+  resourceName = @"Bounce_32BPP_15FPS.mov";
+  } else {
+    assert(0);
+  }
+
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
   // has no transforms applied to the AVAnimatorView.
@@ -342,8 +349,8 @@
   
 	//self.animatorView.animatorFrameDuration = 1.0;
 	//self.animatorView.animatorFrameDuration = AVAnimator15FPS;
-  //self.animatorView.animatorFrameDuration = AVAnimator30FPS;
-  self.animatorView.animatorFrameDuration = 1.0 / 60;
+  self.animatorView.animatorFrameDuration = AVAnimator30FPS;
+  //self.animatorView.animatorFrameDuration = 1.0 / 60;
   
 	self.animatorView.animatorRepeatCount = 400;
   
@@ -412,7 +419,17 @@
   //[self loadCachedCountPNGsUpsidedown];
   //[self loadCachedCountLandscape];
   // FIXME: add a test case for a 16bpp animation in a plain window, not in the controls! (to test FPS)
-  [self loadBounce24BPPAnimation];
+  
+  // About 30 FPS possible when only a single animator view is in the main window.
+  [self loadBounceLandscapeAnimation:16];
+  
+  // 24bpp framebuffers are 2 times larger, about 17 FPS limit on 3g. memcpy() bounded
+  //[self loadBounceLandscapeAnimation:24];
+
+  // 32bpp is about 15FPS. A little more time taken to premultiply ?? But, nothing
+  // compared to the memcpy().
+  //[self loadBounceLandscapeAnimation:32];
+  
 	//[self loadDemoArchive];
 }
 
