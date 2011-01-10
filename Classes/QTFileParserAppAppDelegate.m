@@ -321,7 +321,7 @@
   if (bpp == 16) {
   resourceName = @"Bounce_16BPP_15FPS.mov";
   } else if (bpp == 24) {
-  resourceName = @"Bounce_24BPP_15FPS.mov";
+   resourceName = @"Bounce_24BPP_15FPS.mov";
   } else if (bpp == 32) {
   resourceName = @"Bounce_32BPP_15FPS.mov";
   } else {
@@ -349,8 +349,8 @@
   
 	//self.animatorView.animatorFrameDuration = 1.0;
 	//self.animatorView.animatorFrameDuration = AVAnimator15FPS;
-  self.animatorView.animatorFrameDuration = AVAnimator30FPS;
-  //self.animatorView.animatorFrameDuration = 1.0 / 60;
+  //self.animatorView.animatorFrameDuration = AVAnimator30FPS;
+  self.animatorView.animatorFrameDuration = 1.0 / 60;
   
 	self.animatorView.animatorRepeatCount = 400;
   
@@ -421,10 +421,10 @@
   // FIXME: add a test case for a 16bpp animation in a plain window, not in the controls! (to test FPS)
   
   // About 30 FPS possible when only a single animator view is in the main window.
-  [self loadBounceLandscapeAnimation:16];
+  //[self loadBounceLandscapeAnimation:16];
   
   // 24bpp framebuffers are 2 times larger, about 17 FPS limit on 3g. memcpy() bounded
-  //[self loadBounceLandscapeAnimation:24];
+  [self loadBounceLandscapeAnimation:24];
 
   // 32bpp is about 15FPS. A little more time taken to premultiply ?? But, nothing
   // compared to the memcpy().

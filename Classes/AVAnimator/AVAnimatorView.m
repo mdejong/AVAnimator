@@ -415,10 +415,10 @@
 
   // Query alpha channel support in frame decoder
   
-   if ([self.frameDecoder hasAlphaChannel]) {
-     // This view will blend with other views
-     self.opaque = FALSE;
-   }
+  if ([self.frameDecoder hasAlphaChannel]) {
+    // This view will blend with other views
+    self.opaque = FALSE;
+  }
   
   // Get image data for initial keyframe
     

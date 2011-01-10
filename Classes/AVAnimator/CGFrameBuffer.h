@@ -1,6 +1,5 @@
 //
 //  CGFrameBuffer.h
-//  AVAnimatorDemo
 //
 //  Created by Moses DeJong on 2/13/09.
 //
@@ -22,7 +21,6 @@
 #define CF_RETURNS_RETAINED
 #endif
 #endif
-
 
 @interface CGFrameBuffer : NSObject {
 @protected

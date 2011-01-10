@@ -1,6 +1,5 @@
 //
 //  CGFrameBuffer.m
-//  AVAnimatorDemo
 //
 //  Created by Moses DeJong on 2/13/09.
 //
@@ -9,6 +8,20 @@
 #import "CGFrameBuffer.h"
 
 #import <QuartzCore/QuartzCore.h>
+
+// Alignment is not an issue, makes no difference in performance
+//#define USE_ALIGNED_VALLOC 1
+
+// Using page copy makes a huge diff, 24 bpp goes from 15->20 FPS to 30 FPS!
+#define USE_MACH_VM_ALLOCATE 1
+
+#if defined(USE_ALIGNED_VALLOC) || defined(USE_MACH_VM_ALLOCATE)
+#import <unistd.h> // getpagesize()
+#endif
+
+#if defined(USE_MACH_VM_ALLOCATE)
+#import <mach/mach.h>
+#endif
 
 //#define DEBUG_LOGGING
 
@@ -57,29 +70,65 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   
 	int inNumBytes = numPixelsToAllocate * bytesPerPixel;
 
-  // FIXME: Use valloc(size) to allocate memory that is always aligned to a whole page.
-  // Also, it might be useful to ensure that some number of whole pages is returned,
-  // so make the size in terms on bytes large enough (round up to the page size).
-  // int getpagesize(void); returns the value. Could a memcpy() then know that whole
-  // pages needed to be copied, would this faster?
-
-  // Mac OS X supports vm_copy() and vm_alloc(), look into an impl that makes use of
-  // defered copy ?
+  // FIXME: if every frame is a key frame, then don't use the kernel memory interface
+  // since it would not help at all in terms of performance. Would be faster to
+  // just use different buffers.
   
-  // Test impl of both of these.
-	char* buffer = (char*) malloc(inNumBytes);
+  // FIXME: implement runtime switch for mode, so that code can be compiled once to
+  // test out both modes!
+
+	char* buffer;
+  size_t allocNumBytes = inNumBytes;
+  
+#if defined(USE_MACH_VM_ALLOCATE)
+  int pagesize = getpagesize();
+  int numpages = (inNumBytes / pagesize);
+  if (inNumBytes % pagesize) {
+    numpages++;
+  }
+  
+  kern_return_t ret;
+  mach_vm_size_t size = (mach_vm_size_t)(numpages * pagesize);
+  allocNumBytes = (size_t)size;
+  
+  ret = vm_allocate((vm_map_t) mach_task_self(), (vm_address_t*) &buffer, size, VM_FLAGS_ANYWHERE);
+  
+  if (ret != KERN_SUCCESS) {
+    buffer = NULL;
+  }
+  
+  // Note that the returned memory is not zeroed, the first frame is a keyframe, so it will completely
+  // fill the framebuffer. Additional frames will be created from a copy of the initial frame.
+#else
+  // Regular malloc(), or page aligned malloc()
+# if defined(USE_ALIGNED_VALLOC)
+  int pagesize = getpagesize();
+  int numpages = (inNumBytes / pagesize);
+  if (inNumBytes % pagesize) {
+    numpages++;
+  }
+  allocNumBytes = numpages * pagesize;
+  buffer = (char*) valloc(allocNumBytes);
+  if (buffer) {
+    bzero(buffer, allocNumBytes);
+  }  
+# else
+  buffer = (char*) malloc(allocNumBytes);
+  if (buffer) {
+    bzero(buffer, allocNumBytes);
+  }  
+# endif // USE_ALIGNED_MALLOC
+#endif
 
 	if (buffer == NULL) {
 		return nil;
   }
 
-	memset(buffer, 0, inNumBytes);
-
   if (self = [super init]) {
     self->m_bitsPerPixel = bitsPerPixel;
     self->m_bytesPerPixel = bytesPerPixel;
     self->m_pixels = buffer;
-    self->m_numBytes = inNumBytes;
+    self->m_numBytes = allocNumBytes;
     self->m_width = width;
     self->m_height = height;
   } else {
@@ -367,15 +416,35 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 - (void) copyPixels:(CGFrameBuffer *)anotherFrameBuffer
 {
   assert(self.numBytes == anotherFrameBuffer.numBytes);
+#if defined(USE_MACH_VM_ALLOCATE)
+  kern_return_t ret;
+  vm_address_t src = (vm_address_t) anotherFrameBuffer.pixels;
+  vm_address_t dst = (vm_address_t) self.pixels;
+  ret = vm_copy((vm_map_t) mach_task_self(), src, (vm_size_t) self.numBytes, dst);
+  if (ret != KERN_SUCCESS) {
+    assert(0);
+  }
+#else
   memcpy(self.pixels, anotherFrameBuffer.pixels, anotherFrameBuffer.numBytes);
+#endif
 }
 
 - (void)dealloc {
 	NSAssert(self.isLockedByDataProvider == FALSE, @"dealloc: buffer still locked by data provider");
 
+#if defined(USE_MACH_VM_ALLOCATE)
+	if (self.pixels != NULL) {
+    kern_return_t ret;
+    ret = vm_deallocate((vm_map_t) mach_task_self(), (vm_address_t) self.pixels, (vm_size_t) self.numBytes);
+    if (ret != KERN_SUCCESS) {
+      assert(0);
+    }
+  }  
+#else
 	if (self.pixels != NULL) {
 		free(self.pixels);
   }
+#endif
 
 #ifdef DEBUG_LOGGING
 	NSLog(@"deallocate CGFrameBuffer");
