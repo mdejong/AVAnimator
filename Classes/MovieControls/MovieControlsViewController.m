@@ -14,6 +14,8 @@
 
 #import <QuartzCore/QuartzCore.h>
 
+#import "AutoPropertyRelease.h"
+
 #define LOGGING
 
 #define EVENT_DELTA_OFFSET (0.5)
@@ -26,8 +28,10 @@
 @synthesize volumeSubview, volumeView;
 @synthesize playPauseButton;
 @synthesize rewindButton = m_rewindButton;
+@synthesize fastForwardButton = m_fastForwardButton;
 @synthesize playImage, pauseImage;
 @synthesize rewindImage = m_rewindImage;
+@synthesize fastForwardImage = m_fastForwardImage;
 @synthesize hideControlsTimer, hideControlsFromPlayTimer;
 
 // static ctor
@@ -81,33 +85,19 @@
 	[self hideControls];
 }
 
-- (void)dealloc {
-	[movieControlsView release];
-	[overView release];
-
-	[navController release];
-	[doneButton release];
-
-	[controlsSubview release];
-	[controlsImageView release];
-	[controlsBackgroundImage release];
-	[volumeSubview release];
-	[volumeView release];
-
-	[playPauseButton removeTarget:self
-						action:@selector(pressPlayPause:)
-			  forControlEvents:UIControlEventTouchUpInside];
-
-	[playPauseButton release];
-	self.rewindButton = nil;
-
-	[playImage release];
-	[pauseImage release];
-  self.rewindImage = nil;
-
+- (void)dealloc {  
 	[self _releaseHideControlsTimer];
-
-    [super dealloc];
+	[self.playPauseButton removeTarget:self
+                         action:@selector(pressPlayPause:)
+               forControlEvents:UIControlEventTouchUpInside];
+	[self.rewindButton removeTarget:self
+                              action:@selector(pressRewind:)
+                    forControlEvents:UIControlEventTouchUpInside];
+	[self.fastForwardButton removeTarget:self
+                           action:@selector(pressfastForward:)
+                 forControlEvents:UIControlEventTouchUpInside];    
+  [AutoPropertyRelease releaseProperties:self thisClass:MovieControlsViewController.class];
+  [super dealloc];
 }
 
 - (void) _rotateToLandscape
@@ -231,6 +221,12 @@
 	NSAssert(resPath, @"prevtrack.png resource not found");
   
 	self.rewindImage = [UIImage imageWithContentsOfFile:resPath];  
+
+  imageFilename = @"nexttrack.png";
+	resPath = [[NSBundle mainBundle] pathForResource:imageFilename ofType:nil];
+	NSAssert(resPath, @"nexttrack.png resource not found");
+  
+	self.fastForwardImage = [UIImage imageWithContentsOfFile:resPath];
   
 	// Define size of button in terms of image, it is critical
 	// that the size be odd for this image to avoid scaling issues.
@@ -306,6 +302,42 @@
 	self.rewindButton.enabled = TRUE;
 	self.rewindButton.userInteractionEnabled = TRUE;
 	self.rewindButton.showsTouchWhenHighlighted = TRUE;
+
+	// Create custom button for the fast forward function
+  
+	self.fastForwardButton = [UIButton buttonWithType:UIButtonTypeCustom];
+  
+	self.fastForwardButton.frame = frame;
+  
+	[self.fastForwardButton setImage:self.fastForwardImage forState:UIControlStateNormal];
+  
+	if (FALSE) {
+		self.fastForwardButton.backgroundColor = [UIColor redColor];
+	}
+  
+	center.x = CGRectGetWidth(self.controlsImageView.frame) / 2;
+	center.y = CGRectGetHeight(self.controlsImageView.frame) / 2;
+	center.y -= (self.fastForwardImage.size.height / 2);
+	center.y -= offsetYCenterline;
+  center.y -= 2;
+  center.x += 83;
+	self.fastForwardButton.center = center;	
+  
+	[controlsImageView addSubview:self.fastForwardButton];
+  
+	// Bind button press action to callback
+  
+	[self.fastForwardButton addTarget:self
+                        action:@selector(pressFastForward:)
+              forControlEvents:UIControlEventTouchUpInside];
+  
+	self.fastForwardButton.enabled = TRUE;
+	self.fastForwardButton.userInteractionEnabled = TRUE;
+	self.fastForwardButton.showsTouchWhenHighlighted = TRUE;  
+  
+  // Need to add flags so that "rewind", "fastforward", and volume controls
+  // are optional in the display! These can be BOOL flags that are set in the
+  // object.
   
   return;
 }
@@ -661,19 +693,23 @@
 														object:self];	
 }
 
-- (void) pressRewind:(id)sender;
+// FIXME: When press and hold the rewind or fast forward button, it becomes a seek
+// ahead or back function. Perhaps "rewind" should be when pressed with no hold,
+// while "seek backwards" could be the other one.
+
+- (void) pressRewindOrFastForwardImpl:(BOOL)isRewind
 {
 #ifdef LOGGING
-	NSLog(@"pressRewind");
+	NSLog(@"pressRewindOrFastForwardImpl %d", isRewind);
 #endif  
   
-	// Allow 1 Done button press event per second. This logic
+	// Allow 1 button press event per second. This logic
 	// ignores a second button press in a row.
   
 	CFAbsoluteTime offset = CFAbsoluteTimeGetCurrent() - lastEventTime;
 	if (offset < EVENT_DELTA_OFFSET) {
 #ifdef LOGGING
-		NSLog(@"rewind event too close to previous event");
+		NSLog(@"rewind/ffwd event too close to previous event");
 #endif
     
 		return;
@@ -683,13 +719,28 @@
   if (isPaused) {
     [self _pressPlayPauseImpl];
   }
-
+  
   // The rewind button sends out a notification that will restart the animator
   
-  [[NSNotificationCenter defaultCenter] postNotificationName:MovieControlsRewindNotification
-                                                      object:self];
-  
+  if (isRewind) {
+    [[NSNotificationCenter defaultCenter] postNotificationName:MovieControlsRewindNotification
+                                                        object:self];
+  } else {
+    [[NSNotificationCenter defaultCenter] postNotificationName:MovieControlsFastForwardNotification
+                                                        object:self];
+  }
+    
   [self _scheuleHideControlsFromPlayTimer];
+}
+
+- (void) pressRewind:(id)sender;
+{
+  [self pressRewindOrFastForwardImpl:TRUE];
+}
+
+- (void) pressFastForward:(id)sender;
+{
+  [self pressRewindOrFastForwardImpl:FALSE];
 }
 
 // Find the UIView that contains this touch event, this logic

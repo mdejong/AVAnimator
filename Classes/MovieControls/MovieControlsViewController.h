@@ -24,6 +24,7 @@
 #define MovieControlsPlayNotification @"MovieControlsPlayNotification"
 #define MovieControlsPauseNotification @"MovieControlsPauseNotification"
 #define MovieControlsRewindNotification @"MovieControlsRewindNotification"
+#define MovieControlsFastForwardNotification @"MovieControlsFastForwardNotification"
 
 @interface MovieControlsViewController : UIViewController {
 	// Custom view subclass that manages event propagation
@@ -46,9 +47,11 @@
 
 	UIButton *playPauseButton;
 	UIButton *m_rewindButton;
+	UIButton *m_fastForwardButton;
 	UIImage *playImage;
 	UIImage *pauseImage;
 	UIImage *m_rewindImage;
+	UIImage *m_fastForwardImage;
 
 	UIView *volumeSubview;
 	MPVolumeView *volumeView;
@@ -77,9 +80,11 @@
 @property (nonatomic, retain) UIView *volumeSubview;
 @property (nonatomic, retain) UIButton *playPauseButton;
 @property (nonatomic, retain) UIButton *rewindButton;
+@property (nonatomic, retain) UIButton *fastForwardButton;
 @property (nonatomic, retain) UIImage *playImage;
 @property (nonatomic, retain) UIImage *pauseImage;
 @property (nonatomic, retain) UIImage *rewindImage;
+@property (nonatomic, retain) UIImage *fastForwardImage;
 
 @property (nonatomic, retain) MPVolumeView *volumeView;
 

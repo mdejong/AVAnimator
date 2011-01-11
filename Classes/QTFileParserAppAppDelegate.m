@@ -424,13 +424,13 @@
   //[self loadBounceLandscapeAnimation:16];
   
   // 24bpp framebuffers are 2 times larger, about 17 FPS limit on 3g. memcpy() bounded
-  [self loadBounceLandscapeAnimation:24];
+  //[self loadBounceLandscapeAnimation:24];
 
   // 32bpp is about 15FPS. A little more time taken to premultiply ?? But, nothing
   // compared to the memcpy().
   //[self loadBounceLandscapeAnimation:32];
   
-	//[self loadDemoArchive];
+	[self loadDemoArchive];
 }
 
 // Notification indicates that all animations in a loop are now finished
