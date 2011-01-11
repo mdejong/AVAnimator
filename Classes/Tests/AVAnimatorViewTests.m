@@ -1,9 +1,9 @@
 //
 //  AVAnimatorViewTests.m
-//  QTFileParserApp
 //
 //  Created by Moses DeJong on 1/8/11.
 //
+//  License terms defined in License.txt.
 
 #import "RegressionTests.h"
 

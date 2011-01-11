@@ -1,6 +1,6 @@
 //  Created by Moses DeJong on 11/8/09.
-//  Copyright 2009 HelpURock Software. All rights reserved.
 //
+//  License terms defined in License.txt.
 
 #if !defined(REGRESSION_TESTS)
 #error "RegressionTests.h should not be included unless REGRESSION_TESTS is defined"

@@ -1,10 +1,9 @@
 //
 //  QTFileParserAppViewController.h
-//  QTFileParserApp
 //
 //  Created by Moses DeJong on 12/17/10.
-//  Copyright 2010 __MyCompanyName__. All rights reserved.
 //
+//  License terms defined in License.txt.
 
 #import <UIKit/UIKit.h>
 

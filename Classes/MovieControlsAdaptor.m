@@ -3,6 +3,7 @@
 //
 //  Created by Moses DeJong on 12/17/10.
 //
+//  License terms defined in License.txt.
 
 #import "MovieControlsAdaptor.h"
 
@@ -55,6 +56,18 @@
                                                name:MovieControlsPlayNotification 
                                              object:self.movieControlsViewController];
   
+  // Rewind or Fast Forward actions from the movie controls
+
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(movieControlsRewindNotification:) 
+                                               name:MovieControlsRewindNotification 
+                                             object:self.movieControlsViewController];
+
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(movieControlsFastForwardNotification:) 
+                                               name:MovieControlsFastForwardNotification 
+                                             object:self.movieControlsViewController];
+  
 	// Register callbacks to be invoked when the animator changes from
 	// states between start/stop/done. The start/stop notification
 	// is done at the start and end of each loop. When all loops are
@@ -101,6 +114,14 @@
                                                   name:MovieControlsPlayNotification
                                                 object:self.movieControlsViewController];	
   
+	[[NSNotificationCenter defaultCenter] removeObserver:self
+                                                  name:MovieControlsRewindNotification
+                                                object:self.movieControlsViewController];
+  
+  [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                  name:MovieControlsFastForwardNotification
+                                                object:self.movieControlsViewController];
+
 	// Remove notifications from animator
   
 	[[NSNotificationCenter defaultCenter] removeObserver:self
@@ -149,6 +170,20 @@
 	NSAssert(![self.animatorView isInitializing], @"animatorView isInitializing");
   
 	[self.animatorView unpause];
+}
+
+- (void)movieControlsRewindNotification:(NSNotification*)notification {
+	NSLog( @"movieControlsRewindNotification" );
+  
+	[self.animatorView stopAnimator];
+	[self.animatorView startAnimator];
+}
+
+- (void)movieControlsFastForwardNotification:(NSNotification*)notification {
+	NSLog( @"movieControlsFastForwardNotification" );
+  
+//	[self.animatorView stopAnimator];
+//	[self.animatorView startAnimator];
 }
 
 // Invoked when the animator is ready to begin, meaning all

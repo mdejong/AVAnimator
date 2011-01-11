@@ -1,10 +1,9 @@
 //
 //  MovieControlsView.h
-//  MovieControlsDemo
 //
 //  Created by Moses DeJong on 4/11/09.
-//  Copyright 2009 __MyCompanyName__. All rights reserved.
 //
+//  License terms defined in License.txt.
 
 // This utility class exists to work around an issue with touch
 // detection related to the hide controls timer. The view controller

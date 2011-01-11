@@ -2,8 +2,8 @@
 //  RegressionTests.m
 //
 //  Created by Moses DeJong on 11/8/09.
-//  Copyright 2009 __MyCompanyName__. All rights reserved.
 //
+//  License terms defined in License.txt.
 
 #import "objc/runtime.h"
 

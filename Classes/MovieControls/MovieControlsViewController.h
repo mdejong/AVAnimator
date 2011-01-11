@@ -1,10 +1,9 @@
 //
 //  MovieControlsViewController.h
-//  MovieControlsDemo
 //
 //  Created by Moses DeJong on 4/8/09.
-//  Copyright __MyCompanyName__ 2009. All rights reserved.
 //
+//  License terms defined in License.txt.
 
 #import <UIKit/UIKit.h>
 

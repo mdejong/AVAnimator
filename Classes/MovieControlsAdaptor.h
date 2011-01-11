@@ -3,6 +3,8 @@
 //
 //  Created by Moses DeJong on 12/17/10.
 //
+//  License terms defined in License.txt.
+//
 //  This class provides a default implementation that connects an AVAnimatorViewController
 //  and a MovieControlsViewController. The movie controller can then control the function
 //  of the animator via notifications. This is a util class that keeps most of the notification

@@ -1,9 +1,7 @@
 //
 //  MovieControlsView.m
-//  MovieControlsDemo
 //
-//  Created by Moses DeJong on 4/11/09.
-//
+//  License terms defined in License.txt.
 
 #import "MovieControlsView.h"
 #import "MovieControlsViewController.h"

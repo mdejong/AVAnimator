@@ -6,6 +6,8 @@
 // This file defines the private members of the AVAnimatorView.
 // These fields would typically be used only by the implementation
 // of AVAnimatorView, but could be needed for regression tests.
+//
+//  License terms defined in License.txt.
 
 #import <Foundation/Foundation.h>
 
