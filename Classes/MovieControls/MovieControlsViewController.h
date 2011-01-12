@@ -26,6 +26,8 @@
 #define MovieControlsFastForwardNotification @"MovieControlsFastForwardNotification"
 
 @interface MovieControlsViewController : UIViewController {
+  UIWindow *m_mainWindow;
+  
 	// Custom view subclass that manages event propagation
 	MovieControlsView *movieControlsView;
 
@@ -66,6 +68,7 @@
 	BOOL touchBeganInSelfView;
 }
 
+@property (nonatomic, assign) UIWindow *mainWindow;
 @property (nonatomic, retain) MovieControlsView *movieControlsView;
 @property (nonatomic, retain) UIView *overView;
 
@@ -101,6 +104,7 @@
 - (void) showControls;
 - (void) hideControls;
 
+// FIXME: make these private
 - (void) addNavigationControlerAsSubviewOf:(UIWindow*)window;
 - (void) removeNavigationControlerAsSubviewOf:(UIWindow*)window;
 

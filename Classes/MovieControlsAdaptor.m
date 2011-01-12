@@ -35,7 +35,7 @@
 	// Put movie controls away (this needs to happen when the
 	// loading is done)
   
-	[self.movieControlsViewController hideControls];
+//	[self.movieControlsViewController hideControls];
   
 	// Setup handlers for movie control notifications
   
@@ -87,7 +87,7 @@
                                            selector:@selector(animatorDidStopNotification:) 
                                                name:AVAnimatorDidStopNotification 
                                              object:self.animatorView];
-    
+
 	// Kick off loading operation and disable user touch events until
 	// finished loading.
   

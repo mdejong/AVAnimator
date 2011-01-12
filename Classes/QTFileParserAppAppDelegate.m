@@ -100,13 +100,14 @@
 
 - (void) loadIntoMovieControls
 {
-  // Create Movie Controls and manage AVAnimatorView inside it
+  // Create Movie Controls and let it manage the AVAnimatorView
   
 	self.movieControlsViewController = [MovieControlsViewController movieControlsViewController];
   
-	self.movieControlsViewController.overView = self.animatorView;
+  // note that overView must be set before mainWindow is defined!
   
-	[self.movieControlsViewController addNavigationControlerAsSubviewOf:self.window];
+	self.movieControlsViewController.overView = self.animatorView;
+  self.movieControlsViewController.mainWindow = self.window;
   
   self.movieControlsAdaptor = [MovieControlsAdaptor movieControlsAdaptor];
   self.movieControlsAdaptor.animatorView = self.animatorView;
@@ -273,8 +274,11 @@
 
 - (void) loadCachedCountLandscape
 {
+  // Setup the AnimatorView in landscape mode so that it matches the
+  // orientation of the MovieControls.
   CGRect landscapeFrame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:landscapeFrame];
+  self.animatorView.animatorOrientation = UIImageOrientationLeft;
   
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
@@ -333,7 +337,7 @@
   // has no transforms applied to the AVAnimatorView.
   
   CGRect frame = CGRectMake(0, 0, 480, 320);
-  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
   self.animatorView.animatorOrientation = UIImageOrientationLeft;
   
   // Create loader that will read a movie file from app resources.
@@ -370,7 +374,7 @@
   
 	NSString *resourceName = @"QuickTimeLogo.mov";
   
-  if (1) {
+  if (0) {
     resourceName = @"Sweep30FPS_ANI16BPP.mov";
   }
   if (0) {
@@ -397,8 +401,8 @@
 
 	//self.animatorView.animatorFrameDuration = 1.0;
 	//self.animatorView.animatorFrameDuration = AVAnimator15FPS;
-  //self.animatorView.animatorFrameDuration = AVAnimator30FPS;
-  self.animatorView.animatorFrameDuration = 1.0 / 60;
+  self.animatorView.animatorFrameDuration = AVAnimator30FPS;
+  //self.animatorView.animatorFrameDuration = 1.0 / 60;
   
   //	self.animatorView.animatorRepeatCount = 100;
 	self.animatorView.animatorRepeatCount = 60;
@@ -414,10 +418,18 @@
 {
 	[self.viewController.view removeFromSuperview];
   
+  // These tests show just the animator by themselves, should be
+  // pushing 60 FPS since no decoding is needed and images
+  // can be cached on the graphics card.
+  
   //[self loadBouncePNGs];
   //[self loadCachedCountPNGs];
   //[self loadCachedCountPNGsUpsidedown];
-  //[self loadCachedCountLandscape];
+  
+  // This test case shows a cached PNG animator in the movie controls, to
+  // see if having movie window over effects FPS.
+  [self loadCachedCountLandscape];
+    
   // FIXME: add a test case for a 16bpp animation in a plain window, not in the controls! (to test FPS)
   
   // About 30 FPS possible when only a single animator view is in the main window.
@@ -430,7 +442,7 @@
   // compared to the memcpy().
   //[self loadBounceLandscapeAnimation:32];
   
-	[self loadDemoArchive];
+	//[self loadDemoArchive];
 }
 
 // Notification indicates that all animations in a loop are now finished

@@ -22,6 +22,7 @@
 
 @implementation MovieControlsViewController
 
+@synthesize mainWindow = m_mainWindow;
 @synthesize movieControlsView, overView;
 @synthesize navController, doneButton;
 @synthesize controlsSubview, controlsImageView, controlsBackgroundImage;
@@ -100,12 +101,12 @@
   [super dealloc];
 }
 
-- (void) _rotateToLandscape
+- (void) _rotateToLandscape:(UIView*)aView
 {
 	// Change the center of the nav view to be the center of the
 	// window in portrait mode.
 
-	UIView *viewToRotate = navController.view;
+	UIView *viewToRotate = aView;
 
 	int hw = 480/2;
 	int hh = 320/2;
@@ -135,7 +136,7 @@
 	self.navController = [[UINavigationController alloc] initWithRootViewController:self];
 	[navController release];
 
-	[self _rotateToLandscape];
+	[self _rotateToLandscape:navController.view];
 
 	navController.navigationBar.barStyle = UIBarStyleBlackTranslucent;
 
@@ -149,15 +150,43 @@
 	[self.view addSubview:navController.navigationBar];
 }
 
+- (void) setMainWindow:(UIWindow*)mainWindow
+{
+  NSAssert(mainWindow != nil, @"mainWindow must not be nil");
+ 
+  // overView must be set before setMainWindow can be invoked
+  
+	NSAssert(self.overView, @"overView must be set");  
+
+  self->m_mainWindow = mainWindow;
+
+  NSAssert(self.mainWindow != nil, @"self.mainWindow not set");
+  
+  // Once the toplevel container is available,
+  // add overView and the controls view.
+  
+  NSArray *subviews = [self.mainWindow subviews];
+  
+  NSAssert([subviews count] == 0, @"mainWindow must contain no subviews");
+  
+  [self.mainWindow addSubview:self.overView];
+    
+  // force loading of the view controller and its contained views
+  
+	UIView *v = self.view;
+	NSAssert(v, @"self.view");
+}
+
 - (void) addNavigationControlerAsSubviewOf:(UIWindow*)window
 {
-	// Force self.view to load
+	// Force self.view to load if it had not been done yet
 
 	UIView *v = self.view;
 	NSAssert(v, @"self.view");
 
 	// Load navController if needed, needs to be loaded after
-	// self.view has been loaded.
+	// self.view has been loaded. Note that the nav controller
+  // view is what is added to the mainWindow
 
 	if (navController.view == nil) {
 		[self _loadNavigationController];
@@ -188,11 +217,13 @@
 - (void) disableUserInteraction
 {
 	navController.view.userInteractionEnabled = FALSE;
+  self.overView.userInteractionEnabled = FALSE;
 }
 
 - (void) enableUserInteraction
 {
 	navController.view.userInteractionEnabled = TRUE;
+  self.overView.userInteractionEnabled = TRUE;
 }
 
 // Load buttons in the controls view
@@ -514,28 +545,6 @@
 
 	self.view = movieControlsView;
 
-	// Verify that overView member was set by caller, this is the
-	// view that will be displayed below the movie controls.
-
-	NSAssert(overView, @"overView must be set");
-
-  // FIXME: putting the AVAnimatorView inside the MovieControlsView may not be useful because
-  // it may be limiting total FPS throughput to have an opaque window inside a non-opaque one.
-  // If the views were siblings, were the controls were simply over the main window, then
-  // when the controls go away, the controls could be hidden but the overview would still
-  // be in the normal layout. This might be the cause of the slowdown seen when a 60 FPS
-  // example is slowed down when put into the movie controls widget. Another approach could
-  // be to reparent the animator view into the toplevel window once the controls are put away.
-  // This would mean reduced FPS playback while the controls are showing, but max performance
-  // while the controls are hidden.
-  
-    [self.view insertSubview:overView atIndex:0];
-	overView.userInteractionEnabled = FALSE;
-
-	// Set dimension for overView
-
-	overView.frame = frame;
-
 	// Create movie transport controls subview
 
 	[self _loadControlsView];
@@ -558,6 +567,8 @@
 	self->isPaused = FALSE;
 
 	[playPauseButton setImage:pauseImage forState:UIControlStateNormal];
+    
+  // Add controls view to mainWindow over the overView view
   
 	[self showControls];
 
@@ -579,8 +590,9 @@
 	NSLog(@"_scheuleHideControlsFromPlayTimer");
 #endif
 
-	if (hideControlsFromPlayTimer != nil)
+	if (hideControlsFromPlayTimer != nil) {
 		[hideControlsFromPlayTimer invalidate];
+  }
 
 	self.hideControlsFromPlayTimer = [NSTimer timerWithTimeInterval: 0.25
 															 target: self
@@ -898,42 +910,35 @@
 	NSLog(@"showControls");
 #endif
 
+  NSAssert(controlsVisable == FALSE, @"controls already visable");
 	self->controlsVisable = TRUE;
 
-	// Show controls by making all the subviews
-	// in the container visible
+	// Show controls by adding controls to the main window.
 
-	for (UIView *subview in [self.view subviews]) {
-		if (subview == overView) {
-			// no-op
-		} else {
-			subview.hidden = FALSE;
-		}
-	}
-
+  NSArray *subviews = [self.mainWindow subviews];
+  NSAssert([subviews count] == 1, @"mainWindow must contain 1 subviews");
+  NSAssert([subviews objectAtIndex:0] == self.overView, @"overView must be only subview of mainWindow");
+  
+  [self addNavigationControlerAsSubviewOf:self.mainWindow];
+   
 	// Create idle timer, if nothing happends for
-	// a few seconds the hide the controls.
+	// a few seconds, then hide the controls.
 
 	[self _requeueHideControlsTimer];
 }
 
 - (void) hideControls
 {
+  NSAssert(controlsVisable == TRUE, @"controls already hidden");
 	self->controlsVisable = FALSE;
-
-	// Hide controls by making all the layers
-	// except overView hidden.
-
-// FIXME: If this timer for _hideControlsTimer fires before the view has been created for the first time,
-// what would happen here? The access of self.view will create the view and load it, but is that what we want?
   
-	for (UIView *subview in [self.view subviews]) {
-		if (subview == overView) {
-			// no-op
-		} else {
-			subview.hidden = TRUE;
-		}
-	}
+  // Hide controls by removing them from the main window
+  
+  NSArray *subviews = [self.mainWindow subviews];
+  NSAssert([subviews count] == 2, @"mainWindow must contain 1 subviews");
+  NSAssert([subviews objectAtIndex:0] == self.overView, @"overView must be first subview of mainWindow");
+  
+  [self removeNavigationControlerAsSubviewOf:self.mainWindow];
 
 	[self _releaseHideControlsTimer];
 }
