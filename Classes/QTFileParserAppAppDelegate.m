@@ -373,10 +373,15 @@
   NSString *resourceName;
   resourceName = @"AlphaGhost.mov";
   
-  // Set background color of the window to red so the ghost shows up
-  // over a color other than black.
+  // Animate color shift for window, background shows through the ghost.
   
   self.window.backgroundColor = [UIColor redColor];
+  [UIView beginAnimations:nil context:NULL];
+  [UIView setAnimationDuration:5.0];
+  [UIView setAnimationRepeatCount:3.5];
+  [UIView setAnimationRepeatAutoreverses:TRUE];
+  self.window.backgroundColor = [UIColor blueColor];
+  [UIView commitAnimations];
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and

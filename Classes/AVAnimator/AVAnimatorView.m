@@ -417,7 +417,9 @@
     // This view will blend with other views when pixels are transparent
     // or partially transparent.
     self.opaque = FALSE;
-    self.backgroundColor = [UIColor clearColor];
+//    self.backgroundColor = [UIColor clearColor];
+  } else {
+    self.opaque = TRUE;
   }
   
   // Get image data for initial keyframe
