@@ -35,12 +35,12 @@
 
 - (id) initWithAnimator:(AVAnimatorView*)inAnimator {
 	self = [super init];
-	if (self == nil)
-		return nil;
-	// Note that we don't retain a ref here, since the AVAnimatorView is
-	// the only object that can ref this object, holding a ref would create
-	// a circular reference and the view would never be deallocated.
-	self->animator = inAnimator;
+	if (self) {
+    // Note that we don't retain a ref here, since the AVAnimatorView is
+    // the only object that can ref this object, holding a ref would create
+    // a circular reference and the view would never be deallocated.
+    self->animator = inAnimator;
+  }
 	return self;
 }
 
@@ -187,6 +187,20 @@
   return obj;
 }
 
+- (id) initWithFrame:(CGRect)frame
+{
+  if (self = [super initWithFrame:frame]) {
+    // Defaults for opacity related properties. We expect the view to be
+    // fully opaque since the image renders all the pixels in the view.
+    // Unless in 32bpp mode, in that case pixels can be partially transparent.
+    
+    self.opaque = TRUE;
+    self.clearsContextBeforeDrawing = FALSE;
+    self.backgroundColor = nil;
+  }
+  return self;
+}
+
 // Note: there is no init method since this class makes use of the default
 // init method in the superclass.
 
@@ -275,21 +289,10 @@
 	rs.width = renderWidth;
 	rs.height = renderHeight;
 	self.renderSize = rs;
-  
-  // View defaults to opaque, decoder might know
-  // that there is an alpha channel, but not
-  // until the frame source data has been read.
-  
-  self.opaque = TRUE;
-  
+    
 	// User events to this layer are ignored
   
 	self.userInteractionEnabled = FALSE;
-  
-  // FIXME: If opaque, does background color need
-  // to be set to clear instead of black?
-  
-	self.backgroundColor = [UIColor blackColor];
   
 	NSAssert(self.resourceLoader, @"resourceLoader must be defined");
 	NSAssert(self.frameDecoder, @"frameDecoder must be defined");
@@ -308,12 +311,7 @@
 		self.state = LOADED;
 	}
   
-  // Unknown view flags.
-  
-  // FIXME: Does this default to YES? clearsContextBeforeDrawing, if so
-  // should we set it to NO unless in 32 bpp mode?
-  
-  // clipsToBounds ? Should be YES?
+  return;
 }
 
 - (void) _createAudioPlayer
@@ -416,8 +414,10 @@
   // Query alpha channel support in frame decoder
   
   if ([self.frameDecoder hasAlphaChannel]) {
-    // This view will blend with other views
+    // This view will blend with other views when pixels are transparent
+    // or partially transparent.
     self.opaque = FALSE;
+    self.backgroundColor = [UIColor clearColor];
   }
   
   // Get image data for initial keyframe

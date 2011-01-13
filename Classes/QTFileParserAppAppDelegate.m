@@ -368,6 +368,55 @@
   [self.animatorView startAnimator];
 }
 
+- (void) loadAlphaGhostLandscapeAnimation
+{
+  NSString *resourceName;
+  resourceName = @"AlphaGhost.mov";
+  
+  // Set background color of the window to red so the ghost shows up
+  // over a color other than black.
+  
+  self.window.backgroundColor = [UIColor redColor];
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	self.animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	self.animatorView.frameDecoder = frameDecoder;
+  
+  // An alpha 480x320 animation seems to be able to run about 20 FPS. Not as impressive as
+  // a 24 bpp, but this is with alpha blending and premultiplicaiton on each pixel.
+  
+	self.animatorView.animatorFrameDuration = 1.0 / 2;
+	//self.animatorView.animatorFrameDuration = AVAnimator15FPS;
+  //self.animatorView.animatorFrameDuration = AVAnimator30FPS;
+  //self.animatorView.animatorFrameDuration = 1.0 / 60;
+  
+	self.animatorView.animatorRepeatCount = 400;
+  
+  [self.window addSubview:self.animatorView];
+  
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(animatorDoneNotification:) 
+                                               name:AVAnimatorDoneNotification
+                                             object:self.animatorView];
+  
+  [self.animatorView startAnimator];
+}
+
 - (void) loadDemoArchive
 {
 	// Init animator data
@@ -416,6 +465,7 @@
 
 - (void) startAnimator
 {
+  self.window.backgroundColor = nil;
 	[self.viewController.view removeFromSuperview];
   
   // These tests show just the animator by themselves, should be
@@ -428,7 +478,7 @@
   
   // This test case shows a cached PNG animator in the movie controls, to
   // see if having movie window over effects FPS.
-  [self loadCachedCountLandscape];
+//  [self loadCachedCountLandscape];
     
   // FIXME: add a test case for a 16bpp animation in a plain window, not in the controls! (to test FPS)
   
@@ -441,6 +491,8 @@
   // 32bpp is about 15FPS. A little more time taken to premultiply ?? But, nothing
   // compared to the memcpy().
   //[self loadBounceLandscapeAnimation:32];
+
+  [self loadAlphaGhostLandscapeAnimation];
   
 	//[self loadDemoArchive];
 }

@@ -31,7 +31,7 @@
 }
 
 - (void) startAnimator
-{  
+{
 	// Put movie controls away (this needs to happen when the
 	// loading is done)
   
@@ -193,7 +193,7 @@
 	NSLog( @"animatorPreparedNotification" );
   
 	[self.movieControlsViewController enableUserInteraction];
-  
+    
 	[self.animatorView startAnimator];
 }
 
