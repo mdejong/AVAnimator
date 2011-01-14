@@ -422,6 +422,58 @@
   [self.animatorView startAnimator];
 }
 
+- (void) loadMatrixLettersLandscapeAnimation
+{
+  NSString *resourceName;
+  resourceName = @"Matrix_480_320_10FPS_16BPP.mov";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	self.animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	self.animatorView.frameDecoder = frameDecoder;
+  
+  // Movie is 10FPS
+  
+//	self.animatorView.animatorFrameDuration = AVAnimator10FPS;
+  
+  // This animation can run smoothly at 30 FPS on a iPhone 3G,
+  // but this is about the limit of what the hardware can do.
+  
+//	self.animatorView.animatorFrameDuration = AVAnimator30FPS;
+  
+	self.animatorView.animatorRepeatCount = 100;
+  
+  [self.window addSubview:self.animatorView];
+  
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(animatorDoneNotification:) 
+                                               name:AVAnimatorDoneNotification
+                                             object:self.animatorView];
+  
+  [self.animatorView startAnimator];
+}
+
+// LCD dimensions:
+//
+// 480x320
+//
+// Screen: 33,25
+// WxH: 410,199
+
 - (void) loadDemoArchive
 {
 	// Init animator data
@@ -497,9 +549,11 @@
   // compared to the memcpy().
   //[self loadBounceLandscapeAnimation:32];
 
-  [self loadAlphaGhostLandscapeAnimation];
+  //[self loadAlphaGhostLandscapeAnimation];
+
+  [self loadMatrixLettersLandscapeAnimation];
   
-	//[self loadDemoArchive];
+  //[self loadDemoArchive];
 }
 
 // Notification indicates that all animations in a loop are now finished

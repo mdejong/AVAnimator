@@ -126,6 +126,10 @@
 		CD83D5EE12CA547300A88ABA /* MovieControlsAdaptor.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */; };
 		CDBA6B2512DC50A8001B44EB /* nexttrack.png in Resources */ = {isa = PBXBuildFile; fileRef = CDBA6B2412DC50A8001B44EB /* nexttrack.png */; };
 		CDBA6B2612DC50A9001B44EB /* nexttrack.png in Resources */ = {isa = PBXBuildFile; fileRef = CDBA6B2412DC50A8001B44EB /* nexttrack.png */; };
+		CDBDC0F812E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDBDC0F712E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov */; };
+		CDBDC0F912E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDBDC0F712E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov */; };
+		CDBDC10E12E0EA7500EF5BD4 /* LCD.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */; };
+		CDBDC10F12E0EA7500EF5BD4 /* LCD.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */; };
 		CDCE474A12DA98D0005BF94A /* Bounce_32BPP_15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */; };
 		CDCE474B12DA98D0005BF94A /* Bounce_32BPP_15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */; };
 		CDECC74112BC6B22001A372F /* QuickTimeLogo.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDECC74012BC6B22001A372F /* QuickTimeLogo.mov */; };
@@ -233,6 +237,8 @@
 		CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MovieControlsAdaptor.m; sourceTree = "<group>"; };
 		CD83D5F512CA549000A88ABA /* MovieControlsAdaptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MovieControlsAdaptor.h; sourceTree = "<group>"; };
 		CDBA6B2412DC50A8001B44EB /* nexttrack.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = nexttrack.png; sourceTree = "<group>"; };
+		CDBDC0F712E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Matrix_480_320_10FPS_16BPP.mov; sourceTree = "<group>"; };
+		CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = LCD.jpg; sourceTree = "<group>"; };
 		CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Bounce_32BPP_15FPS.mov; sourceTree = "<group>"; };
 		CDECC74012BC6B22001A372F /* QuickTimeLogo.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = QuickTimeLogo.mov; sourceTree = "<group>"; };
 		CDECC75112BC6CA6001A372F /* AVResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVResourceLoader.h; sourceTree = "<group>"; };
@@ -373,6 +379,8 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */,
+				CDBDC0F712E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov */,
 				CDF7895E12DEB1FE00E96B82 /* AlphaGhost.mov */,
 				CD34638C12D79EA30072CC68 /* License.txt */,
 				CD7D2BED12D510CB0096EDF3 /* CountingLandscape */,
@@ -649,6 +657,8 @@
 				CDCE474B12DA98D0005BF94A /* Bounce_32BPP_15FPS.mov in Resources */,
 				CDBA6B2612DC50A9001B44EB /* nexttrack.png in Resources */,
 				CDF7896012DEB1FE00E96B82 /* AlphaGhost.mov in Resources */,
+				CDBDC0F912E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov in Resources */,
+				CDBDC10F12E0EA7500EF5BD4 /* LCD.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -718,6 +728,8 @@
 				CDCE474A12DA98D0005BF94A /* Bounce_32BPP_15FPS.mov in Resources */,
 				CDBA6B2512DC50A8001B44EB /* nexttrack.png in Resources */,
 				CDF7895F12DEB1FE00E96B82 /* AlphaGhost.mov in Resources */,
+				CDBDC0F812E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov in Resources */,
+				CDBDC10E12E0EA7500EF5BD4 /* LCD.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
