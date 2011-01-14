@@ -152,7 +152,25 @@
 
 - (void) setMainWindow:(UIWindow*)mainWindow
 {
-  NSAssert(mainWindow != nil, @"mainWindow must not be nil");
+  if (mainWindow == nil) {
+    // Done showing movie controls and animator
+    
+    if (self.mainWindow == nil) {
+      return;
+    }
+    
+    if (controlsVisable) {
+      [self removeNavigationControlerAsSubviewOf:self.mainWindow];
+    }
+    
+    [self.view removeFromSuperview];
+    
+    // Note that we don't retain a ref to mainWindow
+    
+    self->m_mainWindow = nil;
+    
+    return;
+  }
  
   // overView must be set before setMainWindow can be invoked
   
@@ -166,8 +184,9 @@
   // add overView and the controls view.
   
   NSArray *subviews = [self.mainWindow subviews];
-  
-  NSAssert([subviews count] == 0, @"mainWindow must contain no subviews");
+  NSAssert(subviews != nil, @"subviews is nil");
+  int subviewCount = [subviews count];
+  NSAssert(subviewCount == 0, @"mainWindow must contain no subviews");
   
   [self.mainWindow addSubview:self.overView];
     
@@ -910,8 +929,11 @@
 	NSLog(@"showControls");
 #endif
 
-  NSAssert(controlsVisable == FALSE, @"controls already visable");
-	self->controlsVisable = TRUE;
+  if (self->controlsVisable == TRUE) {
+    return;
+  } else {
+    self->controlsVisable = TRUE;
+  }
 
 	// Show controls by adding controls to the main window.
 
@@ -929,8 +951,11 @@
 
 - (void) hideControls
 {
-  NSAssert(controlsVisable == TRUE, @"controls already hidden");
-	self->controlsVisable = FALSE;
+  if (self->controlsVisable == FALSE) {
+    return;
+  } else {
+    self->controlsVisable = FALSE;
+  }
   
   // Hide controls by removing them from the main window
   

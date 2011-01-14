@@ -41,5 +41,8 @@
 
 - (void) loadDemoArchive;
 
+- (void) loadIndexedExample:(NSUInteger)index
+                        fps:(NSInteger)fps;
+
 @end
 

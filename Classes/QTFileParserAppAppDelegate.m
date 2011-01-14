@@ -43,7 +43,8 @@
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-  // Override point for customization after app launch    
+  // Override point for customization after app launch
+  NSAssert(self.viewController, @"viewController is nil");
   [self.window addSubview:self.viewController.view];
   [self.window makeKeyAndVisible];
   
@@ -51,7 +52,7 @@
   // Execute regression tests when app is launched
   [RegressionTests testApp];
 #else
-  [self startAnimator];
+//  [self startAnimator];
 #endif // REGRESSION_TESTS    
 
   return YES;
@@ -160,7 +161,16 @@
   [self loadIntoMovieControls];
 }
 
-- (void) loadCachedCountPNGs
+// This example is a portrait animation with a few frames of mostly black
+// with white text. PNG images are read from the app resources and the
+// decoded image data is stored in memory. This is useful for testing the max
+// framerate possible on the device, since no read from disk or frame decode
+// operation is done when switching animation frames. If the movieControls
+// flag is TRUE then the animator is placed in a movie controls widget.
+
+- (void) loadCachedCountPortraitPNGs:(float)frameDuration
+                          upsideDown:(BOOL)upsideDown
+                       movieControls:(BOOL)movieControls
 {
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -168,7 +178,14 @@
   
   CGRect frame = CGRectMake(0, 0, 320, 480);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
-  self.animatorView.animatorOrientation = UIImageOrientationUp;
+  if (upsideDown == FALSE) {
+    // This orientation means that the AVAnimatorView will have no transforms
+    self.animatorView.animatorOrientation = UIImageOrientationUp;
+  } else {
+    // This orientation has a rotation transform applied, useful to test
+    // that a transform does not slow down the max frame rate.
+    self.animatorView.animatorOrientation = UIImageOrientationDown;
+  }
   
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
@@ -201,78 +218,40 @@
   
   // Testing on iPhone 3g indicates that 60 FPS is the the upper limit.
   // This impl likely uses CGImage data cached in the video card.
-  self.animatorView.animatorFrameDuration = 1.0 / 90;
+//  self.animatorView.animatorFrameDuration = 1.0 / 90;
+  
+  // Default to 2 frames per second, so that we can see that each
+  // frame paints correctly.
+  
+  if (frameDuration == -1.0) {
+    frameDuration = 1.0 / 2.0;
+  }
+  self.animatorView.animatorFrameDuration = frameDuration;
   
 //	self.animatorView.animatorRepeatCount = 1;
-	self.animatorView.animatorRepeatCount = 400;
+  self.animatorView.animatorRepeatCount = 100;
   
-  [self.window addSubview:self.animatorView];
+  // Add AVAnimatorView directly to main window, or use movie controls
 
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(animatorDoneNotification:) 
-                                               name:AVAnimatorDoneNotification
-                                             object:self.animatorView];  
-  
-  [self.animatorView startAnimator];
+  if (movieControls == FALSE) {
+    [self.window addSubview:self.animatorView];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(animatorDoneNotification:) 
+                                                 name:AVAnimatorDoneNotification
+                                               object:self.animatorView];  
+    
+    [self.animatorView startAnimator];
+  } else {
+    [self loadIntoMovieControls];
+  }
 }
 
-- (void) loadCachedCountPNGsUpsidedown
-{
-  // Create a plain AVAnimatorView without a movie controls and display
-  // in portrait mode. This setup involves no containing views and
-  // has no transforms applied to the AVAnimatorView.
-  
-  CGRect frame = CGRectMake(0, 0, 320, 480);
-  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
-  self.animatorView.animatorOrientation = UIImageOrientationDown;
-  
-  // Create loader that will get a filename from an app resource.
-  // This resource loader is phony, it becomes a no-op because
-  // the AVPNGFrameDecoder ignores it.
-  
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = @"Counting01.png"; // Phony resource name, becomes no-op
-	self.animatorView.resourceLoader = resLoader;
-  
-  // Create decoder that will generate frames from PNG files attached as app resources.
-  
-  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"Counting"
-                                                  rangeStart:1
-                                                    rangeEnd:8
-                                                suffixFormat:@"%02i.png"];
-  
-  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
-  
-  // Decode all PNGs into UIImage objects and save in memory, this takes up a lot
-  // of memory but it means that displaying a specific frame is fast because
-  // no image decode needs to be done.
-  
-  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
-	self.animatorView.frameDecoder = frameDecoder;
-  
-  //  self.animatorView.animatorFrameDuration = 2.0;
-  //  self.animatorView.animatorFrameDuration = 1.0 / 15;
-  //  self.animatorView.animatorFrameDuration = 1.0 / 30;
-  //	self.animatorView.animatorFrameDuration = 1.0 / 60;
-  
-  // Passing view through one transformation matrix seems to have little
-  // effect on FPS, seeing consistent 60 FPS with this example.
-  self.animatorView.animatorFrameDuration = 1.0 / 90;
-  
-  //	self.animatorView.animatorRepeatCount = 1;
-	self.animatorView.animatorRepeatCount = 400;
-  
-  [self.window addSubview:self.animatorView];
-  
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(animatorDoneNotification:) 
-                                               name:AVAnimatorDoneNotification
-                                             object:self.animatorView];  
-  
-  [self.animatorView startAnimator];
-}
+// This example shows a landscape count animation, PNG images are again
+// read into cached mem and rendered without a read/decode step.
 
-- (void) loadCachedCountLandscape
+- (void) loadCachedCountLandscapePNGs:(float)frameDuration
+                        movieControls:(BOOL)movieControls
 {
   // Setup the AnimatorView in landscape mode so that it matches the
   // orientation of the MovieControls.
@@ -311,12 +290,31 @@
   // The image is already setup in landscape, so this is likely caused by the fact that the
   // animator view is inside another set of views.
   
-//  self.animatorView.animatorFrameDuration = 2.0;
-	self.animatorView.animatorFrameDuration = 1.0 / 90;
+  //  self.animatorView.animatorFrameDuration = 2.0;
+  //	self.animatorView.animatorFrameDuration = 1.0 / 90;  
   
-	self.animatorView.animatorRepeatCount = 1000;
+  if (frameDuration == -1.0) {
+    frameDuration = 1.0 / 2.0;
+  }
+  
+  self.animatorView.animatorFrameDuration = frameDuration;
+  
+	self.animatorView.animatorRepeatCount = 100;
 
-  [self loadIntoMovieControls];
+  // Add AVAnimatorView directly to main window, or use movie controls
+  
+  if (movieControls == FALSE) {
+    [self.window addSubview:self.animatorView];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(animatorDoneNotification:) 
+                                                 name:AVAnimatorDoneNotification
+                                               object:self.animatorView];  
+    
+    [self.animatorView startAnimator];
+  } else {
+    [self loadIntoMovieControls];
+  }  
 }
 
 - (void) loadBounceLandscapeAnimation:(int)bpp
@@ -520,6 +518,69 @@
   return;
 }
 
+// Given an example index, load a specific example with
+// an indicated FPS. The fps is -1 if not set, otherwise
+// it is 10, 20, 30, or 60.
+
+- (void) loadIndexedExample:(NSUInteger)index
+                        fps:(NSInteger)fps
+{
+  // Cleanup after any previous example
+  self.window.backgroundColor = nil;
+  // Remove app view controller from main window
+  NSAssert(self.viewController, @"viewController is nil");
+	[self.viewController.view removeFromSuperview];
+  // Spin even loop so that view controller is removed from window
+  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:0.2];
+  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  // Make sure view was removed from main window
+  NSArray *subviews = self.window.subviews;
+  NSAssert(subviews, @"subviews is nil");
+  int subviewCount = [subviews count];
+  // If the num subviews if not zero, then this loadIndexedExample callback
+  // might have been called by two different button callbacks in the XIB
+  NSAssert(subviewCount == 0, @"expected no subviews inside main window");
+  
+  // Calc frame duration if fps is not -1
+  
+  float frameDuration = -1;
+  if (fps == 10) {
+    frameDuration = AVAnimator10FPS;
+  } else if (fps == 15) {
+    frameDuration = AVAnimator15FPS;
+  } else if (fps == 24) {
+    frameDuration = AVAnimator24FPS;
+  } else if (fps == 30) {
+    frameDuration = AVAnimator30FPS;
+  } else if (fps == 60) {
+    frameDuration = 1.0 / 60.0;
+  }
+  
+  switch (index) {
+    case 1: {
+      [self loadCachedCountPortraitPNGs:frameDuration upsideDown:FALSE movieControls:FALSE];
+      break;
+    }
+    case 2: {
+      [self loadCachedCountPortraitPNGs:frameDuration upsideDown:TRUE movieControls:FALSE];
+      break;
+    }
+    case 3: {
+      [self loadCachedCountPortraitPNGs:frameDuration upsideDown:FALSE movieControls:TRUE];
+      break;
+    }
+    case 4: {
+      [self loadCachedCountLandscapePNGs:frameDuration movieControls:FALSE];
+      break;
+    }
+    case 5: {
+      [self loadCachedCountLandscapePNGs:frameDuration movieControls:TRUE];
+      break;
+    }      
+  }
+}
+
+
 - (void) startAnimator
 {
   self.window.backgroundColor = nil;
@@ -572,16 +633,15 @@
 
 - (void) stopAnimator
 {
-  if (self.movieControlsAdaptor == nil) {
-    [self.animatorView removeFromSuperview];    
-  } else {
+  if (self.movieControlsAdaptor != nil) {
     [self.movieControlsAdaptor stopAnimator];
     self.movieControlsAdaptor = nil;
-
-    [self.movieControlsViewController removeNavigationControlerAsSubviewOf:self.window];	
+    self.movieControlsViewController.mainWindow = nil;
   }
   
+  [self.animatorView removeFromSuperview];    
 	self.animatorView = nil;
+  
 	self.movieControlsViewController = nil;
   
 	[self.window addSubview:self.viewController.view];

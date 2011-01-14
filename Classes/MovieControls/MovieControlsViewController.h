@@ -108,6 +108,8 @@
 - (void) addNavigationControlerAsSubviewOf:(UIWindow*)window;
 - (void) removeNavigationControlerAsSubviewOf:(UIWindow*)window;
 
+- (void) setMainWindow:(UIWindow*)mainWindow;
+
 - (void) touchesAnyEvent;
 
 - (void) disableUserInteraction;
