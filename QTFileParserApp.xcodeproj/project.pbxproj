@@ -51,7 +51,6 @@
 		CD3F4E6612D8F4670067FDDF /* AVPNGFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECCE7112D30FE80067D2EE /* AVPNGFrameDecoder.m */; };
 		CD3F4E6712D8F47D0067FDDF /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 28AD733E0D9D9553002E5188 /* MainWindow.xib */; };
 		CD3F4E6812D8F47D0067FDDF /* QTFileParserAppViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 2899E5210DE3E06400AC0155 /* QTFileParserAppViewController.xib */; };
-		CD3F4E6912D8F47D0067FDDF /* QuickTimeLogo.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDECC74012BC6B22001A372F /* QuickTimeLogo.mov */; };
 		CD3F4E6A12D8F47D0067FDDF /* MovieTransportBackground.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C2C912BC9BDC00A26588 /* MovieTransportBackground.png */; };
 		CD3F4E6B12D8F47D0067FDDF /* pause.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C2CA12BC9BDC00A26588 /* pause.png */; };
 		CD3F4E6C12D8F47D0067FDDF /* play.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C2CB12BC9BDC00A26588 /* play.png */; };
@@ -132,7 +131,6 @@
 		CDBDC10F12E0EA7500EF5BD4 /* LCD.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */; };
 		CDCE474A12DA98D0005BF94A /* Bounce_32BPP_15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */; };
 		CDCE474B12DA98D0005BF94A /* Bounce_32BPP_15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */; };
-		CDECC74112BC6B22001A372F /* QuickTimeLogo.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDECC74012BC6B22001A372F /* QuickTimeLogo.mov */; };
 		CDECC75812BC6CA6001A372F /* AVResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75212BC6CA6001A372F /* AVResourceLoader.m */; };
 		CDECC75912BC6CA6001A372F /* AVAppResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75412BC6CA6001A372F /* AVAppResourceLoader.m */; };
 		CDECC75A12BC6CA6001A372F /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75612BC6CA6001A372F /* CGFrameBuffer.m */; };
@@ -240,7 +238,6 @@
 		CDBDC0F712E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Matrix_480_320_10FPS_16BPP.mov; sourceTree = "<group>"; };
 		CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = LCD.jpg; sourceTree = "<group>"; };
 		CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Bounce_32BPP_15FPS.mov; sourceTree = "<group>"; };
-		CDECC74012BC6B22001A372F /* QuickTimeLogo.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = QuickTimeLogo.mov; sourceTree = "<group>"; };
 		CDECC75112BC6CA6001A372F /* AVResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVResourceLoader.h; sourceTree = "<group>"; };
 		CDECC75212BC6CA6001A372F /* AVResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVResourceLoader.m; sourceTree = "<group>"; };
 		CDECC75312BC6CA6001A372F /* AVAppResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAppResourceLoader.h; sourceTree = "<group>"; };
@@ -390,7 +387,6 @@
 				CD0C340912D7B009007199CA /* Bounce_24BPP_15FPS.mov */,
 				CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */,
 				CD15C54E12BCADA800A26588 /* smiley.png */,
-				CDECC74012BC6B22001A372F /* QuickTimeLogo.mov */,
 				2899E5210DE3E06400AC0155 /* QTFileParserAppViewController.xib */,
 				28AD733E0D9D9553002E5188 /* MainWindow.xib */,
 				8D1107310486CEB800E47090 /* QTFileParserApp-Info.plist */,
@@ -600,7 +596,6 @@
 			files = (
 				28AD733F0D9D9553002E5188 /* MainWindow.xib in Resources */,
 				2899E5220DE3E06400AC0155 /* QTFileParserAppViewController.xib in Resources */,
-				CDECC74112BC6B22001A372F /* QuickTimeLogo.mov in Resources */,
 				CD15C2D112BC9BDC00A26588 /* MovieTransportBackground.png in Resources */,
 				CD15C2D212BC9BDC00A26588 /* pause.png in Resources */,
 				CD15C2D312BC9BDC00A26588 /* play.png in Resources */,
@@ -668,7 +663,6 @@
 			files = (
 				CD3F4E6712D8F47D0067FDDF /* MainWindow.xib in Resources */,
 				CD3F4E6812D8F47D0067FDDF /* QTFileParserAppViewController.xib in Resources */,
-				CD3F4E6912D8F47D0067FDDF /* QuickTimeLogo.mov in Resources */,
 				CD3F4E6A12D8F47D0067FDDF /* MovieTransportBackground.png in Resources */,
 				CD3F4E6B12D8F47D0067FDDF /* pause.png in Resources */,
 				CD3F4E6C12D8F47D0067FDDF /* play.png in Resources */,

@@ -409,7 +409,15 @@
   }  
 }
 
-- (void) loadAlphaGhostLandscapeAnimation
+// This example shows alpha compositing, the ghost is in a movie
+// with an alpha channel. The ghost is partially "see through"
+// so the color in the background shows through and the ghost
+// looks like a mix of white and the background color.
+// Note that because a CoreAnimation color cycle is used, the
+// FPS will show up as 60 FPS in Instruments as long as the
+// color cycle animation is running.
+
+- (void) loadAlphaGhostLandscapeAnimation:(float)frameDuration
 {
   NSString *resourceName;
   resourceName = @"AlphaGhost.mov";
@@ -443,27 +451,29 @@
   AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
 	self.animatorView.frameDecoder = frameDecoder;
   
-  // An alpha 480x320 animation seems to be able to run about 20 FPS. Not as impressive as
-  // a 24 bpp, but this is with alpha blending and premultiplicaiton on each pixel.
+  // An alpha 480x320 animation seems to be able to hit about 15 to 20 FPS.
+  // Not as good as 24bpp, but the alpha blending and premultiplicaiton
+  // on each pixel are more costly in terms of CPU time.
   
-	self.animatorView.animatorFrameDuration = 1.0 / 2;
-	//self.animatorView.animatorFrameDuration = AVAnimator15FPS;
-  //self.animatorView.animatorFrameDuration = AVAnimator30FPS;
-  //self.animatorView.animatorFrameDuration = 1.0 / 60;
+  if (frameDuration == -1.0) {
+    frameDuration = 1.0 / 2.0;
+  }  
   
-	self.animatorView.animatorRepeatCount = 400;
+	self.animatorView.animatorFrameDuration = frameDuration;
   
-  [self.window addSubview:self.animatorView];
-  
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(animatorDoneNotification:) 
-                                               name:AVAnimatorDoneNotification
-                                             object:self.animatorView];
-  
-  [self.animatorView startAnimator];
+	self.animatorView.animatorRepeatCount = 150;
+
+  [self loadIntoMovieControls];
 }
 
-- (void) loadMatrixLettersLandscapeAnimation
+// This landscape animation shows an effect like the one seen
+// in "The Matrix". The movie file is not very small (700K),
+// but it compresses down to a reasonable 300K. This example
+// shows how including a non-trivial movie could be significantly
+// easier than developing the "matrix letters falling" logic in
+// Objective-C code.
+
+- (void) loadMatrixLettersLandscapeAnimation:(float)frameDuration
 {
   NSString *resourceName;
   resourceName = @"Matrix_480_320_10FPS_16BPP.mov";
@@ -487,14 +497,15 @@
   AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
 	self.animatorView.frameDecoder = frameDecoder;
   
-  // Movie is 10FPS
-  
-//	self.animatorView.animatorFrameDuration = AVAnimator10FPS;
-  
+  // Movie is 10FPS  
   // This animation can run smoothly at 30 FPS on a iPhone 3G,
   // but this is about the limit of what the hardware can do.
+
+  if (frameDuration == -1.0) {
+    frameDuration = AVAnimator10FPS;
+  }  
   
-//	self.animatorView.animatorFrameDuration = AVAnimator30FPS;
+	self.animatorView.animatorFrameDuration = frameDuration;  
   
 	self.animatorView.animatorRepeatCount = 100;
   
@@ -515,51 +526,7 @@
 // Screen: 33,25
 // WxH: 410,199
 
-- (void) loadDemoArchive
-{
-	// Init animator data
-  
-	NSString *resourceName = @"QuickTimeLogo.mov";
-  
-  if (0) {
-    resourceName = @"Sweep30FPS_ANI16BPP.mov";
-  }
-  if (0) {
-    resourceName = @"Bounce_16BPP_15FPS.mov";
-  }
-  if (0) {
-    resourceName = @"Vertigo30FPS.mov";
-  }
-  
-  CGRect frame = CGRectMake(0, 0, 480, 320);
-  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
-  self.animatorView.animatorOrientation = UIImageOrientationUp;
-  
-  // Create loader that will read a movie file from app resources.
-  
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = resourceName;
-	self.animatorView.resourceLoader = resLoader;
-  
-  // Create decoder that will generate frames from Quicktime Animation encoded data
-  
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-	self.animatorView.frameDecoder = frameDecoder;
 
-	//self.animatorView.animatorFrameDuration = 1.0;
-	//self.animatorView.animatorFrameDuration = AVAnimator15FPS;
-  self.animatorView.animatorFrameDuration = AVAnimator30FPS;
-  //self.animatorView.animatorFrameDuration = 1.0 / 60;
-  
-  //	self.animatorView.animatorRepeatCount = 100;
-	self.animatorView.animatorRepeatCount = 60;
-  
-  //	self.animatorView.animatorRepeatCount = 1000;
-  
-  [self loadIntoMovieControls];
-  
-  return;
-}
 
 // Given an example index, load a specific example with
 // an indicated FPS. The fps is -1 if not set, otherwise
@@ -632,44 +599,23 @@
       [self loadBounceLandscapeAnimation:frameDuration bpp:16 movieControls:TRUE];
       break;
     }
+    case 9: {
+      [self loadBounceLandscapeAnimation:frameDuration bpp:24 movieControls:TRUE];
+      break;
+    }
+    case 10: {
+      [self loadBounceLandscapeAnimation:frameDuration bpp:32 movieControls:TRUE];
+      break;
+    }
+    case 11: {
+      [self loadAlphaGhostLandscapeAnimation:frameDuration];
+      break;
+    }
+    case 12: {
+      [self loadMatrixLettersLandscapeAnimation:frameDuration];
+      break;
+    }
   }
-}
-
-
-- (void) startAnimator
-{
-  self.window.backgroundColor = nil;
-	[self.viewController.view removeFromSuperview];
-  
-  // These tests show just the animator by themselves, should be
-  // pushing 60 FPS since no decoding is needed and images
-  // can be cached on the graphics card.
-  
-  //[self loadBouncePNGs];
-  //[self loadCachedCountPNGs];
-  //[self loadCachedCountPNGsUpsidedown];
-  
-  // This test case shows a cached PNG animator in the movie controls, to
-  // see if having movie window over effects FPS.
-//  [self loadCachedCountLandscape];
-    
-  // FIXME: add a test case for a 16bpp animation in a plain window, not in the controls! (to test FPS)
-  
-  // About 30 FPS possible when only a single animator view is in the main window.
-  //[self loadBounceLandscapeAnimation:16];
-  
-  // 24bpp framebuffers are 2 times larger, about 17 FPS limit on 3g. memcpy() bounded
-  //[self loadBounceLandscapeAnimation:24];
-
-  // 32bpp is about 15FPS. A little more time taken to premultiply ?? But, nothing
-  // compared to the memcpy().
-  //[self loadBounceLandscapeAnimation:32];
-
-  //[self loadAlphaGhostLandscapeAnimation];
-
-  [self loadMatrixLettersLandscapeAnimation];
-  
-  //[self loadDemoArchive];
 }
 
 // Notification indicates that all animations in a loop are now finished

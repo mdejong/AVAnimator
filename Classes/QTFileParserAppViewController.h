@@ -9,9 +9,11 @@
 
 @interface QTFileParserAppViewController : UIViewController {
   UISegmentedControl *m_segControl;
+  UIScrollView *m_scrollView;
 }
 
 @property (nonatomic, retain) IBOutlet UISegmentedControl *segControl;
+@property (nonatomic, retain) IBOutlet UIScrollView *scrollView;
 
 - (IBAction) runExampleOne:(id) sender;
 
@@ -28,6 +30,14 @@
 - (IBAction) runExampleSeven:(id) sender;
 
 - (IBAction) runExampleEight:(id) sender;
+
+- (IBAction) runExampleNine:(id) sender;
+
+- (IBAction) runExampleTen:(id) sender;
+
+- (IBAction) runExampleEleven:(id) sender;
+
+- (IBAction) runExampleTwelve:(id) sender;
 
 @end
 

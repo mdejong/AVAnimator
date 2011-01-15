@@ -14,6 +14,20 @@
 @implementation QTFileParserAppViewController
 
 @synthesize segControl = m_segControl;
+@synthesize scrollView = m_scrollView;
+
+- (void) viewDidLoad {
+	[super viewDidLoad];
+  NSAssert(self.scrollView, @"scrollView is nil");
+  self.scrollView.contentSize = CGSizeMake(320, 1000);
+  // Explicitly set the size of the scroll view so that
+  // it can be larger in interface builder.
+  //self.scrollView.bounds = CGRectMake(0, 0, 320, 431);
+  self.scrollView.frame = CGRectMake(0, 49, 320, 431);
+  // Explicitly set the size of the containing view
+  // so that it can be bigger in IB.
+  //self.view.bounds = CGRectMake(0, 0, 320, 480);
+}
 
 - (void) dealloc
 {
@@ -107,6 +121,38 @@
 	NSAssert(delegate, @"delegate is nil");
   QTFileParserAppAppDelegate *appDelegate = (QTFileParserAppAppDelegate*)delegate;
   [appDelegate loadIndexedExample:8 fps:[self getFPS]];
+}
+
+- (IBAction) runExampleNine:(id) sender
+{
+  id delegate = [[UIApplication sharedApplication] delegate];
+	NSAssert(delegate, @"delegate is nil");
+  QTFileParserAppAppDelegate *appDelegate = (QTFileParserAppAppDelegate*)delegate;
+  [appDelegate loadIndexedExample:9 fps:[self getFPS]];
+}
+
+- (IBAction) runExampleTen:(id) sender
+{
+  id delegate = [[UIApplication sharedApplication] delegate];
+	NSAssert(delegate, @"delegate is nil");
+  QTFileParserAppAppDelegate *appDelegate = (QTFileParserAppAppDelegate*)delegate;
+  [appDelegate loadIndexedExample:10 fps:[self getFPS]];
+}
+
+- (IBAction) runExampleEleven:(id) sender
+{
+  id delegate = [[UIApplication sharedApplication] delegate];
+	NSAssert(delegate, @"delegate is nil");
+  QTFileParserAppAppDelegate *appDelegate = (QTFileParserAppAppDelegate*)delegate;
+  [appDelegate loadIndexedExample:11 fps:[self getFPS]];
+}
+
+- (IBAction) runExampleTwelve:(id) sender
+{
+  id delegate = [[UIApplication sharedApplication] delegate];
+	NSAssert(delegate, @"delegate is nil");
+  QTFileParserAppAppDelegate *appDelegate = (QTFileParserAppAppDelegate*)delegate;
+  [appDelegate loadIndexedExample:12 fps:[self getFPS]];
 }
 
 @end

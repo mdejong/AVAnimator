@@ -35,11 +35,7 @@
 
 @property (nonatomic, retain) MovieControlsAdaptor *movieControlsAdaptor;
 
-- (void) startAnimator;
-
 - (void) stopAnimator;
-
-- (void) loadDemoArchive;
 
 - (void) loadIndexedExample:(NSUInteger)index
                         fps:(NSInteger)fps;
