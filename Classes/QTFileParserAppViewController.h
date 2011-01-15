@@ -39,5 +39,7 @@
 
 - (IBAction) runExampleTwelve:(id) sender;
 
+- (IBAction) runExampleThirteen:(id) sender;
+
 @end
 

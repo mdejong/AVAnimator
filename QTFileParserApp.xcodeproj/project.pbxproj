@@ -107,6 +107,8 @@
 		CD3F4ECE12D8F6B00067FDDF /* RegressionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD3F4ECC12D8F6B00067FDDF /* RegressionTests.m */; };
 		CD3F4ECF12D8F6B00067FDDF /* ViewLoadTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD3F4ECD12D8F6B00067FDDF /* ViewLoadTests.m */; };
 		CD3F4F1312D8FA0A0067FDDF /* AVAnimatorViewTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD3F4F1212D8FA0A0067FDDF /* AVAnimatorViewTests.m */; };
+		CD4DA91112E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD4DA91012E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov */; };
+		CD4DA91212E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD4DA91012E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov */; };
 		CD5AEE3112D8F32F00A50135 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE3012D8F32F00A50135 /* AVFoundation.framework */; };
 		CD5AEE3512D8F33700A50135 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE3412D8F33700A50135 /* AudioToolbox.framework */; };
 		CD5AEE3912D8F34300A50135 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE3812D8F34300A50135 /* QuartzCore.framework */; };
@@ -212,6 +214,7 @@
 		CD3F4ECD12D8F6B00067FDDF /* ViewLoadTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ViewLoadTests.m; sourceTree = "<group>"; };
 		CD3F4F1212D8FA0A0067FDDF /* AVAnimatorViewTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorViewTests.m; sourceTree = "<group>"; };
 		CD3F4F7E12D8FF620067FDDF /* AVAnimatorViewPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorViewPrivate.h; sourceTree = "<group>"; };
+		CD4DA91012E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = JigsawPuzzle_205_99_10FPS_16BPP.mov; sourceTree = "<group>"; };
 		CD5AECF412D8F28200A50135 /* RegressionTests.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RegressionTests.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD5AECF612D8F28200A50135 /* RegressionTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "RegressionTests-Info.plist"; sourceTree = "<group>"; };
 		CD5AEE3012D8F32F00A50135 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
@@ -377,6 +380,7 @@
 			isa = PBXGroup;
 			children = (
 				CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */,
+				CD4DA91012E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov */,
 				CDBDC0F712E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov */,
 				CDF7895E12DEB1FE00E96B82 /* AlphaGhost.mov */,
 				CD34638C12D79EA30072CC68 /* License.txt */,
@@ -654,6 +658,7 @@
 				CDF7896012DEB1FE00E96B82 /* AlphaGhost.mov in Resources */,
 				CDBDC0F912E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov in Resources */,
 				CDBDC10F12E0EA7500EF5BD4 /* LCD.jpg in Resources */,
+				CD4DA91212E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -724,6 +729,7 @@
 				CDF7895F12DEB1FE00E96B82 /* AlphaGhost.mov in Resources */,
 				CDBDC0F812E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov in Resources */,
 				CDBDC10E12E0EA7500EF5BD4 /* LCD.jpg in Resources */,
+				CD4DA91112E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -21,6 +21,8 @@
 
 #import "AVPNGFrameDecoder.h"
 
+#import <QuartzCore/QuartzCore.h>
+
 #if defined(REGRESSION_TESTS)
 #import "RegressionTests.h"
 #endif
@@ -519,6 +521,34 @@
   [self.animatorView startAnimator];
 }
 
++ (void) rotateToLandscape:(UIView*)aView
+{
+	// Change the center of the nav view to be the center of the
+	// window in portrait mode.
+  
+	UIView *viewToRotate = aView;
+  
+	int hw = 480/2;
+	int hh = 320/2;
+	
+	int container_hw = 320/2;
+	int container_hh = 480/2;
+	
+	int xoff = hw - container_hw;
+	int yoff = hh - container_hh;	
+  
+	CGRect frame = CGRectMake(-xoff, -yoff, 480, 320);
+	viewToRotate.frame = frame;
+  
+	float angle = M_PI / 2;  //rotate CCW 90°, or π/2 radians
+  
+	viewToRotate.layer.transform = CATransform3DMakeRotation(angle, 0, 0.0, 1.0);
+}
+
+// This example shows mixing of video content with a still image. The video is a screen capture
+// showing an iPhone app running in the simulator. The screen cap video was created at a very
+// small size, so it looks a little fuzzy, but this is just an example.
+//
 // LCD dimensions:
 //
 // 480x320
@@ -526,7 +556,79 @@
 // Screen: 33,25
 // WxH: 410,199
 
+- (void) loadScreenCaptureAnimation:(float)frameDuration
+{
+  CGRect rect = CGRectMake(0, 0, 480, 320);
+  UIView *view = [[[UIView alloc] initWithFrame:rect] autorelease];
+  NSAssert(view, @"view is nil");
+  
+  NSBundle* appBundle = [NSBundle mainBundle];
+  NSString* resPath = [appBundle pathForResource:@"LCD.jpg" ofType:nil];
+  NSAssert(resPath, @"invalid resource");
+  UIImage *image = [UIImage imageWithContentsOfFile:resPath];
+  NSAssert(image, @"image is nil");
+  
+//  imageView.image = [[UIImageView alloc] initWithImage:image];
+  UIImageView *imageView = [[[UIImageView alloc] initWithImage:image] autorelease];
+  NSAssert(imageView, @"imageView is nil");
+  
+  //image.imageOrientation = UIImageOrientationLeft;
+  // Rotate image view!
+  [self.class rotateToLandscape:imageView];
+  
+  CGRect screenRect = CGRectMake(33, 25, 410, 199);
+    
+  if (0) {
+    UIView *animatorView = [[[UIView alloc] initWithFrame:screenRect] autorelease];
+    animatorView.backgroundColor = [UIColor blueColor];
+    animatorView.clearsContextBeforeDrawing = TRUE;
+    [imageView addSubview:animatorView];
+  } else {
+    NSString *resourceName = @"JigsawPuzzle_205_99_10FPS_16BPP.mov";
+    
+    AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:screenRect];
+    
+    // The image is rotated, so the movie shown over the image is not rotated.
+    animatorView.animatorOrientation = UIImageOrientationUp;
+    
+    // Create loader that will read a movie file from app resources.
+    
+    AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+    resLoader.movieFilename = resourceName;
+    animatorView.resourceLoader = resLoader;
+    
+    // Create decoder that will generate frames from Quicktime Animation encoded data
+    
+    AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+    animatorView.frameDecoder = frameDecoder;
+    
+    // Movie is 10FPS  
+    // This animation can run smoothly at 30 FPS on a iPhone 3G,
+    // but this is about the limit of what the hardware can do.
+    
+    if (frameDuration == -1.0) {
+      frameDuration = AVAnimator10FPS;
+    }  
+    
+    animatorView.animatorFrameDuration = frameDuration;  
+    
+    self.animatorView.animatorRepeatCount = 10;
 
+    [imageView addSubview:animatorView];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(animatorDoneNotification:) 
+                                                 name:AVAnimatorDoneNotification
+                                               object:animatorView];
+    
+    [animatorView startAnimator];
+    
+    self.animatorView = (AVAnimatorView*) view; // phony toplevel, does not crash because it is just removed from parent
+  }
+  
+  [view addSubview:imageView];
+  [self.window addSubview:view];
+}
 
 // Given an example index, load a specific example with
 // an indicated FPS. The fps is -1 if not set, otherwise
@@ -613,6 +715,10 @@
     }
     case 12: {
       [self loadMatrixLettersLandscapeAnimation:frameDuration];
+      break;
+    }
+    case 13: {
+      [self loadScreenCaptureAnimation:frameDuration];
       break;
     }
   }
