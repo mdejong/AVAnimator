@@ -394,6 +394,27 @@
 								<bool key="IBUIAdjustsFontSizeToFit">NO</bool>
 								<float key="IBUIMinimumFontSize">10</float>
 							</object>
+							<object class="IBUILabel" id="573468986">
+								<reference key="NSNextResponder" ref="124906568"/>
+								<int key="NSvFlags">292</int>
+								<string key="NSFrame">{{99, 751}, {206, 23}}</string>
+								<reference key="NSSuperview" ref="124906568"/>
+								<bool key="IBUIOpaque">NO</bool>
+								<bool key="IBUIClipsSubviews">YES</bool>
+								<int key="IBUIContentMode">7</int>
+								<bool key="IBUIUserInteractionEnabled">NO</bool>
+								<string key="targetRuntimeIdentifier">IBCocoaTouchFramework</string>
+								<string key="IBUIText">Sweep w audio</string>
+								<object class="NSColor" key="IBUITextColor">
+									<int key="NSColorSpace">1</int>
+									<bytes key="NSRGB">MSAxIDEAA</bytes>
+									<reference key="NSCustomColorSpace" ref="225706234"/>
+								</object>
+								<reference key="IBUIHighlightedColor" ref="642435738"/>
+								<int key="IBUIBaselineAdjustment">1</int>
+								<bool key="IBUIAdjustsFontSizeToFit">NO</bool>
+								<float key="IBUIMinimumFontSize">10</float>
+							</object>
 							<object class="IBUILabel" id="556871362">
 								<reference key="NSNextResponder" ref="124906568"/>
 								<int key="NSvFlags">292</int>
@@ -648,6 +669,25 @@
 								</object>
 								<reference key="IBUINormalTitleShadowColor" ref="752552776"/>
 							</object>
+							<object class="IBUIButton" id="424920913">
+								<reference key="NSNextResponder" ref="124906568"/>
+								<int key="NSvFlags">292</int>
+								<string key="NSFrame">{{20, 745}, {72, 37}}</string>
+								<reference key="NSSuperview" ref="124906568"/>
+								<bool key="IBUIOpaque">NO</bool>
+								<string key="targetRuntimeIdentifier">IBCocoaTouchFramework</string>
+								<int key="IBUIContentHorizontalAlignment">0</int>
+								<int key="IBUIContentVerticalAlignment">0</int>
+								<reference key="IBUIFont" ref="619597891"/>
+								<int key="IBUIButtonType">1</int>
+								<string key="IBUINormalTitle">MOV8</string>
+								<reference key="IBUIHighlightedTitleColor" ref="642435738"/>
+								<object class="NSColor" key="IBUINormalTitleColor">
+									<int key="NSColorSpace">1</int>
+									<bytes key="NSRGB">MC4xOTYwNzg0MzQ2IDAuMzA5ODAzOTMyOSAwLjUyMTU2ODY1NgA</bytes>
+								</object>
+								<reference key="IBUINormalTitleShadowColor" ref="752552776"/>
+							</object>
 						</object>
 						<string key="NSFrame">{{0, 49}, {320, 1000}}</string>
 						<reference key="NSSuperview" ref="774585933"/>
@@ -888,6 +928,15 @@
 					</object>
 					<int key="connectionID">63</int>
 				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBCocoaTouchEventConnection" key="connection">
+						<string key="label">runExampleFourteen:</string>
+						<reference key="source" ref="424920913"/>
+						<reference key="destination" ref="372490531"/>
+						<int key="IBEventType">7</int>
+					</object>
+					<int key="connectionID">66</int>
+				</object>
 			</object>
 			<object class="IBMutableOrderedSet" key="objectRecords">
 				<object class="NSArray" key="orderedObjects">
@@ -954,6 +1003,8 @@
 							<reference ref="209323737"/>
 							<reference ref="964021077"/>
 							<reference ref="34227050"/>
+							<reference ref="424920913"/>
+							<reference ref="573468986"/>
 						</object>
 						<reference key="parent" ref="774585933"/>
 					</object>
@@ -1112,6 +1163,16 @@
 						<reference key="object" ref="34227050"/>
 						<reference key="parent" ref="124906568"/>
 					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">64</int>
+						<reference key="object" ref="424920913"/>
+						<reference key="parent" ref="124906568"/>
+					</object>
+					<object class="IBObjectRecord">
+						<int key="objectID">65</int>
+						<reference key="object" ref="573468986"/>
+						<reference key="parent" ref="124906568"/>
+					</object>
 				</object>
 			</object>
 			<object class="NSMutableDictionary" key="flattenedProperties">
@@ -1174,6 +1235,9 @@
 					<string>61.IBPluginDependency</string>
 					<string>62.IBPluginDependency</string>
 					<string>62.IBViewBoundsToFrameTransform</string>
+					<string>64.IBPluginDependency</string>
+					<string>65.IBPluginDependency</string>
+					<string>65.IBViewBoundsToFrameTransform</string>
 					<string>8.IBPluginDependency</string>
 					<string>8.IBViewBoundsToFrameTransform</string>
 				</object>
@@ -1275,6 +1339,11 @@
 					<string>com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
 					<string>com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
 					<object class="NSAffineTransform">
+						<bytes key="NSTransformStruct">AULGAABELkAAA</bytes>
+					</object>
+					<string>com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
+					<string>com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
+					<object class="NSAffineTransform">
 						<bytes key="NSTransformStruct">P4AAAL+AAABCxgAAw9sAAA</bytes>
 					</object>
 					<string>com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
@@ -1299,7 +1368,7 @@
 				</object>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">63</int>
+			<int key="maxID">66</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -1315,6 +1384,7 @@
 							<string>runExampleEleven:</string>
 							<string>runExampleFive:</string>
 							<string>runExampleFour:</string>
+							<string>runExampleFourteen:</string>
 							<string>runExampleNine:</string>
 							<string>runExampleOne:</string>
 							<string>runExampleSeven:</string>
@@ -1340,6 +1410,7 @@
 							<string>id</string>
 							<string>id</string>
 							<string>id</string>
+							<string>id</string>
 						</object>
 					</object>
 					<object class="NSMutableDictionary" key="actionInfosByName">
@@ -1350,6 +1421,7 @@
 							<string>runExampleEleven:</string>
 							<string>runExampleFive:</string>
 							<string>runExampleFour:</string>
+							<string>runExampleFourteen:</string>
 							<string>runExampleNine:</string>
 							<string>runExampleOne:</string>
 							<string>runExampleSeven:</string>
@@ -1376,6 +1448,10 @@
 							</object>
 							<object class="IBActionInfo">
 								<string key="name">runExampleFour:</string>
+								<string key="candidateClassName">id</string>
+							</object>
+							<object class="IBActionInfo">
+								<string key="name">runExampleFourteen:</string>
 								<string key="candidateClassName">id</string>
 							</object>
 							<object class="IBActionInfo">

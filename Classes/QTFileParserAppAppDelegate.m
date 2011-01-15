@@ -46,14 +46,15 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
   // Override point for customization after app launch
-  NSAssert(self.viewController, @"viewController is nil");
-  [self.window addSubview:self.viewController.view];
-  [self.window makeKeyAndVisible];
   
 #if defined(REGRESSION_TESTS)
   // Execute regression tests when app is launched
   [RegressionTests testApp];
 #else
+  NSAssert(self.viewController, @"viewController is nil");
+  [self.window addSubview:self.viewController.view];
+  [self.window makeKeyAndVisible];
+  
 //  [self startAnimator];
 #endif // REGRESSION_TESTS    
 
@@ -528,16 +529,19 @@
   
 	UIView *viewToRotate = aView;
   
-	int hw = 480/2;
-	int hh = 320/2;
-	
-	int container_hw = 320/2;
-	int container_hh = 480/2;
-	
-	int xoff = hw - container_hw;
-	int yoff = hh - container_hh;	
+  float width = 480.0;
+  float height = 320.0;
   
-	CGRect frame = CGRectMake(-xoff, -yoff, 480, 320);
+	float hw = width / 2.0;
+	float hh = height / 2.0;
+	
+	float container_hw = height / 2.0;
+	float container_hh = width / 2.0;
+	
+	float xoff = hw - container_hw;
+	float yoff = hh - container_hh;	
+  
+	CGRect frame = CGRectMake(-xoff, -yoff, width, height);
 	viewToRotate.frame = frame;
   
 	float angle = M_PI / 2;  //rotate CCW 90°, or π/2 radians
@@ -628,6 +632,44 @@
   
   [view addSubview:imageView];
   [self.window addSubview:view];
+}
+
+// The sweep animation is a bit more computationally intensive, as it contains changes in each row
+// in each frame. This example shows an animation that runs at 15FPS and it synced to an audio track.
+// Because of the audio sync, this example only runs at 15FPS.
+
+- (void) loadSweepAnimation:(float)frameDuration
+{
+  NSString *videoResourceName = @"Sweep15FPS_ANI.mov";
+  NSString *audioResourceName = @"Sweep15FPS.m4a";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = videoResourceName;
+  resLoader.audioFilename = audioResourceName;
+	self.animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	self.animatorView.frameDecoder = frameDecoder;
+  
+  // Movie runs only at 15FPS.
+  
+	self.animatorView.animatorFrameDuration = AVAnimator15FPS;  
+  
+	self.animatorView.animatorRepeatCount = 2;
+  
+  [self loadIntoMovieControls];
 }
 
 // Given an example index, load a specific example with
@@ -721,6 +763,10 @@
       [self loadScreenCaptureAnimation:frameDuration];
       break;
     }
+    case 14: {
+      [self loadSweepAnimation:frameDuration];
+      break;
+    }      
   }
 }
 

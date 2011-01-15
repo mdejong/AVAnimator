@@ -18,7 +18,7 @@
 #import "AVResourceLoader.h"
 #import "AVFrameDecoder.h"
 
-//#define DEBUG_OUTPUT
+#define DEBUG_OUTPUT
 
 // util class AVAnimatorViewAudioPlayerDelegate declaration
 
@@ -1314,7 +1314,9 @@
 - (void)willMoveToWindow:(UIWindow *)newWindow
 {
   [super willMoveToWindow:newWindow];
-  [self loadViewImpl];
+  if (newWindow != nil) {
+    [self loadViewImpl];
+  }
 }
 
 @end

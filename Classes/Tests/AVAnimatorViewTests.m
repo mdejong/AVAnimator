@@ -16,6 +16,8 @@
 @interface AVAnimatorViewTests : NSObject {}
 @end
 
+// The methods named test* will be automatically invoked by the RegressionTests harness.
+
 @implementation AVAnimatorViewTests
 
 // Get a pixel value from an image
@@ -43,6 +45,33 @@
   CFDataGetBytes(pixelData, CFRangeMake(offset, sizeof(uint32_t) * nPixels), (UInt8*)pixelPtr);
   CFRelease(pixelData);
 }
+
+// This test checks state transitions related to the first time a view
+// is mapped into a window.
+
++ (void) testAVAnimatorViewMoveToWindow
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  CGRect frame = CGRectMake(0, 0, 2, 2);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+
+  // Note that no movie or audio will be loaded since this movie is never played.
+  
+  NSAssert(animatorView.renderSize.width == 0.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
+  
+  [animatorView willMoveToWindow:nil];
+
+  // A nil window argument should not invoke loadViewImpl
+  
+  NSAssert(animatorView.renderSize.width == 0.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
+  
+  return;
+}  
 
 + (void) test16BPP
 {
@@ -130,8 +159,6 @@
   return;
 }
 
-// Each test case method is invoked by the RegressionTests harness.
-
 + (void) test24BPP
 {
 	id appDelegate = [[UIApplication sharedApplication] delegate];	
@@ -211,6 +238,92 @@
               pixelPtr:&pixel];
   
   NSAssert(pixel == 0x0, @"pixel");
+  
+  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:5.0];
+  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  
+  return;
+}
+
++ (void) test32BPP
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"Bounce_32BPP_15FPS.mov";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	animatorView.frameDecoder = frameDecoder;
+  
+  animatorView.animatorFrameDuration = 1.0;
+  
+  NSAssert(animatorView.renderSize.width == 0.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
+  
+  [window addSubview:animatorView];
+  
+  // Check that adding the animator to the window invoked loadViewImpl
+  
+  NSAssert(animatorView.renderSize.width == 480.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 320.0, @"renderSize.height");
+  
+  /*
+   // No transform should be defined, but default transform depends on
+   // the platform because iOS has a translate and negate transform by default.
+   CATransform3D transform = animatorView.layer.transform;
+   UIView *defaultView = [[[UIView alloc] initWithFrame:frame] autorelease];
+   CATransform3D defaultTransform = defaultView.layer.transform;
+   
+   //  NSAssert(CATransform3DIsIdentity(transform), @"not identity transform");
+   NSAssert(CATransform3DEqualToTransform(transform, defaultTransform), @"not default transform");
+   */
+  
+  // Wait until initial keyframe of data is loaded.
+  
+  NSAssert(animatorView.isReadyToAnimate == FALSE, @"isReadyToAnimate");
+  
+  [animatorView prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:animatorView
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(animatorView.state == READY, @"isReadyToAnimate");
+  
+  // At this point, initial keyframe should be displayed
+  
+  NSAssert(animatorView.currentFrame == 0, @"currentFrame");
+  
+  NSAssert(animatorView.image != nil, @"image");
+  
+  // Query pixel data at a specific pixel offset
+  
+  uint32_t pixel;
+  
+  [self getPixels32BPP:animatorView.image.CGImage
+                offset:0
+               nPixels:1
+              pixelPtr:&pixel];
+  
+  NSAssert(pixel == 0xFF000000, @"pixel");
   
   NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:5.0];
   [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
@@ -475,6 +588,89 @@
   NSAssert(pixel[1] == 0xFF0000FF, @"pixel");  
   NSAssert(pixel[2] == 0xFF0000FF, @"pixel");  
   NSAssert(pixel[3] == 0xFF0000FF, @"pixel");  
+  
+  return;
+}
+
+// Load sweep animation and audio, then run the animation once.
+
++ (void) testSweepWithAudio
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");
+  
+  NSString *videoResourceName = @"Sweep15FPS_ANI.mov";
+  NSString *audioResourceName = @"Sweep15FPS.m4a";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = videoResourceName;
+  resLoader.audioFilename = audioResourceName;
+	animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	animatorView.frameDecoder = frameDecoder;
+  
+  animatorView.animatorFrameDuration = AVAnimator15FPS;
+  
+  animatorView.animatorRepeatCount = 2;
+  
+  NSAssert(animatorView.renderSize.width == 0.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
+  
+  [window addSubview:animatorView];
+  
+  // Check that adding the animator to the window invoked loadViewImpl
+  
+  NSAssert(animatorView.renderSize.width == 480.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 320.0, @"renderSize.height");
+  
+  // Wait until initial keyframe of data is loaded.
+  
+  NSAssert(animatorView.isReadyToAnimate == FALSE, @"isReadyToAnimate");
+  
+  [animatorView prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:animatorView
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(animatorView.state == READY, @"isReadyToAnimate");
+  
+  // At this point, initial keyframe should be displayed
+  
+  NSAssert(animatorView.currentFrame == 0, @"currentFrame");
+  
+  NSAssert(animatorView.image != nil, @"image");
+
+  {
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:0.5];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
+  
+  // Wait for 2 loops to finish
+  
+  [animatorView startAnimator];
+  
+  {
+  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:30.0];
+  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
+  
+  NSAssert(animatorView.state == STOPPED, @"STOPPED");
   
   return;
 }
