@@ -23,5 +23,11 @@
 
 - (IBAction) runExampleFive:(id) sender;
 
+- (IBAction) runExampleSix:(id) sender;
+
+- (IBAction) runExampleSeven:(id) sender;
+
+- (IBAction) runExampleEight:(id) sender;
+
 @end
 

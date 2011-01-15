@@ -127,40 +127,6 @@
   return;  
 }
 
-- (void) loadBouncePNGs
-{  
-  CGRect frame = CGRectMake(0, 0, 480, 320);
-  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
-  self.animatorView.animatorOrientation = UIImageOrientationUp;
-  
-  // Create loader that will get a filename from an app resource.
-  // This resource loader is phony, it becomes a no-op because
-  // the AVPNGFrameDecoder ignores it.
-  
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = @"BouncingBalls01.png"; // Phony resource name, becomes no-op
-	self.animatorView.resourceLoader = resLoader;
-  
-  // Create decoder that will generate frames from PNG files attached as app resources.
-  
-  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"BouncingBalls"
-                                                            rangeStart:1
-                                                              rangeEnd:30
-                                                          suffixFormat:@"%02i.png"];
-  
-  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
-  
-  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
-	self.animatorView.frameDecoder = frameDecoder;
-  
-	//self.animatorView.animatorFrameDuration = 0.25;
-	self.animatorView.animatorFrameDuration = 1.0 / 15;
-  
-	self.animatorView.animatorRepeatCount = 10;
-
-  [self loadIntoMovieControls];
-}
-
 // This example is a portrait animation with a few frames of mostly black
 // with white text. PNG images are read from the app resources and the
 // decoded image data is stored in memory. This is useful for testing the max
@@ -247,7 +213,7 @@
   }
 }
 
-// This example shows a landscape count animation, PNG images are again
+// This example shows a landscape count animation, PNG images are
 // read into cached mem and rendered without a read/decode step.
 
 - (void) loadCachedCountLandscapePNGs:(float)frameDuration
@@ -317,7 +283,77 @@
   }  
 }
 
-- (void) loadBounceLandscapeAnimation:(int)bpp
+// This animation is a series of 30 PNGs in landscape mode.
+// The image files are read into memory, but the decoded
+// image data is not cached. There is no IO between frames
+// but the images do need to be decoded into memory.
+// This test basically checks how quickly the PNG decoding
+// logic can run, it is typically around 15FPS on an
+// iPhone 3G for a 480x320 image.
+
+- (void) loadBounceLandscapePNGs:(float)frameDuration
+                   movieControls:(BOOL)movieControls
+{  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create loader that will get a filename from an app resource.
+  // This resource loader is phony, it becomes a no-op because
+  // the AVPNGFrameDecoder ignores it.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = @"BouncingBalls01.png"; // Phony resource name, becomes no-op
+	self.animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from PNG files attached as app resources.
+  
+  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"BouncingBalls"
+                                                  rangeStart:1
+                                                    rangeEnd:30
+                                                suffixFormat:@"%02i.png"];
+  
+  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  
+  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:FALSE];
+	self.animatorView.frameDecoder = frameDecoder;
+    
+  if (frameDuration == -1.0) {
+    frameDuration = AVAnimator15FPS;
+  }  
+  
+	self.animatorView.animatorFrameDuration = frameDuration;
+  
+	self.animatorView.animatorRepeatCount = 100;
+  
+  // Add AVAnimatorView directly to main window, or use movie controls
+  
+  if (movieControls == FALSE) {
+    [self.window addSubview:self.animatorView];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(animatorDoneNotification:) 
+                                                 name:AVAnimatorDoneNotification
+                                               object:self.animatorView];  
+    
+    [self.animatorView startAnimator];
+  } else {
+    [self loadIntoMovieControls];
+  }  
+  
+}
+
+// The same Bounce animation loaded above, except these frames are
+// read from a MOV file instead of PNGs. Reading deltas from
+// a MOV file is significant more efficient than decoding the
+// entire PNG for each frame. A 16 or 24 bpp decode of this 480x320
+// movie will at about 30 FPS on a iPhone 3G with no problems.
+// Decoding a 32bpp movie with a possible alpha channel is
+// less efficient and will execute more slowly.
+
+- (void) loadBounceLandscapeAnimation:(float)frameDuration
+                                  bpp:(int)bpp
+                        movieControls:(BOOL)movieControls
 {
   NSString *resourceName;
   if (bpp == 16) {
@@ -349,21 +385,28 @@
   AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
 	self.animatorView.frameDecoder = frameDecoder;
   
-	//self.animatorView.animatorFrameDuration = 1.0;
-	//self.animatorView.animatorFrameDuration = AVAnimator15FPS;
-  //self.animatorView.animatorFrameDuration = AVAnimator30FPS;
-  self.animatorView.animatorFrameDuration = 1.0 / 60;
+  if (frameDuration == -1.0) {
+    frameDuration = AVAnimator30FPS;
+  }  
   
-	self.animatorView.animatorRepeatCount = 400;
+	self.animatorView.animatorFrameDuration = frameDuration;
   
-  [self.window addSubview:self.animatorView];
+	self.animatorView.animatorRepeatCount = 100;
   
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(animatorDoneNotification:) 
-                                               name:AVAnimatorDoneNotification
-                                             object:self.animatorView];
+  // Add AVAnimatorView directly to main window, or use movie controls
   
-  [self.animatorView startAnimator];
+  if (movieControls == FALSE) {
+    [self.window addSubview:self.animatorView];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(animatorDoneNotification:) 
+                                                 name:AVAnimatorDoneNotification
+                                               object:self.animatorView];  
+    
+    [self.animatorView startAnimator];
+  } else {
+    [self loadIntoMovieControls];
+  }  
 }
 
 - (void) loadAlphaGhostLandscapeAnimation
@@ -576,7 +619,19 @@
     case 5: {
       [self loadCachedCountLandscapePNGs:frameDuration movieControls:TRUE];
       break;
-    }      
+    }
+    case 6: {
+      [self loadBounceLandscapePNGs:frameDuration movieControls:TRUE];
+      break;
+    }
+    case 7: {
+      [self loadBounceLandscapeAnimation:frameDuration bpp:16 movieControls:FALSE];
+      break;
+    }
+    case 8: {
+      [self loadBounceLandscapeAnimation:frameDuration bpp:16 movieControls:TRUE];
+      break;
+    }
   }
 }
 

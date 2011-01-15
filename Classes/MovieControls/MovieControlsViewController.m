@@ -49,13 +49,15 @@
 	NSLog(@"_releaseHideControlsTimer");
 #endif
 
-	if (hideControlsTimer != nil)
-		[hideControlsTimer invalidate];
+	if (self.hideControlsTimer != nil) {
+		[self.hideControlsTimer invalidate];
+  }
 	
 	self.hideControlsTimer = nil;
 	
-	if (hideControlsFromPlayTimer != nil)
-		[hideControlsFromPlayTimer invalidate];
+	if (self.hideControlsFromPlayTimer != nil) {
+		[self.hideControlsFromPlayTimer invalidate];
+  }
 	
 	self.hideControlsFromPlayTimer = nil;	
 }
@@ -162,6 +164,8 @@
     if (controlsVisable) {
       [self removeNavigationControlerAsSubviewOf:self.mainWindow];
     }
+    
+    [self _releaseHideControlsTimer];
     
     [self.view removeFromSuperview];
     
@@ -960,7 +964,8 @@
   // Hide controls by removing them from the main window
   
   NSArray *subviews = [self.mainWindow subviews];
-  NSAssert([subviews count] == 2, @"mainWindow must contain 1 subviews");
+  int subviewCount = [subviews count];
+  NSAssert(subviewCount == 2, @"mainWindow must contain 2 subviews");
   NSAssert([subviews objectAtIndex:0] == self.overView, @"overView must be first subview of mainWindow");
   
   [self removeNavigationControlerAsSubviewOf:self.mainWindow];

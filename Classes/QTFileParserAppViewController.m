@@ -85,4 +85,28 @@
   [appDelegate loadIndexedExample:5 fps:[self getFPS]];
 }
 
+- (IBAction) runExampleSix:(id) sender
+{
+  id delegate = [[UIApplication sharedApplication] delegate];
+	NSAssert(delegate, @"delegate is nil");
+  QTFileParserAppAppDelegate *appDelegate = (QTFileParserAppAppDelegate*)delegate;
+  [appDelegate loadIndexedExample:6 fps:[self getFPS]];
+}
+
+- (IBAction) runExampleSeven:(id) sender
+{
+  id delegate = [[UIApplication sharedApplication] delegate];
+	NSAssert(delegate, @"delegate is nil");
+  QTFileParserAppAppDelegate *appDelegate = (QTFileParserAppAppDelegate*)delegate;
+  [appDelegate loadIndexedExample:7 fps:[self getFPS]];
+}
+
+- (IBAction) runExampleEight:(id) sender
+{
+  id delegate = [[UIApplication sharedApplication] delegate];
+	NSAssert(delegate, @"delegate is nil");
+  QTFileParserAppAppDelegate *appDelegate = (QTFileParserAppAppDelegate*)delegate;
+  [appDelegate loadIndexedExample:8 fps:[self getFPS]];
+}
+
 @end
