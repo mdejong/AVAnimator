@@ -94,8 +94,6 @@
 	[self.movieControlsViewController disableUserInteraction];
   
 	[self.animatorView prepareToAnimate];
-  
-  [self.animatorView startAnimator];
 }
 
 - (void) stopAnimator

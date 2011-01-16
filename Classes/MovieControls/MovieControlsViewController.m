@@ -273,6 +273,15 @@
 	imageFilename = @"prevtrack.png";
 	resPath = [[NSBundle mainBundle] pathForResource:imageFilename ofType:nil];
 	NSAssert(resPath, @"prevtrack.png resource not found");
+
+  // FIXME: use these instead of including pngs!
+  // UIBarButtonSystemItemRewind
+  // UIBarButtonSystemItemFastForward
+  // UIBarButtonSystemItemPause
+  // UIBarButtonSystemItemPlay
+  // UIBarButtonSystemItemDone
+  //
+  // Not clear what to do about the system alpha image that the buttons go on
   
 	self.rewindImage = [UIImage imageWithContentsOfFile:resPath];  
 

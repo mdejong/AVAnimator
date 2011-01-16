@@ -18,7 +18,7 @@
 #import "AVResourceLoader.h"
 #import "AVFrameDecoder.h"
 
-#define DEBUG_OUTPUT
+//#define DEBUG_OUTPUT
 
 // util class AVAnimatorViewAudioPlayerDelegate declaration
 
@@ -595,6 +595,52 @@
 	[[NSRunLoop currentRunLoop] addTimer: self.animatorPrepTimer forMode: NSDefaultRunLoopMode];
 }
 
+// This callback is invoked as a result of a timer just after the startAnimator
+// method is invoked. This logic is needed because of an odd race condition in
+// AVAudioPlayer between calls to [self.avAudioPlayer stop] and [self.avAudioPlayer play]
+// where the audio will not start playing a second time unless the event loop is entered
+// after the call to stop.
+
+- (void) _delayedStartAnimator:(NSTimer *)timer
+{
+  // Would always be invoked just after a call to startAnimator
+  
+  if (self.state != ANIMATING) {
+    return;
+  }
+  
+  // Create initial callback that is invoked until the audio clock
+  // has started running.
+  
+  self.animatorDecodeTimer = [NSTimer timerWithTimeInterval: self.animatorFrameDuration / 2.0
+                                                     target: self
+                                                   selector: @selector(_animatorDecodeInitialFrameCallback:)
+                                                   userInfo: NULL
+                                                    repeats: FALSE];
+  
+  [[NSRunLoop currentRunLoop] addTimer:self.animatorDecodeTimer forMode:NSDefaultRunLoopMode];
+  
+  // Start playing audio or record the start time if using simulated audio clock
+  
+  if (self.avAudioPlayer) {
+    [self.avAudioPlayer prepareToPlay];
+    [self.avAudioPlayer play];
+    [self _setAudioSessionCategory];
+  } else {
+    self.audioSimulatedStartTime = [NSDate date];
+    self.audioSimulatedNowTime = nil;
+  }
+
+  // Turn off the event idle timer so that the screen is not dimmed while playing
+	
+  UIApplication *thisApplication = [UIApplication sharedApplication];	
+  thisApplication.idleTimerDisabled = YES;
+	
+  // Send notification to object(s) that regestered interest in start action
+  
+  [[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorDidStartNotification object:self];
+}
+
 // Invoke this method to start the animator, if the animator is not yet
 // ready to play then this method will return right away and the animator
 // will be started when it is ready.
@@ -650,17 +696,8 @@
 	self.animatorMaxClockTime = ((self.animatorNumFrames - 1) * self.animatorFrameDuration) -
     (self.animatorFrameDuration / 10);
   
-	// Create initial callback that is invoked until the audio clock
-	// has started running.
-  
-	self.animatorDecodeTimer = [NSTimer timerWithTimeInterval: self.animatorFrameDuration / 2.0
-                                                      target: self
-                                                    selector: @selector(_animatorDecodeInitialFrameCallback:)
-                                                    userInfo: NULL
-                                                     repeats: FALSE];
-  
-  [[NSRunLoop currentRunLoop] addTimer: self.animatorDecodeTimer forMode: NSDefaultRunLoopMode];
-  
+  self.repeatedFrameCount = 0;
+    
   // There should be no display timer at this point
   NSAssert(self.animatorDisplayTimer == nil, @"animatorDisplayTimer");
   
@@ -675,29 +712,17 @@
   [self showFrame:0];
   NSAssert(self.currentFrame == 0, @"currentFrame must be zero");  
   
-  //NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1.0];
-  //[[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  // Schedule delayed start callback to start audio playback and kick
+  // off decode callback cycle.
   
-  // Start playing audio or record the start time if using simulated audio clock
-  
-  if (self.avAudioPlayer) {
-    [self.avAudioPlayer play];
-    [self _setAudioSessionCategory];
-  } else {
-    self.audioSimulatedStartTime = [NSDate date];
-    self.audioSimulatedNowTime = nil;
-  }
-  
-  // Turn off the event idle timer so that the screen is not dimmed while playing
-	
-	UIApplication *thisApplication = [UIApplication sharedApplication];	
-  thisApplication.idleTimerDisabled = YES;
-	
-	// Send notification to object(s) that regestered interest in start action
-  
-	[[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorDidStartNotification
-                                                      object:self];
-  
+	self.animatorDecodeTimer = [NSTimer timerWithTimeInterval: 0.01
+                                                     target: self
+                                                   selector: @selector(_delayedStartAnimator:)
+                                                   userInfo: NULL
+                                                    repeats: FALSE];
+
+  [[NSRunLoop currentRunLoop] addTimer:self.animatorDecodeTimer forMode:NSDefaultRunLoopMode];
+
   return;
 }
 
@@ -944,15 +969,26 @@
 	}
 #endif	
   
-  // FIXME: Need to implement logic for a audio clock that never reports a non-zero
-  // time. If the clock does not start then stop the animator?
-  
 	if (currentTime < (self.animatorFrameDuration / 2.0)) {
 		// Ignore reported times until they are at least half way to the
 		// first frame time. The audio could take a moment to start and it
 		// could report a number of zero or less than zero times. Keep
 		// scheduling a non-repeating call to _animatorDecodeFrameCallback
-		// until the audio clock is actually running.
+		// until the audio clock is actually running. Keep track of how
+    // many times this method has been invoked to avoid getting stuck
+    // in a loop if the clock never reports non-zero times.
+    
+    self.repeatedFrameCount = self.repeatedFrameCount + 1;
+    
+    if (self.repeatedFrameCount > 20) {
+      NSLog(@"%@", [NSString stringWithFormat:@"doneAnimator because audio time not progressing"]);
+      
+      [self doneAnimator];
+      return;
+    } else if (self.repeatedFrameCount > 10) {
+      // Audio clock has stopped reporting progression of time
+      NSLog(@"%@", [NSString stringWithFormat:@"audio time not progressing: %f", currentTime]);
+    }
     
 		if (self.animatorDecodeTimer != nil) {
 			[self.animatorDecodeTimer invalidate];
@@ -973,6 +1009,8 @@
 		// schedule the callbacks.
     
     self.decodedSecondFrame = TRUE;
+    
+    self.repeatedFrameCount = 0;
     
 		[self _animatorDecodeFrameCallback:nil];
     
@@ -1052,15 +1090,15 @@
   
   self.currentFrame = frameNow;
   
-	if (self.repeatedFrameCount > 10) {
-		// Audio clock has stopped reporting progression of time
-		NSLog(@"%@", [NSString stringWithFormat:@"audio time not progressing: %f", currentTime]);
-	} else if (self.repeatedFrameCount > 20) {
-		NSLog(@"%@", [NSString stringWithFormat:@"doneAnimator because audio time not progressing"]);
+  if (self.repeatedFrameCount > 20) {
+    NSLog(@"%@", [NSString stringWithFormat:@"doneAnimator because audio time not progressing"]);
     
-		[self doneAnimator];
-		return;
-	}
+    [self doneAnimator];
+    return;
+  } else if (self.repeatedFrameCount > 10) {
+    // Audio clock has stopped reporting progression of time
+    NSLog(@"%@", [NSString stringWithFormat:@"audio time not progressing: %f", currentTime]);
+  }
   
 	// Schedule the next frame display callback. In the case where the decode
 	// operation takes longer than the time until the frame interval, the

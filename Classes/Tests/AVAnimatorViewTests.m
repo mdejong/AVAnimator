@@ -98,8 +98,6 @@
   // timing events with specific timings.
   
   [animatorView startAnimator];
-
-  NSAssert(animatorView.audioSimulatedStartTime != nil, @"audioSimulatedStartTime not set");
   
   NSAssert(animatorView.state == ANIMATING, @"ANIMATING");
   
@@ -113,7 +111,7 @@
   
   NSAssert(animatorView.animatorMaxClockTime == ((5.0 - 1.0) - 1.0/10), @"animatorDecodeTimerInterval");    
   
-  // Cancel decode timer, it would have invoked _animatorDecodeInitialFrameCallback
+  // Cancel decode timer, it would have invoked _delayedStartAnimator
   // but we want to explicitly invoke this method with specific test times.
   
   NSAssert(animatorView.animatorDecodeTimer != nil, @"animatorDecodeTimer");

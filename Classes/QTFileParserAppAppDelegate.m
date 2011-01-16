@@ -639,9 +639,12 @@
 // Because of the audio sync, this example only runs at 15FPS.
 
 - (void) loadSweepAnimation:(float)frameDuration
+                  withSound:(BOOL)withSound
 {
   NSString *videoResourceName = @"Sweep15FPS_ANI.mov";
-  NSString *audioResourceName = @"Sweep15FPS.m4a";
+  
+  NSString *audioResourceName = @"Sweep15FPS.m4a"; // AAC in a M4AF container
+//  NSString *audioResourceName = @"Sweep15FPS.caf"; // AAC in a CAF container
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -655,7 +658,9 @@
   
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
   resLoader.movieFilename = videoResourceName;
-  resLoader.audioFilename = audioResourceName;
+  if (withSound) {
+    resLoader.audioFilename = audioResourceName;
+  }
 	self.animatorView.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
@@ -663,11 +668,18 @@
   AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
 	self.animatorView.frameDecoder = frameDecoder;
   
-  // Movie runs only at 15FPS.
+  // Movie runs only at 15FPS with sound.
   
-	self.animatorView.animatorFrameDuration = AVAnimator15FPS;  
+  if (withSound) {
+    self.animatorView.animatorFrameDuration = AVAnimator15FPS;
+  } else {
+    if (frameDuration == -1.0) {
+      self.animatorView.animatorFrameDuration = AVAnimator15FPS;      
+    }
+  }
   
-	self.animatorView.animatorRepeatCount = 2;
+//	self.animatorView.animatorRepeatCount = 5;
+	self.animatorView.animatorRepeatCount = 100;
   
   [self loadIntoMovieControls];
 }
@@ -764,7 +776,11 @@
       break;
     }
     case 14: {
-      [self loadSweepAnimation:frameDuration];
+      [self loadSweepAnimation:frameDuration withSound:TRUE];
+      break;
+    }
+    case 15: {
+      [self loadSweepAnimation:frameDuration withSound:FALSE];
       break;
     }      
   }
