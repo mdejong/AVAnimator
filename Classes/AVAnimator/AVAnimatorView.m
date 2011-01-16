@@ -110,12 +110,15 @@
 @synthesize repeatedFrameCount = m_repeatedFrameCount;
 @synthesize avAudioPlayer = m_avAudioPlayer;
 @synthesize audioSimulatedStartTime = m_audioSimulatedStartTime;
+@synthesize audioSimulatedNowTime = m_audioSimulatedNowTime;
 @synthesize state = m_state;
 @synthesize animatorMaxClockTime = m_animatorMaxClockTime;
 @synthesize animatorDecodeTimerInterval = m_animatorDecodeTimerInterval;
 @synthesize renderSize = m_renderSize;
 @synthesize isReadyToAnimate = m_isReadyToAnimate;
 @synthesize startAnimatorWhenReady = m_startAnimatorWhenReady;
+@synthesize decodedSecondFrame = m_decodedSecondFrame;
+@synthesize decodedLastFrame = m_decodedLastFrame;
 
 - (void) dealloc {
 	// This object can't be deallocated while animating, this could
@@ -169,6 +172,7 @@
     self.avAudioPlayer = nil;
   }
   self.audioSimulatedStartTime = nil;
+  self.audioSimulatedNowTime = nil;
   
   [super dealloc];
 }
@@ -597,6 +601,12 @@
 
 - (void) startAnimator
 {
+#ifdef DEBUG_OUTPUT
+	if (TRUE) {
+		NSLog(@"startAnimator: ");
+	}
+#endif
+  
 	[self prepareToAnimate];
   
 	// If still preparing, just set a flag so that the animator
@@ -626,6 +636,9 @@
 	// check the audio clock offset and use that time to schedule a callback to
 	// be fired at time T2. The callback at T2 will simply display the image.
   
+  self.decodedSecondFrame = FALSE;
+  self.decodedLastFrame = FALSE;
+  
 	// Amount of time that will elapse between the expected time that a frame
 	// will be displayed and the time when the next frame decode operation
 	// will be invoked.
@@ -648,11 +661,31 @@
   
   [[NSRunLoop currentRunLoop] addTimer: self.animatorDecodeTimer forMode: NSDefaultRunLoopMode];
   
+  // There should be no display timer at this point
+  NSAssert(self.animatorDisplayTimer == nil, @"animatorDisplayTimer");
+  
+  // Display the initial frame right away. The initial frame callback logic
+  // will decode the second frame when the clock starts running, but the
+  // first frames needs to be shown until that callback is invoked.
+  // Note that the frame decode could take some time, because the initial
+  // keyframe could take some time to decode, so be sure to fully decode
+  // the initial frame before kicking off the audio playback or calculating
+  // the simulated start time.
+  
+  [self showFrame:0];
+  NSAssert(self.currentFrame == 0, @"currentFrame must be zero");  
+  
+  //NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1.0];
+  //[[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  
+  // Start playing audio or record the start time if using simulated audio clock
+  
   if (self.avAudioPlayer) {
     [self.avAudioPlayer play];
     [self _setAudioSessionCategory];
   } else {
     self.audioSimulatedStartTime = [NSDate date];
+    self.audioSimulatedNowTime = nil;
   }
   
   // Turn off the event idle timer so that the screen is not dimmed while playing
@@ -664,13 +697,6 @@
   
 	[[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorDidStartNotification
                                                       object:self];
-  
-  // Display the initial frame right away. The initial frame callback logic
-  // will decode the second frame when the clock starts running, but the
-  // first frames needs to be shown until that callback is invoked.
-  
-  [self showFrame:0];
-  NSAssert(self.currentFrame == 0, @"currentFrame must be zero");
   
   return;
 }
@@ -692,6 +718,12 @@
 
 - (void) stopAnimator
 {
+#ifdef DEBUG_OUTPUT
+	if (TRUE) {
+		NSLog(@"stopAnimator: ");
+	}
+#endif
+
 	if (self.state == STOPPED) {
 		// When already stopped, don't generate another AVAnimatorDidStopNotification
 		return;
@@ -836,8 +868,15 @@
 	NSTimeInterval currentTime;
   
   if (self->m_avAudioPlayer == nil) {
-    NSAssert(self.audioSimulatedStartTime, @"audioSimulatedStartTime is nil");
-    currentTime = [self.audioSimulatedStartTime timeIntervalSinceNow] * -1;
+    // Note that audioSimulatedStartTime could be nil when testing and the [self showFrame]
+    // method is invoked to display the initial keyframe. In this case, it is fine to
+    // just report 0.0 as the current time.
+
+    if (self->m_audioSimulatedNowTime == nil) {
+      currentTime = [self->m_audioSimulatedStartTime timeIntervalSinceNow] * -1.0;
+    } else {
+      currentTime = [self.audioSimulatedStartTime timeIntervalSinceDate:self.audioSimulatedNowTime] * -1.0;
+    }
   } else {
     currentTime = self->m_avAudioPlayer.currentTime;
   }
@@ -905,6 +944,9 @@
 	}
 #endif	
   
+  // FIXME: Need to implement logic for a audio clock that never reports a non-zero
+  // time. If the clock does not start then stop the animator?
+  
 	if (currentTime < (self.animatorFrameDuration / 2.0)) {
 		// Ignore reported times until they are at least half way to the
 		// first frame time. The audio could take a moment to start and it
@@ -929,6 +971,8 @@
 		// we are ready to schedule recurring callbacks. Invoking the
 		// decode frame callback will setup the next frame and
 		// schedule the callbacks.
+    
+    self.decodedSecondFrame = TRUE;
     
 		[self _animatorDecodeFrameCallback:nil];
     
@@ -972,16 +1016,13 @@
 	}
 #endif
  
-	// If the audio clock is reporting nonsense results like time going
-	// backwards, just treat it like the clock is stuck. If a number
-	// of stuck clock callbacks are found then animator will be stopped.
+	// If the audio clock is reporting nonsense results, like a
+  // zero time after the decode callback has started
+  // to be invoked.
   
 	if (frameNow < self.currentFrame) {
-		NSString *msg = [NSString stringWithFormat:@"frameNow %d can't be less than currentFrame %d",
-                     frameNow, self.currentFrame];
-		NSLog(@"%@", msg);
-    
-		frameNow = self.currentFrame;
+    NSUInteger secondToLastFrameIndex = self.animatorNumFrames - 1 - 1;    
+		frameNow = secondToLastFrameIndex;
 	}
   
 	NSUInteger nextFrameIndex = frameNow + 1;
@@ -1073,6 +1114,8 @@
       
 			shouldScheduleDecodeCallback = FALSE;
 			shouldScheduleLastFrameCallback = TRUE;
+
+      self.decodedLastFrame = TRUE;
 		}			
 	}
   

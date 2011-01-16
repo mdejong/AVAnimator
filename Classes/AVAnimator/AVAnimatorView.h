@@ -78,6 +78,7 @@ typedef enum AVAnimatorPlayerState {
 	id m_originalAudioDelegate;
 	id m_retainedAudioDelegate;
   NSDate *m_audioSimulatedStartTime;
+  NSDate *m_audioSimulatedNowTime;
   
 	AVAudioPlayerState m_state;
   
@@ -98,6 +99,14 @@ typedef enum AVAnimatorPlayerState {
 	// prepare phase is complete.
   
 	BOOL m_startAnimatorWhenReady;
+  
+	// Set to TRUE once the second frame has been decoded
+
+	BOOL m_decodedSecondFrame;
+  
+	// Set to TRUE once the last frame has been decoded
+  
+	BOOL m_decodedLastFrame;
 }
 
 // public properties

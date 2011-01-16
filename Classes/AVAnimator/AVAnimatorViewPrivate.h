@@ -43,6 +43,7 @@
 // originalAudioDelegate and retainedAudioDelegate are not properties
 
 @property (nonatomic, retain) NSDate *audioSimulatedStartTime;
+@property (nonatomic, retain) NSDate *audioSimulatedNowTime;
 
 @property (nonatomic, assign) AVAudioPlayerState state;
 @property (nonatomic, assign) NSTimeInterval animatorMaxClockTime;
@@ -52,9 +53,14 @@
 @property (nonatomic, assign) BOOL isReadyToAnimate;
 @property (nonatomic, assign) BOOL startAnimatorWhenReady;
 
+@property (nonatomic, assign) BOOL decodedSecondFrame;
+@property (nonatomic, assign) BOOL decodedLastFrame;
+
 // private methods
 
 - (BOOL) _animatorDecodeNextFrame;
+
+- (void) _animatorDecodeInitialFrameCallback: (NSTimer *)timer;
 
 - (void) _animatorDecodeFrameCallback: (NSTimer *)timer;
 
