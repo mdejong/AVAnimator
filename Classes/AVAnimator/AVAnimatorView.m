@@ -612,6 +612,8 @@
   // Create initial callback that is invoked until the audio clock
   // has started running.
   
+  [self.animatorDecodeTimer invalidate];
+  
   self.animatorDecodeTimer = [NSTimer timerWithTimeInterval: self.animatorFrameDuration / 2.0
                                                      target: self
                                                    selector: @selector(_animatorDecodeInitialFrameCallback:)
@@ -714,6 +716,8 @@
   
   // Schedule delayed start callback to start audio playback and kick
   // off decode callback cycle.
+  
+  [self.animatorDecodeTimer invalidate];
   
 	self.animatorDecodeTimer = [NSTimer timerWithTimeInterval: 0.01
                                                      target: self
@@ -849,6 +853,8 @@
 	[self.avAudioPlayer play];
   
 	// Resume decoding callbacks
+  
+  [self.animatorDecodeTimer invalidate];
   
 	self.animatorDecodeTimer = [NSTimer timerWithTimeInterval: self.animatorDecodeTimerInterval
                                                       target: self

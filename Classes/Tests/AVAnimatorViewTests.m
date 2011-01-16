@@ -32,6 +32,7 @@
   
   CGRect frame = CGRectMake(0, 0, 480, 320);
   AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  animatorView.animatorOrientation = UIImageOrientationLeft;
   
   // Use phony res loader, will load PNG frames from resources later
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
@@ -477,7 +478,7 @@
   // has no transforms applied to the AVAnimatorView.
   
   CGRect frame = CGRectMake(0, 0, 480, 320);
-  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
   animatorView.animatorOrientation = UIImageOrientationLeft;
   
   // Create loader that will read a movie file from app resources.
