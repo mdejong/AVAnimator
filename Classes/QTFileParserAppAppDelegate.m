@@ -103,7 +103,7 @@
 }
 
 - (void) loadIntoMovieControls
-{
+{  
   // Create Movie Controls and let it manage the AVAnimatorView
   
 	self.movieControlsViewController = [MovieControlsViewController movieControlsViewController];
@@ -212,6 +212,8 @@
     
     [self.animatorView startAnimator];
   } else {
+    // FIXME: loading portrait into movie controls is broken
+    
     [self loadIntoMovieControls];
   }
 }
@@ -226,7 +228,11 @@
   // orientation of the MovieControls.
   CGRect landscapeFrame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:landscapeFrame];
-  self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  if (movieControls) {
+    self.animatorView.animatorOrientation = UIImageOrientationUp;  
+  } else {
+    self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  }
   
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
@@ -298,8 +304,12 @@
                    movieControls:(BOOL)movieControls
 {  
   CGRect frame = CGRectMake(0, 0, 480, 320);
-  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
-  self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  if (movieControls) {
+    self.animatorView.animatorOrientation = UIImageOrientationUp;  
+  } else {
+    self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  }
   
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
@@ -375,7 +385,11 @@
   
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
-  self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  if (movieControls) {
+    self.animatorView.animatorOrientation = UIImageOrientationUp;  
+  } else {
+    self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  }  
   
   // Create loader that will read a movie file from app resources.
   
@@ -441,7 +455,7 @@
   
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
-  self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  self.animatorView.animatorOrientation = UIImageOrientationUp;  
   
   // Create loader that will read a movie file from app resources.
   
@@ -487,7 +501,7 @@
   
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
-  self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  self.animatorView.animatorOrientation = UIImageOrientationUp;
   
   // Create loader that will read a movie file from app resources.
   
@@ -572,11 +586,9 @@
   UIImage *image = [UIImage imageWithContentsOfFile:resPath];
   NSAssert(image, @"image is nil");
   
-//  imageView.image = [[UIImageView alloc] initWithImage:image];
   UIImageView *imageView = [[[UIImageView alloc] initWithImage:image] autorelease];
   NSAssert(imageView, @"imageView is nil");
   
-  //image.imageOrientation = UIImageOrientationLeft;
   // Rotate image view!
   [self.class rotateToLandscape:imageView];
   
@@ -652,7 +664,7 @@
   
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
-  self.animatorView.animatorOrientation = UIImageOrientationLeft;
+  self.animatorView.animatorOrientation = UIImageOrientationUp;
   
   // Create loader that will read a movie file from app resources.
   

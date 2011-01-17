@@ -6,6 +6,7 @@
 //  License terms defined in License.txt.
 
 #import <UIKit/UIKit.h>
+#import <QuartzCore/QuartzCore.h>
 
 @class MPVolumeView;
 @class MovieControlsView;
@@ -61,6 +62,9 @@
 	NSTimer *hideControlsFromPlayTimer;
 
 	CFAbsoluteTime lastEventTime;
+  
+  CGRect portraitFrame;
+  CATransform3D portraitTransform;
 
 	BOOL controlsVisable;
 	BOOL isPlaying;

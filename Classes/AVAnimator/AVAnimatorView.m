@@ -245,6 +245,12 @@
 	BOOL isRotatedToLandscape = FALSE;
 	size_t renderWidth, renderHeight;
 
+  // If loadViewImpl was already invoked, ignore.
+  
+  if (self.renderSize.width > 0) {
+    return;
+  }
+
   // FIXME: these settings would need to be available somehow to the caller, but if this method
   // is invoked on init, then they will not be.
   
@@ -300,8 +306,6 @@
   
 	NSAssert(self.resourceLoader, @"resourceLoader must be defined");
 	NSAssert(self.frameDecoder, @"frameDecoder must be defined");
-  
-	NSAssert(self.animatorAudioURL == nil, @"animatorAudioURL must be nil");
   
   // FIXME: may or may not need to set this? Figure out based on what is in header.
   //	NSAssert(animatorFrameDuration != 0.0, @"animatorFrameDuration was not defined");

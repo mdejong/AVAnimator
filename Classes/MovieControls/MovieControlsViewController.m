@@ -107,25 +107,41 @@
 {
 	// Change the center of the nav view to be the center of the
 	// window in portrait mode.
+  
+	UIView *viewToRotate = aView;
+  
+  float width = 480.0;
+  float height = 320.0;
+  
+	float hw = width / 2.0;
+	float hh = height / 2.0;
+	
+	float container_hw = height / 2.0;
+	float container_hh = width / 2.0;
+	
+	float xoff = hw - container_hw;
+	float yoff = hh - container_hh;	
 
+	CGRect frame = CGRectMake(-xoff, -yoff, width, height);
+	viewToRotate.frame = frame;
+  
+	float angle = M_PI / 2;  //rotate CCW 90°, or π/2 radians
+  
+	viewToRotate.layer.transform = CATransform3DMakeRotation(angle, 0, 0.0, 1.0);  
+}
+
+- (void) _rotateToPortrait:(UIView*)aView
+{
+	// Change the center of the nav view to be the center of the
+	// window in portrait mode.
+  
 	UIView *viewToRotate = aView;
 
-	int hw = 480/2;
-	int hh = 320/2;
-	
-	int container_hw = 320/2;
-	int container_hh = 480/2;
-	
-	int xoff = hw - container_hw;
-	int yoff = hh - container_hh;	
-
-	CGRect frame = CGRectMake(-xoff, -yoff, 480, 320);
-	viewToRotate.frame = frame;
- 
-	float angle = M_PI / 2;  //rotate CCW 90°, or π/2 radians
-
-	viewToRotate.layer.transform = CATransform3DMakeRotation(angle, 0, 0.0, 1.0);
- }
+	viewToRotate.layer.transform = self->portraitTransform;
+  
+  NSAssert(CGRectGetWidth(self->portraitFrame) > 0, @"portraitFrame not set");
+  viewToRotate.frame = self->portraitFrame;
+}
 
 // This method is invoked to load a new navigation controller
 // in the movie controls window. The navigation controller
@@ -138,8 +154,6 @@
 	self.navController = [[UINavigationController alloc] initWithRootViewController:self];
 	[navController release];
 
-	[self _rotateToLandscape:navController.view];
-
 	navController.navigationBar.barStyle = UIBarStyleBlackTranslucent;
 
 	UIBarButtonItem *doneItemButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
@@ -148,8 +162,6 @@
   [doneItemButton autorelease];
 
 	self.navigationItem.leftBarButtonItem = doneItemButton;
-
-	[self.view addSubview:navController.navigationBar];
 }
 
 - (void) setMainWindow:(UIWindow*)mainWindow
@@ -161,13 +173,13 @@
       return;
     }
     
-    if (controlsVisable) {
+    [self.view removeFromSuperview];
+    
+    if (self->controlsVisable) {
       [self removeNavigationControlerAsSubviewOf:self.mainWindow];
     }
     
     [self _releaseHideControlsTimer];
-    
-    [self.view removeFromSuperview];
     
     // Note that we don't retain a ref to mainWindow
     
@@ -184,20 +196,38 @@
 
   NSAssert(self.mainWindow != nil, @"self.mainWindow not set");
   
-  // Once the toplevel container is available,
-  // add overView and the controls view.
+  // Add the overView to the main view controlled by the
+  // movie controls widget, and then add the movie
+  // controls view to the main window.
   
   NSArray *subviews = [self.mainWindow subviews];
   NSAssert(subviews != nil, @"subviews is nil");
   int subviewCount = [subviews count];
   NSAssert(subviewCount == 0, @"mainWindow must contain no subviews");
-  
-  [self.mainWindow addSubview:self.overView];
-    
+      
   // force loading of the view controller and its contained views
   
-	UIView *v = self.view;
-	NSAssert(v, @"self.view");
+	UIView *mainView = self.view;
+	NSAssert(mainView, @"self.view");
+  
+  [self.mainWindow addSubview:mainView];
+  
+  // main view needs to be in portrait mode when added to main window
+  
+  self->portraitFrame = self.view.frame;
+  self->portraitTransform = self.view.layer.transform;
+
+  [self _rotateToLandscape:mainView];
+  
+  // Hide controls by default
+  
+  self->controlsVisable = FALSE;
+  
+  [self.controlsSubview removeFromSuperview];
+  
+  // Show controls by default
+  
+//	[self showControls];  
 }
 
 - (void) addNavigationControlerAsSubviewOf:(UIWindow*)window
@@ -214,6 +244,10 @@
 	if (navController.view == nil) {
 		[self _loadNavigationController];
   }
+  
+	[self.view addSubview:navController.navigationBar];
+  
+	[self _rotateToLandscape:navController.view];
 
 	[window addSubview:navController.view];
 }
@@ -231,10 +265,14 @@
 
 - (void) removeNavigationControlerAsSubviewOf:(UIWindow*)window
 {
+	[self _rotateToPortrait:navController.view];
+  
 	[self _removeContainedViews];
 
 	NSAssert(navController.view.window == window, @"view not contained in window");
 	[navController.view removeFromSuperview];
+  
+  [navController.navigationBar removeFromSuperview];
 }
 
 - (void) disableUserInteraction
@@ -493,7 +531,7 @@
 	[controlsSubview addSubview:controlsImageView];
 
 	controlsImageView.userInteractionEnabled = TRUE;
-	controlsSubview.userInteractionEnabled = TRUE;
+	self.controlsSubview.userInteractionEnabled = TRUE;
 
 	// Center the image view inside the parent window
 
@@ -504,15 +542,18 @@
 	[self _loadControlsButtons];
 	[self _loadControlsVolumeView];
 
+  // Set transparency properties for this subview
+
+	self.controlsSubview.backgroundColor = [UIColor clearColor];
+	self.controlsSubview.opaque = FALSE;
+	self.controlsSubview.alpha = 1.0;
+	self.controlsSubview.userInteractionEnabled = TRUE;  
+  
 	// Define a background color for debugging
 
 	if (FALSE) {
 		[controlsSubview setBackgroundColor:[UIColor greenColor]];
 	}
-
-	// Add the controls view as a child of the main view
-
-	[self.view addSubview:controlsSubview];
 }
 
 // Adjust the Y offset for the controls window, this method is invoked
@@ -577,21 +618,27 @@
 
 	self.view = movieControlsView;
 
-	// Create movie transport controls subview
+  // overView fills the main view, it is behind the controls subview
+  
+  [self.view addSubview:self.overView];
+  
+	// Create movie transport controls subview in the main view
 
 	[self _loadControlsView];
-	
+
+  [self.view addSubview:self.controlsSubview];
+  
 	// Reset layout position for controls
 	
 	[self _layoutControlsView];
- 
-  // FIXME: does opaque need to be set here? Is this for the containing window, or is opaque on
-  // the contained window?
-	self.view.backgroundColor = [UIColor clearColor];
-	self.view.opaque = FALSE;
-	self.view.alpha = 1.0;
-	self.view.userInteractionEnabled = TRUE;
 
+  // Set main view properties, the overView will fill this main view
+  
+	self.view.opaque = TRUE;
+	self.view.backgroundColor = nil;
+	self.view.clearsContextBeforeDrawing = FALSE;
+	self.view.userInteractionEnabled = TRUE;
+  
 	// Set initial state
 	
 	NSAssert(isPlaying == FALSE, @"isPlaying should be false");
@@ -599,11 +646,7 @@
 	self->isPaused = FALSE;
 
 	[playPauseButton setImage:pauseImage forState:UIControlStateNormal];
-    
-  // Add controls view to mainWindow over the overView view
   
-	[self showControls];
-
 	// Save initial event time, this logic ensures that a button
 	// press will not be delivered until a little time has passed
 
@@ -952,8 +995,14 @@
 
   NSArray *subviews = [self.mainWindow subviews];
   NSAssert([subviews count] == 1, @"mainWindow must contain 1 subviews");
-  NSAssert([subviews objectAtIndex:0] == self.overView, @"overView must be only subview of mainWindow");
+  NSAssert([subviews objectAtIndex:0] == self.view, @"main view must be only subview of mainWindow");
   
+  [self _rotateToPortrait:self.view];
+
+  [self.view addSubview:self.controlsSubview];
+
+  [self.view removeFromSuperview];
+  [self.navController.view addSubview:self.view];  
   [self addNavigationControlerAsSubviewOf:self.mainWindow];
    
 	// Create idle timer, if nothing happends for
@@ -970,14 +1019,24 @@
     self->controlsVisable = FALSE;
   }
   
-  // Hide controls by removing them from the main window
+  // Hide controls by removing nav controller, putting the
+  // main view back in the main window, and hiding the controls
+  // subview.
   
   NSArray *subviews = [self.mainWindow subviews];
   int subviewCount = [subviews count];
-  NSAssert(subviewCount == 2, @"mainWindow must contain 2 subviews");
-  NSAssert([subviews objectAtIndex:0] == self.overView, @"overView must be first subview of mainWindow");
+  NSAssert(subviewCount == 1, @"mainWindow must contain 1 subviews");
+//  NSAssert([subviews objectAtIndex:0] == self.navController.view, @"overView must be first subview of mainWindow");
+
+  [self _rotateToLandscape:self.view];
+  
+  [self.view removeFromSuperview];
   
   [self removeNavigationControlerAsSubviewOf:self.mainWindow];
+  
+  [self.controlsSubview removeFromSuperview];
+  
+  [self.mainWindow addSubview:self.view];
 
 	[self _releaseHideControlsTimer];
 }
