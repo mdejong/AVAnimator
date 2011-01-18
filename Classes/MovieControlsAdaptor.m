@@ -32,10 +32,8 @@
 
 - (void) startAnimator
 {
-	// Put movie controls away (this needs to happen when the
-	// loading is done)
-  
-//	[self.movieControlsViewController hideControls];
+  // Note that the movie controls view controls starts with the controls in the
+  // hidden state.
   
 	// Setup handlers for movie control notifications
   
@@ -179,9 +177,9 @@
 
 - (void)movieControlsFastForwardNotification:(NSNotification*)notification {
 	NSLog( @"movieControlsFastForwardNotification" );
-  
-//	[self.animatorView stopAnimator];
-//	[self.animatorView startAnimator];
+
+	[self.animatorView stopAnimator];
+	[self.animatorView startAnimator];
 }
 
 // Invoked when the animator is ready to begin, meaning all
@@ -190,8 +188,15 @@
 - (void)animatorPreparedNotification:(NSNotification*)notification {
 	NSLog( @"animatorPreparedNotification" );
   
-	[self.movieControlsViewController enableUserInteraction];
+  if (self.animatorView.hasAudio == FALSE) {
+    // The animator has no associated audio track, no need to show volume
+    // controls in the movie controller.
     
+    self.movieControlsViewController.showVolumeControls = FALSE;
+  }
+
+	[self.movieControlsViewController enableUserInteraction];
+  
 	[self.animatorView startAnimator];
 }
 

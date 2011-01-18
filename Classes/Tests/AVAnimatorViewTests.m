@@ -412,6 +412,71 @@
   return;
 }
 
+// This test case invokes advanceToFrame on a MOV frame decoder twice with the
+// same index. The second invocation must be a no-op.
+
++ (void) testAdvanceToSameFrame
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 2, 2);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	animatorView.frameDecoder = frameDecoder;
+  
+  animatorView.animatorFrameDuration = 1.0;
+  
+  [window addSubview:animatorView];
+  
+  [animatorView prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:animatorView
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  // At this point, initial keyframe should be displayed
+  
+  NSAssert(animatorView.currentFrame == 0, @"currentFrame");
+
+  [animatorView showFrame:1];
+  
+  // Fake out the animatorView logic that checks the current setting of
+  // self.currentFrame by explicitly setting the value.
+
+  animatorView.currentFrame = 0;
+  
+  UIImage *imageBefore = animatorView.image;
+  
+  [animatorView showFrame:1];
+
+  UIImage *imageAfter = animatorView.image;
+
+  NSAssert(imageBefore == imageAfter, @"image changed");
+  
+  NSAssert(animatorView.currentFrame == 1, @"currentFrame");
+  
+  return;
+}
+
 // Get a pixel value from an image
 
 + (void) getPixels16BPP:(CGImageRef)image

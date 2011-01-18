@@ -32,6 +32,7 @@
 @synthesize rewindImage = m_rewindImage;
 @synthesize fastForwardImage = m_fastForwardImage;
 @synthesize hideControlsTimer, hideControlsFromPlayTimer;
+@synthesize showVolumeControls;
 
 // static ctor
 + (MovieControlsViewController*) movieControlsViewController:(UIView*)overView
@@ -268,13 +269,6 @@
 	resPath = [[NSBundle mainBundle] pathForResource:imageFilename ofType:nil];
 	NSAssert(resPath, @"prevtrack.png resource not found");
 
-  // FIXME: use these instead of including pngs!
-  // UIBarButtonSystemItemRewind
-  // UIBarButtonSystemItemFastForward
-  // UIBarButtonSystemItemPause
-  // UIBarButtonSystemItemPlay
-  // UIBarButtonSystemItemDone
-  //
   // Not clear what to do about the system alpha image that the buttons go on
   
 	self.rewindImage = [UIImage imageWithContentsOfFile:resPath];  
@@ -500,8 +494,8 @@
 
   // Set transparency properties for this subview
 
-	self.controlsSubview.backgroundColor = [UIColor clearColor];
 	self.controlsSubview.opaque = FALSE;
+	self.controlsSubview.backgroundColor = [UIColor clearColor];
 	self.controlsSubview.alpha = 1.0;
 	self.controlsSubview.userInteractionEnabled = TRUE;  
   
@@ -518,8 +512,8 @@
 
 - (void)_layoutControlsView
 {
-	int container_height = 320;
 	int container_width = 480;
+	int container_height = 320;
 
 	CGRect controlsFrame = self.controlsSubview.frame;
 
@@ -997,6 +991,15 @@
   [self.overlaySubview removeFromSuperview];
    
 	[self _releaseHideControlsTimer];
+}
+
+- (void) setShowVolumeControls:(BOOL)state
+{
+  if (state == FALSE) {
+    [self.volumeSubview removeFromSuperview];
+  } else {
+    [self.controlsImageView addSubview:self.volumeSubview];
+  }
 }
 
 @end

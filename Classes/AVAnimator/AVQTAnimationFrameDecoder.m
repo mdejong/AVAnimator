@@ -286,16 +286,19 @@ int num_words(uint32_t numBytes)
   // the next frame buffer. This should not happen, and we can't copy the buffer into itself.
   
   NSAssert(nextFrameBuffer != self->m_currentFrameBuffer, @"current and next frame buffers can't be the same object");  
-  
-	// movie frame index can only go forward via advanceToFrame
-  
-	if ((frameIndex != -1) && (newFrameIndex <= frameIndex)) {
+
+  // Advance to same frame is a no-op
+
+	if ((frameIndex != -1) && (newFrameIndex == frameIndex)) {
+    return nil;
+	} else if ((frameIndex != -1) && (newFrameIndex < frameIndex)) {
+    	// movie frame index can only go forward via advanceToFrame
 		NSString *msg = [NSString stringWithFormat:@"%@: %d -> %d",
                      @"can't advance to frame before current frameIndex",
                      frameIndex,
                      newFrameIndex];
 		NSAssert(FALSE, msg);
-	}
+  }
   
 	// Get the number of frames directly from the header
 	// instead of invoking method to query self.numFrames.

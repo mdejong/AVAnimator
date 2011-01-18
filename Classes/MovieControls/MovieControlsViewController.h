@@ -64,6 +64,7 @@
 	BOOL isPlaying;
 	BOOL isPaused;
 	BOOL touchBeganOutsideControls;
+	BOOL showVolumeControls;
 }
 
 @property (nonatomic, assign) UIWindow *mainWindow;
@@ -88,6 +89,8 @@
 
 @property (nonatomic, retain) NSTimer *hideControlsTimer;
 @property (nonatomic, retain) NSTimer *hideControlsFromPlayTimer;
+
+@property (nonatomic, assign) BOOL showVolumeControls;
 
 // static ctor : pass view that controls will appear over
 + (MovieControlsViewController*) movieControlsViewController:(UIView*)overView;

@@ -129,6 +129,8 @@
 		CD7E12B212E373190077CB9C /* Sweep15FPS.caf in Resources */ = {isa = PBXBuildFile; fileRef = CD7E12B112E373190077CB9C /* Sweep15FPS.caf */; };
 		CD7E12B312E373190077CB9C /* Sweep15FPS.caf in Resources */ = {isa = PBXBuildFile; fileRef = CD7E12B112E373190077CB9C /* Sweep15FPS.caf */; };
 		CD83D5EE12CA547300A88ABA /* MovieControlsAdaptor.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */; };
+		CDA1DC0612E61F37004C570F /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = CDA1DC0512E61F37004C570F /* Icon.png */; };
+		CDA1DC0712E61F37004C570F /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = CDA1DC0512E61F37004C570F /* Icon.png */; };
 		CDBA6B2512DC50A8001B44EB /* nexttrack.png in Resources */ = {isa = PBXBuildFile; fileRef = CDBA6B2412DC50A8001B44EB /* nexttrack.png */; };
 		CDBA6B2612DC50A9001B44EB /* nexttrack.png in Resources */ = {isa = PBXBuildFile; fileRef = CDBA6B2412DC50A8001B44EB /* nexttrack.png */; };
 		CDBDC0F812E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDBDC0F712E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov */; };
@@ -242,6 +244,7 @@
 		CD7E12B112E373190077CB9C /* Sweep15FPS.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Sweep15FPS.caf; sourceTree = "<group>"; };
 		CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MovieControlsAdaptor.m; sourceTree = "<group>"; };
 		CD83D5F512CA549000A88ABA /* MovieControlsAdaptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MovieControlsAdaptor.h; sourceTree = "<group>"; };
+		CDA1DC0512E61F37004C570F /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
 		CDBA6B2412DC50A8001B44EB /* nexttrack.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = nexttrack.png; sourceTree = "<group>"; };
 		CDBDC0F712E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Matrix_480_320_10FPS_16BPP.mov; sourceTree = "<group>"; };
 		CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = LCD.jpg; sourceTree = "<group>"; };
@@ -384,6 +387,7 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				CDA1DC0512E61F37004C570F /* Icon.png */,
 				CD5006D812E23B95007038D0 /* Sweep15FPS_ANI.mov */,
 				CD5006D912E23B95007038D0 /* Sweep15FPS.m4a */,
 				CD7E12B112E373190077CB9C /* Sweep15FPS.caf */,
@@ -668,6 +672,7 @@
 				CD5006DC12E23B95007038D0 /* Sweep15FPS_ANI.mov in Resources */,
 				CD5006DD12E23B95007038D0 /* Sweep15FPS.m4a in Resources */,
 				CD7E12B312E373190077CB9C /* Sweep15FPS.caf in Resources */,
+				CDA1DC0712E61F37004C570F /* Icon.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -742,6 +747,7 @@
 				CD5006DA12E23B95007038D0 /* Sweep15FPS_ANI.mov in Resources */,
 				CD5006DB12E23B95007038D0 /* Sweep15FPS.m4a in Resources */,
 				CD7E12B212E373190077CB9C /* Sweep15FPS.caf in Resources */,
+				CDA1DC0612E61F37004C570F /* Icon.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

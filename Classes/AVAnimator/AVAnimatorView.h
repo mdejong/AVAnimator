@@ -123,6 +123,11 @@ typedef enum AVAnimatorPlayerState {
 // defaults to UIImageOrientationUp
 @property (nonatomic, assign) UIImageOrientation animatorOrientation;
 
+// TRUE when the animator has an audio track. This property is not set until the
+// resource loaded is done loading and AVAnimatorPreparedToAnimateNotification
+// has been delivered.
+@property (nonatomic, readonly) BOOL hasAudio;
+
 // static ctor : create view that has the screen dimensions
 + (AVAnimatorView*) aVAnimatorView;
 // static ctor : create view with the given dimensions

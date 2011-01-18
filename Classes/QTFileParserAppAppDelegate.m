@@ -430,6 +430,9 @@
   NSString *resourceName;
   resourceName = @"AlphaGhost.mov";
   
+  // FIXME: Create example without the background animation, because it makes
+  // the FPS unusable as a debug tool.
+  
   // Animate color shift for window, background shows through the ghost.
   
   self.window.backgroundColor = [UIColor redColor];
@@ -515,14 +518,7 @@
   
 	self.animatorView.animatorRepeatCount = 100;
   
-  [self.window addSubview:self.animatorView];
-  
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(animatorDoneNotification:) 
-                                               name:AVAnimatorDoneNotification
-                                             object:self.animatorView];
-  
-  [self.animatorView startAnimator];
+  [self loadIntoMovieControls];
 }
 
 + (void) rotateToLandscape:(UIView*)aView

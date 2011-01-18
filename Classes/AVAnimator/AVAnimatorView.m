@@ -425,13 +425,12 @@
     // This view will blend with other views when pixels are transparent
     // or partially transparent.
     self.opaque = FALSE;
-//    self.backgroundColor = [UIColor clearColor];
   } else {
     self.opaque = TRUE;
   }
   
   // Get image data for initial keyframe
-    
+  
   UIImage *img = [self.frameDecoder advanceToFrame:0];
   NSAssert(img != nil, @"frame decoder must advance to first frame");    
   self.image = img;
@@ -1420,6 +1419,11 @@
   if (newWindow != nil) {
     [self loadViewImpl];
   }
+}
+
+- (BOOL) hasAudio
+{
+  return (self.avAudioPlayer != nil);
 }
 
 @end
