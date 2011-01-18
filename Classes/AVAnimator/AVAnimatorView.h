@@ -118,6 +118,9 @@ typedef enum AVAnimatorPlayerState {
 @property (nonatomic, assign) NSUInteger animatorNumFrames;
 // Be careful not to use animationRepeatCount from the UIImageView super class!
 @property (nonatomic, assign) NSUInteger animatorRepeatCount;
+
+// UIImageOrientationUp, UIImageOrientationDown, UIImageOrientationLeft, UIImageOrientationRight
+// defaults to UIImageOrientationUp
 @property (nonatomic, assign) UIImageOrientation animatorOrientation;
 
 // static ctor : create view that has the screen dimensions

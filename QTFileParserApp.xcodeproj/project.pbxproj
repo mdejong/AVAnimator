@@ -14,7 +14,6 @@
 		28D7ACF80DDB3853001CB0EB /* QTFileParserAppViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 28D7ACF70DDB3853001CB0EB /* QTFileParserAppViewController.m */; };
 		CD0C340A12D7B009007199CA /* Bounce_24BPP_15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD0C340912D7B009007199CA /* Bounce_24BPP_15FPS.mov */; };
 		CD0C340C12D7B027007199CA /* Bounce_16BPP_15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD0C340B12D7B027007199CA /* Bounce_16BPP_15FPS.mov */; };
-		CD15C2CF12BC9BDC00A26588 /* MovieControlsView.m in Sources */ = {isa = PBXBuildFile; fileRef = CD15C2C612BC9BDC00A26588 /* MovieControlsView.m */; };
 		CD15C2D012BC9BDC00A26588 /* MovieControlsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = CD15C2C812BC9BDC00A26588 /* MovieControlsViewController.m */; };
 		CD15C2D112BC9BDC00A26588 /* MovieTransportBackground.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C2C912BC9BDC00A26588 /* MovieTransportBackground.png */; };
 		CD15C2D212BC9BDC00A26588 /* pause.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C2CA12BC9BDC00A26588 /* pause.png */; };
@@ -42,7 +41,6 @@
 		CD3F4E5D12D8F4670067FDDF /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75612BC6CA6001A372F /* CGFrameBuffer.m */; };
 		CD3F4E5E12D8F4670067FDDF /* AutoPropertyRelease.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75C12BC6CBC001A372F /* AutoPropertyRelease.m */; };
 		CD3F4E5F12D8F4670067FDDF /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75E12BC6CCC001A372F /* movdata.c */; };
-		CD3F4E6012D8F4670067FDDF /* MovieControlsView.m in Sources */ = {isa = PBXBuildFile; fileRef = CD15C2C612BC9BDC00A26588 /* MovieControlsView.m */; };
 		CD3F4E6112D8F4670067FDDF /* MovieControlsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = CD15C2C812BC9BDC00A26588 /* MovieControlsViewController.m */; };
 		CD3F4E6212D8F4670067FDDF /* MovieControlsAdaptor.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */; };
 		CD3F4E6312D8F4670067FDDF /* AVFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */; };
@@ -200,8 +198,6 @@
 		8D1107310486CEB800E47090 /* QTFileParserApp-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "QTFileParserApp-Info.plist"; plistStructureDefinitionIdentifier = "com.apple.xcode.plist.structure-definition.iphone.info-plist"; sourceTree = "<group>"; };
 		CD0C340912D7B009007199CA /* Bounce_24BPP_15FPS.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Bounce_24BPP_15FPS.mov; sourceTree = "<group>"; };
 		CD0C340B12D7B027007199CA /* Bounce_16BPP_15FPS.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Bounce_16BPP_15FPS.mov; sourceTree = "<group>"; };
-		CD15C2C512BC9BDC00A26588 /* MovieControlsView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MovieControlsView.h; sourceTree = "<group>"; };
-		CD15C2C612BC9BDC00A26588 /* MovieControlsView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MovieControlsView.m; sourceTree = "<group>"; };
 		CD15C2C712BC9BDC00A26588 /* MovieControlsViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MovieControlsViewController.h; sourceTree = "<group>"; };
 		CD15C2C812BC9BDC00A26588 /* MovieControlsViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MovieControlsViewController.m; sourceTree = "<group>"; };
 		CD15C2C912BC9BDC00A26588 /* MovieTransportBackground.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = MovieTransportBackground.png; sourceTree = "<group>"; };
@@ -428,8 +424,6 @@
 		CD15C2C412BC9BDC00A26588 /* MovieControls */ = {
 			isa = PBXGroup;
 			children = (
-				CD15C2C512BC9BDC00A26588 /* MovieControlsView.h */,
-				CD15C2C612BC9BDC00A26588 /* MovieControlsView.m */,
 				CD15C2C712BC9BDC00A26588 /* MovieControlsViewController.h */,
 				CD15C2C812BC9BDC00A26588 /* MovieControlsViewController.m */,
 				CD15C2C912BC9BDC00A26588 /* MovieTransportBackground.png */,
@@ -766,7 +760,6 @@
 				CDECC75A12BC6CA6001A372F /* CGFrameBuffer.m in Sources */,
 				CDECC75D12BC6CBC001A372F /* AutoPropertyRelease.m in Sources */,
 				CDECC75F12BC6CCC001A372F /* movdata.c in Sources */,
-				CD15C2CF12BC9BDC00A26588 /* MovieControlsView.m in Sources */,
 				CD15C2D012BC9BDC00A26588 /* MovieControlsViewController.m in Sources */,
 				CD83D5EE12CA547300A88ABA /* MovieControlsAdaptor.m in Sources */,
 				CD6198BF12CCFC640003AEAA /* AVFrameDecoder.m in Sources */,
@@ -788,7 +781,6 @@
 				CD3F4E5D12D8F4670067FDDF /* CGFrameBuffer.m in Sources */,
 				CD3F4E5E12D8F4670067FDDF /* AutoPropertyRelease.m in Sources */,
 				CD3F4E5F12D8F4670067FDDF /* movdata.c in Sources */,
-				CD3F4E6012D8F4670067FDDF /* MovieControlsView.m in Sources */,
 				CD3F4E6112D8F4670067FDDF /* MovieControlsViewController.m in Sources */,
 				CD3F4E6212D8F4670067FDDF /* MovieControlsAdaptor.m in Sources */,
 				CD3F4E6312D8F4670067FDDF /* AVFrameDecoder.m in Sources */,

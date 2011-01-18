@@ -106,11 +106,8 @@
 {  
   // Create Movie Controls and let it manage the AVAnimatorView
   
-	self.movieControlsViewController = [MovieControlsViewController movieControlsViewController];
+	self.movieControlsViewController = [MovieControlsViewController movieControlsViewController:self.animatorView];
   
-  // note that overView must be set before mainWindow is defined!
-  
-	self.movieControlsViewController.overView = self.animatorView;
   self.movieControlsViewController.mainWindow = self.window;
   
   self.movieControlsAdaptor = [MovieControlsAdaptor movieControlsAdaptor];
@@ -228,9 +225,7 @@
   // orientation of the MovieControls.
   CGRect landscapeFrame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:landscapeFrame];
-  if (movieControls) {
-    self.animatorView.animatorOrientation = UIImageOrientationUp;  
-  } else {
+  if (!movieControls) {
     self.animatorView.animatorOrientation = UIImageOrientationLeft;
   }
   
@@ -305,9 +300,7 @@
 {  
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
-  if (movieControls) {
-    self.animatorView.animatorOrientation = UIImageOrientationUp;  
-  } else {
+  if (!movieControls) {
     self.animatorView.animatorOrientation = UIImageOrientationLeft;
   }
   
@@ -385,9 +378,7 @@
   
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
-  if (movieControls) {
-    self.animatorView.animatorOrientation = UIImageOrientationUp;  
-  } else {
+  if (!movieControls) {
     self.animatorView.animatorOrientation = UIImageOrientationLeft;
   }  
   
@@ -455,7 +446,6 @@
   
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
-  self.animatorView.animatorOrientation = UIImageOrientationUp;  
   
   // Create loader that will read a movie file from app resources.
   
@@ -501,7 +491,6 @@
   
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
-  self.animatorView.animatorOrientation = UIImageOrientationUp;
   
   // Create loader that will read a movie file from app resources.
   
@@ -664,7 +653,6 @@
   
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
-  self.animatorView.animatorOrientation = UIImageOrientationUp;
   
   // Create loader that will read a movie file from app resources.
   

@@ -8,23 +8,21 @@
 
 #import "MovieControlsViewController.h"
 
-#import "MovieControlsView.h"
-
 #import <MediaPlayer/MPVolumeView.h>
 
 #import <QuartzCore/QuartzCore.h>
 
 #import "AutoPropertyRelease.h"
 
-#define LOGGING
+//#define LOGGING
 
 #define EVENT_DELTA_OFFSET (0.5)
 
 @implementation MovieControlsViewController
 
 @synthesize mainWindow = m_mainWindow;
-@synthesize movieControlsView, overView;
-@synthesize navController, doneButton;
+@synthesize overlaySubview = m_overlaySubview;
+@synthesize doneButton = m_doneButton;
 @synthesize controlsSubview, controlsImageView, controlsBackgroundImage;
 @synthesize volumeSubview, volumeView;
 @synthesize playPauseButton;
@@ -36,10 +34,12 @@
 @synthesize hideControlsTimer, hideControlsFromPlayTimer;
 
 // static ctor
-+ (MovieControlsViewController*) movieControlsViewController
++ (MovieControlsViewController*) movieControlsViewController:(UIView*)overView
 {
   MovieControlsViewController *obj = [[MovieControlsViewController alloc] init];
   [obj autorelease];
+  NSAssert(overView, @"overView is nil");
+  obj.view = overView;
   return obj;
 }
 
@@ -143,25 +143,34 @@
   viewToRotate.frame = self->portraitFrame;
 }
 
-// This method is invoked to load a new navigation controller
-// in the movie controls window. The navigation controller
-// just displays a done button.
+// This method is invoked to load a new navigation bar
+// that displays a Done button
 
-- (void) _loadNavigationController
+- (void) _loadNavigationBar
 {
-	// movie controls view contains a navigation bar with a "Done" button
+  // FIXME: add property for self.navigationBar ?
+  // FIXME: detect width or "renderWidth"
+  
+  CGRect frame = CGRectMake(0.0f, 0.0f, 480.0f, 40.0f);
+  UINavigationBar *navigationBar = [[UINavigationBar alloc] initWithFrame:frame];
+  [navigationBar autorelease];
 
-	self.navController = [[UINavigationController alloc] initWithRootViewController:self];
-	[navController release];
-
-	navController.navigationBar.barStyle = UIBarStyleBlackTranslucent;
+	navigationBar.barStyle = UIBarStyleBlackTranslucent;
+  
 
 	UIBarButtonItem *doneItemButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
 																					target:self
 																					action:@selector(pressDone:)];
   [doneItemButton autorelease];
+  
+  UINavigationItem *navigationItem = [[UINavigationItem alloc] initWithTitle:@""];
+  [navigationItem autorelease];
 
-	self.navigationItem.leftBarButtonItem = doneItemButton;
+  [navigationBar pushNavigationItem:navigationItem animated:FALSE];
+  
+  navigationItem.leftBarButtonItem = doneItemButton;
+  
+  [self.overlaySubview addSubview:navigationBar];
 }
 
 - (void) setMainWindow:(UIWindow*)mainWindow
@@ -172,12 +181,12 @@
     if (self.mainWindow == nil) {
       return;
     }
+
+    if (self->controlsVisable) {
+      [self hideControls];
+    }    
     
     [self.view removeFromSuperview];
-    
-    if (self->controlsVisable) {
-      [self removeNavigationControlerAsSubviewOf:self.mainWindow];
-    }
     
     [self _releaseHideControlsTimer];
     
@@ -187,11 +196,7 @@
     
     return;
   }
- 
-  // overView must be set before setMainWindow can be invoked
   
-	NSAssert(self.overView, @"overView must be set");  
-
   self->m_mainWindow = mainWindow;
 
   NSAssert(self.mainWindow != nil, @"self.mainWindow not set");
@@ -207,84 +212,35 @@
       
   // force loading of the view controller and its contained views
   
-	UIView *mainView = self.view;
-	NSAssert(mainView, @"self.view");
+	UIView *selfView = self.view;
+	NSAssert(selfView, @"self.view");
   
-  [self.mainWindow addSubview:mainView];
+  [self loadViewImpl];
+  
+  [self.mainWindow addSubview:selfView];
   
   // main view needs to be in portrait mode when added to main window
   
   self->portraitFrame = self.view.frame;
   self->portraitTransform = self.view.layer.transform;
 
-  [self _rotateToLandscape:mainView];
+  [self _rotateToLandscape:selfView];
   
   // Hide controls by default
   
   self->controlsVisable = FALSE;
   
-  [self.controlsSubview removeFromSuperview];
-  
-  // Show controls by default
-  
-//	[self showControls];  
-}
-
-- (void) addNavigationControlerAsSubviewOf:(UIWindow*)window
-{
-	// Force self.view to load if it had not been done yet
-
-	UIView *v = self.view;
-	NSAssert(v, @"self.view");
-
-	// Load navController if needed, needs to be loaded after
-	// self.view has been loaded. Note that the nav controller
-  // view is what is added to the mainWindow
-
-	if (navController.view == nil) {
-		[self _loadNavigationController];
-  }
-  
-	[self.view addSubview:navController.navigationBar];
-  
-	[self _rotateToLandscape:navController.view];
-
-	[window addSubview:navController.view];
-}
-
-- (void) _removeContainedViews
-{
-	// The nav controller "contains" the views that it manages, but UIKit
-	// needs to be eplicitly told that the managed subviews have been
-	// removed from the view hierarchy before removing the nav view.
-	// Otherwise, when these views think they are still in the view
-	// heirarchy even after the view objects have been deallocated.
-
-	[self.view removeFromSuperview];
-}
-
-- (void) removeNavigationControlerAsSubviewOf:(UIWindow*)window
-{
-	[self _rotateToPortrait:navController.view];
-  
-	[self _removeContainedViews];
-
-	NSAssert(navController.view.window == window, @"view not contained in window");
-	[navController.view removeFromSuperview];
-  
-  [navController.navigationBar removeFromSuperview];
+  [self.overlaySubview removeFromSuperview];
 }
 
 - (void) disableUserInteraction
 {
-	navController.view.userInteractionEnabled = FALSE;
-  self.overView.userInteractionEnabled = FALSE;
+  self.view.userInteractionEnabled = FALSE;
 }
 
 - (void) enableUserInteraction
 {
-	navController.view.userInteractionEnabled = TRUE;
-  self.overView.userInteractionEnabled = TRUE;
+  self.view.userInteractionEnabled = TRUE;
 }
 
 // Load buttons in the controls view
@@ -594,11 +550,15 @@
   // return (interfaceOrientation == UIInterfaceOrientationLandscapeRight);
 }
 
-// This method is invoked when the view for this view controller is allocated,
-// it will create the navigation controller and its view which contain
-// all the other views. This class uses no .nib file.
-
 - (void)loadView {
+  NSAssert(FALSE, @"loadView should not be invoked");
+}
+
+// This method is invoked when the movie controls view is connected to
+// a main window.
+
+- (void)loadViewImpl {
+  // FIXME: make this work for views other than the full window at 480x320 ?
 	CGRect frame = [UIScreen mainScreen].applicationFrame;
 
 	// MovieControls can only be displayed in landscape mode
@@ -607,37 +567,32 @@
 		NSAssert(FALSE, @"movie controls can only be displayed at full screen resolution of 320x480");
 	}
 
-	// Create the main view in landscape orientation
+	// Create controls overlay with landscape dimensions
 
 	frame = CGRectMake(0, 0, 480, 320);
 
-	self.movieControlsView = [[[MovieControlsView alloc] initWithFrame:frame] autorelease];
-  NSAssert(self.movieControlsView, @"could not allocate MovieControlsView");
-
-	movieControlsView.viewController = self;
-
-	self.view = movieControlsView;
-
-  // overView fills the main view, it is behind the controls subview
+  // overlaySubview completely covers self.view and contains
+  // all the movie control widgets.
   
-  [self.view addSubview:self.overView];
+  self.overlaySubview = [[UIView alloc] initWithFrame:frame];
   
-	// Create movie transport controls subview in the main view
+  [self.view addSubview:self.overlaySubview];
+  
+  [self _loadNavigationBar];
 
 	[self _loadControlsView];
 
-  [self.view addSubview:self.controlsSubview];
+  [self.overlaySubview addSubview:self.controlsSubview];
   
 	// Reset layout position for controls
 	
 	[self _layoutControlsView];
 
-  // Set main view properties, the overView will fill this main view
+  // Set main view properties
   
-	self.view.opaque = TRUE;
-	self.view.backgroundColor = nil;
-	self.view.clearsContextBeforeDrawing = FALSE;
-	self.view.userInteractionEnabled = TRUE;
+	self.overlaySubview.opaque = FALSE;
+	self.overlaySubview.backgroundColor = [UIColor clearColor];
+	self.overlaySubview.userInteractionEnabled = TRUE;
   
 	// Set initial state
 	
@@ -651,6 +606,8 @@
 	// press will not be delivered until a little time has passed
 
 	self->lastEventTime = CFAbsoluteTimeGetCurrent();
+  
+  [self.view addSubview:self.overlaySubview];
 
 	return;	
 }
@@ -692,7 +649,11 @@
 }
 
 - (void) _pressPlayPauseImpl
-{  
+{
+#ifdef LOGGING
+	NSLog(@"_pressPlayPauseImpl");
+#endif  
+  
   if (isPaused) {
     // When paused, switch to play state and put controls away.
     
@@ -705,7 +666,11 @@
 		// Send notification to object(s) that regestered interest in play action
 		
 		[[NSNotificationCenter defaultCenter] postNotificationName:MovieControlsPlayNotification
-                                                        object:self];    
+                                                        object:self];
+    
+#ifdef LOGGING
+    NSLog(@"sending MovieControlsPlayNotification");
+#endif      
   } else {
     // Not paused, so it must be playing currently. Switch to the pause state.
     
@@ -716,7 +681,11 @@
 		// Send notification to object(s) that regestered interest in pause action
 		
 		[[NSNotificationCenter defaultCenter] postNotificationName:MovieControlsPauseNotification
-                                                        object:self];    
+                                                        object:self];
+    
+#ifdef LOGGING
+    NSLog(@"sending MovieControlsPauseNotification");
+#endif    
   }
   
 	self->isPlaying = !isPlaying;
@@ -844,7 +813,7 @@
 	// logic in MovieControlsView object. This is needed
 	// because the subclass does special touch event processing.
 
-	UIView *hitView = [movieControlsView hitTestSuper:location withEvent:event];
+	UIView *hitView = [self.view hitTest:location withEvent:event];
 
 	return hitView;
 }
@@ -864,8 +833,8 @@
 #ifdef LOGGING
 	if (hitView == self.view) {
 		NSLog(@"hit in self.view");
-	} else if (hitView == overView) {
-		NSLog(@"hit in overView");	
+	} else if (hitView == self.overlaySubview) {
+		NSLog(@"hit in overlaySubview");	
 	} else if (hitView == controlsSubview) {
 		NSLog(@"hit in controlsSubview");
 	} else if (hitView == controlsImageView) {
@@ -889,13 +858,13 @@
 #ifdef LOGGING
 		NSLog(@"controls not visible, allow any hit");
 #endif
-		touchBeganInSelfView = TRUE;	
+		touchBeganOutsideControls = TRUE;	
 	} else {
 		// When controls are visible, allow
 		// hiding the controls only when the
 		// touch begins outside the controls
 
-		touchBeganInSelfView = (hitView == self.view);
+		touchBeganOutsideControls = (hitView == self.view) || (hitView == self.overlaySubview);
 
 		// It should not be possible for the idle
 		// timer to fire in between a touch start
@@ -906,7 +875,7 @@
 
 	if (tapCount > 1) {
 		// Ignore repeated touch events
-		touchBeganInSelfView = FALSE;
+		touchBeganOutsideControls = FALSE;
 	}
 
 	// Propagate event to next responder
@@ -925,13 +894,16 @@
 	tapCount = tapCount; // avoid compiler warning 
 #endif
 
-	if (controlsVisable)
+	if (controlsVisable) {
 		[self _requeueHideControlsTimer];
+  }
 
-	if (touchBeganInSelfView) {
+	if (touchBeganOutsideControls) {
 		UIView *hitView = [self _viewThatContainsTouch:touches withEvent:event];
 
-		if ((!controlsVisable) || (hitView == self.view)) {
+    BOOL touchEndedOutsideControls = (hitView == self.view) || (hitView == self.overlaySubview);
+    
+		if ((!controlsVisable) || touchEndedOutsideControls) {
 			// Invoke pressOutsideControls when hit begins and
 			// ends outside the controls. Short circut the
 			// case where the controls are currently hidden.
@@ -996,14 +968,8 @@
   NSArray *subviews = [self.mainWindow subviews];
   NSAssert([subviews count] == 1, @"mainWindow must contain 1 subviews");
   NSAssert([subviews objectAtIndex:0] == self.view, @"main view must be only subview of mainWindow");
-  
-  [self _rotateToPortrait:self.view];
-
-  [self.view addSubview:self.controlsSubview];
-
-  [self.view removeFromSuperview];
-  [self.navController.view addSubview:self.view];  
-  [self addNavigationControlerAsSubviewOf:self.mainWindow];
+    
+  [self.view addSubview:self.overlaySubview];
    
 	// Create idle timer, if nothing happends for
 	// a few seconds, then hide the controls.
@@ -1026,18 +992,10 @@
   NSArray *subviews = [self.mainWindow subviews];
   int subviewCount = [subviews count];
   NSAssert(subviewCount == 1, @"mainWindow must contain 1 subviews");
-//  NSAssert([subviews objectAtIndex:0] == self.navController.view, @"overView must be first subview of mainWindow");
-
-  [self _rotateToLandscape:self.view];
+  NSAssert([subviews objectAtIndex:0] == self.view, @"self.view must be only subview of mainWindow");
   
-  [self.view removeFromSuperview];
-  
-  [self removeNavigationControlerAsSubviewOf:self.mainWindow];
-  
-  [self.controlsSubview removeFromSuperview];
-  
-  [self.mainWindow addSubview:self.view];
-
+  [self.overlaySubview removeFromSuperview];
+   
 	[self _releaseHideControlsTimer];
 }
 

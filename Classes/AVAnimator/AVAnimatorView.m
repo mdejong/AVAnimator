@@ -830,10 +830,17 @@
 	[self.animatorDecodeTimer invalidate];
 	self.animatorDecodeTimer = nil;
   
-	[self.animatorDisplayTimer invalidate];
-	self.animatorDisplayTimer = nil;
+  // Let diplay callback fire, since we don't want to drop a frame
+	//[self.animatorDisplayTimer invalidate];
+	//self.animatorDisplayTimer = nil;
   
-	[self.avAudioPlayer pause];
+  if (self.avAudioPlayer) {
+    [self.avAudioPlayer pause];
+  } else {
+    // Save "now" as audioSimulatedNowTime so that new start
+    // time can be computed when unpaused.
+    self.audioSimulatedNowTime = [NSDate date];
+  }  
   
 	self.repeatedFrameCount = 0;
   
@@ -847,18 +854,23 @@
 
 - (void) unpause
 {
-	//NSAssert(state == PAUSED, @"unpause when not paused");
   if (self.state != PAUSED) {
     return;
   }
   
 	self.state = ANIMATING;
   
-	[self.avAudioPlayer play];
+  if (self.avAudioPlayer) {
+    [self.avAudioPlayer prepareToPlay];
+    [self.avAudioPlayer play];
+  } else {
+    NSAssert(self.audioSimulatedNowTime != nil, @"audioSimulatedNowTime is nil");
+    NSTimeInterval offset = [self.audioSimulatedStartTime timeIntervalSinceDate:self.audioSimulatedNowTime] * -1.0;
+    self.audioSimulatedStartTime = [NSDate dateWithTimeIntervalSinceNow:-offset];
+    self.audioSimulatedNowTime = nil;
+  }
   
-	// Resume decoding callbacks
-  
-  [self.animatorDecodeTimer invalidate];
+  NSAssert(self.animatorDecodeTimer == nil, @"animatorDecodeTimer not nil");
   
 	self.animatorDecodeTimer = [NSTimer timerWithTimeInterval: self.animatorDecodeTimerInterval
                                                       target: self
@@ -991,7 +1003,7 @@
     self.repeatedFrameCount = self.repeatedFrameCount + 1;
     
     if (self.repeatedFrameCount > 20) {
-      NSLog(@"%@", [NSString stringWithFormat:@"doneAnimator because audio time not progressing"]);
+      NSLog(@"%@", [NSString stringWithFormat:@"doneAnimator because audio time not progressing in initial frame"]);
       
       [self doneAnimator];
       return;
@@ -1152,7 +1164,7 @@
 	// audio clock each time this method is invoked. If the clock
 	// is stuck, just take care of this in the next callback.
   
-	if (!isAudioClockStuck) {
+	if (/*!isAudioClockStuck*/ 1) {
 		NSUInteger secondToLastFrameIndex = self.animatorNumFrames - 1 - 1;
     
 		if (frameNow == secondToLastFrameIndex) {
@@ -1268,7 +1280,7 @@
 // as soon as possible.
 
 - (void) _animatorDisplayFrameCallback: (NSTimer *)timer {
-  if (self->m_state != ANIMATING) {
+  if ((self->m_state != ANIMATING) && (self->m_state != PAUSED)) {
     NSAssert(FALSE, @"state is not ANIMATING");
   }
   

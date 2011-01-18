@@ -9,7 +9,6 @@
 #import <QuartzCore/QuartzCore.h>
 
 @class MPVolumeView;
-@class MovieControlsView;
 
 // The 4 state notifications supported by movie controls.
 // The play state notification is delivered when changing
@@ -28,18 +27,13 @@
 
 @interface MovieControlsViewController : UIViewController {
   UIWindow *m_mainWindow;
+
+  // All elements that float over self.view are contained in this subview
+  UIView *m_overlaySubview;
   
-	// Custom view subclass that manages event propagation
-	MovieControlsView *movieControlsView;
-
-	// The view that this movie controller floats over
-
-	UIView *overView;
-
 	// Elements in nav subview at top of window
 
-	UINavigationController *navController;
-	UIBarButtonItem *doneButton;
+	UIBarButtonItem *m_doneButton;
 
 	// Elements in floating "controls" subview
 
@@ -69,14 +63,12 @@
 	BOOL controlsVisable;
 	BOOL isPlaying;
 	BOOL isPaused;
-	BOOL touchBeganInSelfView;
+	BOOL touchBeganOutsideControls;
 }
 
 @property (nonatomic, assign) UIWindow *mainWindow;
-@property (nonatomic, retain) MovieControlsView *movieControlsView;
-@property (nonatomic, retain) UIView *overView;
+@property (nonatomic, retain) UIView *overlaySubview;
 
-@property (nonatomic, retain) UINavigationController *navController;
 @property (nonatomic, retain) UIBarButtonItem *doneButton;
 
 @property (nonatomic, retain) UIView *controlsSubview;
@@ -97,8 +89,8 @@
 @property (nonatomic, retain) NSTimer *hideControlsTimer;
 @property (nonatomic, retain) NSTimer *hideControlsFromPlayTimer;
 
-// static ctor
-+ (MovieControlsViewController*) movieControlsViewController;
+// static ctor : pass view that controls will appear over
++ (MovieControlsViewController*) movieControlsViewController:(UIView*)overView;
 
 - (void) pressPlayPause:(id)sender;
 - (void) pressDone:(id)sender;
@@ -109,8 +101,7 @@
 - (void) hideControls;
 
 // FIXME: make these private
-- (void) addNavigationControlerAsSubviewOf:(UIWindow*)window;
-- (void) removeNavigationControlerAsSubviewOf:(UIWindow*)window;
+- (void)loadViewImpl;
 
 - (void) setMainWindow:(UIWindow*)mainWindow;
 
