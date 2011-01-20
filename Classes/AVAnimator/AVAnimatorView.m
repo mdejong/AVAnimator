@@ -693,8 +693,9 @@
 	// Amount of time that will elapse between the expected time that a frame
 	// will be displayed and the time when the next frame decode operation
 	// will be invoked.
-  
+
 	self.animatorDecodeTimerInterval = self.animatorFrameDuration / 4.0;
+//	self.animatorDecodeTimerInterval = self.animatorFrameDuration / 10.0;
   
 	// Calculate upper limit for time that maps to specific frames.
   

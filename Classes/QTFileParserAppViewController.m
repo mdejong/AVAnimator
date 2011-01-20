@@ -179,4 +179,12 @@
   [appDelegate loadIndexedExample:15 fps:[self getFPS]];
 }
 
+- (IBAction) runExampleSixteen:(id) sender
+{
+  id delegate = [[UIApplication sharedApplication] delegate];
+	NSAssert(delegate, @"delegate is nil");
+  QTFileParserAppAppDelegate *appDelegate = (QTFileParserAppAppDelegate*)delegate;
+  [appDelegate loadIndexedExample:16 fps:[self getFPS]];
+}
+
 @end

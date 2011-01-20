@@ -1782,6 +1782,8 @@ result = (b1 << 16) | (b2 << 8) | b3; \
 // alpha pixels. Clearly, avoiding these 3 floating point operations
 // per pixel is why PNG files are recoded by Xcode.
 
+// See README for optimization via table lookup notes
+
 static inline
 uint32_t
 read_ARGB_and_premultiply(const char *ptr) {

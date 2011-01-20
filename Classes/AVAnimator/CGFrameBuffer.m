@@ -38,14 +38,18 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 //@synthesize isLockedByDataProvider = m_isLockedByDataProvider;
 @synthesize lockedByImageRef = m_lockedByImageRef;
 
-+ (CGFrameBuffer*) cGFrameBufferWithBppDimensions:(NSInteger)bitsPerPixel width:(NSInteger)width height:(NSInteger)height
++ (CGFrameBuffer*) cGFrameBufferWithBppDimensions:(NSInteger)bitsPerPixel
+                                            width:(NSInteger)width
+                                           height:(NSInteger)height
 {
   CGFrameBuffer *obj = [[CGFrameBuffer alloc] initWithBppDimensions:bitsPerPixel width:width height:height];
   [obj autorelease];
   return obj;
 }
 
-- (id) initWithBppDimensions:(NSInteger)bitsPerPixel width:(NSInteger)width height:(NSInteger)height;
+- (id) initWithBppDimensions:(NSInteger)bitsPerPixel
+                       width:(NSInteger)width
+                      height:(NSInteger)height;
 {
 	// Ensure that memory is allocated in terms of whole words, the
 	// bitmap context won't make use of the extra half-word.

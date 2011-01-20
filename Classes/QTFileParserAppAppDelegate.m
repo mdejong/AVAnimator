@@ -680,6 +680,52 @@
   [self loadIntoMovieControls];
 }
 
+// The Gradient Color wheel is the worst possible 32BPP animation, every pixel changes on
+// every frame, so all the frames are marked as keyframes.
+// Even though there are only 10 frames in the video, this animation takes up a whopping
+// 5 megs of space. Also, every pixel is partially transparent, so the conversion to premultiplied
+// alpha takes a lot of CPU because it needs to be done for every pixel.
+// This series of frames would be better encoded as a set of PNG files, because there are no common
+// pixels so the delta would be the entire frame.
+
+- (void) loadGradientColorWheelAnimation:(float)frameDuration
+{
+  NSString *videoResourceName = @"GradientColorWheel_2FPS_32BPP_Keyframes.mov";
+  
+  // The color wheel is partially transparent, so set a blue color on the window
+  // to verify that some of the blue is showing through.
+  
+  self.window.backgroundColor = [UIColor blueColor];
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = videoResourceName;
+	self.animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	self.animatorView.frameDecoder = frameDecoder;
+  
+  if (frameDuration != -1.0) {
+    // Don't set a frame duration, use the 2.0 FPS encoded in the MOV file
+    self.animatorView.animatorFrameDuration = frameDuration;
+  }
+  
+  //	self.animatorView.animatorRepeatCount = 5;
+	self.animatorView.animatorRepeatCount = 100;
+  
+  [self loadIntoMovieControls];
+}
+
 // Given an example index, load a specific example with
 // an indicated FPS. The fps is -1 if not set, otherwise
 // it is 10, 20, 30, or 60.
@@ -779,6 +825,10 @@
       [self loadSweepAnimation:frameDuration withSound:FALSE];
       break;
     }      
+    case 16: {
+      [self loadGradientColorWheelAnimation:frameDuration];
+      break;
+    }
   }
 }
 

@@ -139,6 +139,8 @@
 		CDBDC10F12E0EA7500EF5BD4 /* LCD.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */; };
 		CDCE474A12DA98D0005BF94A /* Bounce_32BPP_15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */; };
 		CDCE474B12DA98D0005BF94A /* Bounce_32BPP_15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */; };
+		CDEC7CAA12E798EF00D01E0E /* GradientColorWheel_2FPS_32BPP_Keyframes.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDEC7CA912E798EF00D01E0E /* GradientColorWheel_2FPS_32BPP_Keyframes.mov */; };
+		CDEC7CAB12E798EF00D01E0E /* GradientColorWheel_2FPS_32BPP_Keyframes.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDEC7CA912E798EF00D01E0E /* GradientColorWheel_2FPS_32BPP_Keyframes.mov */; };
 		CDECC75812BC6CA6001A372F /* AVResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75212BC6CA6001A372F /* AVResourceLoader.m */; };
 		CDECC75912BC6CA6001A372F /* AVAppResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75412BC6CA6001A372F /* AVAppResourceLoader.m */; };
 		CDECC75A12BC6CA6001A372F /* CGFrameBuffer.m in Sources */ = {isa = PBXBuildFile; fileRef = CDECC75612BC6CA6001A372F /* CGFrameBuffer.m */; };
@@ -249,6 +251,7 @@
 		CDBDC0F712E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Matrix_480_320_10FPS_16BPP.mov; sourceTree = "<group>"; };
 		CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = LCD.jpg; sourceTree = "<group>"; };
 		CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Bounce_32BPP_15FPS.mov; sourceTree = "<group>"; };
+		CDEC7CA912E798EF00D01E0E /* GradientColorWheel_2FPS_32BPP_Keyframes.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = GradientColorWheel_2FPS_32BPP_Keyframes.mov; sourceTree = "<group>"; };
 		CDECC75112BC6CA6001A372F /* AVResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVResourceLoader.h; sourceTree = "<group>"; };
 		CDECC75212BC6CA6001A372F /* AVResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVResourceLoader.m; sourceTree = "<group>"; };
 		CDECC75312BC6CA6001A372F /* AVAppResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAppResourceLoader.h; sourceTree = "<group>"; };
@@ -391,6 +394,7 @@
 				CD5006D812E23B95007038D0 /* Sweep15FPS_ANI.mov */,
 				CD5006D912E23B95007038D0 /* Sweep15FPS.m4a */,
 				CD7E12B112E373190077CB9C /* Sweep15FPS.caf */,
+				CDEC7CA912E798EF00D01E0E /* GradientColorWheel_2FPS_32BPP_Keyframes.mov */,
 				CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */,
 				CD4DA91012E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov */,
 				CDBDC0F712E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov */,
@@ -673,6 +677,7 @@
 				CD5006DD12E23B95007038D0 /* Sweep15FPS.m4a in Resources */,
 				CD7E12B312E373190077CB9C /* Sweep15FPS.caf in Resources */,
 				CDA1DC0712E61F37004C570F /* Icon.png in Resources */,
+				CDEC7CAB12E798EF00D01E0E /* GradientColorWheel_2FPS_32BPP_Keyframes.mov in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -748,6 +753,7 @@
 				CD5006DB12E23B95007038D0 /* Sweep15FPS.m4a in Resources */,
 				CD7E12B212E373190077CB9C /* Sweep15FPS.caf in Resources */,
 				CDA1DC0612E61F37004C570F /* Icon.png in Resources */,
+				CDEC7CAA12E798EF00D01E0E /* GradientColorWheel_2FPS_32BPP_Keyframes.mov in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
