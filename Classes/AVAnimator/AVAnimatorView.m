@@ -250,9 +250,6 @@
   if (self.renderSize.width > 0) {
     return;
   }
-
-  // FIXME: these settings would need to be available somehow to the caller, but if this method
-  // is invoked on init, then they will not be.
   
 	if (self.animatorOrientation == UIImageOrientationUp) {
 		isRotatedToLandscape = FALSE;
@@ -306,13 +303,10 @@
   
 	NSAssert(self.resourceLoader, @"resourceLoader must be defined");
 	NSAssert(self.frameDecoder, @"frameDecoder must be defined");
-  
-  // FIXME: may or may not need to set this? Figure out based on what is in header.
-  //	NSAssert(animatorFrameDuration != 0.0, @"animatorFrameDuration was not defined");
-  
+    
 	// Note that we don't load any data from the movie archive or from the
-	// audio files at load time. Resource loading is done only as a result
-	// of a call to prepareToAnimate. Only a state change of
+	// audio files at widget load time. Resource loading is done only as a
+	// result of a call to prepareToAnimate. Only a state change of
 	// ALLOCATED -> LOADED is possible here.
   
 	if (self.state == ALLOCATED) {

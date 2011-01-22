@@ -108,6 +108,10 @@
   
 	self.movieControlsViewController = [MovieControlsViewController movieControlsViewController:self.animatorView];
   
+  // A MovieControlsViewController can only be placed inside a toplevel window!
+  // Unlike a normal controller, you can't invoke [window addSubview:movieControlsViewController.view]
+  // to place a MovieControlsViewController in a window. Just set the mainWindow property instead.
+  
   self.movieControlsViewController.mainWindow = self.window;
   
   self.movieControlsAdaptor = [MovieControlsAdaptor movieControlsAdaptor];
