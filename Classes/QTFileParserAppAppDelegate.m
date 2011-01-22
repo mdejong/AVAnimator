@@ -435,6 +435,8 @@
   
   // Animate color shift for window, background shows through the ghost.
   
+  if (1) {
+  
   self.window.backgroundColor = [UIColor redColor];
   [UIView beginAnimations:nil context:NULL];
   [UIView setAnimationDuration:5.0];
@@ -442,6 +444,8 @@
   [UIView setAnimationRepeatAutoreverses:TRUE];
   self.window.backgroundColor = [UIColor blueColor];
   [UIView commitAnimations];
+    
+  }
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and

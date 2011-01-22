@@ -179,12 +179,17 @@ read_fixed32(FILE *fp, float *ptr)
   return 0;
 }
 
+static
+void init_alphaTables();
+
 // recurse into atoms and process them. Return 0 on success
 // otherwise non-zero to indicate an error.
 
 int
 process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
 {
+  init_alphaTables();
+  
   // first 4 bytes indicate the size of the atom
   
   Atom atom;
@@ -1777,13 +1782,125 @@ result = (b1 << 16) | (b2 << 8) | b3; \
 
 // Read a big endian uint32_t from a char* and store in result (ARGB).
 // Each pixel needs to be multiplied by the alpha channel value.
-// This is not optimal, but CoreGraphics does not accept straight
-// alpha pixels and the Animation codec only supports straight
-// alpha pixels. Clearly, avoiding these 3 floating point operations
-// per pixel is why PNG files are recoded by Xcode.
+// Optimized premultiplication implementation using table lookups
 
-// See README for optimization via table lookup notes
+#define TABLEMAX 256
+//#define TABLEDUMP
 
+static
+uint8_t alphaTables[TABLEMAX*TABLEMAX];
+static
+int alphaTablesInitialized = 0;
+
+#define READ_AND_PREMULTIPLY(result, ptr) \
+{ \
+uint8_t alpha = *ptr++; \
+uint8_t red = *ptr++; \
+uint8_t green = *ptr++; \
+uint8_t blue = *ptr++; \
+uint8_t * restrict alphaTable = &alphaTables[alpha * TABLEMAX]; \
+result = (alpha << 24) | (alphaTable[red] << 16) | (alphaTable[green] << 8) | alphaTable[blue]; \
+}
+
+static
+void init_alphaTables() {
+  if (alphaTablesInitialized) {
+    return;
+  }
+  
+  for (int alpha = 0; alpha < TABLEMAX; alpha++) {
+    uint8_t *alphaTable = &alphaTables[alpha * TABLEMAX];
+    float alphaf = alpha / 255.0; // (TABLEMAX - 1)
+#ifdef TABLEDUMP
+    fprintf(stdout, "alpha table for alpha %d = %f\n", alpha, alphaf);
+#endif
+    for (int i = 0; i < TABLEMAX; i++) {
+      int rounded = (int) round(i * alphaf);
+      if (rounded < 0 || rounded >= TABLEMAX) {
+        assert(0);
+      }
+      assert(rounded == (int) (i * alphaf + 0.5));
+      alphaTable[i] = (uint8_t)rounded;
+#ifdef TABLEDUMP
+      if (i == 0 || i == 1 || i == 2 || i == 126 || i == 127 || i == 128 || i == 254 || i == 255) {
+        fprintf(stdout, "alphaTable[%d] = %d\n", i, alphaTable[i]);
+      }
+#endif
+    }
+  }
+  
+  // alpha = 0.0
+  
+  assert(alphaTables[(0 * TABLEMAX) + 0] == 0);
+  assert(alphaTables[(0 * TABLEMAX) + 255] == 0);
+  
+  // alpha = 1.0
+  
+  assert(alphaTables[(255 * TABLEMAX) + 0] == 0);
+  assert(alphaTables[(255 * TABLEMAX) + 127] == 127);
+  assert(alphaTables[(255 * TABLEMAX) + 255] == 255);
+  
+  // Test all generated alpha values in table using
+  // read_ARGB_and_premultiply()
+  
+  for (int alphai = 0; alphai < TABLEMAX; alphai++) {
+    for (int i = 0; i < TABLEMAX; i++) {
+      uint8_t in_alpha = (uint8_t) alphai;
+      uint8_t in_red = 0;
+      uint8_t in_green = (uint8_t) i;
+      uint8_t in_blue = (uint8_t) i;
+      //if (i == 1) {
+      //  assert(alphaTables[(255 * TABLEMAX) + 0] == 0);
+      //}
+      uint32_t in_pixel = (in_alpha << 24) | (in_red << 16) | (in_green << 8) | in_blue;
+      uint32_t in_pixel_be = htonl(in_pixel); // pixel in BE byte order
+      uint32_t premult_pixel_le;
+      char *inPixelPtr = (char*) &in_pixel_be;
+      READ_AND_PREMULTIPLY(premult_pixel_le, inPixelPtr);
+      
+      // Compare read_ARGB_and_premultiply() result to known good value
+      
+      float alphaf = in_alpha / 255.0; // (TABLEMAX - 1)
+      int rounded = (int) round(i * alphaf);      
+      uint8_t round_alpha = in_alpha;
+      uint8_t round_red = 0;
+      uint8_t round_green = (uint8_t) rounded;
+      uint8_t round_blue = (uint8_t) rounded;
+      // Special case: If alpha is 0, then all 3 components are zero
+      if (round_alpha == 0) {
+        round_red = round_green = round_blue = 0;
+      }
+      uint32_t expected_pixel_le = (round_alpha << 24) | (round_red << 16) | (round_green << 8) | round_blue;
+      if (premult_pixel_le != expected_pixel_le) {
+        uint8_t premult_pixel_alpha = (premult_pixel_le >> 24) & 0xFF;
+        uint8_t premult_pixel_red = (premult_pixel_le >> 16) & 0xFF;
+        uint8_t premult_pixel_green = (premult_pixel_le >> 8) & 0xFF;
+        uint8_t premult_pixel_blue = (premult_pixel_le >> 0) & 0xFF;
+        
+        uint8_t rounded_pixel_alpha = (expected_pixel_le >> 24) & 0xFF;
+        uint8_t rounded_pixel_red = (expected_pixel_le >> 16) & 0xFF;
+        uint8_t rounded_pixel_green = (expected_pixel_le >> 8) & 0xFF;
+        uint8_t rounded_pixel_blue = (expected_pixel_le >> 0) & 0xFF;        
+        
+        assert(premult_pixel_alpha == rounded_pixel_alpha);
+        assert(premult_pixel_red == rounded_pixel_red);
+        assert(premult_pixel_green == rounded_pixel_green);
+        assert(premult_pixel_blue == rounded_pixel_blue);
+        
+        assert(premult_pixel_le == expected_pixel_le);
+      }
+    }
+  }
+  
+  // Everything worked
+  
+  alphaTablesInitialized = 1;
+}
+
+/*
+
+// This is the old floating point multiplicaiton impl
+ 
 static inline
 uint32_t
 read_ARGB_and_premultiply(const char *ptr) {
@@ -1809,6 +1926,8 @@ read_ARGB_and_premultiply(const char *ptr) {
   pixel = (alpha << 24) | (red << 16) | (green << 8) | blue;
   return pixel;
 }
+ 
+*/
 
 // 16 bit rgb555 pixels with no alpha channel
 // Works for (RBG555, RGB5551, or RGB565) though only XRRRRRGGGGGBBBBB is supported.
@@ -2619,10 +2738,10 @@ decode_rle_sample32(
           // 32 bit pixels : ARGB
           
           assert(bytesRemaining >= 4);
-          uint32_t pixel = read_ARGB_and_premultiply(samplePtr);
-          samplePtr += 4;
-          bytesRemaining -= 4;            
-                    
+          uint32_t pixel;
+          READ_AND_PREMULTIPLY(pixel, samplePtr);
+          bytesRemaining -= 4;
+          
 #ifdef DUMP_WHILE_DECODING
           fprintf(stdout, "repeat 32 bit pixel 0x%X %d times\n", pixel, numTimesToRepeat);
 #endif // DUMP_WHILE_DECODING          
@@ -2653,8 +2772,8 @@ decode_rle_sample32(
           assert((rowPtr + rle_code - 1) < rowPtrMax);
           
           for (int i = 0; i < rle_code; i++) {
-            uint32_t pixel = read_ARGB_and_premultiply(samplePtr);
-            samplePtr += 4;
+            uint32_t pixel;
+            READ_AND_PREMULTIPLY(pixel, samplePtr);
             
 #ifdef DUMP_WHILE_DECODING
             fprintf(stdout, "copy 32 bit pixel 0x%X to dest\n", pixel);
