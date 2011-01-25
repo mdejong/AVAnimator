@@ -137,6 +137,7 @@ typedef enum AVAnimatorPlayerState {
 - (void) startAnimator;
 - (void) stopAnimator;
 
+// Be careful not to invoke isAnimating from the UIImageView super class!
 - (BOOL) isAnimatorRunning;
 - (BOOL) isInitializing;
 - (void) doneAnimator;

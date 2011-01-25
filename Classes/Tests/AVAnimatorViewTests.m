@@ -18,13 +18,16 @@
 @interface AVAnimatorViewTests : NSObject {}
 @end
 
+#define REPEATED_FRAME_WARN_COUNT 10
+#define REPEATED_FRAME_DONE_COUNT 20
+
 // The methods named test* will be automatically invoked by the RegressionTests harness.
 
 @implementation AVAnimatorViewTests
 
 // This test checks various clock related issues.
 
-+ (void) testClockInitialReports
++ (void) testClockReports
 {
 	id appDelegate = [[UIApplication sharedApplication] delegate];	
 	UIWindow *window = [appDelegate window];
@@ -408,6 +411,117 @@
   NSAssert(animatorView.decodedLastFrame == TRUE, @"decodedLastFrame");
   
   [animatorView stopAnimator];
+  
+  return;
+}
+
+// This test case checks a weird condition where the audio clock starts
+// but then never begins to report a non-zero time. If this were to
+// happen, the animation would be stopped after a number of retries.
+
++ (void) testClockInitialTimeDoesNotStart
+{
+  id appDelegate = [[UIApplication sharedApplication] delegate];	
+  UIWindow *window = [appDelegate window];
+  NSAssert(window, @"window");  
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Use phony res loader, will load PNG frames from resources later
+  AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = @"CountingLandscape01.png"; // Phony resource name, becomes no-op
+  animatorView.resourceLoader = resLoader;    
+  
+  // Create decoder that will generate frames from PNG files attached as app resources.
+  
+  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
+                                                  rangeStart:1
+                                                    rangeEnd:5
+                                                suffixFormat:@"%02i.png"];
+  
+  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  
+  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+  animatorView.frameDecoder = frameDecoder;  
+  
+  // Configure frame duration and repeat count, there are 5 frames in this animation
+  // so the valid time frame is [0.0, 5.0]
+  
+  animatorView.animatorFrameDuration = 1.0;
+  
+  [window addSubview:animatorView];
+  
+  // Wait until initial keyframe of data is loaded.
+  
+  [animatorView prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:animatorView
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  // Start the audio clock and then cancel the initial decode callback.
+
+  BOOL isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == FALSE, @"isAnimatorRunning");
+  
+  [animatorView startAnimator];
+  
+  isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == TRUE, @"isAnimatorRunning");
+
+  NSAssert(animatorView.animatorDecodeTimer != nil, @"animatorDecodeTimer");
+  [animatorView.animatorDecodeTimer invalidate];
+  animatorView.animatorDecodeTimer = nil;
+  NSAssert(animatorView.animatorDisplayTimer == nil, @"animatorDisplayTimer");
+
+  // Should be at frame zero, with no repeated frames at this point
+  
+  NSAssert(animatorView.currentFrame == 0, @"currentFrame");
+  NSAssert(animatorView.repeatedFrameCount == 0, @"repeatedFrameCount");
+
+  // Report a series of zero times in the initial frame callback
+  
+  int count = 0;
+  
+  animatorView.audioSimulatedStartTime = [NSDate date];
+  animatorView.audioSimulatedNowTime = animatorView.audioSimulatedStartTime;
+  [animatorView _animatorDecodeInitialFrameCallback:nil];
+  count++;
+
+  NSAssert(animatorView.currentFrame == 0, @"currentFrame");
+  NSAssert(animatorView.repeatedFrameCount == 1, @"repeatedFrameCount");
+  
+  int phony = 0;
+  
+  isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == TRUE, @"isAnimatorRunning");
+  
+  for ( ; count < REPEATED_FRAME_DONE_COUNT; count++) {
+    if (count == (REPEATED_FRAME_DONE_COUNT - 1)) {
+      phony = 1;
+    }
+    
+    [animatorView _animatorDecodeInitialFrameCallback:nil];
+    
+    if (count < (REPEATED_FRAME_DONE_COUNT - 1)) {
+      isAnimatorRunning = [animatorView isAnimatorRunning];
+      NSAssert(isAnimatorRunning == TRUE, @"isAnimatorRunning");
+    }
+  }
+  
+  // Timers should be canceled by each invocation of _animatorDecodeInitialFrameCallback
+  // and then the final invocation of stopAnimator sets them to nil.
+  
+  NSAssert(animatorView.animatorDecodeTimer == nil, @"animatorDecodeTimer");
+  NSAssert(animatorView.animatorDisplayTimer == nil, @"animatorDisplayTimer");  
+  
+  // The last invocation should have stopped the animation
+  
+  isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == FALSE, @"isAnimatorRunning");
   
   return;
 }
@@ -844,6 +958,8 @@
   
   NSAssert(animatorView.image != nil, @"image");
   
+  NSAssert(animatorView.prevFrame == nil, @"prev frame not set properly");
+  
   uint16_t pixel[4];
 
   // First frame is all black pixels
@@ -859,8 +975,16 @@
   NSAssert(pixel[3] == 0x0, @"pixel");
   
   // Second frame is all blue pixels
-    
+  
+  UIImage *frameBefore = animatorView.image;
+  
   [animatorView showFrame:1];
+  
+  UIImage *frameAfter = animatorView.image;
+  
+  NSAssert(frameAfter != nil, @"image");
+  NSAssert(frameBefore != frameAfter, @"image");
+  NSAssert(animatorView.prevFrame == frameBefore, @"prev frame not set properly");
 
   [self getPixels16BPP:animatorView.image.CGImage
                 offset:0
@@ -1048,6 +1172,134 @@
   
   return;
 }
+
+// This test case contains 3 frames of 2x2 16 BPP data. The first two frames
+// are all black pixels. The 3rd is all blue pixels. The second frame is a no-op
+// since the pixels are all the same as the pixels in the first frame.
+
++ (void) testNopFrame
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"2x2_nop.mov";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 2, 2);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	animatorView.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	animatorView.frameDecoder = frameDecoder;
+  
+  animatorView.animatorFrameDuration = 1.0;
+  
+  NSAssert(animatorView.renderSize.width == 0.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
+  
+  [window addSubview:animatorView];
+  
+  // Check that adding the animator to the window invoked loadViewImpl
+  
+  NSAssert(animatorView.renderSize.width == 2.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 2.0, @"renderSize.height");
+  
+  [animatorView prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:animatorView
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(animatorView.state == READY, @"isReadyToAnimate");
+  
+  // At this point, initial keyframe should be displayed
+  
+  NSAssert([frameDecoder hasAlphaChannel] == FALSE, @"hasAlphaChannel");
+  
+  NSAssert(animatorView.currentFrame == 0, @"currentFrame");
+  
+  NSAssert(animatorView.image != nil, @"image");
+  
+  NSAssert(animatorView.prevFrame == nil, @"prev frame should be nil");
+  
+  uint16_t pixel[4];
+  
+  // First frame is all black pixels
+  
+  [self getPixels16BPP:animatorView.image.CGImage
+                offset:0
+               nPixels:4
+              pixelPtr:&pixel[0]];
+  
+  NSAssert(pixel[0] == 0x0000, @"pixel");  
+  NSAssert(pixel[1] == 0x0000, @"pixel");  
+  NSAssert(pixel[2] == 0x0000, @"pixel");  
+  NSAssert(pixel[3] == 0x0000, @"pixel");
+  
+  // Second frame is all black pixels, advancing to the second
+  // frame is a no-op since no pixels changed as compared to
+  // the first frame.
+
+  UIImage *imageBefore = animatorView.image;
+  
+  [animatorView showFrame:1];
+
+  UIImage *imageAfter = animatorView.image;
+  
+  NSAssert(imageBefore == imageAfter, @"advancing to 2nd frame changed the image");
+  
+  NSAssert(animatorView.prevFrame == nil, @"prev frame should be nil");
+  
+  [self getPixels16BPP:animatorView.image.CGImage
+                offset:0
+               nPixels:4
+              pixelPtr:&pixel[0]];
+  
+  NSAssert(pixel[0] == 0x0000, @"pixel");  
+  NSAssert(pixel[1] == 0x0000, @"pixel");  
+  NSAssert(pixel[2] == 0x0000, @"pixel");  
+  NSAssert(pixel[3] == 0x0000, @"pixel");
+
+  // Advance to 3rd frame, changes to all blue pixels
+  
+  imageBefore = animatorView.image;
+  
+  [animatorView showFrame:2];
+  
+  imageAfter = animatorView.image;
+  
+  NSAssert(imageBefore != imageAfter, @"advancing to 3rd frame changed the image");
+  
+  NSAssert(animatorView.prevFrame == imageBefore, @"prev frame not set");
+  
+  [self getPixels16BPP:animatorView.image.CGImage
+                offset:0
+               nPixels:4
+              pixelPtr:&pixel[0]];
+  
+  NSAssert(pixel[0] == 0x1F, @"pixel");  
+  NSAssert(pixel[1] == 0x1F, @"pixel");  
+  NSAssert(pixel[2] == 0x1F, @"pixel");  
+  NSAssert(pixel[3] == 0x1F, @"pixel");  
+  
+  return;
+}
+
+// FIXME: add 32BPP test case where ALPHA pixels are decoded!
+// Also, some black and some totally see through.
 
 // Load sweep animation and audio, then run the animation once.
 

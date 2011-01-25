@@ -20,6 +20,9 @@
 
 //#define DEBUG_OUTPUT
 
+#define REPEATED_FRAME_WARN_COUNT 10
+#define REPEATED_FRAME_DONE_COUNT 20
+
 // util class AVAnimatorViewAudioPlayerDelegate declaration
 
 @interface AVAnimatorViewAudioPlayerDelegate : NSObject <AVAudioPlayerDelegate> {	
@@ -996,12 +999,12 @@
     
     self.repeatedFrameCount = self.repeatedFrameCount + 1;
     
-    if (self.repeatedFrameCount > 20) {
+    if (self.repeatedFrameCount >= REPEATED_FRAME_DONE_COUNT) {
       NSLog(@"%@", [NSString stringWithFormat:@"doneAnimator because audio time not progressing in initial frame"]);
       
       [self doneAnimator];
       return;
-    } else if (self.repeatedFrameCount > 10) {
+    } else if (self.repeatedFrameCount >= REPEATED_FRAME_WARN_COUNT) {
       // Audio clock has stopped reporting progression of time
       NSLog(@"%@", [NSString stringWithFormat:@"audio time not progressing: %f", currentTime]);
     }
@@ -1106,12 +1109,12 @@
   
   self.currentFrame = frameNow;
   
-  if (self.repeatedFrameCount > 20) {
+  if (self.repeatedFrameCount >= REPEATED_FRAME_DONE_COUNT) {
     NSLog(@"%@", [NSString stringWithFormat:@"doneAnimator because audio time not progressing"]);
     
     [self doneAnimator];
     return;
-  } else if (self.repeatedFrameCount > 10) {
+  } else if (self.repeatedFrameCount >= REPEATED_FRAME_WARN_COUNT) {
     // Audio clock has stopped reporting progression of time
     NSLog(@"%@", [NSString stringWithFormat:@"audio time not progressing: %f", currentTime]);
   }
@@ -1303,17 +1306,16 @@
 	// the minimium amount of work to paint the display
 	// with the contents of a UIImage. No objects are
 	// allocated in this callback and no objects
-	// are released. In the case of a duplicate
-	// frame, where the next frame is the exact same
-	// data as the previous frame, the render callback
-	// will not change the value of nextFrame so
-	// this method can just avoid updating the display.
+	// are released. In the case of a duplicate frame
+	// where the next frame is the exact same data as
+	// the current frame, don't change self.image
+	// so that no repaint is done.
   
 	UIImage *currentImage = self.image;
-	self.prevFrame = currentImage;
-  
-	if (currentImage != self->m_nextFrame) {
-		self.image = self->m_nextFrame;
+	UIImage *nextImage = self->m_nextFrame;
+	if ((nextImage != nil) && (currentImage != nextImage)) {
+		self.prevFrame = currentImage;
+		self.image = nextImage;
 	}
   
   // Test release of frame now, instead of in next decode callback. Seems
@@ -1336,7 +1338,12 @@
 		return;
 	
 	self.currentFrame = frame - 1;
-	[self _animatorDecodeNextFrame];
+	BOOL decodedFrame = [self _animatorDecodeNextFrame];
+	// The first frame is always a keyframe, so assume that the
+	// decode always works for the first frame.
+	if (frame == 0) {
+	  NSAssert(decodedFrame == TRUE, @"_animatorDecodeNextFrame did not decode initial frame");
+	}
   // _animatorDisplayFrameCallback expects currentFrame
   // to be set to the frame index just before the one
   // to be displayed, so invoke and then set currentFrame.
