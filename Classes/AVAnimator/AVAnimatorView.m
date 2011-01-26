@@ -121,6 +121,7 @@
 @synthesize isReadyToAnimate = m_isReadyToAnimate;
 @synthesize startAnimatorWhenReady = m_startAnimatorWhenReady;
 @synthesize decodedSecondFrame = m_decodedSecondFrame;
+@synthesize ignoreRepeatedFirstFrameReport = m_ignoreRepeatedFirstFrameReport;
 @synthesize decodedLastFrame = m_decodedLastFrame;
 
 - (void) dealloc {
@@ -485,6 +486,11 @@
 	self.animatorNumFrames = [self.frameDecoder numFrames];
 	assert(self.animatorNumFrames >= 2);
   
+  // FIXME: is it possible for the UIView to be created but not yet added to the
+  // containing window when this method is invoked?
+  
+  NSAssert(self.renderSize.width > 0, @"animator view not added to containing view");
+  
 	self.state = READY;
 	self.isReadyToAnimate = TRUE;
   
@@ -812,24 +818,21 @@
 
 - (void) pause
 {
-  // FIXME: What state could this be in other than animating? Could be some tricky race conditions
-  // here related to where the event comes from. Also note that an interruption can cause a pause
-  // action, it can't be ignored from an interruption since that has to work!
-  
-  //	NSAssert(state == ANIMATING, @"pause only valid while animating");
-  
   if (self.state != ANIMATING) {
     // Ignore since an odd race condition could happen when window is put away or when
     // incoming call triggers this method.
     return;
   }
+
+  // The next decode and display operations need to be canceled so that no additional
+  // screen updates happen once pause has been invoked. This is important when the
+  // system audio interrupt is the source of the pause action.
   
 	[self.animatorDecodeTimer invalidate];
 	self.animatorDecodeTimer = nil;
   
-  // Let diplay callback fire, since we don't want to drop a frame
-	//[self.animatorDisplayTimer invalidate];
-	//self.animatorDisplayTimer = nil;
+	[self.animatorDisplayTimer invalidate];
+	self.animatorDisplayTimer = nil;
   
   if (self.avAudioPlayer) {
     [self.avAudioPlayer pause];
@@ -861,11 +864,32 @@
     [self.avAudioPlayer prepareToPlay];
     [self.avAudioPlayer play];
   } else {
+    // Reset the start time so that now is the same distance away from
+    // start as when the pause method was invoked.
+    
     NSAssert(self.audioSimulatedNowTime != nil, @"audioSimulatedNowTime is nil");
     NSTimeInterval offset = [self.audioSimulatedStartTime timeIntervalSinceDate:self.audioSimulatedNowTime] * -1.0;
     self.audioSimulatedStartTime = [NSDate dateWithTimeIntervalSinceNow:-offset];
     self.audioSimulatedNowTime = nil;
   }
+  
+  // Schedule a display callback right away, the pause could have have been delivered between a decode
+  // and a display operation, so a pending display needs to be done ASAP. If there was no pending
+  // display, then the display operation will do nothing.
+
+  NSAssert(self.animatorDisplayTimer == nil, @"animatorDecodeTimer not nil");
+  
+  NSTimeInterval displayDelta = 0.001;
+  
+  self.animatorDisplayTimer = [NSTimer timerWithTimeInterval: displayDelta
+                                                      target: self
+                                                    selector: @selector(_animatorDisplayFrameCallback:)
+                                                    userInfo: NULL
+                                                     repeats: FALSE];
+  
+  [[NSRunLoop currentRunLoop] addTimer: self.animatorDisplayTimer forMode: NSDefaultRunLoopMode];  
+
+  // Schedule a decode operation
   
   NSAssert(self.animatorDecodeTimer == nil, @"animatorDecodeTimer not nil");
   
@@ -1028,7 +1052,7 @@
 		// schedule the callbacks.
     
     self.decodedSecondFrame = TRUE;
-    
+    self.ignoreRepeatedFirstFrameReport = TRUE;    
     self.repeatedFrameCount = 0;
     
 		[self _animatorDecodeFrameCallback:nil];
@@ -1072,7 +1096,12 @@
 		NSLog(@"%@", formatted);
 	}
 #endif
- 
+
+  // Check that initial time report check has passed by the time we get into decode callbacks.
+  
+  BOOL decodedSecondFrame = self.decodedSecondFrame;
+  NSAssert(decodedSecondFrame, @"decodedSecondFrame");
+  
 	// If the audio clock is reporting nonsense results, like a
   // zero time after the decode callback has started
   // to be invoked.
@@ -1089,23 +1118,30 @@
 	BOOL isAudioClockStuck = FALSE;
 	BOOL shouldScheduleDisplayCallback = TRUE;
 	BOOL shouldScheduleDecodeCallback = TRUE;
-	BOOL shouldScheduleLastFrameCallback = FALSE;  
+	BOOL shouldScheduleLastFrameCallback = FALSE;
   
-  if ((frameNow > 0) && (frameNow == self.currentFrame)) {
+  if ((self.ignoreRepeatedFirstFrameReport == FALSE) && (frameNow == self.currentFrame)) {
     // The audio clock must be stuck, because there is no change in
 		// the frame to display. This is basically a no-op, schedule
 		// another frame decode operation but don't schedule a
 		// frame display operation. Because the clock is stuck, we
 		// don't know exactly when to schedule the callback for
 		// based on frameNow, so schedule it one frame duration from now.
+    // In the case where this is the first decode callback after the
+    // initial frame was shown, record one repeat but don't consider
+    // the clock stuck. This repeatedFrameCount will be reset to
+    // zero in the next decode callback if time is progressing normally.
     
-		isAudioClockStuck = TRUE;
-		shouldScheduleDisplayCallback = FALSE;
-    
+    isAudioClockStuck = TRUE;
+    shouldScheduleDisplayCallback = FALSE;
     self.repeatedFrameCount = self.repeatedFrameCount + 1;
   } else {
     self.repeatedFrameCount = 0;
   }
+  
+  // The decode callback should ignore the repeated initial frame once.
+  
+  self.ignoreRepeatedFirstFrameReport = FALSE;    
   
   self.currentFrame = frameNow;
   

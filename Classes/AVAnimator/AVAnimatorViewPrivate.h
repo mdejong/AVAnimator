@@ -54,6 +54,7 @@
 @property (nonatomic, assign) BOOL startAnimatorWhenReady;
 
 @property (nonatomic, assign) BOOL decodedSecondFrame;
+@property (nonatomic, assign) BOOL ignoreRepeatedFirstFrameReport;
 @property (nonatomic, assign) BOOL decodedLastFrame;
 
 // private methods

@@ -103,6 +103,11 @@ typedef enum AVAnimatorPlayerState {
 	// Set to TRUE once the second frame has been decoded
 
 	BOOL m_decodedSecondFrame;
+
+	// Set to TRUE when decodedSecondFrame becomes TRUE,
+  // then set to false during the first decode operation.
+  
+	BOOL m_ignoreRepeatedFirstFrameReport;
   
 	// Set to TRUE once the last frame has been decoded
   

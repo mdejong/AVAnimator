@@ -526,6 +526,346 @@
   return;
 }
 
+// This test case checks a condition when the audio clock starts to
+// report a zero time after the initial playback has begun. This
+// can happen when the audio clip is shorter than the video clip,
+// for example.
+
++ (void) testClockStartsAndThenReportsZeroTime
+{
+  id appDelegate = [[UIApplication sharedApplication] delegate];	
+  UIWindow *window = [appDelegate window];
+  NSAssert(window, @"window");  
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Use phony res loader, will load PNG frames from resources later
+  AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = @"CountingLandscape01.png"; // Phony resource name, becomes no-op
+  animatorView.resourceLoader = resLoader;    
+  
+  // Create decoder that will generate frames from PNG files attached as app resources.
+  
+  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
+                                                  rangeStart:1
+                                                    rangeEnd:5
+                                                suffixFormat:@"%02i.png"];
+  
+  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  
+  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+  animatorView.frameDecoder = frameDecoder;  
+  
+  // Configure frame duration and repeat count, there are 5 frames in this animation
+  // so the valid time frame is [0.0, 5.0]
+  
+  animatorView.animatorFrameDuration = 1.0;
+  
+  [window addSubview:animatorView];
+  
+  // Wait until initial keyframe of data is loaded.
+  
+  [animatorView prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:animatorView
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  // Start the audio clock and then cancel the initial decode callback.
+  
+  BOOL isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == FALSE, @"isAnimatorRunning");
+  
+  [animatorView startAnimator];
+  
+  isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == TRUE, @"isAnimatorRunning");
+  
+  NSAssert(animatorView.animatorDecodeTimer != nil, @"animatorDecodeTimer");
+  [animatorView.animatorDecodeTimer invalidate];
+  animatorView.animatorDecodeTimer = nil;
+  NSAssert(animatorView.animatorDisplayTimer == nil, @"animatorDisplayTimer");
+  
+  // Should be at frame zero, with no repeated frames at this point
+  
+  NSAssert(animatorView.currentFrame == 0, @"currentFrame");
+  NSAssert(animatorView.repeatedFrameCount == 0, @"repeatedFrameCount");
+  
+  // Report a time that is far enough away that the second frame is decoded.
+  
+  animatorView.audioSimulatedStartTime = [NSDate date];
+  animatorView.audioSimulatedNowTime = [NSDate dateWithTimeInterval:0.75 sinceDate:animatorView.audioSimulatedStartTime];
+  [animatorView _animatorDecodeInitialFrameCallback:nil];
+  
+  NSAssert(animatorView.animatorDecodeTimer != nil, @"animatorDecodeTimer");
+  [animatorView.animatorDecodeTimer invalidate];
+  animatorView.animatorDecodeTimer = nil;
+  NSAssert(animatorView.animatorDisplayTimer != nil, @"animatorDisplayTimer");
+  [animatorView.animatorDisplayTimer invalidate];
+  animatorView.animatorDisplayTimer = nil;
+  
+  // The _animatorDecodeFrameCallback function has now been invoked
+  // and the second frame has been decoded. Note that the
+  // animatorView.currentFrame is always set to the frame on the
+  // left of the time interval, so it is still zero at this point.
+  
+  NSAssert(animatorView.decodedSecondFrame == TRUE, @"decodedSecondFrame");  
+  NSAssert(animatorView.currentFrame == 0, @"currentFrame");
+  NSAssert(animatorView.repeatedFrameCount == 0, @"repeatedFrameCount");
+  
+  // Report a series of zero times to the decode callback.
+  
+  int count = 0;
+  
+  animatorView.audioSimulatedStartTime = [NSDate date];
+  animatorView.audioSimulatedNowTime = animatorView.audioSimulatedStartTime;
+  [animatorView _animatorDecodeFrameCallback:nil];
+  count++;
+  
+  NSAssert(animatorView.currentFrame == 0, @"currentFrame");
+  NSAssert(animatorView.repeatedFrameCount == 1, @"repeatedFrameCount");
+  
+  int phony = 0;
+  
+  isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == TRUE, @"isAnimatorRunning");
+  
+  for ( ; count < REPEATED_FRAME_DONE_COUNT; count++) {
+    if (count == (REPEATED_FRAME_DONE_COUNT - 1)) {
+      phony = 1;
+    }
+    
+    [animatorView _animatorDecodeFrameCallback:nil];
+    
+    if (count < (REPEATED_FRAME_DONE_COUNT - 1)) {
+      isAnimatorRunning = [animatorView isAnimatorRunning];
+      NSAssert(isAnimatorRunning == TRUE, @"isAnimatorRunning");
+    }
+  }
+  
+  // Timers should be canceled by each invocation of _animatorDecodeInitialFrameCallback
+  // and then the final invocation of stopAnimator sets them to nil.
+  
+  NSAssert(animatorView.animatorDecodeTimer == nil, @"animatorDecodeTimer");
+  NSAssert(animatorView.animatorDisplayTimer == nil, @"animatorDisplayTimer");  
+  
+  // The last invocation should have stopped the animation
+  
+  isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == FALSE, @"isAnimatorRunning");
+  
+  return;
+}
+
+// This test case starts the clock, decodes the first frame,
+// then invokes pause followed by unpause. The unpause
+// logic should restart animation where it left off.
+
++ (void) testPauseThenUnpause
+{
+  id appDelegate = [[UIApplication sharedApplication] delegate];	
+  UIWindow *window = [appDelegate window];
+  NSAssert(window, @"window");  
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Use phony res loader, will load PNG frames from resources later
+  AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = @"CountingLandscape01.png"; // Phony resource name, becomes no-op
+  animatorView.resourceLoader = resLoader;    
+  
+  // Create decoder that will generate frames from PNG files attached as app resources.
+  
+  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
+                                                  rangeStart:1
+                                                    rangeEnd:5
+                                                suffixFormat:@"%02i.png"];
+  
+  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  
+  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+  animatorView.frameDecoder = frameDecoder;  
+  
+  // Configure frame duration and repeat count, there are 5 frames in this animation
+  // so the valid time frame is [0.0, 5.0]
+  
+  animatorView.animatorFrameDuration = 1.0;
+  
+  [window addSubview:animatorView];
+  
+  // Wait until initial keyframe of data is loaded.
+  
+  [animatorView prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:animatorView
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  // Start the audio clock and then cancel the initial decode callback.
+  
+  BOOL isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == FALSE, @"isAnimatorRunning");
+  
+  [animatorView startAnimator];
+  
+  isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == TRUE, @"isAnimatorRunning");
+    
+  // Report a time that is far enough away that the second frame is decoded.
+  
+  animatorView.audioSimulatedStartTime = [NSDate date];
+  animatorView.audioSimulatedNowTime = [NSDate dateWithTimeInterval:0.5 sinceDate:animatorView.audioSimulatedStartTime];
+  
+  [animatorView _animatorDecodeInitialFrameCallback:nil];
+  
+  NSAssert(animatorView.currentFrame == 0, @"currentFrame");
+  
+  // Now report a time in between the second and third frames.
+  
+  animatorView.audioSimulatedNowTime = [NSDate dateWithTimeInterval:1.5 sinceDate:animatorView.audioSimulatedStartTime];
+  
+  [animatorView _animatorDecodeFrameCallback:nil];
+  
+  NSAssert(animatorView.currentFrame == 1, @"currentFrame");
+
+  NSAssert(animatorView.image != animatorView.nextFrame, @"nextFrame");
+  
+  // Invoke pause, this should cancel the next decode and display
+  
+  [animatorView pause];
+  
+  NSAssert(animatorView.animatorDecodeTimer == nil, @"animatorDecodeTimer");
+  NSAssert(animatorView.animatorDisplayTimer == nil, @"animatorDisplayTimer");
+  
+  NSAssert(animatorView.currentFrame == 1, @"currentFrame");
+  
+  isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == FALSE, @"isAnimatorRunning");
+  
+  // Another pause when already paused is a no-op
+  
+  [animatorView pause];  
+  
+  // Unpause, this invocation will schedule a display callback right away
+  // and also schedule the next decode.
+
+  [animatorView unpause];
+  
+  NSAssert(animatorView.animatorDecodeTimer != nil, @"animatorDecodeTimer");
+  NSAssert(animatorView.animatorDisplayTimer != nil, @"animatorDisplayTimer");
+  
+  // Another unpause when animating is a no-op
+  
+  [animatorView unpause];
+  
+  [animatorView stopAnimator];
+  
+  return;
+}
+
+// This test case invokes pause before the second frame is decoded. In this
+// case an unpause action should just start invoke startAnimator instead
+// of scheduling a decode and display operation.
+
++ (void) testPauseThenUnpauseBeforeSecondFrameDecode
+{
+  id appDelegate = [[UIApplication sharedApplication] delegate];	
+  UIWindow *window = [appDelegate window];
+  NSAssert(window, @"window");  
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Use phony res loader, will load PNG frames from resources later
+  AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = @"CountingLandscape01.png"; // Phony resource name, becomes no-op
+  animatorView.resourceLoader = resLoader;    
+  
+  // Create decoder that will generate frames from PNG files attached as app resources.
+  
+  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
+                                                  rangeStart:1
+                                                    rangeEnd:5
+                                                suffixFormat:@"%02i.png"];
+  
+  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  
+  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+  animatorView.frameDecoder = frameDecoder;  
+  
+  // Configure frame duration and repeat count, there are 5 frames in this animation
+  // so the valid time frame is [0.0, 5.0]
+  
+  animatorView.animatorFrameDuration = 1.0;
+  
+  [window addSubview:animatorView];
+  
+  // Wait until initial keyframe of data is loaded.
+  
+  [animatorView prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:animatorView
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  // Start the audio clock and then cancel the initial decode callback.
+  
+  BOOL isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == FALSE, @"isAnimatorRunning");
+  
+  [animatorView startAnimator];
+  
+  isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == TRUE, @"isAnimatorRunning");
+  
+  // Report a time that is not far enough from the start time to decode the second frame.
+  
+  animatorView.audioSimulatedStartTime = [NSDate date];
+  animatorView.audioSimulatedNowTime = [NSDate dateWithTimeInterval:0.25 sinceDate:animatorView.audioSimulatedStartTime];
+  
+  [animatorView _animatorDecodeInitialFrameCallback:nil];
+  
+  NSAssert(animatorView.currentFrame == 0, @"currentFrame");
+  NSAssert(animatorView.decodedSecondFrame == FALSE, @"decodedSecondFrame");
+  
+  // Invoke pause, this should cancel the next decode and display
+  
+  [animatorView pause];
+  
+  NSAssert(animatorView.animatorDecodeTimer == nil, @"animatorDecodeTimer");
+  NSAssert(animatorView.animatorDisplayTimer == nil, @"animatorDisplayTimer");
+  
+  NSAssert(animatorView.currentFrame == 0, @"currentFrame");
+  
+  isAnimatorRunning = [animatorView isAnimatorRunning];
+  NSAssert(isAnimatorRunning == FALSE, @"isAnimatorRunning");
+  
+  // Unpause, this invocation should notice that decodedSecondFrame is false
+  // and it should invoke startAnimator.
+  
+  [animatorView unpause];
+  
+  NSAssert(animatorView.animatorDecodeTimer != nil, @"animatorDecodeTimer");
+  NSAssert(animatorView.animatorDisplayTimer != nil, @"animatorDisplayTimer");
+  
+  // Go to the event loop so that pending timers have a chance to fire.
+  
+  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1.0];
+  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  
+  [animatorView stopAnimator];
+  
+  return;
+}
+
 // This test case invokes advanceToFrame on a MOV frame decoder twice with the
 // same index. The second invocation must be a no-op.
 
