@@ -79,14 +79,20 @@ typedef enum AVAnimatorPlayerState {
 	id m_retainedAudioDelegate;
   NSDate *m_audioSimulatedStartTime;
   NSDate *m_audioSimulatedNowTime;
+  NSDate *m_audioPlayerFallbackStartTime;
+  NSDate *m_audioPlayerFallbackNowTime;
   
 	AVAudioPlayerState m_state;
+  
+  // This time stores an offset from the original start time
+  // at the moment the pause command is invoked.
+  NSTimeInterval m_pauseTimeInterval;
   
 	NSTimeInterval m_animatorMaxClockTime;
 	NSTimeInterval m_animatorDecodeTimerInterval;
   
 	CGSize m_renderSize;
-  
+    
 	// Becomes TRUE the first time the state changes to READY
 	// and stays TRUE after that. This flag is needed to handle
 	// the case where the player is stopped before it becomes
@@ -105,13 +111,23 @@ typedef enum AVAnimatorPlayerState {
 	BOOL m_decodedSecondFrame;
 
 	// Set to TRUE when decodedSecondFrame becomes TRUE,
-  // then set to false during the first decode operation.
+	// then set to false during the first decode operation.
   
 	BOOL m_ignoreRepeatedFirstFrameReport;
   
 	// Set to TRUE once the last frame has been decoded
   
 	BOOL m_decodedLastFrame;
+  
+	// Set to TRUE when the audio clock time reports
+	// a zero time after frames have been decoded.
+	// This happens when the audio that goes along
+	// with an animation is as long as the time
+	// needed to display the frames. Clock time
+	// is reported in terms of the fallback clock
+	// in this case.
+  
+	BOOL reportTimeFromFallbackClock;
 }
 
 // public properties

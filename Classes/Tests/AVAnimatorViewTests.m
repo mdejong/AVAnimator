@@ -406,7 +406,15 @@
 
   animatorView.audioSimulatedStartTime = [NSDate date];
   animatorView.audioSimulatedNowTime = animatorView.audioSimulatedStartTime;
-  [animatorView _animatorDecodeFrameCallback:nil];  
+
+  // Once the simulated clock is reporting a zero time, the code will
+  // use the fallback clock. Provide an end time so that the fallback
+  // clock has a delta to work with.
+
+  animatorView.audioPlayerFallbackStartTime = [NSDate date];
+  animatorView.audioPlayerFallbackNowTime = [NSDate dateWithTimeIntervalSinceNow:4.5];
+  
+  [animatorView _animatorDecodeFrameCallback:nil];
   
   NSAssert(animatorView.decodedLastFrame == TRUE, @"decodedLastFrame");
   
@@ -745,6 +753,9 @@
   
   NSAssert(animatorView.currentFrame == 1, @"currentFrame");
   
+  // The pause operation records the clock time when pause was invoked
+  NSAssert(animatorView.pauseTimeInterval == 1.5, @"pauseTimeInterval");
+  
   isAnimatorRunning = [animatorView isAnimatorRunning];
   NSAssert(isAnimatorRunning == FALSE, @"isAnimatorRunning");
   
@@ -844,6 +855,9 @@
   NSAssert(animatorView.animatorDisplayTimer == nil, @"animatorDisplayTimer");
   
   NSAssert(animatorView.currentFrame == 0, @"currentFrame");
+  
+  // The pause operation records the clock time when pause was invoked
+  NSAssert(animatorView.pauseTimeInterval == 0.25, @"pauseTimeInterval");
   
   isAnimatorRunning = [animatorView isAnimatorRunning];
   NSAssert(isAnimatorRunning == FALSE, @"isAnimatorRunning");
@@ -1725,6 +1739,95 @@
   NSAssert(animatorView.state == STOPPED, @"STOPPED");
   
   return;
+}
+
+// This test case is for the case where the audio is not as long as the
+// animation frames. In this case, the frames would run for 5.0 seconds
+// while the audio is only 3.0 seconds long. The audio clock will begin
+// to report a zero time after the end of the audio is reached, so the
+// code needs to use the fallback clock to continue to report time
+// until the video is finished.
+
++ (void) testAudioShorterThanAnimation
+{
+  id appDelegate = [[UIApplication sharedApplication] delegate];	
+  UIWindow *window = [appDelegate window];
+  NSAssert(window, @"window");
+  
+  NSString *audioResourceName = @"Silence3S.wav";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Use phony res loader, will load PNG frames from resources later
+  AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = @"CountingLandscape01.png"; // Phony resource name, becomes no-op
+  resLoader.audioFilename = audioResourceName;
+  animatorView.resourceLoader = resLoader;    
+  
+  // Create decoder that will generate frames from PNG files attached as app resources.
+  
+  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
+                                                  rangeStart:1
+                                                    rangeEnd:5
+                                                suffixFormat:@"%02i.png"];
+  
+  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  
+  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+  animatorView.frameDecoder = frameDecoder;  
+  
+  // Configure frame duration and repeat count, there are 5 frames in this animation
+  // so the valid time frame is [0.0, 5.0]
+  
+  animatorView.animatorFrameDuration = 1.0;
+  
+  [window addSubview:animatorView];
+  
+  // Wait until initial keyframe of data is loaded.
+  
+  [animatorView prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:animatorView
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  // Wait until animation cycle is finished
+  
+  [animatorView startAnimator];
+  
+  {
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:7.0];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
+  
+  // FIXME: Add functionality so that we can tell which frames were displayed
+  // during the animation cycle. This would make it possible to test that
+  // each frame was decoded by this logic. Might want a more general "frame decode info"
+  // that could also record the frame decode times and how the clock sync was
+  // going for each decode operation so that this info could be dumped and graphed.
+  
+  NSAssert(animatorView.state == STOPPED, @"STOPPED");
+
+  NSAssert(animatorView.reportTimeFromFallbackClock == TRUE, @"reportTimeFromFallbackClock");
+
+  // Invoking startAnimator clears the reportTimeFromFallbackClock flag
+  
+  [animatorView startAnimator];
+  
+  NSAssert(animatorView.reportTimeFromFallbackClock == FALSE, @"reportTimeFromFallbackClock");
+  
+  [animatorView stopAnimator];
+  
+  NSAssert(animatorView.reportTimeFromFallbackClock == FALSE, @"reportTimeFromFallbackClock");
+  
+  return;  
 }
 
 @end

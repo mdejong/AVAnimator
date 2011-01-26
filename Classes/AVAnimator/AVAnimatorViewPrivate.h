@@ -44,8 +44,11 @@
 
 @property (nonatomic, retain) NSDate *audioSimulatedStartTime;
 @property (nonatomic, retain) NSDate *audioSimulatedNowTime;
+@property (nonatomic, retain) NSDate *audioPlayerFallbackStartTime;
+@property (nonatomic, retain) NSDate *audioPlayerFallbackNowTime;
 
 @property (nonatomic, assign) AVAudioPlayerState state;
+@property (nonatomic, assign) NSTimeInterval pauseTimeInterval;
 @property (nonatomic, assign) NSTimeInterval animatorMaxClockTime;
 @property (nonatomic, assign) NSTimeInterval animatorDecodeTimerInterval;
 @property (nonatomic, assign) CGSize renderSize;
@@ -56,6 +59,7 @@
 @property (nonatomic, assign) BOOL decodedSecondFrame;
 @property (nonatomic, assign) BOOL ignoreRepeatedFirstFrameReport;
 @property (nonatomic, assign) BOOL decodedLastFrame;
+@property (nonatomic, assign) BOOL reportTimeFromFallbackClock;
 
 // private methods
 
