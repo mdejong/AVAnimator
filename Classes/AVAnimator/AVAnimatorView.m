@@ -861,8 +861,7 @@
 	self.state = ANIMATING;
   
   if (self.avAudioPlayer) {
-    [self.avAudioPlayer prepareToPlay];
-    [self.avAudioPlayer play];
+    // No-op
   } else {
     // Reset the start time so that now is the same distance away from
     // start as when the pause method was invoked.
@@ -873,38 +872,53 @@
     self.audioSimulatedNowTime = nil;
   }
   
-  // Schedule a display callback right away, the pause could have have been delivered between a decode
-  // and a display operation, so a pending display needs to be done ASAP. If there was no pending
-  // display, then the display operation will do nothing.
+  if (self.decodedSecondFrame == FALSE) {
+    // Pause was invoked before the clock started reporting valid times. Unpause and then start over.
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorDidUnpauseNotification
+                                                        object:self];
 
-  NSAssert(self.animatorDisplayTimer == nil, @"animatorDecodeTimer not nil");
-  
-  NSTimeInterval displayDelta = 0.001;
-  
-  self.animatorDisplayTimer = [NSTimer timerWithTimeInterval: displayDelta
-                                                      target: self
-                                                    selector: @selector(_animatorDisplayFrameCallback:)
-                                                    userInfo: NULL
-                                                     repeats: FALSE];
-  
-  [[NSRunLoop currentRunLoop] addTimer: self.animatorDisplayTimer forMode: NSDefaultRunLoopMode];  
-
-  // Schedule a decode operation
-  
-  NSAssert(self.animatorDecodeTimer == nil, @"animatorDecodeTimer not nil");
-  
-	self.animatorDecodeTimer = [NSTimer timerWithTimeInterval: self.animatorDecodeTimerInterval
-                                                      target: self
-                                                    selector: @selector(_animatorDecodeFrameCallback:)
-                                                    userInfo: NULL
-                                                     repeats: FALSE];
-  
-	[[NSRunLoop currentRunLoop] addTimer: self.animatorDecodeTimer forMode: NSDefaultRunLoopMode];
-  
-	// Send notification to object(s) that regestered interest in the unpause action
-  
-	[[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorDidUnpauseNotification
-                                                      object:self];	
+    [self stopAnimator];
+    [self startAnimator];
+  } else {
+    // Schedule a display callback right away, the pause could have have been delivered between a decode
+    // and a display operation, so a pending display needs to be done ASAP. If there was no pending
+    // display, then the display operation will do nothing.
+    
+    NSAssert(self.animatorDisplayTimer == nil, @"animatorDecodeTimer not nil");
+    
+    NSTimeInterval displayDelta = 0.001;
+    
+    self.animatorDisplayTimer = [NSTimer timerWithTimeInterval: displayDelta
+                                                        target: self
+                                                      selector: @selector(_animatorDisplayFrameCallback:)
+                                                      userInfo: NULL
+                                                       repeats: FALSE];
+    
+    [[NSRunLoop currentRunLoop] addTimer: self.animatorDisplayTimer forMode: NSDefaultRunLoopMode];  
+    
+    // Schedule a decode operation
+    
+    NSAssert(self.animatorDecodeTimer == nil, @"animatorDecodeTimer not nil");
+    
+    self.animatorDecodeTimer = [NSTimer timerWithTimeInterval: self.animatorDecodeTimerInterval
+                                                       target: self
+                                                     selector: @selector(_animatorDecodeFrameCallback:)
+                                                     userInfo: NULL
+                                                      repeats: FALSE];
+    
+    [[NSRunLoop currentRunLoop] addTimer: self.animatorDecodeTimer forMode: NSDefaultRunLoopMode];
+    
+    // Kick off the audio clock
+    
+    if (self.avAudioPlayer) {
+      [self.avAudioPlayer prepareToPlay];
+      [self.avAudioPlayer play];
+    }
+    
+    [[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorDidUnpauseNotification
+                                                        object:self];
+  }
 }
 
 - (void) rewind

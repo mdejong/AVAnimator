@@ -853,10 +853,13 @@
   
   [animatorView unpause];
   
+  // Started over, so display timer should be nil
+  
   NSAssert(animatorView.animatorDecodeTimer != nil, @"animatorDecodeTimer");
-  NSAssert(animatorView.animatorDisplayTimer != nil, @"animatorDisplayTimer");
+  NSAssert(animatorView.animatorDisplayTimer == nil, @"animatorDisplayTimer");
   
   // Go to the event loop so that pending timers have a chance to fire.
+  // If we don't get a crash in the decode callback, then everything is okay.
   
   NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1.0];
   [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
