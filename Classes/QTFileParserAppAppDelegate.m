@@ -11,6 +11,8 @@
 
 #import "AVAnimatorView.h"
 
+#import "AVAnimatorMedia.h"
+
 #import "MovieControlsViewController.h"
 
 #import "MovieControlsAdaptor.h"
@@ -124,11 +126,26 @@
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(animatorDoneNotification:) 
                                                name:AVAnimatorDoneNotification
-                                             object:self.animatorView];  
+                                             object:self.animatorView.media];  
   
   [self.movieControlsAdaptor startAnimator];
   
   return;  
+}
+
+// Util method that loads the animatorView into the outermost window
+// and starts off the animation cycle.
+
+- (void) loadIntoWindow
+{
+  [self.window addSubview:self.animatorView];
+  
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(animatorDoneNotification:) 
+                                               name:AVAnimatorDoneNotification
+                                             object:self.animatorView.media];  
+  
+  [self.animatorView.media startAnimator];  
 }
 
 // This example is a portrait animation with a few frames of mostly black
@@ -156,14 +173,19 @@
     // that a transform does not slow down the max frame rate.
     self.animatorView.animatorOrientation = UIImageOrientationDown;
   }
+
+  // Create Media object and link it to the animatorView
+  
+	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
+	self.animatorView.media = media;
   
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
   // the AVPNGFrameDecoder ignores it.
   
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = @"Counting01.png"; // Phony resource name, becomes no-op
-	self.animatorView.resourceLoader = resLoader;
+	resLoader.movieFilename = @"Counting01.png"; // Phony resource name, becomes no-op  
+	media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from PNG files attached as app resources.
   
@@ -179,16 +201,13 @@
   // no image decode needs to be done.
   
   AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
-	self.animatorView.frameDecoder = frameDecoder;
+	media.frameDecoder = frameDecoder;
   
-//  self.animatorView.animatorFrameDuration = 2.0;
-//  self.animatorView.animatorFrameDuration = 1.0 / 15;
-//  self.animatorView.animatorFrameDuration = 1.0 / 30;
-//	self.animatorView.animatorFrameDuration = 1.0 / 60;
+//  media.animatorFrameDuration = 2.0;
+//  media.animatorFrameDuration = 1.0 / 15;
   
   // Testing on iPhone 3g indicates that 60 FPS is the the upper limit.
   // This impl likely uses CGImage data cached in the video card.
-//  self.animatorView.animatorFrameDuration = 1.0 / 90;
   
   // Default to 2 frames per second, so that we can see that each
   // frame paints correctly.
@@ -196,22 +215,15 @@
   if (frameDuration == -1.0) {
     frameDuration = 1.0 / 2.0;
   }
-  self.animatorView.animatorFrameDuration = frameDuration;
+  media.animatorFrameDuration = frameDuration;
   
-//	self.animatorView.animatorRepeatCount = 1;
-  self.animatorView.animatorRepeatCount = 100;
+//	media.animatorRepeatCount = 1;
+  media.animatorRepeatCount = 100;
   
   // Add AVAnimatorView directly to main window, or use movie controls
 
   if (movieControls == FALSE) {
-    [self.window addSubview:self.animatorView];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(animatorDoneNotification:) 
-                                                 name:AVAnimatorDoneNotification
-                                               object:self.animatorView];  
-    
-    [self.animatorView startAnimator];
+    [self loadIntoWindow];
   } else {
     // FIXME: loading portrait into movie controls is broken
     
@@ -233,6 +245,11 @@
     self.animatorView.animatorOrientation = UIImageOrientationLeft;
   }
   
+  // Create Media object and link it to the animatorView
+  
+	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
+	self.animatorView.media = media;  
+  
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
   // the AVPNGFrameDecoder ignores it.
@@ -242,7 +259,7 @@
   
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
   resLoader.movieFilename = @"CountingLandscape01.png"; // Phony resource name, becomes no-op
-	self.animatorView.resourceLoader = resLoader;
+	media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from PNG files attached as app resources.
   
@@ -258,7 +275,7 @@
   // no image decode needs to be done.
   
   AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
-	self.animatorView.frameDecoder = frameDecoder;
+	media.frameDecoder = frameDecoder;
   
   // Using a rotation and putting it inside an opaque window seems to limit the FPS to about 40.
   // The image is already setup in landscape, so this is likely caused by the fact that the
@@ -271,21 +288,14 @@
     frameDuration = 1.0 / 2.0;
   }
   
-  self.animatorView.animatorFrameDuration = frameDuration;
+  media.animatorFrameDuration = frameDuration;
   
-	self.animatorView.animatorRepeatCount = 100;
+	media.animatorRepeatCount = 100;
 
   // Add AVAnimatorView directly to main window, or use movie controls
   
   if (movieControls == FALSE) {
-    [self.window addSubview:self.animatorView];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(animatorDoneNotification:) 
-                                                 name:AVAnimatorDoneNotification
-                                               object:self.animatorView];  
-    
-    [self.animatorView startAnimator];
+    [self loadIntoWindow];
   } else {
     [self loadIntoMovieControls];
   }  
@@ -308,13 +318,18 @@
     self.animatorView.animatorOrientation = UIImageOrientationLeft;
   }
   
+  // Create Media object and link it to the animatorView
+  
+	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
+	self.animatorView.media = media;  
+  
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
   // the AVPNGFrameDecoder ignores it.
   
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
   resLoader.movieFilename = @"BouncingBalls01.png"; // Phony resource name, becomes no-op
-	self.animatorView.resourceLoader = resLoader;
+	media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from PNG files attached as app resources.
   
@@ -326,27 +341,20 @@
   NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
   
   AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:FALSE];
-	self.animatorView.frameDecoder = frameDecoder;
+	media.frameDecoder = frameDecoder;
     
   if (frameDuration == -1.0) {
     frameDuration = AVAnimator15FPS;
   }  
   
-	self.animatorView.animatorFrameDuration = frameDuration;
+	media.animatorFrameDuration = frameDuration;
   
-	self.animatorView.animatorRepeatCount = 100;
+	media.animatorRepeatCount = 100;
   
   // Add AVAnimatorView directly to main window, or use movie controls
   
   if (movieControls == FALSE) {
-    [self.window addSubview:self.animatorView];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(animatorDoneNotification:) 
-                                                 name:AVAnimatorDoneNotification
-                                               object:self.animatorView];  
-    
-    [self.animatorView startAnimator];
+    [self loadIntoWindow];
   } else {
     [self loadIntoMovieControls];
   }  
@@ -386,36 +394,34 @@
     self.animatorView.animatorOrientation = UIImageOrientationLeft;
   }  
   
+  // Create Media object and link it to the animatorView
+  
+	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
+	self.animatorView.media = media;  
+  
   // Create loader that will read a movie file from app resources.
   
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
   resLoader.movieFilename = resourceName;
-	self.animatorView.resourceLoader = resLoader;
+	media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
   AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-	self.animatorView.frameDecoder = frameDecoder;
+	media.frameDecoder = frameDecoder;
   
   if (frameDuration == -1.0) {
     frameDuration = AVAnimator30FPS;
   }  
   
-	self.animatorView.animatorFrameDuration = frameDuration;
+	media.animatorFrameDuration = frameDuration;
   
-	self.animatorView.animatorRepeatCount = 100;
+	media.animatorRepeatCount = 100;
   
   // Add AVAnimatorView directly to main window, or use movie controls
   
   if (movieControls == FALSE) {
-    [self.window addSubview:self.animatorView];
-    
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(animatorDoneNotification:) 
-                                                 name:AVAnimatorDoneNotification
-                                               object:self.animatorView];  
-    
-    [self.animatorView startAnimator];
+    [self loadIntoWindow];
   } else {
     [self loadIntoMovieControls];
   }  
@@ -458,16 +464,21 @@
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
   
+  // Create Media object and link it to the animatorView
+  
+	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
+	self.animatorView.media = media;  
+  
   // Create loader that will read a movie file from app resources.
   
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
   resLoader.movieFilename = resourceName;
-	self.animatorView.resourceLoader = resLoader;
+	media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
   AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-	self.animatorView.frameDecoder = frameDecoder;
+	media.frameDecoder = frameDecoder;
   
   // An alpha 480x320 animation seems to be able to hit about 15 to 20 FPS.
   // Not as good as 24bpp, but the alpha blending and premultiplicaiton
@@ -477,9 +488,9 @@
     frameDuration = 1.0 / 2.0;
   }  
   
-	self.animatorView.animatorFrameDuration = frameDuration;
+	media.animatorFrameDuration = frameDuration;
   
-	self.animatorView.animatorRepeatCount = 150;
+	media.animatorRepeatCount = 150;
 
   [self loadIntoMovieControls];
 }
@@ -503,16 +514,21 @@
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
   
+  // Create Media object and link it to the animatorView
+  
+	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
+	self.animatorView.media = media;  
+  
   // Create loader that will read a movie file from app resources.
   
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
   resLoader.movieFilename = resourceName;
-	self.animatorView.resourceLoader = resLoader;
+	media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
   AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-	self.animatorView.frameDecoder = frameDecoder;
+	media.frameDecoder = frameDecoder;
   
   // Movie is 10FPS  
   // This animation can run smoothly at 30 FPS on a iPhone 3G,
@@ -522,9 +538,9 @@
     frameDuration = AVAnimator10FPS;
   }  
   
-	self.animatorView.animatorFrameDuration = frameDuration;  
+	media.animatorFrameDuration = frameDuration;  
   
-	self.animatorView.animatorRepeatCount = 100;
+	media.animatorRepeatCount = 100;
   
   [self loadIntoMovieControls];
 }
@@ -600,16 +616,21 @@
     // The image is rotated, so the movie shown over the image is not rotated.
     animatorView.animatorOrientation = UIImageOrientationUp;
     
+    // Create Media object and link it to the animatorView
+    
+    AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
+    self.animatorView.media = media;    
+    
     // Create loader that will read a movie file from app resources.
     
     AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
     resLoader.movieFilename = resourceName;
-    animatorView.resourceLoader = resLoader;
+    media.resourceLoader = resLoader;
     
     // Create decoder that will generate frames from Quicktime Animation encoded data
     
     AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-    animatorView.frameDecoder = frameDecoder;
+    media.frameDecoder = frameDecoder;
     
     // Movie is 10FPS  
     // This animation can run smoothly at 30 FPS on a iPhone 3G,
@@ -619,18 +640,18 @@
       frameDuration = AVAnimator10FPS;
     }  
     
-    animatorView.animatorFrameDuration = frameDuration;  
+    media.animatorFrameDuration = frameDuration;  
     
-    self.animatorView.animatorRepeatCount = 10;
-
+    media.animatorRepeatCount = 10;
+     
     [imageView addSubview:animatorView];
     
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(animatorDoneNotification:) 
                                                  name:AVAnimatorDoneNotification
-                                               object:animatorView];
+                                               object:animatorView.media];
     
-    [animatorView startAnimator];
+    [animatorView.media startAnimator];
     
     self.animatorView = (AVAnimatorView*) view; // phony toplevel, does not crash because it is just removed from parent
   }
@@ -658,6 +679,11 @@
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
   
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
+  self.animatorView.media = media;  
+  
   // Create loader that will read a movie file from app resources.
   
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
@@ -665,25 +691,25 @@
   if (withSound) {
     resLoader.audioFilename = audioResourceName;
   }
-	self.animatorView.resourceLoader = resLoader;
+	media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
   AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-	self.animatorView.frameDecoder = frameDecoder;
+	media.frameDecoder = frameDecoder;
   
   // Movie runs only at 15FPS with sound.
   
   if (withSound) {
-    self.animatorView.animatorFrameDuration = AVAnimator15FPS;
+    media.animatorFrameDuration = AVAnimator15FPS;
   } else {
     if (frameDuration == -1.0) {
-      self.animatorView.animatorFrameDuration = AVAnimator15FPS;      
+      media.animatorFrameDuration = AVAnimator15FPS;      
     }
   }
   
-//	self.animatorView.animatorRepeatCount = 5;
-	self.animatorView.animatorRepeatCount = 100;
+//	media.animatorRepeatCount = 5;
+	media.animatorRepeatCount = 100;
   
   [self loadIntoMovieControls];
 }
@@ -712,24 +738,29 @@
   CGRect frame = CGRectMake(0, 0, 480, 320);
   self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
   
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
+  self.animatorView.media = media;  
+  
   // Create loader that will read a movie file from app resources.
   
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
   resLoader.movieFilename = videoResourceName;
-	self.animatorView.resourceLoader = resLoader;
+	media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
   AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-	self.animatorView.frameDecoder = frameDecoder;
+	media.frameDecoder = frameDecoder;
   
   if (frameDuration != -1.0) {
     // Don't set a frame duration, use the 2.0 FPS encoded in the MOV file
-    self.animatorView.animatorFrameDuration = frameDuration;
+    media.animatorFrameDuration = frameDuration;
   }
   
-  //	self.animatorView.animatorRepeatCount = 5;
-	self.animatorView.animatorRepeatCount = 100;
+  //	media.animatorRepeatCount = 5;
+	media.animatorRepeatCount = 100;
   
   [self loadIntoMovieControls];
 }

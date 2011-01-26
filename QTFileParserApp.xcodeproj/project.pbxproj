@@ -25,6 +25,8 @@
 		CD288D4112D93865005F0EEA /* 2x2_black_blue_16BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD288D3E12D93865005F0EEA /* 2x2_black_blue_16BPP.mov */; };
 		CD288D4212D93865005F0EEA /* 2x2_black_blue_24BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD288D3F12D93865005F0EEA /* 2x2_black_blue_24BPP.mov */; };
 		CD288D4312D93865005F0EEA /* 2x2_black_blue_32BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD288D4012D93865005F0EEA /* 2x2_black_blue_32BPP.mov */; };
+		CD2F6D4812F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
+		CD2F6D4912F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
 		CD34638D12D79EA30072CC68 /* License.txt in Resources */ = {isa = PBXBuildFile; fileRef = CD34638C12D79EA30072CC68 /* License.txt */; };
 		CD3F4E5112D8F4400067FDDF /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE3012D8F32F00A50135 /* AVFoundation.framework */; };
 		CD3F4E5212D8F4400067FDDF /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE3412D8F33700A50135 /* AudioToolbox.framework */; };
@@ -216,6 +218,10 @@
 		CD288D3E12D93865005F0EEA /* 2x2_black_blue_16BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 2x2_black_blue_16BPP.mov; sourceTree = "<group>"; };
 		CD288D3F12D93865005F0EEA /* 2x2_black_blue_24BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 2x2_black_blue_24BPP.mov; sourceTree = "<group>"; };
 		CD288D4012D93865005F0EEA /* 2x2_black_blue_32BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 2x2_black_blue_32BPP.mov; sourceTree = "<group>"; };
+		CD2F6D4512F0B8AF0022413B /* AVAnimatorMedia.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorMedia.h; sourceTree = "<group>"; };
+		CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorMedia.m; sourceTree = "<group>"; };
+		CD2F6D4712F0B8AF0022413B /* AVAnimatorMediaPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorMediaPrivate.h; sourceTree = "<group>"; };
+		CD2F6E4512F0C2400022413B /* AVAnimatorMediaRendererProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorMediaRendererProtocol.h; sourceTree = "<group>"; };
 		CD34638C12D79EA30072CC68 /* License.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = License.txt; sourceTree = "<group>"; };
 		CD3F4ECB12D8F6B00067FDDF /* RegressionTests.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RegressionTests.h; sourceTree = "<group>"; };
 		CD3F4ECC12D8F6B00067FDDF /* RegressionTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RegressionTests.m; sourceTree = "<group>"; };
@@ -483,6 +489,10 @@
 				CD7A02EE12D261A900366AC6 /* AVAnimatorView.h */,
 				CD3F4F7E12D8FF620067FDDF /* AVAnimatorViewPrivate.h */,
 				CD7A02EF12D261A900366AC6 /* AVAnimatorView.m */,
+				CD2F6D4512F0B8AF0022413B /* AVAnimatorMedia.h */,
+				CD2F6D4712F0B8AF0022413B /* AVAnimatorMediaPrivate.h */,
+				CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */,
+				CD2F6E4512F0C2400022413B /* AVAnimatorMediaRendererProtocol.h */,
 				CDECC75512BC6CA6001A372F /* CGFrameBuffer.h */,
 				CDECC75612BC6CA6001A372F /* CGFrameBuffer.m */,
 				CDECC75112BC6CA6001A372F /* AVResourceLoader.h */,
@@ -786,6 +796,7 @@
 				CD61994A12CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m in Sources */,
 				CD7A02F012D261A900366AC6 /* AVAnimatorView.m in Sources */,
 				CDECCE7212D30FE80067D2EE /* AVPNGFrameDecoder.m in Sources */,
+				CD2F6D4912F0B8AF0022413B /* AVAnimatorMedia.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -810,6 +821,7 @@
 				CD3F4ECE12D8F6B00067FDDF /* RegressionTests.m in Sources */,
 				CD3F4ECF12D8F6B00067FDDF /* ViewLoadTests.m in Sources */,
 				CD3F4F1312D8FA0A0067FDDF /* AVAnimatorViewTests.m in Sources */,
+				CD2F6D4812F0B8AF0022413B /* AVAnimatorMedia.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
