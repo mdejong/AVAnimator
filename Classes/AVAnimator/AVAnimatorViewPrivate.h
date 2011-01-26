@@ -47,7 +47,7 @@
 @property (nonatomic, retain) NSDate *audioPlayerFallbackStartTime;
 @property (nonatomic, retain) NSDate *audioPlayerFallbackNowTime;
 
-@property (nonatomic, assign) AVAudioPlayerState state;
+@property (nonatomic, assign) AVAnimatorPlayerState state;
 @property (nonatomic, assign) NSTimeInterval pauseTimeInterval;
 @property (nonatomic, assign) NSTimeInterval animatorMaxClockTime;
 @property (nonatomic, assign) NSTimeInterval animatorDecodeTimerInterval;

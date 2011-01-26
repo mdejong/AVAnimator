@@ -1453,7 +1453,7 @@
   // to be displayed, so invoke and then set currentFrame.
   // Note that state must be switched to ANIMATING to
   // avoid an error check in _animatorDisplayFrameCallback.
-  AVAudioPlayerState state = self.state;
+  AVAnimatorPlayerState state = self.state;
 	self.state = ANIMATING;
 	[self _animatorDisplayFrameCallback:nil];
   self.state = state;

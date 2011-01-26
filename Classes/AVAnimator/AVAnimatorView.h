@@ -47,10 +47,10 @@ typedef enum AVAnimatorPlayerState {
 	ANIMATING = 4,
 	STOPPED = 5,
 	PAUSED = 6
-} AVAudioPlayerState;
+} AVAnimatorPlayerState;
 
 @interface AVAnimatorView : UIImageView {
-@public
+@private
   
 	AVResourceLoader *m_resourceLoader;
 	AVFrameDecoder *m_frameDecoder;
@@ -59,8 +59,6 @@ typedef enum AVAnimatorPlayerState {
 	NSUInteger m_animatorNumFrames;
 	NSUInteger m_animatorRepeatCount;
 	UIImageOrientation m_animatorOrientation;
-  
-@private
   
 	NSURL *m_animatorAudioURL;	
 	UIImage *m_prevFrame;
@@ -82,7 +80,7 @@ typedef enum AVAnimatorPlayerState {
   NSDate *m_audioPlayerFallbackStartTime;
   NSDate *m_audioPlayerFallbackNowTime;
   
-	AVAudioPlayerState m_state;
+	AVAnimatorPlayerState m_state;
   
   // This time stores an offset from the original start time
   // at the moment the pause command is invoked.
