@@ -4,6 +4,15 @@
 //  Created by Moses DeJong on 3/18/09.
 //
 //  License terms defined in License.txt.
+//
+// The AVAnimatorView class provides a view that an animator can
+// render into. The view renders UIImage objects generated
+// by an attached media object. When the media renders an image
+// that is the exact same size as the view, the image will be
+// displayed at exact pixel resolution. Otherwise, the rendered
+// image will be scaled to fit into the view in the ways supported
+// by the UIImageView class. Media frames with whole or partial
+// transparency are supported automatically.
 
 #import <UIKit/UIKit.h>
 
@@ -42,10 +51,6 @@
 // Invoked once media is loaded
 
 - (void) mediaDidLoad;
-
-// Invoked by media protocol to test if renderer is ready
-
-- (BOOL) isReadyToRender;
 
 // Note that the superclass implicitly defines setImage
 

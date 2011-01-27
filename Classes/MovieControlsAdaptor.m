@@ -209,14 +209,14 @@
 // can be invoked multiple times for an animator that loops.
 
 - (void)animatorDidStartNotification:(NSNotification*)notification {
-	NSLog( @"animatorDidStartNotification" );
+//	NSLog( @"animatorDidStartNotification" );
 }
 
 // Invoked when an animation ends, note that this method
 // can be invoked multiple times for an animator that loops.
 
 - (void)animatorDidStopNotification:(NSNotification*)notification {
-	NSLog( @"animatorDidStopNotification" );	
+//	NSLog( @"animatorDidStopNotification" );	
 }
 
 @end

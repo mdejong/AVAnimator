@@ -18,7 +18,8 @@
 #import "AVResourceLoader.h"
 #import "AVFrameDecoder.h"
 
-#define DEBUG_OUTPUT
+// Uncomment to enable debug output, note that this kill FPS performance of decoder!
+//#define DEBUG_OUTPUT
 
 #define REPEATED_FRAME_WARN_COUNT 10
 #define REPEATED_FRAME_DONE_COUNT 20
@@ -377,10 +378,14 @@
 
 - (void) _loadResourcesCallback:(NSTimer *)timer
 {
+#ifdef DEBUG_OUTPUT
+  NSLog(@"AVAnimatorMedia: _loadResourcesCallback");
+#endif
+  
 	NSAssert(self.state == PREPPING, @"expected to be in PREPPING state");
   
   // FIXME: not sure about this loadImpl call, seems like it should happen
-  // before the LAODING phase
+  // before the LOADING phase
   [self loadImpl];
   
 	// Prepare movie and audio, if needed

@@ -16,8 +16,6 @@
 
 - (void) mediaDidLoad;
 
-- (BOOL) isReadyToRender;
-
 // setter for obj.image property
 
 - (void) setImage:(UIImage*)inImage;

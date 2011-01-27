@@ -11,6 +11,8 @@
 
 #import "AVAnimatorView.h"
 
+#import "AVAnimatorLayer.h"
+
 #import "AVAnimatorMedia.h"
 
 #import "MovieControlsViewController.h"
@@ -36,6 +38,8 @@
 @synthesize animatorView = m_animatorView;
 @synthesize movieControlsViewController = m_movieControlsViewController;
 @synthesize movieControlsAdaptor = m_movieControlsAdaptor;
+@synthesize plainView = m_plainView;
+@synthesize animatorLayer = m_animatorLayer;
 
 - (void)dealloc {
   self.window = nil;
@@ -43,6 +47,8 @@
   self.movieControlsViewController = nil;
   self.animatorView = nil;
   self.movieControlsAdaptor = nil;
+  self.plainView = nil;
+  self.animatorLayer = nil;
   [super dealloc];
 }
 
@@ -102,6 +108,8 @@
   }
   
 	self.animatorView = nil;
+  self.plainView = nil;
+  self.animatorLayer = nil;
 }
 
 - (void) loadIntoMovieControls:(AVAnimatorMedia*)media
@@ -451,7 +459,7 @@
   
   // Animate color shift for window, background shows through the ghost.
   
-  if (1) {
+  if (0) {
   
   self.window.backgroundColor = [UIColor redColor];
   [UIView beginAnimations:nil context:NULL];
@@ -663,7 +671,7 @@
     
     [media startAnimator];
     
-    self.animatorView = (AVAnimatorView*) view; // phony toplevel, does not crash because it is just removed from parent
+    self.plainView = view;
   }
   
 }
@@ -771,6 +779,113 @@
   [self loadIntoMovieControls:media];
 }
 
+// This example shows some of the more fancy things that one can do
+// using Core Animation. The AVAnimatorLayer class links a media
+// object to a CALayer which is then added to a view. The
+// CALayer can then be animated using any of the standard
+// Core Animation methods.
+
+- (void) loadCoreAnimationGhostAnimation:(float)frameDuration
+{
+  // Create a plain UIView in portrait orientation and add a CALayer
+  // in the center of this view.
+  
+  NSString *videoResourceName = @"AlphaGhost.mov";
+  
+  CGRect frame = CGRectMake(0, 0, 320, 480);
+  UIView *mainView = [[[UIView alloc] initWithFrame:frame] autorelease];
+  [self.window addSubview:mainView];
+  
+  mainView.backgroundColor = [UIColor grayColor];
+  
+  // Get the main CALayer in the UIView
+  
+  CALayer *mainLayer = mainView.layer;
+  
+  // Create a CoreAnimation sublayer that the media will render into
+  
+  CALayer *renderLayer = [[[CALayer alloc] init] autorelease];
+
+  // By default, the backgroundColor for a CALayer is nil, so
+  // no background is rendered before the image is painted.
+  renderLayer.backgroundColor = [UIColor greenColor].CGColor;
+  
+  renderLayer.borderColor = [UIColor blackColor].CGColor;
+  renderLayer.borderWidth = 1.0;
+  // Round the corners of the layer and clip to this bound
+  renderLayer.cornerRadius = 20.0;
+  renderLayer.masksToBounds = YES;
+  
+  // Aspect fit landscape image into this portrait window
+  
+  CGRect rendererFrame = CGRectMake(0, 0, frame.size.height*2/3, frame.size.width*2/3);
+  
+  renderLayer.frame = rendererFrame;
+  
+  CGPoint point = CGPointMake(frame.size.width/2.0, frame.size.height/2.0);
+  renderLayer.position = point;
+  
+  [mainLayer addSublayer:renderLayer];
+  
+  if (0) {
+    // Test image
+    UIImage *smiley = [UIImage imageNamed:@"smiley.png"];
+    NSAssert(smiley, @"smiley");
+    renderLayer.contents = (id) smiley.CGImage;
+    return;
+  }
+  
+  // Create AVAnimatorLayer and associate it with the
+  // existing CALayer that will be rendered into.
+  
+  AVAnimatorLayer *aVAnimatorLayer = [AVAnimatorLayer aVAnimatorLayer:renderLayer];
+    
+  // Create Media object
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = videoResourceName;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  if (frameDuration != -1.0) {
+    media.animatorFrameDuration = frameDuration;
+  }
+  
+  //	media.animatorRepeatCount = 5;
+	media.animatorRepeatCount = 100;
+
+  // Link media to render layer
+  
+  [aVAnimatorLayer attachMedia:media];
+  
+//  media.animatorRepeatCount = 1000;
+  media.animatorRepeatCount = 10;
+
+  // Setup callback that will be invoked when animation is done
+  
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(animatorDoneNotification:) 
+                                               name:AVAnimatorDoneNotification
+                                             object:media];  
+  
+  self.plainView = mainView;
+  
+  // A ref to the animator layer object needs to be held, not retained as
+  // part of the CALayer hierarchy.
+
+  self.animatorLayer = aVAnimatorLayer;
+    
+  [media startAnimator];
+}
+
 // Given an example index, load a specific example with
 // an indicated FPS. The fps is -1 if not set, otherwise
 // it is 10, 20, 30, or 60.
@@ -874,19 +989,21 @@
       [self loadGradientColorWheelAnimation:frameDuration];
       break;
     }
+    case 17: {
+      [self loadCoreAnimationGhostAnimation:frameDuration];
+      break;
+    }      
   }
 }
 
 // Notification indicates that all animations in a loop are now finished
 
 - (void)animatorDoneNotification:(NSNotification*)notification {
-	NSLog( @"animatorDoneNotification" );
+//	NSLog( @"animatorDoneNotification" );
   
-  // Unlink the notification
+  // Unlink all notifications
   
-  [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                  name:AVAnimatorDoneNotification
-                                                object:self.animatorView];  
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
   
 	[self stopAnimator];  
 }
@@ -905,6 +1022,10 @@
 	self.movieControlsViewController = nil;
   
 	[self.window addSubview:self.viewController.view];
+
+  [self.plainView removeFromSuperview];
+  self.plainView = nil;
+  self.animatorLayer = nil;
 }
 
 @end

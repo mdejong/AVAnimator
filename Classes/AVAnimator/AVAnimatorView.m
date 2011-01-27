@@ -9,13 +9,6 @@
 
 #import <QuartzCore/QuartzCore.h>
 
-#import <AVFoundation/AVAudioPlayer.h>
-
-#import <AudioToolbox/AudioFile.h>
-#import "AudioToolbox/AudioServices.h"
-
-#import "CGFrameBuffer.h"
-#import "AVResourceLoader.h"
 #import "AVFrameDecoder.h"
 
 #import "AVAnimatorMedia.h"
@@ -161,17 +154,6 @@
   }
   
 	return;
-}
-
-// FIXME: remove, since loading of window is unrelated to loading of resources!
-
-- (BOOL) isReadyToRender
-{
-  if (self.window == nil) {
-    return FALSE;
-  } else {
-    return TRUE;    
-  }
 }
 
 - (void) rotateToPortrait
