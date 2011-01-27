@@ -58,6 +58,12 @@ typedef struct MovData *MovDataPtr;
 
 - (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex;
 
+// A frame decoder may be asked to limit memory usage or deallocate
+// resources when it is not being actively used. When enabled, the
+// frame decoder should deallocate memory where possible.
+
+- (void) resourceUsageLimit:(BOOL)enabled;
+
 // Return the current frame buffer, this is the buffer that was most recently written to via
 // a call to advanceToFrame. Returns nil on init or after a rewind operation.
 

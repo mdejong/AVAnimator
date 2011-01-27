@@ -130,6 +130,10 @@
   return img;
 }
 
+- (void) resourceUsageLimit:(BOOL)enabled
+{
+}
+
 - (BOOL) openForReading:(NSString*)path
 {
   return TRUE;

@@ -1403,9 +1403,9 @@
   NSAssert(renderer, @"renderer can't be nil");
   self.renderer = renderer;
 
-  // Make sure framebuffers have been allocated in the frame decoder
+  // Tell decoder that it is no longer resource constrained
   
-  // Display initial keyframe when attaching to a renderer
+  [self.frameDecoder resourceUsageLimit:FALSE];
   
   // If media is ready, then display initial keyframe
   
@@ -1422,7 +1422,9 @@
   
   [self stopAnimator];
   
-  // make sure frame buffers are released in the frame decoder
+  // Tell decoder it is now resource constrained
+  
+  [self.frameDecoder resourceUsageLimit:TRUE];
 }
 
 @end

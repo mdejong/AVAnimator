@@ -38,6 +38,12 @@
 	return FALSE;
 }
 
+- (void) resourceUsageLimit:(BOOL)enabled
+{
+  [self doesNotRecognizeSelector:_cmd];
+	return;
+}
+
 // Properties
 
 - (NSUInteger) width

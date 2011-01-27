@@ -41,7 +41,10 @@
   
 	self.image = nil;
   
-	self.mediaObj = nil;
+  if (self.mediaObj) {
+    [self.mediaObj detachFromRenderer:self];
+    self.mediaObj = nil;
+  }
   
   [super dealloc];
 }

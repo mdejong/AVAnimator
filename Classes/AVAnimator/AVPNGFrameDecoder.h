@@ -51,6 +51,8 @@
 
 - (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex;
 
+- (void) resourceUsageLimit:(BOOL)enabled;
+
 // Properties
 
 // Dimensions of each frame
