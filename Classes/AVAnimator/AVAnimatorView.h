@@ -15,7 +15,7 @@
 @private
 	UIImageOrientation m_animatorOrientation;
 	CGSize m_renderSize;
-	AVAnimatorMedia *m_media;
+	AVAnimatorMedia *m_mediaObj;
 }
 
 // public properties
@@ -24,13 +24,18 @@
 // defaults to UIImageOrientationUp
 @property (nonatomic, assign) UIImageOrientation animatorOrientation;
 
-@property (nonatomic, retain) AVAnimatorMedia *media;
+@property (nonatomic, readonly) AVAnimatorMedia *media;
 
 // static ctor : create view that has the screen dimensions
 + (AVAnimatorView*) aVAnimatorView;
 
 // static ctor : create view with the given dimensions
 + (AVAnimatorView*) aVAnimatorViewWithFrame:(CGRect)viewFrame;
+
+// A media item is attached to the view to indicate that the media will
+// render to this view.
+
+- (void) attachMedia:(AVAnimatorMedia*)inMedia;
 
 // Implement AVAnimatorMediaRendererProtocol protocol
 

@@ -176,16 +176,14 @@
 
 // static ctor
 
-/*
-
 + (AVAnimatorMedia*) aVAnimatorMedia
 {
   AVAnimatorMedia *obj = [[AVAnimatorMedia alloc] init];
   [obj autorelease];
   return obj;
 }
- 
-*/
+
+// FIXME: Remove this static ctor that accepts a renderer, should use attach
 
 + (AVAnimatorMedia*) aVAnimatorMedia:(id<AVAnimatorMediaRendererProtocol>)renderer
 {
@@ -198,6 +196,8 @@
 - (id) init
 {
   if (self = [super init]) {
+    self.state = ALLOCATED;
+    self.currentFrame = -1;
   }
   return self;
 }
@@ -337,17 +337,22 @@
     self.animatorFrameDuration = duration;
   }
 
-  // Tell the renderer that this media had been loaded 
+  // Record how many frame there are in the animation
   
-  [self.renderer mediaDidLoad];
+	self.animatorNumFrames = [self.frameDecoder numFrames];
+	assert(self.animatorNumFrames >= 2);
   
-  // Get image data for initial keyframe
+  // Tell the renderer that this media had been loaded
   
-  UIImage *img = [self.frameDecoder advanceToFrame:0];
-  NSAssert(img != nil, @"frame decoder must advance to first frame");
+  NSAssert(self.currentFrame == -1, @"currentFrame");
   
-  self.renderer.image = img;
-	self.currentFrame = 0;
+  if (self.renderer) {
+    [self.renderer mediaDidLoad];
+
+    [self showFrame:0];
+    
+    NSAssert(self.currentFrame == 0, @"currentFrame");
+  }
   
 	// Create AVAudioPlayer that plays audio from the file on disk
   
@@ -367,27 +372,15 @@
   //NSLog(@"AVAnimatorViewController: _cleanupReadyToAnimate");
 }
 
-// When an animaton widget is ready to start loading any
-// resources needed to play video/audio, this method is invoked.
+// When a media item is ready to load resources needed for audio/video
+// playback, this method is invoked.
 
 - (void) _loadResourcesCallback:(NSTimer *)timer
 {
 	NSAssert(self.state == PREPPING, @"expected to be in PREPPING state");
   
-  // If the associated render view is not added to a containing
-  // window yet, then the media can't be rendered into the view.
-  
-  // FIXME: If there is a race condition between view create
-  // and resource loading, make sure the resource loading is
-  // going on while waiting for the view to be created?
-  
-  if (self.renderer != nil) {
-    BOOL isReadyToRender = [self.renderer isReadyToRender];
-    if (isReadyToRender == FALSE) {
-      return;
-    }
-  }
-  
+  // FIXME: not sure about this loadImpl call, seems like it should happen
+  // before the LAODING phase
   [self loadImpl];
   
 	// Prepare movie and audio, if needed
@@ -406,10 +399,7 @@
 	// Init audio data
 	
 	[self _createAudioPlayer];
-  
-	self.animatorNumFrames = [self.frameDecoder numFrames];
-	assert(self.animatorNumFrames >= 2);
-    
+      
 	self.state = READY;
 	self.isReadyToAnimate = TRUE;
   
@@ -673,6 +663,7 @@
     self.avAudioPlayer.currentTime = 0.0;
   }
   
+  self.currentFrame = -1;
 	self.repeatedFrameCount = 0;
   
 	self.prevFrame = nil;
@@ -1248,7 +1239,7 @@
 // as soon as possible.
 
 - (void) _animatorDisplayFrameCallback: (NSTimer *)timer {
-  if ((self->m_state != ANIMATING) && (self->m_state != PAUSED)) {
+  if (self->m_state != ANIMATING) {
     NSAssert(FALSE, @"state is not ANIMATING");
   }
   
@@ -1284,7 +1275,9 @@
   
 	UIImage *currentImage = self.renderer.image;
 	UIImage *nextImage = self->m_nextFrame;
-	if ((nextImage != nil) && (currentImage != nextImage)) {
+  NSAssert(nextImage, @"nextImage");
+  
+	if (nextImage != currentImage) {
 		self.prevFrame = currentImage;
 		self.renderer.image = nextImage;
 	}
@@ -1300,7 +1293,7 @@
 	return;
 }
 
-// Display the given animator frame, in the range [1 to N]
+// Display the given animator frame, in the range [0 to N-1]
 // where N is the largest frame number. Note that this method
 // should only be called when the animator is not running.
 
@@ -1308,6 +1301,15 @@
 	if ((frame >= self.animatorNumFrames) || (frame < 0) || frame == self.currentFrame)
 		return;
 	
+  // In the case where the frame decoder can only go forwards, but
+  // the frame is smaller than the last decoded frame, we need to
+  // rewind the frame decoder before advancing
+  
+  NSInteger lastDecodedFrame = [self.frameDecoder frameIndex];
+  if (frame < lastDecodedFrame) {
+    [self.frameDecoder rewind];
+  }  
+  
 	self.currentFrame = frame - 1;
 	BOOL decodedFrame = [self _animatorDecodeNextFrame];
 	// The first frame is always a keyframe, so assume that the
@@ -1325,6 +1327,7 @@
 	[self _animatorDisplayFrameCallback:nil];
   self.state = state;
   self.currentFrame = frame;
+  self.prevFrame = nil;
 }
 
 // This method is invoked to decode the next frame
@@ -1336,7 +1339,7 @@
 // that no update is needed for the next frame.
 
 - (BOOL) _animatorDecodeNextFrame {
-	NSUInteger nextFrameNum = self.currentFrame + 1;
+	NSInteger nextFrameNum = self.currentFrame + 1;
 	NSAssert(nextFrameNum >= 0 && nextFrameNum < self.animatorNumFrames, @"nextFrameNum is invalid");
   
 	// Deallocate UIImage object for the frame before
@@ -1346,16 +1349,17 @@
 	// provider flag on an associated CGFrameBuffer
 	// so that it can be used again.
   
-  //	int refCount;
-  
 	UIImage *prevFrameImage = self.prevFrame;
   
 	if (prevFrameImage != nil) {
+/*
 		if (prevFrameImage != self.nextFrame) {
 			NSAssert(prevFrameImage != self.renderer.image,
                @"self.prevFrame is not the same as current image");
 		}
+*/
     
+    //	int refCount;
     //		refCount = [prevFrameImage retainCount];
     //		NSLog([NSString stringWithFormat:@"refCount before %d", refCount]);
     
@@ -1371,8 +1375,9 @@
   
 	// Advance the "current frame" in the movie. In the case where
   // the next frame is exactly the same as the previous frame,
-  // nil will be returned.
-  
+  // nil will be returned. Note that nextFrame is left the same
+  // in the case where the frame is not changed.
+    
 	UIImage *img = [self.frameDecoder advanceToFrame:nextFrameNum];
   
 	if (img == nil) {
@@ -1386,6 +1391,38 @@
 - (BOOL) hasAudio
 {
   return (self.avAudioPlayer != nil);
+}
+
+// A media item can only be attached to a renderer that has been
+// added to the window system and is ready to animate. So, as
+// soon as a renderer is attached, the media item should display
+// the initial keyframe.
+
+- (void) attachToRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer
+{
+  NSAssert(renderer, @"renderer can't be nil");
+  self.renderer = renderer;
+
+  // Make sure framebuffers have been allocated in the frame decoder
+  
+  // Display initial keyframe when attaching to a renderer
+  
+  // If media is ready, then display initial keyframe
+  
+  if (self.isReadyToAnimate) {
+    [self showFrame:0];
+  }
+}
+
+
+- (void) detachFromRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer
+{
+  NSAssert(renderer, @"renderer can't be nil");
+  self.renderer = nil;
+  
+  [self stopAnimator];
+  
+  // make sure frame buffers are released in the frame decoder
 }
 
 @end

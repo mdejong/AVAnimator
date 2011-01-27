@@ -77,7 +77,7 @@ typedef enum AVAnimatorPlayerState {
 	NSTimer *m_animatorDecodeTimer;
 	NSTimer *m_animatorDisplayTimer;
 	
-	NSUInteger m_currentFrame;
+	NSInteger m_currentFrame;
 	NSUInteger m_repeatedFrameCount;
   
 	AVAudioPlayer *m_avAudioPlayer;
@@ -138,8 +138,6 @@ typedef enum AVAnimatorPlayerState {
 
 // public properties
 
-@property (nonatomic, assign) id<AVAnimatorMediaRendererProtocol> renderer;
-
 @property (nonatomic, retain) AVResourceLoader *resourceLoader;
 @property (nonatomic, retain) AVFrameDecoder *frameDecoder;
 
@@ -154,7 +152,7 @@ typedef enum AVAnimatorPlayerState {
 @property (nonatomic, readonly) BOOL hasAudio;
 
 // static ctor : create media object in autorelease pool
-+ (AVAnimatorMedia*) aVAnimatorMedia:(id<AVAnimatorMediaRendererProtocol>)renderer;
++ (AVAnimatorMedia*) aVAnimatorMedia;
 
 - (void) startAnimator;
 - (void) stopAnimator;
@@ -174,5 +172,12 @@ typedef enum AVAnimatorPlayerState {
 // should only be called when the animator is not running.
 
 - (void) showFrame: (NSInteger) frame;
+
+// These next two method should be invoked from a renderer to signal
+// when this media item is attached to and detached from a renderer.
+
+- (void) attachToRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer;
+
+- (void) detachFromRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer;
 
 @end

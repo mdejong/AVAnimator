@@ -104,7 +104,7 @@
 	self.animatorView = nil;
 }
 
-- (void) loadIntoMovieControls
+- (void) loadIntoMovieControls:(AVAnimatorMedia*)media
 {  
   // Create Movie Controls and let it manage the AVAnimatorView
   
@@ -119,6 +119,11 @@
   self.movieControlsAdaptor = [MovieControlsAdaptor movieControlsAdaptor];
   self.movieControlsAdaptor.animatorView = self.animatorView;
   self.movieControlsAdaptor.movieControlsViewController = self.movieControlsViewController;
+
+  // Media needs to be attached to the view after the view
+  // has been added to the window system.
+  
+  [self.animatorView attachMedia:media];
   
   // This object needs to listen for the AVAnimatorDoneNotification to update the GUI
   // after movie loops are finished playing.
@@ -136,9 +141,14 @@
 // Util method that loads the animatorView into the outermost window
 // and starts off the animation cycle.
 
-- (void) loadIntoWindow
+- (void) loadIntoWindow:(AVAnimatorMedia*)media
 {
   [self.window addSubview:self.animatorView];
+
+  // Media needs to be attached to the view after the view
+  // has been added to the window system.
+  
+  [self.animatorView attachMedia:media];
   
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(animatorDoneNotification:) 
@@ -176,8 +186,7 @@
 
   // Create Media object and link it to the animatorView
   
-	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
-	self.animatorView.media = media;
+	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
@@ -223,11 +232,11 @@
   // Add AVAnimatorView directly to main window, or use movie controls
 
   if (movieControls == FALSE) {
-    [self loadIntoWindow];
+    [self loadIntoWindow:media];
   } else {
     // FIXME: loading portrait into movie controls is broken
     
-    [self loadIntoMovieControls];
+    [self loadIntoMovieControls:media];
   }
 }
 
@@ -247,8 +256,7 @@
   
   // Create Media object and link it to the animatorView
   
-	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
-	self.animatorView.media = media;  
+	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
@@ -295,9 +303,9 @@
   // Add AVAnimatorView directly to main window, or use movie controls
   
   if (movieControls == FALSE) {
-    [self loadIntoWindow];
+    [self loadIntoWindow:media];
   } else {
-    [self loadIntoMovieControls];
+    [self loadIntoMovieControls:media];
   }  
 }
 
@@ -320,8 +328,7 @@
   
   // Create Media object and link it to the animatorView
   
-	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
-	self.animatorView.media = media;  
+	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
@@ -354,9 +361,9 @@
   // Add AVAnimatorView directly to main window, or use movie controls
   
   if (movieControls == FALSE) {
-    [self loadIntoWindow];
+    [self loadIntoWindow:media];
   } else {
-    [self loadIntoMovieControls];
+    [self loadIntoMovieControls:media];
   }  
   
 }
@@ -396,8 +403,7 @@
   
   // Create Media object and link it to the animatorView
   
-	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
-	self.animatorView.media = media;  
+	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -421,9 +427,9 @@
   // Add AVAnimatorView directly to main window, or use movie controls
   
   if (movieControls == FALSE) {
-    [self loadIntoWindow];
+    [self loadIntoWindow:media];
   } else {
-    [self loadIntoMovieControls];
+    [self loadIntoMovieControls:media];
   }  
 }
 
@@ -466,8 +472,7 @@
   
   // Create Media object and link it to the animatorView
   
-	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
-	self.animatorView.media = media;  
+	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -492,7 +497,7 @@
   
 	media.animatorRepeatCount = 150;
 
-  [self loadIntoMovieControls];
+  [self loadIntoMovieControls:media];
 }
 
 // This landscape animation shows an effect like the one seen
@@ -516,8 +521,7 @@
   
   // Create Media object and link it to the animatorView
   
-	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
-	self.animatorView.media = media;  
+	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -542,7 +546,7 @@
   
 	media.animatorRepeatCount = 100;
   
-  [self loadIntoMovieControls];
+  [self loadIntoMovieControls:media];
 }
 
 + (void) rotateToLandscape:(UIView*)aView
@@ -608,6 +612,8 @@
     animatorView.backgroundColor = [UIColor blueColor];
     animatorView.clearsContextBeforeDrawing = TRUE;
     [imageView addSubview:animatorView];
+    [view addSubview:imageView];
+    [self.window addSubview:view];
   } else {
     NSString *resourceName = @"JigsawPuzzle_205_99_10FPS_16BPP.mov";
     
@@ -618,8 +624,7 @@
     
     // Create Media object and link it to the animatorView
     
-    AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
-    self.animatorView.media = media;    
+    AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
     
     // Create loader that will read a movie file from app resources.
     
@@ -646,18 +651,21 @@
      
     [imageView addSubview:animatorView];
     
+    [view addSubview:imageView];
+    [self.window addSubview:view];
+    
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(animatorDoneNotification:) 
                                                  name:AVAnimatorDoneNotification
                                                object:animatorView.media];
     
-    [animatorView.media startAnimator];
+    [animatorView attachMedia:media];
+    
+    [media startAnimator];
     
     self.animatorView = (AVAnimatorView*) view; // phony toplevel, does not crash because it is just removed from parent
   }
   
-  [view addSubview:imageView];
-  [self.window addSubview:view];
 }
 
 // The sweep animation is a bit more computationally intensive, as it contains changes in each row
@@ -681,8 +689,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
-  self.animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -711,7 +718,7 @@
 //	media.animatorRepeatCount = 5;
 	media.animatorRepeatCount = 100;
   
-  [self loadIntoMovieControls];
+  [self loadIntoMovieControls:media];
 }
 
 // The Gradient Color wheel is the worst possible 32BPP animation, every pixel changes on
@@ -740,8 +747,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:self.animatorView];
-  self.animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -762,7 +768,7 @@
   //	media.animatorRepeatCount = 5;
 	media.animatorRepeatCount = 100;
   
-  [self loadIntoMovieControls];
+  [self loadIntoMovieControls:media];
 }
 
 // Given an example index, load a specific example with

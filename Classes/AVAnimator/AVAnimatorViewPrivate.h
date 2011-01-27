@@ -21,6 +21,8 @@
 
 @property (nonatomic, assign) CGSize renderSize;
 
+@property (nonatomic, retain) AVAnimatorMedia *mediaObj;
+
 // private methods
 
 - (void) rotateToPortrait;

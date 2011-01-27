@@ -42,8 +42,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Use phony res loader, will load PNG frames from resources later
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
@@ -75,6 +74,8 @@
   NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");  
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
   
   // Check that adding the animator to the window invoked loadViewImpl
   
@@ -447,8 +448,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Use phony res loader, will load PNG frames from resources later
   AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
@@ -474,6 +474,8 @@
   
   [window addSubview:animatorView];
   
+  [animatorView attachMedia:media];
+  
   // Wait until initial keyframe of data is loaded.
   
   [media prepareToAnimate];
@@ -482,6 +484,10 @@
                                       selector:@selector(isReadyToAnimate)
                                    maxWaitTime:10.0];
   NSAssert(worked, @"worked");
+
+  // Initial keyframe should be displayed
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");
   
   // Start the audio clock and then cancel the initial decode callback.
 
@@ -564,8 +570,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Use phony res loader, will load PNG frames from resources later
   AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
@@ -590,6 +595,8 @@
   media.animatorFrameDuration = 1.0;
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
   
   // Wait until initial keyframe of data is loaded.
   
@@ -702,8 +709,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Use phony res loader, will load PNG frames from resources later
   AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
@@ -728,6 +734,8 @@
   media.animatorFrameDuration = 1.0;
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
   
   // Wait until initial keyframe of data is loaded.
   
@@ -819,8 +827,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Use phony res loader, will load PNG frames from resources later
   AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
@@ -845,6 +852,8 @@
   media.animatorFrameDuration = 1.0;
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
   
   // Wait until initial keyframe of data is loaded.
   
@@ -932,8 +941,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -949,6 +957,8 @@
   media.animatorFrameDuration = 1.0;
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
   
   [media prepareToAnimate];
   
@@ -980,6 +990,241 @@
   
   return;
 }
+
+// This test checks the implementation of the attachMedia method
+// in the AVAnimatorView class. Only a single media item can be
+// attached to a rendering view at a time, and only an attached
+// media element has resources like allocated framebuffers.
+
++ (void) testAttachDetachMedia
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 200, 200);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");
+    
+  [animatorView attachMedia:nil];
+  
+  NSAssert(animatorView.media == nil, @"media");
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  [window addSubview:animatorView];
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  // The media was not attached on load, so currentFrame is still -1
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");  
+  
+  // The media is now ready, attaching will display the first keyframe.
+  
+  [animatorView attachMedia:media];
+  
+  NSAssert(animatorView.media == media, @"media");
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");
+  
+  [animatorView attachMedia:nil];
+  
+  NSAssert(animatorView.media == nil, @"media");
+
+  // Detech from renderer implicity invoked stopAnimator
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");
+  
+  return;
+}
+
+// This test uses two different media objects and attaches
+// them to the animator view. When attaching a media element,
+// the initial keyframe is displayed. The second attach
+// should replace the keyframe set in the first attach.
+
++ (void) testAttachTwoDifferentMedia
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceOneName = @"2x2_black_blue_16BPP.mov";
+  NSString *resourceTwoName = @"2x2_black_blue_24BPP.mov";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 200, 200);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media1 = [AVAnimatorMedia aVAnimatorMedia];
+  AVAnimatorMedia *media2 = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader1 = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader1.movieFilename = resourceOneName;
+	media1.resourceLoader = resLoader1;
+
+	AVAppResourceLoader *resLoader2 = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader2.movieFilename = resourceTwoName;
+	media2.resourceLoader = resLoader2;  
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder1 = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	media1.frameDecoder = frameDecoder1;
+
+  AVQTAnimationFrameDecoder *frameDecoder2 = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	media2.frameDecoder = frameDecoder2;
+  
+  media1.animatorFrameDuration = 1.0;
+  media2.animatorFrameDuration = 1.0;
+  
+  [window addSubview:animatorView];
+  
+  [media1 prepareToAnimate];
+  [media2 prepareToAnimate];
+  
+  BOOL worked1 = [RegressionTests waitUntilTrue:media1
+                                       selector:@selector(isReadyToAnimate)
+                                    maxWaitTime:10.0];
+  NSAssert(worked1, @"worked");
+  
+  BOOL worked2 = [RegressionTests waitUntilTrue:media2
+                                       selector:@selector(isReadyToAnimate)
+                                    maxWaitTime:10.0];
+  NSAssert(worked2, @"worked");  
+  
+  // The media was not attached on load, so currentFrame is still -1
+  
+  NSAssert(media1.currentFrame == -1, @"currentFrame");
+  NSAssert(media2.currentFrame == -1, @"currentFrame");  
+  
+  // The media is now ready, attaching will display the first keyframe.
+  
+  UIImage *beforeImage;
+  UIImage *afterImage;
+  
+  beforeImage = animatorView.image;
+  
+  [animatorView attachMedia:media1];
+  
+  NSAssert(animatorView.media == media1, @"media");
+
+  afterImage = animatorView.image;
+  
+  NSAssert(beforeImage != afterImage, @"image");
+  
+  NSAssert(media1.currentFrame == 0, @"currentFrame");
+  
+  beforeImage = animatorView.image;
+  
+  [animatorView attachMedia:media2];
+  
+  NSAssert(animatorView.media == media2, @"media");
+  
+  afterImage = animatorView.image;
+  
+  NSAssert(media1.currentFrame == -1, @"currentFrame");
+  NSAssert(media2.currentFrame == 0, @"currentFrame");
+  
+  NSAssert(beforeImage != afterImage, @"image");
+  
+  // Invoking showFrame again for frame 0 is a no-op
+  
+  beforeImage = animatorView.image;
+  
+  [media2 showFrame:0];
+  
+  afterImage = animatorView.image;
+  
+  NSAssert(beforeImage == afterImage, @"image");
+  
+  NSAssert(media2.currentFrame == 0, @"currentFrame");
+  
+  // Invoking showFrame for frame 1 works as expected
+
+  beforeImage = animatorView.image;
+  
+  [media2 showFrame:1];
+  
+  afterImage = animatorView.image;
+  
+  NSAssert(beforeImage != afterImage, @"image");  
+  
+  NSAssert(media2.currentFrame == 1, @"currentFrame");
+  
+  // The prevFrame field should be set to nil after
+  // calling showFrame. There is no reason to hold
+  // onto the earlier UIImage like in the normal
+  // decode cycle.
+  
+  NSAssert(media2.prevFrame == nil, @"prevFrame");  
+  
+  // There are only 2 frames, so doign a show of frame 3
+  // does nothing.
+  
+  beforeImage = animatorView.image;
+
+  [media2 showFrame:2];
+
+  afterImage = animatorView.image;
+  
+  NSAssert(beforeImage == afterImage, @"image");    
+  
+  NSAssert(media2.currentFrame == 1, @"currentFrame");
+    
+  // Attempting to show frame zero now should rewind and
+  // then show frame zero.
+  
+  beforeImage = animatorView.image;
+  
+  [media2 showFrame:0];
+  
+  afterImage = animatorView.image;
+  
+  NSAssert(beforeImage != afterImage, @"image");    
+  
+  NSAssert(media2.currentFrame == 0, @"currentFrame");  
+  
+  return;
+}
+
 
 // Get a pixel value from an image
 
@@ -1052,8 +1297,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -1072,6 +1316,8 @@
   NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
   
   // Check that adding the animator to the window invoked loadViewImpl
   
@@ -1143,8 +1389,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -1163,6 +1408,8 @@
   NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
     
   // Check that adding the animator to the window invoked loadViewImpl
   
@@ -1234,8 +1481,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -1254,6 +1500,8 @@
   NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
   
   // Check that adding the animator to the window invoked loadViewImpl
   
@@ -1325,8 +1573,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -1345,6 +1592,8 @@
   NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
   
   // Check that adding the animator to the window invoked loadViewImpl
   
@@ -1394,7 +1643,6 @@
   
   NSAssert(frameAfter != nil, @"image");
   NSAssert(frameBefore != frameAfter, @"image");
-  NSAssert(media.prevFrame == frameBefore, @"prev frame not set properly");
 
   [self getPixels16BPP:animatorView.image.CGImage
                 offset:0
@@ -1427,8 +1675,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -1447,6 +1694,8 @@
   NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
   
   // Check that adding the animator to the window invoked loadViewImpl
   
@@ -1519,8 +1768,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -1539,6 +1787,8 @@
   NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
   
   // Check that adding the animator to the window invoked loadViewImpl
   
@@ -1615,8 +1865,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -1635,6 +1884,8 @@
   NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
   
   // Check that adding the animator to the window invoked loadViewImpl
   
@@ -1686,8 +1937,6 @@
   
   NSAssert(imageBefore == imageAfter, @"advancing to 2nd frame changed the image");
   
-  NSAssert(media.prevFrame == nil, @"prev frame should be nil");
-  
   [self getPixels16BPP:animatorView.image.CGImage
                 offset:0
                nPixels:4
@@ -1707,8 +1956,6 @@
   imageAfter = animatorView.image;
   
   NSAssert(imageBefore != imageAfter, @"advancing to 3rd frame changed the image");
-  
-  NSAssert(media.prevFrame == imageBefore, @"prev frame not set");
   
   [self getPixels16BPP:animatorView.image.CGImage
                 offset:0
@@ -1747,8 +1994,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
   
@@ -1770,6 +2016,8 @@
   NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
   
   // Check that adding the animator to the window invoked loadViewImpl
   
@@ -1839,8 +2087,7 @@
   
   // Create Media object and link it to the animatorView
   
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia:animatorView];
-  animatorView.media = media;  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Use phony res loader, will load PNG frames from resources later
   AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
@@ -1866,6 +2113,8 @@
   media.animatorFrameDuration = 1.0;
   
   [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
   
   // Wait until initial keyframe of data is loaded.
   

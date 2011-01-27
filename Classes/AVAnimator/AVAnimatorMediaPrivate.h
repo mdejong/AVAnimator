@@ -19,6 +19,8 @@
 
 @interface AVAnimatorMedia ()
 
+@property (nonatomic, assign) id<AVAnimatorMediaRendererProtocol> renderer;
+
 @property (nonatomic, retain) NSURL *animatorAudioURL;
 
 @property (nonatomic, retain) UIImage *prevFrame;
@@ -33,8 +35,12 @@
 // of a decode time window. When decoding, the frame just
 // before the one to be decoded next will be calculated
 // from the time and saved as currentFrame. Basically this
-// is the index of the frame being displayed "now".
-@property (nonatomic, assign) NSUInteger currentFrame;
+// is the index of the frame being displayed "now". The
+// tricky part is that on init or after a stop, the
+// current frame is -1 to indicate that no specific
+// frame is being displayed.
+
+@property (nonatomic, assign) NSInteger currentFrame;
 
 @property (nonatomic, assign) NSUInteger repeatedFrameCount;
 

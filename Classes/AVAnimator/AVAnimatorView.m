@@ -31,7 +31,7 @@
 
 @synthesize animatorOrientation = m_animatorOrientation;
 @synthesize renderSize = m_renderSize;
-@synthesize media = m_media;
+@synthesize mediaObj = m_mediaObj;
 
 - (void) dealloc {
 	// Explicitly release image inside the imageView, the
@@ -41,7 +41,7 @@
   
 	self.image = nil;
   
-	self.media = nil;
+	self.mediaObj = nil;
   
   [super dealloc];
 }
@@ -157,8 +157,10 @@
     self.opaque = TRUE;
   }
   
-	return;  
+	return;
 }
+
+// FIXME: remove, since loading of window is unrelated to loading of resources!
 
 - (BOOL) isReadyToRender
 {
@@ -224,6 +226,32 @@
   if (newWindow != nil) {
     [self _loadViewImpl];
   }
+}
+
+- (void) attachMedia:(AVAnimatorMedia*)inMedia
+{
+  if (inMedia == nil) {
+    // Detach case
+    
+    [self.mediaObj detachFromRenderer:self];
+    self.mediaObj = nil;
+    return;
+  }
+  
+  // Attach case
+  
+  NSAssert(self.window, @"AVAnimatorView must have been added to a window before media can be attached");
+
+  [self.mediaObj detachFromRenderer:self];
+  self.mediaObj = inMedia;
+  [self.mediaObj attachToRenderer:self];
+}
+
+// Implement read-only property for use outside this class
+
+- (AVAnimatorMedia*) media
+{
+  return self->m_mediaObj;
 }
 
 @end
