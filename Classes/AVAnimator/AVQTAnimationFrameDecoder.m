@@ -159,6 +159,12 @@ int num_words(uint32_t numBytes)
 {
 	CGFrameBuffer *cgFrameBuffer = nil;
 	for (CGFrameBuffer *aBuffer in self.cgFrameBuffers) {
+    if (aBuffer == self.currentFrameBuffer) {
+      // When a framebuffer is the "current" one, it contains
+      // the decoded output from a previous frame. Need to
+      // ignore it and select the next available one.
+      continue;
+    }    
 		if (!aBuffer.isLockedByDataProvider) {
 			cgFrameBuffer = aBuffer;
 			break;
@@ -285,7 +291,7 @@ int num_words(uint32_t numBytes)
   // Double check that the current frame is not the exact same object as the one we pass as
   // the next frame buffer. This should not happen, and we can't copy the buffer into itself.
   
-  NSAssert(nextFrameBuffer != self->m_currentFrameBuffer, @"current and next frame buffers can't be the same object");  
+  NSAssert(nextFrameBuffer != self.currentFrameBuffer, @"current and next frame buffers can't be the same object");  
 
   // Advance to same frame is a no-op
 
