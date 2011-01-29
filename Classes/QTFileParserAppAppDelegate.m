@@ -112,11 +112,16 @@
   self.animatorLayer = nil;
 }
 
-- (void) loadIntoMovieControls:(AVAnimatorMedia*)media
-{  
+- (void) loadIntoMovieControls:(AVAnimatorMedia*)media inPortraitMode:(BOOL)inPortraitMode
+{
   // Create Movie Controls and let it manage the AVAnimatorView
   
 	self.movieControlsViewController = [MovieControlsViewController movieControlsViewController:self.animatorView];
+  
+  if (inPortraitMode) {
+    // special portrait mode flag must be set before setting mainWindow
+    self.movieControlsViewController.portraitMode = TRUE;
+  }
   
   // A MovieControlsViewController can only be placed inside a toplevel window!
   // Unlike a normal controller, you can't invoke [window addSubview:movieControlsViewController.view]
@@ -144,6 +149,11 @@
   [self.movieControlsAdaptor startAnimator];
   
   return;  
+}
+
+- (void) loadIntoMovieControls:(AVAnimatorMedia*)media
+{
+  [self loadIntoMovieControls:media inPortraitMode:FALSE];
 }
 
 // Util method that loads the animatorView into the outermost window
@@ -242,9 +252,7 @@
   if (movieControls == FALSE) {
     [self loadIntoWindow:media];
   } else {
-    // FIXME: loading portrait into movie controls is broken
-    
-    [self loadIntoMovieControls:media];
+    [self loadIntoMovieControls:media inPortraitMode:TRUE];
   }
 }
 

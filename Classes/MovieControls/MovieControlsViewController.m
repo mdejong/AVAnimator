@@ -33,6 +33,7 @@
 @synthesize fastForwardImage = m_fastForwardImage;
 @synthesize hideControlsTimer, hideControlsFromPlayTimer;
 @synthesize showVolumeControls;
+@synthesize portraitMode;
 
 // static ctor
 + (MovieControlsViewController*) movieControlsViewController:(UIView*)overView
@@ -104,26 +105,40 @@
   [super dealloc];
 }
 
+- (CGSize) _containerSize
+{
+  CGSize containerSize;
+  
+  if (portraitMode) {
+    containerSize.width = 320.0;
+    containerSize.height = 480.0;
+  } else {
+    containerSize.width = 480.0;
+    containerSize.height = 320.0;
+  }
+  
+  return containerSize;
+}
+
 - (void) _rotateToLandscape:(UIView*)aView
 {
 	// Change the center of the nav view to be the center of the
 	// window in portrait mode.
   
 	UIView *viewToRotate = aView;
+
+  CGSize containerSize = [self _containerSize];
   
-  float width = 480.0;
-  float height = 320.0;
-  
-	float hw = width / 2.0;
-	float hh = height / 2.0;
+	float hw = containerSize.width / 2.0;
+	float hh = containerSize.height / 2.0;
 	
-	float container_hw = height / 2.0;
-	float container_hh = width / 2.0;
+	float container_hw = containerSize.height / 2.0;
+	float container_hh = containerSize.width / 2.0;
 	
 	float xoff = hw - container_hw;
 	float yoff = hh - container_hh;	
 
-	CGRect frame = CGRectMake(-xoff, -yoff, width, height);
+	CGRect frame = CGRectMake(-xoff, -yoff, containerSize.width, containerSize.height);
 	viewToRotate.frame = frame;
   
 	float angle = M_PI / 2;  //rotate CCW 90°, or π/2 radians
@@ -150,9 +165,10 @@
 - (void) _loadNavigationBar
 {
   // FIXME: add property for self.navigationBar ?
-  // FIXME: detect width or "renderWidth"
   
-  CGRect frame = CGRectMake(0.0f, 0.0f, 480.0f, 40.0f);
+  CGSize containerSize = [self _containerSize];
+  
+  CGRect frame = CGRectMake(0.0f, 0.0f, containerSize.width, 40.0f);
   UINavigationBar *navigationBar = [[UINavigationBar alloc] initWithFrame:frame];
   [navigationBar autorelease];
 
@@ -225,7 +241,9 @@
   self->portraitFrame = self.view.frame;
   self->portraitTransform = self.view.layer.transform;
 
-  [self _rotateToLandscape:selfView];
+  if (!portraitMode) {
+    [self _rotateToLandscape:selfView];
+  }
   
   // Hide controls by default
   
@@ -466,10 +484,12 @@
 
 	int image_height = controlsBackgroundImage.size.height;
 	int spacer = 19;
+  
+  CGSize containerSize = [self _containerSize];
 
-	NSAssert(controlsBackgroundImage.size.width <= 320, @"invalid image width");
+	NSAssert(controlsBackgroundImage.size.width <= containerSize.height, @"invalid image width");
 
-	CGRect frame = CGRectMake(0, 0, 320, image_height + spacer);
+	CGRect frame = CGRectMake(0, 0, containerSize.height, image_height + spacer);
 
 	UIView *controlsSubviewObj = [[UIView alloc] initWithFrame:frame];
   [controlsSubviewObj autorelease];
@@ -512,26 +532,31 @@
 
 - (void)_layoutControlsView
 {
-	int container_width = 480;
-	int container_height = 320;
+  CGSize containerSize = [self _containerSize];
 
 	CGRect controlsFrame = self.controlsSubview.frame;
 
 	// X position (middle of frame)
 
-	int controls_width = CGRectGetWidth(controlsFrame);
+	float controls_width = CGRectGetWidth(controlsFrame);
 
-	int half_container_width = container_width / 2;
-	int half_controls_width = controls_width / 2;
+	float half_container_width = containerSize.width / 2;
+	float half_controls_width = controls_width / 2;
 
 	controlsFrame.origin.x = half_container_width - half_controls_width;
 
 	// Y position
 
-	int controls_height = CGRectGetHeight(controlsFrame);
+	float controls_height = CGRectGetHeight(controlsFrame);
 
-	int y = container_height - controls_height;
+	float y = containerSize.height - controls_height;
 
+  // Move control up just a bit in portrait mode
+  
+  if (portraitMode) {
+    y -= containerSize.height * 0.05;
+  }
+  
 	controlsFrame.origin.y = y;
 
 	self.controlsSubview.frame = controlsFrame;
@@ -552,18 +577,27 @@
 // a main window.
 
 - (void)loadViewImpl {
-  // FIXME: make this work for views other than the full window at 480x320 ?
 	CGRect frame = [UIScreen mainScreen].applicationFrame;
 
-	// MovieControls can only be displayed in landscape mode
-
-	if (frame.size.width != 320 || frame.size.height != 480) {
-		NSAssert(FALSE, @"movie controls can only be displayed at full screen resolution of 320x480");
-	}
+	// MovieControls defaults to full screen landscape mode. If the special portraitMode
+  // flag is set before the window is set, then the controls are show in portrait mode.
+  // This logic checks that the main view is the entire size of the screen.
+  
+  CGSize containerSize = [self _containerSize];
+  
+  if (portraitMode) {
+    if (frame.size.width != containerSize.width || frame.size.height != containerSize.height) {
+      NSAssert(FALSE, @"movie controls can only be displayed at full screen resolution");
+    }    
+  } else {
+    if (frame.size.width != containerSize.height || frame.size.height != containerSize.width) {
+      NSAssert(FALSE, @"movie controls can only be displayed at full screen resolution");
+    }    
+  }
 
 	// Create controls overlay with landscape dimensions
 
-	frame = CGRectMake(0, 0, 480, 320);
+	frame = CGRectMake(0, 0, containerSize.width, containerSize.height);
 
   // overlaySubview completely covers self.view and contains
   // all the movie control widgets.

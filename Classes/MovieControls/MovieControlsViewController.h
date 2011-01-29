@@ -65,6 +65,7 @@
 	BOOL isPaused;
 	BOOL touchBeganOutsideControls;
 	BOOL showVolumeControls;
+  BOOL portraitMode;
 }
 
 @property (nonatomic, assign) UIWindow *mainWindow;
@@ -91,6 +92,7 @@
 @property (nonatomic, retain) NSTimer *hideControlsFromPlayTimer;
 
 @property (nonatomic, assign) BOOL showVolumeControls;
+@property (nonatomic, assign) BOOL portraitMode;
 
 // static ctor : pass view that controls will appear over
 + (MovieControlsViewController*) movieControlsViewController:(UIView*)overView;
