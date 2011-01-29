@@ -19,6 +19,7 @@
   NSArray *m_urls;
   NSArray *m_dataObjs;
   NSArray *m_cachedImageObjs;
+  BOOL m_resourceUsageLimit;
 }
 
 @property (nonatomic, copy) NSArray *cgFrameBuffers;
@@ -52,6 +53,8 @@
 - (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex;
 
 - (void) resourceUsageLimit:(BOOL)enabled;
+
+- (BOOL) isResourceUsageLimit;
 
 // Properties
 

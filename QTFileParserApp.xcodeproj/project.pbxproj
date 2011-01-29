@@ -123,6 +123,7 @@
 		CD61994A12CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD61994912CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m */; };
 		CD6EF5A812F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; };
 		CD6EF5A912F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; };
+		CD7098B312F4A6BA00582B9B /* AVAnimatorLayerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD7098B212F4A6BA00582B9B /* AVAnimatorLayerTests.m */; };
 		CD7A02F012D261A900366AC6 /* AVAnimatorView.m in Sources */ = {isa = PBXBuildFile; fileRef = CD7A02EF12D261A900366AC6 /* AVAnimatorView.m */; };
 		CD7D2BF312D510CB0096EDF3 /* CountingLandscape01.png in Resources */ = {isa = PBXBuildFile; fileRef = CD7D2BEE12D510CB0096EDF3 /* CountingLandscape01.png */; };
 		CD7D2BF412D510CB0096EDF3 /* CountingLandscape02.png in Resources */ = {isa = PBXBuildFile; fileRef = CD7D2BEF12D510CB0096EDF3 /* CountingLandscape02.png */; };
@@ -248,6 +249,7 @@
 		CD61994912CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVQTAnimationFrameDecoder.m; sourceTree = "<group>"; };
 		CD6EF5A612F0F7920045659F /* movdata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = movdata.c; sourceTree = "<group>"; };
 		CD6EF5A712F0F7920045659F /* movdata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = movdata.h; sourceTree = "<group>"; };
+		CD7098B212F4A6BA00582B9B /* AVAnimatorLayerTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorLayerTests.m; sourceTree = "<group>"; };
 		CD7A02EE12D261A900366AC6 /* AVAnimatorView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorView.h; sourceTree = "<group>"; };
 		CD7A02EF12D261A900366AC6 /* AVAnimatorView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorView.m; sourceTree = "<group>"; };
 		CD7D2BEE12D510CB0096EDF3 /* CountingLandscape01.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = CountingLandscape01.png; sourceTree = "<group>"; };
@@ -465,6 +467,7 @@
 				CD3F4ECC12D8F6B00067FDDF /* RegressionTests.m */,
 				CD3F4ECD12D8F6B00067FDDF /* ViewLoadTests.m */,
 				CD3F4F1212D8FA0A0067FDDF /* AVAnimatorViewTests.m */,
+				CD7098B212F4A6BA00582B9B /* AVAnimatorLayerTests.m */,
 				CD288D3E12D93865005F0EEA /* 2x2_black_blue_16BPP.mov */,
 				CD288D3F12D93865005F0EEA /* 2x2_black_blue_24BPP.mov */,
 				CD288D4012D93865005F0EEA /* 2x2_black_blue_32BPP.mov */,
@@ -832,6 +835,7 @@
 				CD2F6D4812F0B8AF0022413B /* AVAnimatorMedia.m in Sources */,
 				CD6EF5A912F0F7920045659F /* movdata.c in Sources */,
 				CDC38D5D12F1F06C00D55CE8 /* AVAnimatorLayer.m in Sources */,
+				CD7098B312F4A6BA00582B9B /* AVAnimatorLayerTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -82,7 +82,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   // test out both modes!
 
 	char* buffer;
-  size_t allocNumBytes = inNumBytes;
+  size_t allocNumBytes;
   
 #if defined(USE_MACH_VM_ALLOCATE)
   int pagesize = getpagesize();
@@ -117,6 +117,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
     bzero(buffer, allocNumBytes);
   }  
 # else
+  allocNumBytes = inNumBytes;
   buffer = (char*) malloc(allocNumBytes);
   if (buffer) {
     bzero(buffer, allocNumBytes);
@@ -162,13 +163,13 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 //		return FALSE;
 //	}
 
-	BOOL isRotated;
+//	BOOL isRotated;
 
 	if ((self.width == w) && (self.height == h)) {
-		isRotated = FALSE;
+//		isRotated = FALSE;
 	} else if ((self.width == h) || (self.height != w)) {
 		// view must have created a rotation transformation
-		isRotated = TRUE;
+//		isRotated = TRUE;
 	} else {
 		return FALSE;
 	}
@@ -180,7 +181,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   
   if (self.bitsPerPixel == 16) {
     bitsPerComponent = 5;
-    numComponents = 3;
+//    numComponents = 3;
     bitsPerPixel = 16;
     bytesPerRow = self.width * (bitsPerPixel / 8);    
   } else if (self.bitsPerPixel == 24 || self.bitsPerPixel == 32) {
@@ -246,7 +247,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   
   if (self.bitsPerPixel == 16) {
     bitsPerComponent = 5;
-    numComponents = 3;
+//    numComponents = 3;
     bitsPerPixel = 16;
     bytesPerRow = self.width * (bitsPerPixel / 8);    
   } else if (self.bitsPerPixel == 24 || self.bitsPerPixel == 32) {
@@ -304,7 +305,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   
   if (self.bitsPerPixel == 16) {
     bitsPerComponent = 5;
-    numComponents = 3;
+//    numComponents = 3;
     bitsPerPixel = 16;
     bytesPerRow = self.width * (bitsPerPixel / 8);    
   } else if (self.bitsPerPixel == 24 || self.bitsPerPixel == 32) {

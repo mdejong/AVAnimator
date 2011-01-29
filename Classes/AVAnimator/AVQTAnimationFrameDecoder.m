@@ -41,7 +41,7 @@ int num_words(uint32_t numBytes)
 // AVQTAnimationFrameDecoder class
 
 @implementation AVQTAnimationFrameDecoder
-
+@synthesize filePath = m_filePath;
 @synthesize mappedData = m_mappedData;
 @synthesize currentFrameBuffer = m_currentFrameBuffer;
 @synthesize cgFrameBuffers = m_cgFrameBuffers;
@@ -53,23 +53,30 @@ int num_words(uint32_t numBytes)
 
 - (id) init
 {
-	self = [super init];
-	if (self == nil)
-		return nil;
-  
-	self->frameIndex = -1;
-  
+	if ((self = [super init]) != nil) {
+    self->frameIndex = -1;
+    self->m_resourceUsageLimit = TRUE;
+  }
 	return self;
 }
 
-- (void) _allocateInputBuffer:(NSUInteger)numWords
+- (void) _allocateInputBuffer
 {
+  assert(self->movData != NULL);
+  int numWords = num_words(movData->maxSampleSize);  
+  
   assert(self->inputBuffer == NULL);
 	void *buf = malloc(numWords * sizeof(int));
 	assert(buf);
   
 	self->inputBuffer = buf;
 	self->numWordsInputBuffer = numWords;
+  
+# ifdef LOG_MISSED_BUFFER_USAGE
+	NSLog(@"allocated input buffer of size %d bytes", maxNumWords*sizeof(int));
+# endif // LOG_MISSED_BUFFER_USAGE
+  
+  self->m_resourceUsageLimit = FALSE;
   
 	return;
 }
@@ -92,6 +99,7 @@ int num_words(uint32_t numBytes)
     free(movData);
   }
   [self _freeInputBuffer];
+  self.filePath = nil;
   self.mappedData = nil;
   self.currentFrameBuffer = nil;
   
@@ -153,6 +161,8 @@ int num_words(uint32_t numBytes)
   } else {
     NSAssert(FALSE, @"invalid bitsPerPixel");
   }
+  
+  self->m_resourceUsageLimit = FALSE;
 }
 
 - (void) _freeFrameBuffers
@@ -183,7 +193,7 @@ int num_words(uint32_t numBytes)
   return cgFrameBuffer;
 }
 
-- (BOOL) _readHeader:(uint32_t)filesize path:(NSString*)path
+- (BOOL) _readHeader:(uint32_t)filesize
 {
 	// opening the file reads the header data
   
@@ -212,45 +222,35 @@ int num_words(uint32_t numBytes)
   assert(self->movData->bitDepth == 16 || self->movData->bitDepth == 24 || self->movData->bitDepth == 32);
   
 #ifdef USE_MMAP
+  // Once the header has been read, there is no need to keep the FILE* open
   [self close];
-  self->m_isOpen = TRUE;
-  self.mappedData = [NSData dataWithContentsOfMappedFile:path];
-  NSAssert(self.mappedData, @"could not map movie file");
 #else
-	// Figure out good size for input buffer.
-  
-  int maxNumWords = num_words(movData->maxSampleSize);
-  
-	[self _allocateInputBuffer:maxNumWords];
-  
-# ifdef LOG_MISSED_BUFFER_USAGE
-	NSLog(@"allocated input buffer of size %d bytes", maxNumWords*sizeof(int));
-# endif // LOG_MISSED_BUFFER_USAGE	  
-  
+  // No-op
 #endif // USE_MMAP
   
 	return TRUE;
 }
 
-- (BOOL) openForReading:(NSString*)flatMoviePath
+- (BOOL) openForReading:(NSString*)moviePath
 {
 	if (self->m_isOpen)
 		return FALSE;
   
-	char *flatFilePath = (char*) [flatMoviePath UTF8String];
-	self->movFile = fopen(flatFilePath, "rb");
+  self.filePath = moviePath;
+	char *movieFilePathCstr = (char*) [moviePath UTF8String];
+	self->movFile = fopen(movieFilePathCstr, "rb");
   
 	if (movFile == NULL) {
 		return FALSE;
 	}
   
   uint32_t fsize;
-  int status = filesize(flatFilePath, &fsize);
+  int status = filesize(movieFilePathCstr, &fsize);
 	if (status != 0) {
 		return FALSE;
 	}
   
-	if ([self _readHeader:fsize path:flatMoviePath] == FALSE) {
+	if ([self _readHeader:fsize] == FALSE) {
 		[self close];
 		return FALSE;
 	}
@@ -295,8 +295,7 @@ int num_words(uint32_t numBytes)
   // No-op
 #else
   if (self->inputBuffer == NULL) {
-    int maxNumWords = num_words(movData->maxSampleSize);    
-    [self _allocateInputBuffer:maxNumWords];
+    [self _allocateInputBuffer];
   }
 #endif
 
@@ -335,6 +334,11 @@ int num_words(uint32_t numBytes)
   MovSample **frames = movData->frames;
   
 #ifdef USE_MMAP
+  if (self.mappedData == nil) {
+    self.mappedData = [NSData dataWithContentsOfMappedFile:self.filePath];
+    NSAssert(self.mappedData, @"could not map movie file");
+    self->m_resourceUsageLimit = FALSE;
+  }
   char *mappedPtr = (char*) [self.mappedData bytes];
   NSAssert(mappedPtr, @"mappedPtr");
 #endif // USE_MMAP
@@ -421,19 +425,29 @@ int num_words(uint32_t numBytes)
 
 - (void) resourceUsageLimit:(BOOL)enabled
 {
+  self->m_resourceUsageLimit = enabled;
+  
   if (enabled) {
     [self _freeFrameBuffers];
   } else {
   }
   
 #ifdef USE_MMAP
-  // No-op
+  if (enabled) {
+    self.mappedData = nil;
+  }
 #else
   if (enabled) {    
     [self _freeInputBuffer];
   } else {
+    // No-op
   }  
 #endif
+}
+
+- (BOOL) isResourceUsageLimit
+{
+  return self->m_resourceUsageLimit;
 }
 
 // Return the current frame buffer, this is the buffer that was most recently written to via

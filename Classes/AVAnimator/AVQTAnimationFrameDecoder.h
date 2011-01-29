@@ -16,6 +16,7 @@
 typedef struct MovData *MovDataPtr;
 
 @interface AVQTAnimationFrameDecoder : AVFrameDecoder {
+  NSString *m_filePath;
   FILE *movFile;
 	MovDataPtr movData;
   
@@ -33,9 +34,12 @@ typedef struct MovData *MovDataPtr;
   CGFrameBuffer *m_currentFrameBuffer;  
 	NSArray *m_cgFrameBuffers;
   
-	int frameIndex;  
+	int frameIndex;
+  
+  BOOL m_resourceUsageLimit;
 }
 
+@property (nonatomic, copy) NSString *filePath;
 @property (nonatomic, copy) NSData *mappedData;
 @property (nonatomic, retain) CGFrameBuffer *currentFrameBuffer;
 @property (nonatomic, copy) NSArray *cgFrameBuffers;

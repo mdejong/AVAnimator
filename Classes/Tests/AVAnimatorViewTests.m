@@ -528,7 +528,7 @@
   
   for ( ; count < REPEATED_FRAME_DONE_COUNT; count++) {
     if (count == (REPEATED_FRAME_DONE_COUNT - 1)) {
-      phony = 1;
+      phony++;
     }
     
     [media _animatorDecodeInitialFrameCallback:nil];
@@ -668,7 +668,7 @@
   
   for ( ; count < REPEATED_FRAME_DONE_COUNT; count++) {
     if (count == (REPEATED_FRAME_DONE_COUNT - 1)) {
-      phony = 1;
+      phony++;
     }
     
     [media _animatorDecodeFrameCallback:nil];
@@ -1135,7 +1135,12 @@
   NSAssert(media1.currentFrame == -1, @"currentFrame");
   NSAssert(media2.currentFrame == -1, @"currentFrame");  
   
-  // The media is now ready, attaching will display the first keyframe.
+  // Both frame decoders are in the init state
+  
+  NSAssert([media1.frameDecoder isResourceUsageLimit] == TRUE, @"isResourceUsageLimit");
+  NSAssert([media2.frameDecoder isResourceUsageLimit] == TRUE, @"isResourceUsageLimit");
+  
+  // The media is now ready, attaching media1 will display the first keyframe in the view.
   
   UIImage *beforeImage;
   UIImage *afterImage;
@@ -1145,6 +1150,9 @@
   [animatorView attachMedia:media1];
   
   NSAssert(animatorView.media == media1, @"media");
+  
+  NSAssert([media1.frameDecoder isResourceUsageLimit] == FALSE, @"isResourceUsageLimit");
+  NSAssert([media2.frameDecoder isResourceUsageLimit] == TRUE, @"isResourceUsageLimit");  
 
   afterImage = animatorView.image;
   
@@ -1152,11 +1160,16 @@
   
   NSAssert(media1.currentFrame == 0, @"currentFrame");
   
+  // Attach the second media object. Resources associated
+  // with the first media element are deallocated and
+  // those needed for the second would be allocated on demand.
+  
   beforeImage = animatorView.image;
   
   [animatorView attachMedia:media2];
-  
-  NSAssert(animatorView.media == media2, @"media");
+
+  NSAssert([media1.frameDecoder isResourceUsageLimit] == TRUE, @"isResourceUsageLimit");
+  NSAssert([media2.frameDecoder isResourceUsageLimit] == FALSE, @"isResourceUsageLimit");
   
   afterImage = animatorView.image;
   
@@ -1220,7 +1233,31 @@
   
   NSAssert(beforeImage != afterImage, @"image");    
   
-  NSAssert(media2.currentFrame == 0, @"currentFrame");  
+  NSAssert(media2.currentFrame == 0, @"currentFrame");
+  
+  // Detach media and check that both media objects have the resource limit flag set
+  
+  [animatorView attachMedia:nil];
+  
+  NSAssert([media1.frameDecoder isResourceUsageLimit] == TRUE, @"isResourceUsageLimit");
+  NSAssert([media2.frameDecoder isResourceUsageLimit] == TRUE, @"isResourceUsageLimit");  
+  
+  // Reattach the first media element to test that the file is getting mapped again
+  
+  beforeImage = animatorView.image;
+  
+  [animatorView attachMedia:media1];
+  
+  NSAssert(animatorView.media == media1, @"media");
+  
+  NSAssert([media1.frameDecoder isResourceUsageLimit] == FALSE, @"isResourceUsageLimit");
+  NSAssert([media2.frameDecoder isResourceUsageLimit] == TRUE, @"isResourceUsageLimit");  
+  
+  afterImage = animatorView.image;
+  
+  NSAssert(beforeImage != afterImage, @"image");
+  
+  NSAssert(media1.currentFrame == 0, @"currentFrame");  
   
   return;
 }

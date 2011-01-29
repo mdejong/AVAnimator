@@ -132,6 +132,12 @@
 
 - (void) resourceUsageLimit:(BOOL)enabled
 {
+  self->m_resourceUsageLimit = enabled;
+}
+
+- (BOOL) isResourceUsageLimit
+{
+  return self->m_resourceUsageLimit;
 }
 
 - (BOOL) openForReading:(NSString*)path
