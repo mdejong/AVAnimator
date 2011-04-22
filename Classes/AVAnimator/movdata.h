@@ -38,38 +38,38 @@ typedef struct MovSample {
 // This structure is filled in by a parse operation.
 
 typedef struct MovData {
-  int width;
-  int height;
-  int numSamples;
+  uint32_t width;
+  uint32_t height;
+  uint32_t numSamples;
 	uint32_t maxSampleSize;
   
   MovSample *samples;
-  int numFrames;
+  uint32_t numFrames;
   MovSample **frames; // note that the number of frames can be larger than samples.
 
-  int timeScale;
-  int fps;
+  uint32_t timeScale;
+  uint32_t fps;
   float lengthInSeconds;
   uint32_t lengthInTicks;
-  int bitDepth; // 16, 24, or 32
+  uint32_t bitDepth; // 16, 24, or 32
   uint16_t graphicsMode;
   char fccbuffer[5];
 
-  int rleDataOffset;
-  int rleDataLength;
-  int errCode; // used to report an error condition
+  uint32_t rleDataOffset;
+  uint32_t rleDataLength;
+  uint32_t errCode; // used to report an error condition
   char errMsg[1024]; // used to report an error condition
 
-  int timeToSampleTableNumEntries;
+  uint32_t timeToSampleTableNumEntries;
   uint32_t timeToSampleTableOffset;
-  int syncSampleTableNumEntries;
+  uint32_t syncSampleTableNumEntries;
   uint32_t syncSampleTableOffset;
-  int sampleToChunkTableNumEntries;
+  uint32_t sampleToChunkTableNumEntries;
   uint32_t sampleToChunkTableOffset;
-  int sampleSizeCommon; // non-zero if sampleSizeTableNumEntries is zero!
-  int sampleSizeTableNumEntries;
+  uint32_t sampleSizeCommon; // non-zero if sampleSizeTableNumEntries is zero!
+  uint32_t sampleSizeTableNumEntries;
   uint32_t sampleSizeTableOffset;
-  int chunkOffsetTableNumEntries;
+  uint32_t chunkOffsetTableNumEntries;
   uint32_t chunkOffsetTableOffset;  
   
   unsigned foundMDAT:1;
@@ -99,26 +99,26 @@ void movdata_free(MovData *movData);
 
 static
 inline
-int movsample_iskeyframe(MovSample *movSample) {
+uint32_t movsample_iskeyframe(MovSample *movSample) {
   return (movSample->lengthAndFlags >> 24) & MOVSAMPLE_IS_KEYFRAME;
 }
 
 static
 inline
-int movsample_length(MovSample *movSample) {
+uint32_t movsample_length(MovSample *movSample) {
   return movSample->lengthAndFlags & 0xFFFFFF;
 }
 
 // recurse into atoms and process them. Return 0 on success
 // otherwise non-zero to indicate an error.
 
-int
+uint32_t
 process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset);
 
 // This method is invoked after all the atoms have been read
 // successfully.
 
-int
+uint32_t
 process_sample_tables(FILE *movFile, MovData *movData);
 
 // Process a single sample, decode the RLE data contained at the
@@ -127,7 +127,7 @@ process_sample_tables(FILE *movFile, MovData *movData);
 // Note that the type of frameBuffer you pass in (uint16_t* or uint32_t*) depends
 // on the bit depth of the mov. If NULL is passed as frameBuffer, no pixels are written during decoding.
 
-int
+uint32_t
 read_process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer, const void *sampleBuffer, uint32_t sampleBufferSize);
 
 // Process sample data contained in an already memory mapped file. Unlike process_rle_sample above
@@ -137,7 +137,7 @@ read_process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void
 // Note that the type of frameBuffer you pass in (uint16_t* or uint32_t*) depends
 // on the bit depth of the mov.
 
-int
+uint32_t
 process_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, void *frameBuffer);
 
 
@@ -146,26 +146,26 @@ process_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, voi
 void
 exported_decode_rle_sample16(
                              void *sampleBuffer,
-                             int sampleBufferSize,
-                             int isKeyframe,
+                             uint32_t sampleBufferSize,
+                             uint32_t isKeyframe,
                              void *frameBuffer,
-                             int frameBufferWidth,
-                             int frameBufferHeight);
+                             uint32_t frameBufferWidth,
+                             uint32_t frameBufferHeight);
 
 void
 exported_decode_rle_sample24(
                              void *sampleBuffer,
-                             int sampleBufferSize,
-                             int isKeyframe,
+                             uint32_t sampleBufferSize,
+                             uint32_t isKeyframe,
                              void *frameBuffer,
-                             int frameBufferWidth,
-                             int frameBufferHeight);
+                             uint32_t frameBufferWidth,
+                             uint32_t frameBufferHeight);
 
 void
 exported_decode_rle_sample32(
                              void *sampleBuffer,
-                             int sampleBufferSize,
-                             int isKeyframe,
+                             uint32_t sampleBufferSize,
+                             uint32_t isKeyframe,
                              void *frameBuffer,
-                             int frameBufferWidth,
-                             int frameBufferHeight);
+                             uint32_t frameBufferWidth,
+                             uint32_t frameBufferHeight);

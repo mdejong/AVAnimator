@@ -95,18 +95,18 @@ typedef struct DataRefTableEntry
 } DataRefTableEntry;
 
 static inline char *
-moviedata_fcc_tostring(MovData *movData, int i)
+moviedata_fcc_tostring(MovData *movData, uint32_t num)
 {
-  movData->fccbuffer[0] = ((char) (i & 0xFF)),
-  movData->fccbuffer[1] = ((char) ((i >> 8) & 0xFF)),
-  movData->fccbuffer[2] = ((char) ((i >> 16) & 0xFF)),
-  movData->fccbuffer[3] = ((char) ((i >> 24) & 0xFF)),
+  movData->fccbuffer[0] = ((char) (num & 0xFF)),
+  movData->fccbuffer[1] = ((char) ((num >> 8) & 0xFF)),
+  movData->fccbuffer[2] = ((char) ((num >> 16) & 0xFF)),
+  movData->fccbuffer[3] = ((char) ((num >> 24) & 0xFF)),
   movData->fccbuffer[4] = '\0';
   return movData->fccbuffer;  
 }
 
 static inline int
-fcc_toint(char a, char b, char c, char d)
+fcc_toint(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
 {
   return ((a) | ((b) << 8) | ((c) << 16) | ((d) << 24));
 }
@@ -125,6 +125,19 @@ read_be_uint32(FILE *fp, uint32_t *ptr)
 }
 
 // read an unsigned 16 bit number in big endian format, returns 0 on success.
+
+static inline int
+read_be_uint16(FILE *fp, uint16_t *ptr)
+{
+  uint16_t lv;
+  if (fread(&lv, sizeof(lv), 1, fp) != 1) {
+    return 1;
+  }
+  *ptr = ntohs(lv);
+  return 0;
+}
+
+// read a signed 16 bit number in big endian format, returns 0 on success.
 
 static inline int
 read_be_int16(FILE *fp, int16_t *ptr)
@@ -185,7 +198,7 @@ void init_alphaTables();
 // recurse into atoms and process them. Return 0 on success
 // otherwise non-zero to indicate an error.
 
-int
+uint32_t
 process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
 {
   init_alphaTables();
@@ -669,7 +682,7 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
 
       uint16_t graphics_mode;
       
-      if (read_be_int16(movFile, (int16_t*)&graphics_mode) != 0) {
+      if (read_be_uint16(movFile, &graphics_mode) != 0) {
         movData->errCode = ERR_READ;
         snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for vmhd graphics mode");
         return 1;
@@ -842,9 +855,9 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
         return 1;        
       }      
       
-      int16_t data_ref_index;
+      uint16_t data_ref_index;
       
-      if (read_be_int16(movFile, &data_ref_index) != 0) {
+      if (read_be_uint16(movFile, &data_ref_index) != 0) {
         movData->errCode = ERR_READ;
         snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsd sample data ref index");
         return 1;
@@ -902,9 +915,9 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
       
       // Verify that movie format stores only 1 frame in each sample.
       
-      int16_t frame_count;
+      uint16_t frame_count;
       
-      if (read_be_int16(movFile, &frame_count) != 0) {
+      if (read_be_uint16(movFile, &frame_count) != 0) {
         movData->errCode = ERR_READ;
         snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsd frame count");
         return 1;
@@ -941,9 +954,9 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
       
       // depth == 16 | 24 | 32
       
-      int16_t depth;
+      uint16_t depth;
       
-      if (read_be_int16(movFile, &depth) != 0) {
+      if (read_be_uint16(movFile, &depth) != 0) {
         movData->errCode = ERR_READ;
         snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for stsd depth");
         return 1;
@@ -1205,7 +1218,7 @@ int SampleToChunkTableEntry_read(FILE *movFile, MovData *movData, SampleToChunkT
 // This method is invoked after all the atoms have been read
 // successfully.
 
-int
+uint32_t
 process_sample_tables(FILE *movFile, MovData *movData) {
   // All atoms except sync are required at this point
   
@@ -1936,11 +1949,11 @@ static inline
 void
 decode_rle_sample16(
                   const void* restrict sampleBuffer,
-                  int sampleBufferSize,
-                  int isKeyFrame,
+                  uint32_t sampleBufferSize,
+                  uint32_t isKeyFrame,
                   uint16_t* restrict frameBuffer,
-                  int frameBufferWidth,
-                  int frameBufferHeight)
+                  uint32_t frameBufferWidth,
+                  uint32_t frameBufferHeight)
 {
   assert(sampleBuffer);
   assert(sampleBufferSize > 0);
@@ -2023,13 +2036,13 @@ decode_rle_sample16(
     bytesRemaining -= 4;
     
     assert(bytesRemaining >= 2);
-    uint16_t header;
+    uint32_t header;
     READ_UINT16(header, samplePtr);
     bytesRemaining -= 2;
     
     assert(header == 0x0 || header == 0x0008);
     
-    int16_t starting_line, lines_to_update;
+    uint32_t starting_line, lines_to_update;
     
     if (header != 0) {
       // Frame delta
@@ -2164,7 +2177,7 @@ decode_rle_sample16(
           // 16 bit pixels : rgb555 or rgb565
             
           assert(bytesRemaining >= 2);
-          uint16_t pixel;
+          uint32_t pixel;
           READ_UINT16(pixel, samplePtr);
           bytesRemaining -= 2;
           
@@ -2197,7 +2210,7 @@ decode_rle_sample16(
           assert((rowPtr + rle_code - 1) < rowPtrMax);
             
           for (int i = 0; i < rle_code; i++) {
-            uint16_t pixel;
+            uint32_t pixel;
             READ_UINT16(pixel, samplePtr);
             
 #ifdef DUMP_WHILE_DECODING
@@ -2221,11 +2234,11 @@ static inline
 void
 decode_rle_sample24(
                     const void* restrict sampleBuffer,
-                    int sampleBufferSize,
-                    int isKeyFrame,
+                    uint32_t sampleBufferSize,
+                    uint32_t isKeyFrame,
                     uint32_t* restrict frameBuffer,
-                    int frameBufferWidth,
-                    int frameBufferHeight)
+                    uint32_t frameBufferWidth,
+                    uint32_t frameBufferHeight)
 {
   assert(sampleBuffer);
   assert(sampleBufferSize > 0);
@@ -2308,13 +2321,13 @@ decode_rle_sample24(
     bytesRemaining -= 4;
     
     assert(bytesRemaining >= 2);
-    uint16_t header;
+    uint32_t header;
     READ_UINT16(header, samplePtr);
     bytesRemaining -= 2;
     
     assert(header == 0x0 || header == 0x0008);
     
-    int16_t starting_line, lines_to_update;
+    uint32_t starting_line, lines_to_update;
     
     if (header != 0) {
       // Frame delta
@@ -2508,11 +2521,11 @@ static inline
 void
 decode_rle_sample32(
                     const void* restrict sampleBuffer,
-                    int sampleBufferSize,
-                    int isKeyFrame,
+                    uint32_t sampleBufferSize,
+                    uint32_t isKeyFrame,
                     uint32_t* restrict frameBuffer,
-                    int frameBufferWidth,
-                    int frameBufferHeight)
+                    uint32_t frameBufferWidth,
+                    uint32_t frameBufferHeight)
 {
   assert(sampleBuffer);
   assert(sampleBufferSize > 0);
@@ -2595,13 +2608,13 @@ decode_rle_sample32(
     bytesRemaining -= 4;
     
     assert(bytesRemaining >= 2);
-    uint16_t header;
+    uint32_t header;
     READ_UINT16(header, samplePtr);
     bytesRemaining -= 2;
     
     assert(header == 0x0 || header == 0x0008);
     
-    int16_t starting_line, lines_to_update;
+    uint32_t starting_line, lines_to_update;
     
     if (header != 0) {
       // Frame delta
@@ -2795,7 +2808,7 @@ decode_rle_sample32(
 // on the bit depth of the mov. If NULL is passed as frameBuffer, then a phony
 // framebuffer will be allocated and then released.
 
-int
+uint32_t
 read_process_rle_sample(FILE *movFile, MovData *movData, MovSample *sample, void *frameBuffer, const void *sampleBuffer, uint32_t sampleBufferSize)
 {
   void* frameBufferPtr = NULL;
@@ -2885,7 +2898,7 @@ retstatus:
 // Note that the type of frameBuffer you pass in (uint16_t* or uint32_t*) depends
 // on the bit depth of the mov.
 
-int
+uint32_t
 process_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, void *frameBuffer)
 {
   const char *samplePtr = NULL;
@@ -2924,11 +2937,11 @@ process_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, voi
 void
 exported_decode_rle_sample16(
                              void *sampleBuffer,
-                             int sampleBufferSize,
-                             int isKeyFrame,
+                             uint32_t sampleBufferSize,
+                             uint32_t isKeyFrame,
                              void *frameBuffer,
-                             int frameBufferWidth,
-                             int frameBufferHeight)
+                             uint32_t frameBufferWidth,
+                             uint32_t frameBufferHeight)
 {
   decode_rle_sample16(sampleBuffer, sampleBufferSize, isKeyFrame,
                       frameBuffer, frameBufferWidth, frameBufferHeight);
@@ -2937,11 +2950,11 @@ exported_decode_rle_sample16(
 void
 exported_decode_rle_sample24(
                              void *sampleBuffer,
-                             int sampleBufferSize,
-                             int isKeyFrame,
+                             uint32_t sampleBufferSize,
+                             uint32_t isKeyFrame,
                              void *frameBuffer,
-                             int frameBufferWidth,
-                             int frameBufferHeight)
+                             uint32_t frameBufferWidth,
+                             uint32_t frameBufferHeight)
 {
   decode_rle_sample24(sampleBuffer, sampleBufferSize, isKeyFrame,
                       frameBuffer, frameBufferWidth, frameBufferHeight);
@@ -2950,11 +2963,11 @@ exported_decode_rle_sample24(
 void
 exported_decode_rle_sample32(
                              void *sampleBuffer,
-                             int sampleBufferSize,
-                             int isKeyFrame,
+                             uint32_t sampleBufferSize,
+                             uint32_t isKeyFrame,
                              void *frameBuffer,
-                             int frameBufferWidth,
-                             int frameBufferHeight)
+                             uint32_t frameBufferWidth,
+                             uint32_t frameBufferHeight)
 {
   init_alphaTables();
   decode_rle_sample32(sampleBuffer, sampleBufferSize, isKeyFrame,
