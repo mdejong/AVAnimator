@@ -512,8 +512,8 @@
 				CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */,
 				CD61994812CD03FC0003AEAA /* AVQTAnimationFrameDecoder.h */,
 				CD61994912CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m */,
-				CD6EF5A612F0F7920045659F /* movdata.c */,
 				CD6EF5A712F0F7920045659F /* movdata.h */,
+				CD6EF5A612F0F7920045659F /* movdata.c */,
 				CDECCE7012D30FE80067D2EE /* AVPNGFrameDecoder.h */,
 				CDECCE7112D30FE80067D2EE /* AVPNGFrameDecoder.m */,
 			);

@@ -2128,7 +2128,7 @@ decode_rle_sample16(
         // Advance the row ptr by skip pixels checking that it does
         // not skip past the end of the row.
         
-        assert((rowPtr + num_to_skip) < rowPtrMax);          
+        assert((rowPtr + num_to_skip - 1) < rowPtrMax);          
         rowPtr += num_to_skip;
       }
       
@@ -2185,7 +2185,6 @@ decode_rle_sample16(
           
         } else {
           // Greater than 0, copy pixels from input to output stream
-          assert(rle_code > 0);
           
           // 16 bit pixels
           
@@ -2414,7 +2413,7 @@ decode_rle_sample24(
         // Advance the row ptr by skip pixels checking that it does
         // not skip past the end of the row.
         
-        assert((rowPtr + num_to_skip) < rowPtrMax);          
+        assert((rowPtr + num_to_skip - 1) < rowPtrMax);          
         rowPtr += num_to_skip;
       }
       
@@ -2472,7 +2471,6 @@ decode_rle_sample24(
           
         } else {
           // Greater than 0, copy pixels from input to output stream
-          assert(rle_code > 0);
           
           // 24 bit pixels : RGB
           // write 32 bit pixels : ARGB
@@ -2702,7 +2700,7 @@ decode_rle_sample32(
         // Advance the row ptr by skip pixels checking that it does
         // not skip past the end of the row.
         
-        assert((rowPtr + num_to_skip) < rowPtrMax);          
+        assert((rowPtr + num_to_skip - 1) < rowPtrMax);          
         rowPtr += num_to_skip;
       }
       
@@ -2759,7 +2757,6 @@ decode_rle_sample32(
           
         } else {
           // Greater than 0, copy pixels from input to output stream
-          assert(rle_code > 0);
           
           // 32 bit pixels : ARGB
           
@@ -2922,17 +2919,44 @@ process_rle_sample(void *mappedFilePtr, MovData *movData, MovSample *sample, voi
   return status;
 }
 
-// Decode just 1 sample contained in a buffer
+// Decode just 1 frame contained in a buffer
 
 void
 exported_decode_rle_sample16(
-                  void *sampleBuffer,
-                  int sampleBufferSize,
-                  int isKeyFrame,
-                  void *frameBuffer,
-                  int frameBufferWidth,
-                  int frameBufferHeight)
+                             void *sampleBuffer,
+                             int sampleBufferSize,
+                             int isKeyFrame,
+                             void *frameBuffer,
+                             int frameBufferWidth,
+                             int frameBufferHeight)
 {
   decode_rle_sample16(sampleBuffer, sampleBufferSize, isKeyFrame,
-                           frameBuffer, frameBufferWidth, frameBufferHeight);
+                      frameBuffer, frameBufferWidth, frameBufferHeight);
+}
+
+void
+exported_decode_rle_sample24(
+                             void *sampleBuffer,
+                             int sampleBufferSize,
+                             int isKeyFrame,
+                             void *frameBuffer,
+                             int frameBufferWidth,
+                             int frameBufferHeight)
+{
+  decode_rle_sample24(sampleBuffer, sampleBufferSize, isKeyFrame,
+                      frameBuffer, frameBufferWidth, frameBufferHeight);
+}
+
+void
+exported_decode_rle_sample32(
+                             void *sampleBuffer,
+                             int sampleBufferSize,
+                             int isKeyFrame,
+                             void *frameBuffer,
+                             int frameBufferWidth,
+                             int frameBufferHeight)
+{
+  init_alphaTables();
+  decode_rle_sample32(sampleBuffer, sampleBufferSize, isKeyFrame,
+                      frameBuffer, frameBufferWidth, frameBufferHeight);
 }

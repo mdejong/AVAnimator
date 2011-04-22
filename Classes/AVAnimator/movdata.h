@@ -151,3 +151,21 @@ exported_decode_rle_sample16(
                              void *frameBuffer,
                              int frameBufferWidth,
                              int frameBufferHeight);
+
+void
+exported_decode_rle_sample24(
+                             void *sampleBuffer,
+                             int sampleBufferSize,
+                             int isKeyframe,
+                             void *frameBuffer,
+                             int frameBufferWidth,
+                             int frameBufferHeight);
+
+void
+exported_decode_rle_sample32(
+                             void *sampleBuffer,
+                             int sampleBufferSize,
+                             int isKeyframe,
+                             void *frameBuffer,
+                             int frameBufferWidth,
+                             int frameBufferHeight);
