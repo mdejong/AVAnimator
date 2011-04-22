@@ -29,7 +29,7 @@
 	return [[NSFileManager defaultManager] fileExistsAtPath:path];
 }
 
-- (NSString*) _getMoviePath:(NSString*)movieFilename
+- (NSString*) _getResourcePath:(NSString*)movieFilename
 {
 	NSBundle* appBundle = [NSBundle mainBundle];
 	NSString* movieFilePath = [appBundle pathForResource:movieFilename ofType:nil];
@@ -37,24 +37,36 @@
 	return movieFilePath;
 }
 
-- (NSString*) _getAudioPath:(NSString*)audioFilename
+- (NSString*) _getMoviePath:(NSString*)movieFilename
 {
-  return [self _getMoviePath:audioFilename];
+  return [self _getResourcePath:movieFilename];
 }
 
-- (BOOL) isReady
+- (NSString*) _getAudioPath:(NSString*)audioFilename
+{
+  return [self _getResourcePath:audioFilename];
+}
+
+- (BOOL) isMovieReady
 {
   BOOL isMovieReady = FALSE;
-  BOOL isAudioReady = FALSE;
   
   NSAssert(self.movieFilename, @"movieFilename is nil");
   
-  // Check for movie file in tmp dir
-  NSString *tmpAnimationsPath = [self _getMoviePath:self.movieFilename];
+  // Return TRUE if the mov file exists in the app resources
+
+  NSString *tmpMoviePath = [self _getMoviePath:self.movieFilename];
   
-  if ([self _fileExists:tmpAnimationsPath]) {
+  if ([self _fileExists:tmpMoviePath]) {
     isMovieReady = TRUE;
   }
+  
+  return isMovieReady;
+}
+
+- (BOOL) isAudioReady
+{
+  BOOL isAudioReady = FALSE;
   
   if (self.audioFilename != nil) {
     // Check for audio file in tmp dir
@@ -68,6 +80,18 @@
     isAudioReady = TRUE;
   }
   
+  return isAudioReady;
+}
+
+
+- (BOOL) isReady
+{
+  BOOL isMovieReady = FALSE;
+  BOOL isAudioReady = FALSE;
+  
+  isMovieReady = [self isMovieReady];
+  isAudioReady = [self isAudioReady];
+    
   if (isMovieReady && isAudioReady) {
     m_isReady = TRUE;
     return TRUE;
@@ -94,7 +118,9 @@
 - (void) load
 {
   NSAssert(self.movieFilename, @"movieFilename is nil");
-  NSAssert(self.audioFilename, @"audioFilename is nil");
+
+  // audioFilename can be nil
+  //NSAssert(self.audioFilename, @"audioFilename is nil");
   
   // No-op since the movie must exist as a resource
 

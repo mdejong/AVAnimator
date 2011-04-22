@@ -133,6 +133,46 @@
 		CD7E12B212E373190077CB9C /* Sweep15FPS.caf in Resources */ = {isa = PBXBuildFile; fileRef = CD7E12B112E373190077CB9C /* Sweep15FPS.caf */; };
 		CD7E12B312E373190077CB9C /* Sweep15FPS.caf in Resources */ = {isa = PBXBuildFile; fileRef = CD7E12B112E373190077CB9C /* Sweep15FPS.caf */; };
 		CD83D5EE12CA547300A88ABA /* MovieControlsAdaptor.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */; };
+		CD922D0E136206290024AFBB /* AVResourceLoaderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD922D0D136206290024AFBB /* AVResourceLoaderTests.m */; };
+		CD922D25136206DE0024AFBB /* 2x2_black_blue_16BPP.mov.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD922D24136206DE0024AFBB /* 2x2_black_blue_16BPP.mov.7z */; };
+		CD922D72136209280024AFBB /* AV7zAppResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD922D71136209280024AFBB /* AV7zAppResourceLoader.m */; };
+		CD922D73136209280024AFBB /* AV7zAppResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD922D71136209280024AFBB /* AV7zAppResourceLoader.m */; };
+		CD922DAE13620A310024AFBB /* 7zBuf.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D8A13620A310024AFBB /* 7zBuf.c */; };
+		CD922DAF13620A310024AFBB /* 7zBuf2.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D8C13620A310024AFBB /* 7zBuf2.c */; };
+		CD922DB013620A310024AFBB /* 7zDec.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D8D13620A310024AFBB /* 7zDec.c */; };
+		CD922DB113620A310024AFBB /* 7zFile.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D8E13620A310024AFBB /* 7zFile.c */; };
+		CD922DB213620A310024AFBB /* 7zIn.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9013620A310024AFBB /* 7zIn.c */; };
+		CD922DB313620A310024AFBB /* 7zStream.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9113620A310024AFBB /* 7zStream.c */; };
+		CD922DB413620A310024AFBB /* Alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9313620A310024AFBB /* Alloc.c */; };
+		CD922DB513620A310024AFBB /* CpuArch.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9513620A310024AFBB /* CpuArch.c */; };
+		CD922DB613620A310024AFBB /* Delta.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9713620A310024AFBB /* Delta.c */; };
+		CD922DB713620A310024AFBB /* Lzma2Dec.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9A13620A310024AFBB /* Lzma2Dec.c */; };
+		CD922DB813620A310024AFBB /* LzmaDec.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9C13620A310024AFBB /* LzmaDec.c */; };
+		CD922DB913620A310024AFBB /* LZMAExtractor.m in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9F13620A310024AFBB /* LZMAExtractor.m */; };
+		CD922DBA13620A310024AFBB /* Ppmd7.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DA113620A310024AFBB /* Ppmd7.c */; };
+		CD922DBB13620A310024AFBB /* Ppmd7Dec.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DA313620A310024AFBB /* Ppmd7Dec.c */; };
+		CD922DBC13620A310024AFBB /* Ppmd8.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DA413620A310024AFBB /* Ppmd8.c */; };
+		CD922DBD13620A310024AFBB /* Ppmd8Dec.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DA613620A310024AFBB /* Ppmd8Dec.c */; };
+		CD922DBE13620A310024AFBB /* 7zAlloc.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DAB13620A310024AFBB /* 7zAlloc.c */; };
+		CD922DBF13620A310024AFBB /* 7zMain.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DAD13620A310024AFBB /* 7zMain.c */; };
+		CD922DC013620A310024AFBB /* 7zBuf.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D8A13620A310024AFBB /* 7zBuf.c */; };
+		CD922DC113620A310024AFBB /* 7zBuf2.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D8C13620A310024AFBB /* 7zBuf2.c */; };
+		CD922DC213620A310024AFBB /* 7zDec.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D8D13620A310024AFBB /* 7zDec.c */; };
+		CD922DC313620A310024AFBB /* 7zFile.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D8E13620A310024AFBB /* 7zFile.c */; };
+		CD922DC413620A310024AFBB /* 7zIn.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9013620A310024AFBB /* 7zIn.c */; };
+		CD922DC513620A310024AFBB /* 7zStream.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9113620A310024AFBB /* 7zStream.c */; };
+		CD922DC613620A310024AFBB /* Alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9313620A310024AFBB /* Alloc.c */; };
+		CD922DC713620A310024AFBB /* CpuArch.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9513620A310024AFBB /* CpuArch.c */; };
+		CD922DC813620A310024AFBB /* Delta.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9713620A310024AFBB /* Delta.c */; };
+		CD922DC913620A310024AFBB /* Lzma2Dec.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9A13620A310024AFBB /* Lzma2Dec.c */; };
+		CD922DCA13620A310024AFBB /* LzmaDec.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9C13620A310024AFBB /* LzmaDec.c */; };
+		CD922DCB13620A310024AFBB /* LZMAExtractor.m in Sources */ = {isa = PBXBuildFile; fileRef = CD922D9F13620A310024AFBB /* LZMAExtractor.m */; };
+		CD922DCC13620A310024AFBB /* Ppmd7.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DA113620A310024AFBB /* Ppmd7.c */; };
+		CD922DCD13620A310024AFBB /* Ppmd7Dec.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DA313620A310024AFBB /* Ppmd7Dec.c */; };
+		CD922DCE13620A310024AFBB /* Ppmd8.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DA413620A310024AFBB /* Ppmd8.c */; };
+		CD922DCF13620A310024AFBB /* Ppmd8Dec.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DA613620A310024AFBB /* Ppmd8Dec.c */; };
+		CD922DD013620A310024AFBB /* 7zAlloc.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DAB13620A310024AFBB /* 7zAlloc.c */; };
+		CD922DD113620A310024AFBB /* 7zMain.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DAD13620A310024AFBB /* 7zMain.c */; };
 		CDA1DC0612E61F37004C570F /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = CDA1DC0512E61F37004C570F /* Icon.png */; };
 		CDA1DC0712E61F37004C570F /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = CDA1DC0512E61F37004C570F /* Icon.png */; };
 		CDA2BADB12F0AA4000F299B4 /* Silence3S.wav in Resources */ = {isa = PBXBuildFile; fileRef = CDA2BADA12F0AA4000F299B4 /* Silence3S.wav */; };
@@ -260,6 +300,45 @@
 		CD7E12B112E373190077CB9C /* Sweep15FPS.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Sweep15FPS.caf; sourceTree = "<group>"; };
 		CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MovieControlsAdaptor.m; sourceTree = "<group>"; };
 		CD83D5F512CA549000A88ABA /* MovieControlsAdaptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MovieControlsAdaptor.h; sourceTree = "<group>"; };
+		CD922D0D136206290024AFBB /* AVResourceLoaderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVResourceLoaderTests.m; sourceTree = "<group>"; };
+		CD922D24136206DE0024AFBB /* 2x2_black_blue_16BPP.mov.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = 2x2_black_blue_16BPP.mov.7z; sourceTree = "<group>"; };
+		CD922D70136209280024AFBB /* AV7zAppResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AV7zAppResourceLoader.h; sourceTree = "<group>"; };
+		CD922D71136209280024AFBB /* AV7zAppResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AV7zAppResourceLoader.m; sourceTree = "<group>"; };
+		CD922D8913620A310024AFBB /* 7z.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = 7z.h; sourceTree = "<group>"; };
+		CD922D8A13620A310024AFBB /* 7zBuf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = 7zBuf.c; sourceTree = "<group>"; };
+		CD922D8B13620A310024AFBB /* 7zBuf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = 7zBuf.h; sourceTree = "<group>"; };
+		CD922D8C13620A310024AFBB /* 7zBuf2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = 7zBuf2.c; sourceTree = "<group>"; };
+		CD922D8D13620A310024AFBB /* 7zDec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = 7zDec.c; sourceTree = "<group>"; };
+		CD922D8E13620A310024AFBB /* 7zFile.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = 7zFile.c; sourceTree = "<group>"; };
+		CD922D8F13620A310024AFBB /* 7zFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = 7zFile.h; sourceTree = "<group>"; };
+		CD922D9013620A310024AFBB /* 7zIn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = 7zIn.c; sourceTree = "<group>"; };
+		CD922D9113620A310024AFBB /* 7zStream.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = 7zStream.c; sourceTree = "<group>"; };
+		CD922D9213620A310024AFBB /* 7zVersion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = 7zVersion.h; sourceTree = "<group>"; };
+		CD922D9313620A310024AFBB /* Alloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Alloc.c; sourceTree = "<group>"; };
+		CD922D9413620A310024AFBB /* Alloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Alloc.h; sourceTree = "<group>"; };
+		CD922D9513620A310024AFBB /* CpuArch.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = CpuArch.c; sourceTree = "<group>"; };
+		CD922D9613620A310024AFBB /* CpuArch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CpuArch.h; sourceTree = "<group>"; };
+		CD922D9713620A310024AFBB /* Delta.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Delta.c; sourceTree = "<group>"; };
+		CD922D9813620A310024AFBB /* Delta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Delta.h; sourceTree = "<group>"; };
+		CD922D9913620A310024AFBB /* LzHash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LzHash.h; sourceTree = "<group>"; };
+		CD922D9A13620A310024AFBB /* Lzma2Dec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Lzma2Dec.c; sourceTree = "<group>"; };
+		CD922D9B13620A310024AFBB /* Lzma2Dec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Lzma2Dec.h; sourceTree = "<group>"; };
+		CD922D9C13620A310024AFBB /* LzmaDec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = LzmaDec.c; sourceTree = "<group>"; };
+		CD922D9D13620A310024AFBB /* LzmaDec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LzmaDec.h; sourceTree = "<group>"; };
+		CD922D9E13620A310024AFBB /* LZMAExtractor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LZMAExtractor.h; sourceTree = "<group>"; };
+		CD922D9F13620A310024AFBB /* LZMAExtractor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LZMAExtractor.m; sourceTree = "<group>"; };
+		CD922DA013620A310024AFBB /* Ppmd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Ppmd.h; sourceTree = "<group>"; };
+		CD922DA113620A310024AFBB /* Ppmd7.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Ppmd7.c; sourceTree = "<group>"; };
+		CD922DA213620A310024AFBB /* Ppmd7.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Ppmd7.h; sourceTree = "<group>"; };
+		CD922DA313620A310024AFBB /* Ppmd7Dec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Ppmd7Dec.c; sourceTree = "<group>"; };
+		CD922DA413620A310024AFBB /* Ppmd8.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Ppmd8.c; sourceTree = "<group>"; };
+		CD922DA513620A310024AFBB /* Ppmd8.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Ppmd8.h; sourceTree = "<group>"; };
+		CD922DA613620A310024AFBB /* Ppmd8Dec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Ppmd8Dec.c; sourceTree = "<group>"; };
+		CD922DA713620A310024AFBB /* RotateDefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RotateDefs.h; sourceTree = "<group>"; };
+		CD922DA813620A310024AFBB /* Types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Types.h; sourceTree = "<group>"; };
+		CD922DAB13620A310024AFBB /* 7zAlloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = 7zAlloc.c; sourceTree = "<group>"; };
+		CD922DAC13620A310024AFBB /* 7zAlloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = 7zAlloc.h; sourceTree = "<group>"; };
+		CD922DAD13620A310024AFBB /* 7zMain.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = 7zMain.c; sourceTree = "<group>"; };
 		CDA1DC0512E61F37004C570F /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
 		CDA2BADA12F0AA4000F299B4 /* Silence3S.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = Silence3S.wav; sourceTree = "<group>"; };
 		CDBA6B2412DC50A8001B44EB /* nexttrack.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = nexttrack.png; sourceTree = "<group>"; };
@@ -357,6 +436,7 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				CD922D8813620A310024AFBB /* LZMASDK */,
 				CD15C2C412BC9BDC00A26588 /* MovieControls */,
 				CDECC74E12BC6CA6001A372F /* AVAnimator */,
 				1D3623240D0F684500981E51 /* QTFileParserAppAppDelegate.h */,
@@ -468,7 +548,9 @@
 				CD3F4ECD12D8F6B00067FDDF /* ViewLoadTests.m */,
 				CD3F4F1212D8FA0A0067FDDF /* AVAnimatorViewTests.m */,
 				CD7098B212F4A6BA00582B9B /* AVAnimatorLayerTests.m */,
+				CD922D0D136206290024AFBB /* AVResourceLoaderTests.m */,
 				CD288D3E12D93865005F0EEA /* 2x2_black_blue_16BPP.mov */,
+				CD922D24136206DE0024AFBB /* 2x2_black_blue_16BPP.mov.7z */,
 				CD288D3F12D93865005F0EEA /* 2x2_black_blue_24BPP.mov */,
 				CD288D4012D93865005F0EEA /* 2x2_black_blue_32BPP.mov */,
 				CDCB181512EF659E00E52D3E /* 2x2_nop.mov */,
@@ -487,6 +569,64 @@
 				CD7D2BF212D510CB0096EDF3 /* CountingLandscape05.png */,
 			);
 			path = CountingLandscape;
+			sourceTree = "<group>";
+		};
+		CD922D8813620A310024AFBB /* LZMASDK */ = {
+			isa = PBXGroup;
+			children = (
+				CD922D8913620A310024AFBB /* 7z.h */,
+				CD922D8A13620A310024AFBB /* 7zBuf.c */,
+				CD922D8B13620A310024AFBB /* 7zBuf.h */,
+				CD922D8C13620A310024AFBB /* 7zBuf2.c */,
+				CD922D8D13620A310024AFBB /* 7zDec.c */,
+				CD922D8E13620A310024AFBB /* 7zFile.c */,
+				CD922D8F13620A310024AFBB /* 7zFile.h */,
+				CD922D9013620A310024AFBB /* 7zIn.c */,
+				CD922D9113620A310024AFBB /* 7zStream.c */,
+				CD922D9213620A310024AFBB /* 7zVersion.h */,
+				CD922D9313620A310024AFBB /* Alloc.c */,
+				CD922D9413620A310024AFBB /* Alloc.h */,
+				CD922D9513620A310024AFBB /* CpuArch.c */,
+				CD922D9613620A310024AFBB /* CpuArch.h */,
+				CD922D9713620A310024AFBB /* Delta.c */,
+				CD922D9813620A310024AFBB /* Delta.h */,
+				CD922D9913620A310024AFBB /* LzHash.h */,
+				CD922D9A13620A310024AFBB /* Lzma2Dec.c */,
+				CD922D9B13620A310024AFBB /* Lzma2Dec.h */,
+				CD922D9C13620A310024AFBB /* LzmaDec.c */,
+				CD922D9D13620A310024AFBB /* LzmaDec.h */,
+				CD922D9E13620A310024AFBB /* LZMAExtractor.h */,
+				CD922D9F13620A310024AFBB /* LZMAExtractor.m */,
+				CD922DA013620A310024AFBB /* Ppmd.h */,
+				CD922DA113620A310024AFBB /* Ppmd7.c */,
+				CD922DA213620A310024AFBB /* Ppmd7.h */,
+				CD922DA313620A310024AFBB /* Ppmd7Dec.c */,
+				CD922DA413620A310024AFBB /* Ppmd8.c */,
+				CD922DA513620A310024AFBB /* Ppmd8.h */,
+				CD922DA613620A310024AFBB /* Ppmd8Dec.c */,
+				CD922DA713620A310024AFBB /* RotateDefs.h */,
+				CD922DA813620A310024AFBB /* Types.h */,
+				CD922DA913620A310024AFBB /* Util */,
+			);
+			path = LZMASDK;
+			sourceTree = "<group>";
+		};
+		CD922DA913620A310024AFBB /* Util */ = {
+			isa = PBXGroup;
+			children = (
+				CD922DAA13620A310024AFBB /* 7z */,
+			);
+			path = Util;
+			sourceTree = "<group>";
+		};
+		CD922DAA13620A310024AFBB /* 7z */ = {
+			isa = PBXGroup;
+			children = (
+				CD922DAB13620A310024AFBB /* 7zAlloc.c */,
+				CD922DAC13620A310024AFBB /* 7zAlloc.h */,
+				CD922DAD13620A310024AFBB /* 7zMain.c */,
+			);
+			path = 7z;
 			sourceTree = "<group>";
 		};
 		CDECC74E12BC6CA6001A372F /* AVAnimator */ = {
@@ -508,6 +648,8 @@
 				CDECC75212BC6CA6001A372F /* AVResourceLoader.m */,
 				CDECC75312BC6CA6001A372F /* AVAppResourceLoader.h */,
 				CDECC75412BC6CA6001A372F /* AVAppResourceLoader.m */,
+				CD922D70136209280024AFBB /* AV7zAppResourceLoader.h */,
+				CD922D71136209280024AFBB /* AV7zAppResourceLoader.m */,
 				CD6198BD12CCFC640003AEAA /* AVFrameDecoder.h */,
 				CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */,
 				CD61994812CD03FC0003AEAA /* AVQTAnimationFrameDecoder.h */,
@@ -783,6 +925,7 @@
 				CDEC7CAA12E798EF00D01E0E /* GradientColorWheel_2FPS_32BPP_Keyframes.mov in Resources */,
 				CDCB181612EF659E00E52D3E /* 2x2_nop.mov in Resources */,
 				CDA2BADB12F0AA4000F299B4 /* Silence3S.wav in Resources */,
+				CD922D25136206DE0024AFBB /* 2x2_black_blue_16BPP.mov.7z in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -809,6 +952,25 @@
 				CD2F6D4912F0B8AF0022413B /* AVAnimatorMedia.m in Sources */,
 				CD6EF5A812F0F7920045659F /* movdata.c in Sources */,
 				CDC38D5C12F1F06C00D55CE8 /* AVAnimatorLayer.m in Sources */,
+				CD922D73136209280024AFBB /* AV7zAppResourceLoader.m in Sources */,
+				CD922DC013620A310024AFBB /* 7zBuf.c in Sources */,
+				CD922DC113620A310024AFBB /* 7zBuf2.c in Sources */,
+				CD922DC213620A310024AFBB /* 7zDec.c in Sources */,
+				CD922DC313620A310024AFBB /* 7zFile.c in Sources */,
+				CD922DC413620A310024AFBB /* 7zIn.c in Sources */,
+				CD922DC513620A310024AFBB /* 7zStream.c in Sources */,
+				CD922DC613620A310024AFBB /* Alloc.c in Sources */,
+				CD922DC713620A310024AFBB /* CpuArch.c in Sources */,
+				CD922DC813620A310024AFBB /* Delta.c in Sources */,
+				CD922DC913620A310024AFBB /* Lzma2Dec.c in Sources */,
+				CD922DCA13620A310024AFBB /* LzmaDec.c in Sources */,
+				CD922DCB13620A310024AFBB /* LZMAExtractor.m in Sources */,
+				CD922DCC13620A310024AFBB /* Ppmd7.c in Sources */,
+				CD922DCD13620A310024AFBB /* Ppmd7Dec.c in Sources */,
+				CD922DCE13620A310024AFBB /* Ppmd8.c in Sources */,
+				CD922DCF13620A310024AFBB /* Ppmd8Dec.c in Sources */,
+				CD922DD013620A310024AFBB /* 7zAlloc.c in Sources */,
+				CD922DD113620A310024AFBB /* 7zMain.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -836,6 +998,26 @@
 				CD6EF5A912F0F7920045659F /* movdata.c in Sources */,
 				CDC38D5D12F1F06C00D55CE8 /* AVAnimatorLayer.m in Sources */,
 				CD7098B312F4A6BA00582B9B /* AVAnimatorLayerTests.m in Sources */,
+				CD922D0E136206290024AFBB /* AVResourceLoaderTests.m in Sources */,
+				CD922D72136209280024AFBB /* AV7zAppResourceLoader.m in Sources */,
+				CD922DAE13620A310024AFBB /* 7zBuf.c in Sources */,
+				CD922DAF13620A310024AFBB /* 7zBuf2.c in Sources */,
+				CD922DB013620A310024AFBB /* 7zDec.c in Sources */,
+				CD922DB113620A310024AFBB /* 7zFile.c in Sources */,
+				CD922DB213620A310024AFBB /* 7zIn.c in Sources */,
+				CD922DB313620A310024AFBB /* 7zStream.c in Sources */,
+				CD922DB413620A310024AFBB /* Alloc.c in Sources */,
+				CD922DB513620A310024AFBB /* CpuArch.c in Sources */,
+				CD922DB613620A310024AFBB /* Delta.c in Sources */,
+				CD922DB713620A310024AFBB /* Lzma2Dec.c in Sources */,
+				CD922DB813620A310024AFBB /* LzmaDec.c in Sources */,
+				CD922DB913620A310024AFBB /* LZMAExtractor.m in Sources */,
+				CD922DBA13620A310024AFBB /* Ppmd7.c in Sources */,
+				CD922DBB13620A310024AFBB /* Ppmd7Dec.c in Sources */,
+				CD922DBC13620A310024AFBB /* Ppmd8.c in Sources */,
+				CD922DBD13620A310024AFBB /* Ppmd8Dec.c in Sources */,
+				CD922DBE13620A310024AFBB /* 7zAlloc.c in Sources */,
+				CD922DBF13620A310024AFBB /* 7zMain.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

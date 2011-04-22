@@ -12,6 +12,8 @@
 
 #import "AVResourceLoader.h"
 
+#import "AVAppResourceLoader.h"
+
 @interface AVAppResourceLoader : AVResourceLoader {
 	NSString *m_movieFilename;
 	NSString *m_audioFilename;
@@ -30,5 +32,15 @@
 // exist when the next request comes in.
 
 - (void) load;
+
+// Non-Public methods
+
+- (BOOL) _fileExists:(NSString*)path;
+
+- (NSString*) _getMoviePath:(NSString*)movieFilename;
+
+- (NSString*) _getAudioPath:(NSString*)audioFilename;
+
+- (NSString*) _getResourcePath:(NSString*)movieFilename;
 
 @end

@@ -220,27 +220,6 @@
 	return lastPath;
 }
 
-// This loadImpl method is invoked at some point after the media object has been
-// created and loaded.
-
-// FIXME: this method needs to be after that view was created?
-
-- (void) loadImpl {  
-	NSAssert(self.resourceLoader, @"resourceLoader must be defined");
-	NSAssert(self.frameDecoder, @"frameDecoder must be defined");
-    
-	// Note that we don't load any data from the movie archive or from the
-	// audio files at widget load time. Resource loading is done only as a
-	// result of a call to prepareToAnimate. Only a state change of
-	// ALLOCATED -> LOADED is possible here.
-  
-	if (self.state == ALLOCATED) {
-		self.state = LOADED;
-	}
-  
-  return;
-}
-
 - (void) _createAudioPlayer
 {
 	NSError *error;
@@ -291,8 +270,13 @@
 }
 
 // This method is invoked in the prep state via a timer callback
-// while the widget is preparing to animate. This method will
-// load resources once we know the files exist in the tmp dir.
+// while the widget is preparing to animate. In the case where
+// all resources are ready, this method will init the frame decoder
+// with the resource paths returned by the resource loader.
+// The first time this method is called, this code will invoke
+// the load method on the resource loader that the could kick off
+// an async loading operation. In any case, the resource loader
+// will notice multiple calls to load and ignore all but the first.
 
 - (BOOL) _loadResources
 {
@@ -302,6 +286,7 @@
 	BOOL isReady = [self.resourceLoader isReady];
   if (!isReady) {
     NSLog(@"Not Yet Ready in _loadResources");
+    [self.resourceLoader load];
     return FALSE;
   }
   
@@ -383,12 +368,20 @@
 #endif
   
 	NSAssert(self.state == PREPPING, @"expected to be in PREPPING state");
+  NSAssert(self.resourceLoader, @"resourceLoader must be defined");
+	NSAssert(self.frameDecoder, @"frameDecoder must be defined");
   
-  // FIXME: not sure about this loadImpl call, seems like it should happen
-  // before the LOADING phase
-  [self loadImpl];
+	// Note that we don't load any data from the movie archive or from the
+	// audio files at widget load time. Resource loading is done only as a
+	// result of a call to prepareToAnimate. Only a state change of
+	// ALLOCATED -> LOADED is possible here.
   
-	// Prepare movie and audio, if needed
+	if (self.state == ALLOCATED) {
+		self.state = LOADED;
+	}
+
+  // Test to see if the all resources have been loaded. If they have, then
+  // stop invoking the load callback and get ready to play.
   
 	BOOL ready = [self _loadResources];
   if (!ready) {

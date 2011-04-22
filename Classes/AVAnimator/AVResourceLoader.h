@@ -26,9 +26,10 @@
 
 // Invoked to load resources, this call assumes that
 // isReady has been invoked to check if the resources
-// actually need to be loaded. This calls will
-// return right away, it does not wait until the
-// resources are fully loaded.
+// actually need to be loaded. This call must be
+// non-blocking and return right away. If a loading
+// operation will take time to execute, it should be
+// implemented as a secondary thread.
 
 - (void) load;
 
