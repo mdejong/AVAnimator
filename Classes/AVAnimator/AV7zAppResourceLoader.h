@@ -16,6 +16,7 @@
 
 @interface AV7zAppResourceLoader : AVAppResourceLoader {
   NSString *m_archiveFilename;
+  BOOL startedLoading;
 }
 
 @property (nonatomic, copy) NSString *archiveFilename;
