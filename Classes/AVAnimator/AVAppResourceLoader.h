@@ -4,6 +4,9 @@
 //  Created by Moses DeJong on 7/13/10.
 //
 //  License terms defined in License.txt.
+//
+// The AVAppResourceLoader class implements loading of animation
+// data from the compiled in app resources of an iOS project.
 
 #import <Foundation/Foundation.h>
 

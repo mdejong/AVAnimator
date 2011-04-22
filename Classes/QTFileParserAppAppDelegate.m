@@ -23,7 +23,7 @@
 
 #import "AVQTAnimationFrameDecoder.h"
 
-#import "AVPNGFrameDecoder.h"
+#import "AVImageFrameDecoder.h"
 
 #import <QuartzCore/QuartzCore.h>
 
@@ -208,7 +208,7 @@
   
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
-  // the AVPNGFrameDecoder ignores it.
+  // the AVImageFrameDecoder ignores it.
   
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
 	resLoader.movieFilename = @"Counting01.png"; // Phony resource name, becomes no-op  
@@ -216,18 +216,18 @@
   
   // Create decoder that will generate frames from PNG files attached as app resources.
   
-  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"Counting"
+  NSArray *names = [AVImageFrameDecoder arrayWithNumberedNames:@"Counting"
                                                   rangeStart:1
                                                     rangeEnd:8
                                                 suffixFormat:@"%02i.png"];
   
-  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  NSArray *URLs = [AVImageFrameDecoder arrayWithResourcePrefixedURLs:names];
   
   // Decode all PNGs into UIImage objects and save in memory, this takes up a lot
   // of memory but it means that displaying a specific frame is fast because
   // no image decode needs to be done.
   
-  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+  AVImageFrameDecoder *frameDecoder = [AVImageFrameDecoder aVImageFrameDecoder:URLs cacheDecodedImages:TRUE];
 	media.frameDecoder = frameDecoder;
   
 //  media.animatorFrameDuration = 2.0;
@@ -276,7 +276,7 @@
   
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
-  // the AVPNGFrameDecoder ignores it.
+  // the AVImageFrameDecoder ignores it.
   
   // FIXME: should be able to set loader to nil, or perhaps pass the loader to the render
   // so that the animator code need not know how these are structured.
@@ -287,18 +287,18 @@
   
   // Create decoder that will generate frames from PNG files attached as app resources.
   
-  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
+  NSArray *names = [AVImageFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
                                                   rangeStart:1
                                                     rangeEnd:5
                                                 suffixFormat:@"%02i.png"];
   
-  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  NSArray *URLs = [AVImageFrameDecoder arrayWithResourcePrefixedURLs:names];
   
   // Decode all PNGs into UIImage objects and save in memory, this takes up a lot
   // of memory but it means that displaying a specific frame is fast because
   // no image decode needs to be done.
   
-  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+  AVImageFrameDecoder *frameDecoder = [AVImageFrameDecoder aVImageFrameDecoder:URLs cacheDecodedImages:TRUE];
 	media.frameDecoder = frameDecoder;
   
   // Using a rotation and putting it inside an opaque window seems to limit the FPS to about 40.
@@ -348,7 +348,7 @@
   
   // Create loader that will get a filename from an app resource.
   // This resource loader is phony, it becomes a no-op because
-  // the AVPNGFrameDecoder ignores it.
+  // the AVImageFrameDecoder ignores it.
   
 	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
   resLoader.movieFilename = @"BouncingBalls01.png"; // Phony resource name, becomes no-op
@@ -356,14 +356,14 @@
   
   // Create decoder that will generate frames from PNG files attached as app resources.
   
-  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"BouncingBalls"
+  NSArray *names = [AVImageFrameDecoder arrayWithNumberedNames:@"BouncingBalls"
                                                   rangeStart:1
                                                     rangeEnd:30
                                                 suffixFormat:@"%02i.png"];
   
-  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  NSArray *URLs = [AVImageFrameDecoder arrayWithResourcePrefixedURLs:names];
   
-  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:FALSE];
+  AVImageFrameDecoder *frameDecoder = [AVImageFrameDecoder aVImageFrameDecoder:URLs cacheDecodedImages:FALSE];
 	media.frameDecoder = frameDecoder;
     
   if (frameDuration == -1.0) {

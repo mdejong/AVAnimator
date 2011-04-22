@@ -16,7 +16,7 @@
 #import "AVAppResourceLoader.h"
 #import "AVQTAnimationFrameDecoder.h"
 
-#import "AVPNGFrameDecoder.h"
+#import "AVImageFrameDecoder.h"
 
 @interface AVAnimatorViewTests : NSObject {}
 @end
@@ -51,14 +51,14 @@
   
   // Create decoder that will generate frames from PNG files attached as app resources.
   
-  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
+  NSArray *names = [AVImageFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
                                                   rangeStart:1
                                                     rangeEnd:5
                                                 suffixFormat:@"%02i.png"];
   
-  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  NSArray *URLs = [AVImageFrameDecoder arrayWithResourcePrefixedURLs:names];
   
-  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+  AVImageFrameDecoder *frameDecoder = [AVImageFrameDecoder aVImageFrameDecoder:URLs cacheDecodedImages:TRUE];
 	media.frameDecoder = frameDecoder;  
 
   // Configure frame duration and repeat count, there are 5 frames in this animation
@@ -457,14 +457,14 @@
   
   // Create decoder that will generate frames from PNG files attached as app resources.
   
-  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
+  NSArray *names = [AVImageFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
                                                   rangeStart:1
                                                     rangeEnd:5
                                                 suffixFormat:@"%02i.png"];
   
-  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  NSArray *URLs = [AVImageFrameDecoder arrayWithResourcePrefixedURLs:names];
   
-  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+  AVImageFrameDecoder *frameDecoder = [AVImageFrameDecoder aVImageFrameDecoder:URLs cacheDecodedImages:TRUE];
   media.frameDecoder = frameDecoder;  
   
   // Configure frame duration and repeat count, there are 5 frames in this animation
@@ -579,14 +579,14 @@
   
   // Create decoder that will generate frames from PNG files attached as app resources.
   
-  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
+  NSArray *names = [AVImageFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
                                                   rangeStart:1
                                                     rangeEnd:5
                                                 suffixFormat:@"%02i.png"];
   
-  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  NSArray *URLs = [AVImageFrameDecoder arrayWithResourcePrefixedURLs:names];
   
-  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+  AVImageFrameDecoder *frameDecoder = [AVImageFrameDecoder aVImageFrameDecoder:URLs cacheDecodedImages:TRUE];
   media.frameDecoder = frameDecoder;  
   
   // Configure frame duration and repeat count, there are 5 frames in this animation
@@ -718,14 +718,14 @@
   
   // Create decoder that will generate frames from PNG files attached as app resources.
   
-  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
+  NSArray *names = [AVImageFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
                                                   rangeStart:1
                                                     rangeEnd:5
                                                 suffixFormat:@"%02i.png"];
   
-  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  NSArray *URLs = [AVImageFrameDecoder arrayWithResourcePrefixedURLs:names];
   
-  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+  AVImageFrameDecoder *frameDecoder = [AVImageFrameDecoder aVImageFrameDecoder:URLs cacheDecodedImages:TRUE];
   media.frameDecoder = frameDecoder;  
   
   // Configure frame duration and repeat count, there are 5 frames in this animation
@@ -836,14 +836,14 @@
   
   // Create decoder that will generate frames from PNG files attached as app resources.
   
-  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
+  NSArray *names = [AVImageFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
                                                   rangeStart:1
                                                     rangeEnd:5
                                                 suffixFormat:@"%02i.png"];
   
-  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  NSArray *URLs = [AVImageFrameDecoder arrayWithResourcePrefixedURLs:names];
   
-  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+  AVImageFrameDecoder *frameDecoder = [AVImageFrameDecoder aVImageFrameDecoder:URLs cacheDecodedImages:TRUE];
   media.frameDecoder = frameDecoder;  
   
   // Configure frame duration and repeat count, there are 5 frames in this animation
@@ -2134,14 +2134,14 @@
   
   // Create decoder that will generate frames from PNG files attached as app resources.
   
-  NSArray *names = [AVPNGFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
+  NSArray *names = [AVImageFrameDecoder arrayWithNumberedNames:@"CountingLandscape"
                                                   rangeStart:1
                                                     rangeEnd:5
                                                 suffixFormat:@"%02i.png"];
   
-  NSArray *URLs = [AVPNGFrameDecoder arrayWithResourcePrefixedURLs:names];
+  NSArray *URLs = [AVImageFrameDecoder arrayWithResourcePrefixedURLs:names];
   
-  AVPNGFrameDecoder *frameDecoder = [AVPNGFrameDecoder aVPNGFrameDecoder:URLs cacheDecodedImages:TRUE];
+  AVImageFrameDecoder *frameDecoder = [AVImageFrameDecoder aVImageFrameDecoder:URLs cacheDecodedImages:TRUE];
   media.frameDecoder = frameDecoder;  
   
   // Configure frame duration and repeat count, there are 5 frames in this animation

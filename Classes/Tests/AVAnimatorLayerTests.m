@@ -16,8 +16,6 @@
 #import "AVAppResourceLoader.h"
 #import "AVQTAnimationFrameDecoder.h"
 
-#import "AVPNGFrameDecoder.h"
-
 @interface AVAnimatorLayerTests : NSObject {}
 @end
 

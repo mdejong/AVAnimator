@@ -1,20 +1,26 @@
 //
-//  AVPNGFrameDecoder.h
+//  AVImageFrameDecoder.h
 //  QTFileParserApp
 //
 //  Created by Moses DeJong on 1/4/11.
 //
 //  License terms defined in License.txt.
 //
-//  This class implements the AVFrameDecoder such that PNG files can be
-//  loaded and played in an AVAnimatorView. This implementation is not
-//  meant to work all that well, it is only a simple demonstration of
-//  the AVFrameDecoder interface.
+//  This class implements the AVFrameDecoder interface and supports
+//  loading "frames" from individual images files. These image files
+//  could be PNG, JPEG, or any other format supported by the system.
+//  This implementation works, but does not work that well since
+//  decoding an entire image each frame is not optimal. This class
+//  is mostly a proof of concept. A real implementation would use
+//  a file format that supports frame deltas, since frame deltas
+//  provide reasonable memory and cpu usage results. This implementation
+//  holds the entire encoded image data in memory, since IO between
+//  frame rendering is too slow to produce useful results.
 
 #import <Foundation/Foundation.h>
 #import "AVFrameDecoder.h"
 
-@interface AVPNGFrameDecoder : AVFrameDecoder {
+@interface AVImageFrameDecoder : AVFrameDecoder {
   NSArray *m_cgFrameBuffers;
   NSArray *m_urls;
   NSArray *m_dataObjs;
@@ -34,7 +40,7 @@
 
 + (NSArray*) arrayWithResourcePrefixedURLs:(NSArray*)inNumberedNames;
 
-+ (AVPNGFrameDecoder*) aVPNGFrameDecoder:(NSArray*)urls cacheDecodedImages:(BOOL)cacheDecodedImages;
++ (AVImageFrameDecoder*) aVImageFrameDecoder:(NSArray*)urls cacheDecodedImages:(BOOL)cacheDecodedImages;
 
 // Open resource identified by path
 

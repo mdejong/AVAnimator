@@ -1,14 +1,14 @@
 //
-//  AVPNGFrameDecoder.m
+//  AVImageFrameDecoder.m
 //
 //  Created by Moses DeJong on 1/4/11.
 //
 //  License terms defined in License.txt.
 
-#import "AVPNGFrameDecoder.h"
+#import "AVImageFrameDecoder.h"
 #import "AutoPropertyRelease.h"
 
-@implementation AVPNGFrameDecoder
+@implementation AVImageFrameDecoder
 
 @synthesize cgFrameBuffers = m_cgFrameBuffers;
 @synthesize urls = m_urls;
@@ -16,7 +16,7 @@
 @synthesize cachedImageObjs = m_cachedImageObjs;
 
 - (void) dealloc {
-  [AutoPropertyRelease releaseProperties:self thisClass:AVPNGFrameDecoder.class];
+  [AutoPropertyRelease releaseProperties:self thisClass:AVImageFrameDecoder.class];
   [super dealloc];
 }
 
@@ -70,9 +70,9 @@
 	return newArray;
 }
 
-+ (AVPNGFrameDecoder*) aVPNGFrameDecoder:(NSArray*)urls cacheDecodedImages:(BOOL)cacheDecodedImages
++ (AVImageFrameDecoder*) aVImageFrameDecoder:(NSArray*)urls cacheDecodedImages:(BOOL)cacheDecodedImages
 {
-  AVPNGFrameDecoder *obj = [[AVPNGFrameDecoder alloc] init];
+  AVImageFrameDecoder *obj = [[AVImageFrameDecoder alloc] init];
   [obj autorelease];
   if (obj == nil) {
     return nil;
