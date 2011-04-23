@@ -8,7 +8,8 @@
 // Extend AVAppResourceLoader to support loading of 7zip compressed resource files.
 // For example, a resource named "2x2_black_blue_16BPP.mov.7z" could be decompressed
 // to "2x2_black_blue_16BPP.mov". The file is decompressed into the tmp dir in
-// a second thread.
+// a second thread. The caller must define the archiveFilename, movieFilename, and
+// outPath properties. The outPath is a .mvid file path.
 
 #import <Foundation/Foundation.h>
 
@@ -16,15 +17,18 @@
 
 @interface AV7zAppResourceLoader : AVAppResourceLoader {
   NSString *m_archiveFilename;
+  NSString *m_outPath;
   BOOL startedLoading;
 }
 
+// The name of the archive resource file. For example: "XYZ.mov.7z"
 @property (nonatomic, copy) NSString *archiveFilename;
 
+// The fully qualified filename for the extracted data. For example: "XYZ.mov.7z"
+// If outPath is not set, then a path in the tmp dir will be automatically
+// constructed using the movieFilename property.
+@property (nonatomic, copy) NSString *outPath;
+
 + (AV7zAppResourceLoader*) aV7zAppResourceLoader;
-
-// Non-public utils
-
-- (NSString*) _getTmpDirPath:(NSString*)filename;
 
 @end

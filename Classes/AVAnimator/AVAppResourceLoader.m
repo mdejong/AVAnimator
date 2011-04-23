@@ -7,6 +7,8 @@
 
 #import "AVAppResourceLoader.h"
 
+#import "AVFileUtil.h"
+
 @implementation AVAppResourceLoader
 
 @synthesize movieFilename = m_movieFilename;
@@ -24,27 +26,14 @@
   return [[[AVAppResourceLoader alloc] init] autorelease];
 }
 
-- (BOOL) _fileExists:(NSString*)path
-{
-	return [[NSFileManager defaultManager] fileExistsAtPath:path];
-}
-
-- (NSString*) _getResourcePath:(NSString*)movieFilename
-{
-	NSBundle* appBundle = [NSBundle mainBundle];
-	NSString* movieFilePath = [appBundle pathForResource:movieFilename ofType:nil];
-  NSAssert(movieFilePath, @"movieFilePath is nil");
-	return movieFilePath;
-}
-
 - (NSString*) _getMoviePath:(NSString*)movieFilename
 {
-  return [self _getResourcePath:movieFilename];
+  return [AVFileUtil getResourcePath:movieFilename];
 }
 
 - (NSString*) _getAudioPath:(NSString*)audioFilename
 {
-  return [self _getResourcePath:audioFilename];
+  return [AVFileUtil getResourcePath:audioFilename];
 }
 
 - (BOOL) isMovieReady
@@ -57,7 +46,7 @@
 
   NSString *tmpMoviePath = [self _getMoviePath:self.movieFilename];
   
-  if ([self _fileExists:tmpMoviePath]) {
+  if ([AVFileUtil fileExists:tmpMoviePath]) {
     isMovieReady = TRUE;
   }
   
@@ -73,7 +62,7 @@
     NSString *tmpTracksPath = [self _getAudioPath:self.audioFilename];
     NSAssert(tmpTracksPath, @"tmpTracksPath is nil");
     
-    if ([self _fileExists:tmpTracksPath]) {
+    if ([AVFileUtil fileExists:tmpTracksPath]) {
       isAudioReady = TRUE;
     }    
   } else {

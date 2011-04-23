@@ -8,15 +8,19 @@
 
 #import "AV7zAppResourceLoader.h"
 
+#import "AVFileUtil.h"
+
 #import "LZMAExtractor.h"
 
 @implementation AV7zAppResourceLoader
 
 @synthesize archiveFilename = m_archiveFilename;
+@synthesize outPath = m_outPath;
 
 - (void) dealloc
 {
   self.archiveFilename = nil;
+  self.outPath = nil;
   [super dealloc];
 }
 
@@ -78,48 +82,22 @@
   // Superclass load method asserts that self.movieFilename is not nil
   [super load];
 
-  if (self.archiveFilename == nil) {
-    // If no archive filename is indicated, but an entry filename is, then assume
-    // the archive name. For example, if movieFilename is "2x2_black_blue_16BPP.mov"
-    // then assume an archive filename of "2x2_black_blue_16BPP.mov.7z"
-    self.archiveFilename = [NSString stringWithFormat:@"%@.7z", self.movieFilename];
-  }
-    
   NSString *archiveFilename = self.archiveFilename;
-  NSString *archivePath = [self _getResourcePath:archiveFilename];
+  NSAssert(archiveFilename, @"archiveFilename");
+  NSString *archivePath = [AVFileUtil getResourcePath:archiveFilename];
   NSString *archiveEntry = self.movieFilename;
-  
-  NSString *tmpDir = NSTemporaryDirectory();
-  NSString *outPath = [tmpDir stringByAppendingPathComponent:archiveEntry];
-  
-  // Generate a phony /tmp filename, data is written to the phony path name and then
-  // the result is renamed to outPath once complete. This avoids thread race conditions
-  // and partial writes. Note that the filename is generated in this method, and this
-  // method should only be invoked from the main thread.  
+  NSString *outPath = self.outPath;
+  NSAssert(outPath, @"outPath not defined");
 
-  NSDate *nowDate = [NSDate date];
-  NSTimeInterval ti = [nowDate timeIntervalSince1970];
-  uint64_t ival = (uint64_t)(ti * 1000.0);
-  NSString *phonyOutFilename = [NSString stringWithFormat:@"%qi", ival];
-  NSString *phonyOutPath = [tmpDir stringByAppendingPathComponent:phonyOutFilename];
+  // Generate phony tmp path that data will be written to as it is extracted.
+  // This avoids thread race conditions and partial writes. Note that the filename is
+  // generated in this method, and this method should only be invoked from the main thread.
+
+  NSString *phonyOutPath = [AVFileUtil generateUniqueTmpPath];
 
   [self _detachNewThread:archivePath archiveEntry:archiveEntry phonyOutPath:phonyOutPath outPath:outPath];
   
   return;
-}
-
-// Given a filename (typically an archive entry name), return the filename
-// in the tmp dir that corresponds to the entry. For example,
-// "2x2_black_blue_16BPP.mov" -> "/tmp/2x2_black_blue_16BPP.mov" where "/tmp"
-// is the app tmp dir.
-
-- (NSString*) _getTmpDirPath:(NSString*)filename
-{
-  NSString *tmpDir = NSTemporaryDirectory();
-  NSAssert(tmpDir, @"tmpDir");
-  NSString *outPath = [tmpDir stringByAppendingPathComponent:filename];
-  NSAssert(outPath, @"outPath");
-  return outPath;
 }
 
 // Define isMovieReady so that TRUE is returned if the mov file
@@ -130,12 +108,13 @@
   BOOL isMovieReady = FALSE;
   
   NSAssert(self.movieFilename, @"movieFilename is nil");
+  NSAssert(self.outPath, @"outPath is nil");
   
   // Return TRUE if the decoded mov file exists in the tmp dir
   
-  NSString *tmpMoviePath = [self _getTmpDirPath:self.movieFilename];
+  NSString *tmpMoviePath = self.outPath;
   
-  if ([self _fileExists:tmpMoviePath]) {
+  if ([AVFileUtil fileExists:tmpMoviePath]) {
     isMovieReady = TRUE;
   }
   
