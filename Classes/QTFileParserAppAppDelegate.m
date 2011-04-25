@@ -463,18 +463,37 @@
   }  
 }
 
-// This example shows alpha compositing, the ghost is in a movie
-// with an alpha channel. The ghost is partially "see through"
+// This example demonstrates alpha compositing using a movie of a ghost at
+// 32BPP with an alpha channel. The ghost is partially "see through"
 // so the color in the background shows through and the ghost
 // looks like a mix of white and the background color.
 // Note that because a CoreAnimation color cycle is used, the
 // FPS will show up as 60 FPS in Instruments as long as the
-// color cycle animation is running.
+// color cycle animation is running. Decoding the alpha ghost
+// from a .mov file will max out at about 20 FPS on a 3g iPhone.
+// The framerate is the same when decoding from a .mvid file because
+// the bottleneck is in the time it takes to transfer the image data
+// to the graphics card.
 
 - (void) loadAlphaGhostLandscapeAnimation:(float)frameDuration
 {
-  NSString *resourceName;
-  resourceName = @"AlphaGhost.mov";
+  int useMvid = 1;
+
+  // Convert .mov to .mvid format before playing
+  NSString *videoResourceArchiveName;
+  NSString *videoResourceEntryName;
+  NSString *videoResourceOutName;
+  NSString *videoResourceOutPath;
+  
+  if (useMvid) {
+    // Convert .mov to .mvid format before playing
+    videoResourceArchiveName = @"AlphaGhost.mov.7z";
+    videoResourceEntryName = @"AlphaGhost.mov";
+    videoResourceOutName = @"AlphaGhost.mvid";
+    videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];    
+  } else {
+    videoResourceEntryName = @"AlphaGhost.mov";    
+  }
   
   // FIXME: Create example without the background animation, because it makes
   // the FPS unusable as a debug tool.
@@ -506,15 +525,28 @@
   
   // Create loader that will read a movie file from app resources.
   
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = resourceName;
-	media.resourceLoader = resLoader;
+  if (useMvid) {
+    AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+    resLoader.archiveFilename = videoResourceArchiveName;
+    resLoader.movieFilename = videoResourceEntryName;
+    resLoader.outPath = videoResourceOutPath;
+    
+    media.resourceLoader = resLoader;
+  } else {
+    AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+    resLoader.movieFilename = videoResourceEntryName;
+    media.resourceLoader = resLoader;    
+  }
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-	media.frameDecoder = frameDecoder;
-  
+  if (useMvid) {
+    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+    media.frameDecoder = frameDecoder;
+  } else {
+    AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+    media.frameDecoder = frameDecoder;
+  }  
   // An alpha 480x320 animation seems to be able to hit about 15 to 20 FPS.
   // Not as good as 24bpp, but the alpha blending and premultiplicaiton
   // on each pixel are more costly in terms of CPU time.

@@ -34,6 +34,7 @@
 		CD15C2D512BC9BDC00A26588 /* VolumeLeftTall.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C2CD12BC9BDC00A26588 /* VolumeLeftTall.png */; };
 		CD15C2D612BC9BDC00A26588 /* VolumeRightTall.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C2CE12BC9BDC00A26588 /* VolumeRightTall.png */; };
 		CD15C54F12BCADA800A26588 /* smiley.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C54E12BCADA800A26588 /* smiley.png */; };
+		CD2841921365F6FD007F229A /* AlphaGhost.mov.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD2841911365F6FD007F229A /* AlphaGhost.mov.7z */; };
 		CD288D4112D93865005F0EEA /* 2x2_black_blue_16BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD288D3E12D93865005F0EEA /* 2x2_black_blue_16BPP.mov */; };
 		CD288D4212D93865005F0EEA /* 2x2_black_blue_24BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD288D3F12D93865005F0EEA /* 2x2_black_blue_24BPP.mov */; };
 		CD288D4312D93865005F0EEA /* 2x2_black_blue_32BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD288D4012D93865005F0EEA /* 2x2_black_blue_32BPP.mov */; };
@@ -293,6 +294,7 @@
 		CD15C2CD12BC9BDC00A26588 /* VolumeLeftTall.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = VolumeLeftTall.png; sourceTree = "<group>"; };
 		CD15C2CE12BC9BDC00A26588 /* VolumeRightTall.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = VolumeRightTall.png; sourceTree = "<group>"; };
 		CD15C54E12BCADA800A26588 /* smiley.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = smiley.png; sourceTree = "<group>"; };
+		CD2841911365F6FD007F229A /* AlphaGhost.mov.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = AlphaGhost.mov.7z; sourceTree = "<group>"; };
 		CD288D3E12D93865005F0EEA /* 2x2_black_blue_16BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 2x2_black_blue_16BPP.mov; sourceTree = "<group>"; };
 		CD288D3F12D93865005F0EEA /* 2x2_black_blue_24BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 2x2_black_blue_24BPP.mov; sourceTree = "<group>"; };
 		CD288D4012D93865005F0EEA /* 2x2_black_blue_32BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 2x2_black_blue_32BPP.mov; sourceTree = "<group>"; };
@@ -537,6 +539,7 @@
 				CD4DA91012E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov */,
 				CDBDC0F712E0E80000EF5BD4 /* Matrix_480_320_10FPS_16BPP.mov */,
 				CDF7895E12DEB1FE00E96B82 /* AlphaGhost.mov */,
+				CD2841911365F6FD007F229A /* AlphaGhost.mov.7z */,
 				CD34638C12D79EA30072CC68 /* License.txt */,
 				CD7D2BED12D510CB0096EDF3 /* CountingLandscape */,
 				CDFAD88C12D3D50F009DEAF3 /* CountingAnimation */,
@@ -912,6 +915,7 @@
 				CD3EC98F1363768300266267 /* Bounce_24BPP_15FPS.mov.7z in Resources */,
 				CD3EC9901363768300266267 /* Bounce_32BPP_15FPS.mov.7z in Resources */,
 				CD9BF09A1364EC2700FF5190 /* GradientColorWheel_2FPS_32BPP_Keyframes.mov.7z in Resources */,
+				CD2841921365F6FD007F229A /* AlphaGhost.mov.7z in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
