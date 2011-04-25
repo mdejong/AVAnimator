@@ -24,6 +24,8 @@
 // This method is invoked in the secondary thread to decode the contents of the archive entry
 // and write it to an output file (typically in the tmp dir).
 
+#define LOGGING
+
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   
@@ -36,6 +38,10 @@
   NSString *phonyOutPath = [arr objectAtIndex:2];
   NSString *phonyOutPath2 = [arr objectAtIndex:3];
   NSString *outPath = [arr objectAtIndex:4];
+  
+#ifdef LOGGING
+  NSLog(@"start 7zip extraction %@", archiveEntry);
+#endif // LOGGING
   
   BOOL worked;
   worked = [LZMAExtractor extractArchiveEntry:archivePath archiveEntry:archiveEntry outPath:phonyOutPath];
@@ -54,6 +60,10 @@
   
   assert(strcmp(movPathCstr, phonyOutPath2Cstr) != 0);
   
+#ifdef LOGGING
+  NSLog(@"done 7zip extraction %@, start encode", archiveEntry);
+#endif // LOGGING  
+  
   uint32_t retcode;
   retcode = movdata_convert_maxvid_file(movPathCstr, movData, movNumBytes, phonyOutPath2Cstr);
   assert(retcode == 0);
@@ -68,25 +78,9 @@
   worked = [[NSFileManager defaultManager] moveItemAtPath:phonyOutPath2 toPath:outPath error:nil];
   NSAssert(worked, @"moveItemAtPath failed for decode result");
   
-  if (0) {
-    // Compare extracted file data to identical data attached as a project resource
-    
-    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
-    NSAssert(wroteMvidData, @"could not map .mov data");
-
-    NSString *tail = [outPath lastPathComponent];
-    NSString *resPath = [AVFileUtil getResourcePath:tail];
-    NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
-    NSAssert(resMvidData, @"could not map .mov data");
-
-    uint32_t resByteLength = [resMvidData length];
-    uint32_t wroteByteLength = [wroteMvidData length];
-    
-    BOOL sameLength = (resByteLength == wroteByteLength);
-    NSAssert(sameLength, @"sameLength");
-    BOOL same = [resMvidData isEqualToData:wroteMvidData];
-    NSAssert(same, @"same");
-  }
+#ifdef LOGGING
+  NSLog(@"done encode %@", [outPath lastPathComponent]);
+#endif // LOGGING
   
   [pool drain];
 }

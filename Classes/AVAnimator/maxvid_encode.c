@@ -12,22 +12,8 @@
 
 #include "maxvid_encode.h"
 
-// Generate a compile time error if compiled in Thumb mode. Code compiled in ARM mode will execute
-// significantly faster. This module should be compiled with "-mno-thumb" added to the file specific
-// target to enabled ARM mode for just this module.
-
-#if defined(__arm__)
-# define COMPILE_ARM 1
-# if defined(__thumb__)
-#  define COMPILE_ARM_THUMB_ASM 1
-# else
-#  define COMPILE_ARM_ASM 1
-# endif
-#endif
-
-#if defined(COMPILE_ARM_THUMB_ASM)
-#error "Module should not be compiled in Thumb mode, enable ARM mode by adding -mno-thumb to file specific target flags"
-#endif
+// Testing indicates that there is no performance improvement in emitting ARM code for this
+// encode module.
 
 //#define EXTRA_CHECKS 1
 

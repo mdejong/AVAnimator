@@ -282,17 +282,17 @@
 
 - (BOOL) _loadResources
 {
-	NSLog(@"Started _loadResources");
+	//NSLog(@"Started _loadResources");
   
   NSAssert(self.resourceLoader, @"resourceLoader");
 	BOOL isReady = [self.resourceLoader isReady];
   if (!isReady) {
-    NSLog(@"Not Yet Ready in _loadResources");
+    //NSLog(@"Not Yet Ready in _loadResources");
     [self.resourceLoader load];
     return FALSE;
   }
   
-	NSLog(@"Ready _loadResources");
+	//NSLog(@"Ready _loadResources");
   
 	NSArray *resourcePathsArr = [self.resourceLoader getResources];
   

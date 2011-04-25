@@ -15,11 +15,11 @@
 		CD0BCEB313634F7E00D8287A /* AV7zQT2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD0BCEB213634F7E00D8287A /* AV7zQT2MvidResourceLoader.m */; };
 		CD0BCEB413634F7E00D8287A /* AV7zQT2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD0BCEB213634F7E00D8287A /* AV7zQT2MvidResourceLoader.m */; };
 		CD0BD03C1363523800D8287A /* maxvid_decode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0341363523800D8287A /* maxvid_decode.c */; settings = {COMPILER_FLAGS = "-mno-thumb"; }; };
-		CD0BD03D1363523800D8287A /* maxvid_encode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0361363523800D8287A /* maxvid_encode.c */; settings = {COMPILER_FLAGS = "-mno-thumb"; }; };
+		CD0BD03D1363523800D8287A /* maxvid_encode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0361363523800D8287A /* maxvid_encode.c */; };
 		CD0BD03E1363523800D8287A /* maxvid_file.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0381363523800D8287A /* maxvid_file.c */; };
 		CD0BD03F1363523800D8287A /* movdata_convert_maxvid.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD03A1363523800D8287A /* movdata_convert_maxvid.c */; };
 		CD0BD0401363523800D8287A /* maxvid_decode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0341363523800D8287A /* maxvid_decode.c */; settings = {COMPILER_FLAGS = "-mno-thumb"; }; };
-		CD0BD0411363523800D8287A /* maxvid_encode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0361363523800D8287A /* maxvid_encode.c */; settings = {COMPILER_FLAGS = "-mno-thumb"; }; };
+		CD0BD0411363523800D8287A /* maxvid_encode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0361363523800D8287A /* maxvid_encode.c */; };
 		CD0BD0421363523800D8287A /* maxvid_file.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0381363523800D8287A /* maxvid_file.c */; };
 		CD0BD0431363523800D8287A /* movdata_convert_maxvid.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD03A1363523800D8287A /* movdata_convert_maxvid.c */; };
 		CD0BD14413635EDD00D8287A /* AVFileUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD14313635EDD00D8287A /* AVFileUtil.m */; };
