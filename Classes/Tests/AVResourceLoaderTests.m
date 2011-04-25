@@ -20,6 +20,8 @@
 #import "AV7zAppResourceLoader.h"
 #import "AV7zQT2MvidResourceLoader.h"
 
+#import "AVMvidFrameDecoder.h"
+
 #import "AVFileUtil.h"
 
 @interface AVResourceLoaderTests : NSObject {}
@@ -42,6 +44,9 @@
   CFDataGetBytes(pixelData, CFRangeMake(offset, sizeof(uint16_t) * nPixels), (UInt8*)pixelPtr);
   CFRelease(pixelData);
 }
+
+// Decompress .mov.7z app resource to .mov in temp file and open.
+// Then extract image data to make sure extraction was successful.
 
 + (void) test7zBlackBlue2x2_16BPP
 {
@@ -161,6 +166,127 @@
   return;
 }
 
+// Use AV7zAppResourceLoader class to decompress .mov.7z to .mov and compare
+// the results to a known good result, also attached as a resource.
+
++ (void) testDecode7zCompareToResource
+{
+  NSString *archiveFilename = @"2x2_black_blue_16BPP.mov.7z";
+  NSString *entryFilename = @"2x2_black_blue_16BPP.mov";
+  NSString *outPath = [AVFileUtil getTmpDirPath:entryFilename];
+  
+  AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  
+  // If the decode mov path exists currently, delete it so that this test case always
+  // decodes the .mov from the .7z compressed Resource.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file with same name as tmp dir");
+  }  
+  
+  [resLoader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");  
+  
+  NSLog(@"Wrote : %@", outPath);
+  
+  if (1) {
+    // Compare extracted file data to identical data attached as a project resource
+    
+    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSAssert(wroteMvidData, @"could not map .mov data");
+    
+    NSString *resPath = [AVFileUtil getResourcePath:entryFilename];
+    NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
+    NSAssert(resMvidData, @"could not map .mov data");
+    
+    uint32_t resByteLength = [resMvidData length];
+    uint32_t wroteByteLength = [wroteMvidData length];
+    
+    // Extracted 2x2_black_blue_16BPP.mov Size should be 839 bytes
+    
+    BOOL sameLength = (resByteLength == wroteByteLength);
+    NSAssert(sameLength, @"sameLength");
+    BOOL same = [resMvidData isEqualToData:wroteMvidData];
+    NSAssert(same, @"same");
+  }
+  
+  return;
+}
+
+// Decompress a .mov.7z file and convert the .mov data to .mvid
+
++ (void) testDecode7zMvidCompareToResource
+{
+  NSString *archiveFilename = @"2x2_black_blue_16BPP.mov.7z";
+  NSString *entryFilename = @"2x2_black_blue_16BPP.mov";
+  NSString *outFilename = @"2x2_black_blue_16BPP.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+
+  AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  
+  // If the decode mov path exists currently, delete it so that this test case always
+  // decodes the .mov from the .7z compressed Resource.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file with same name as tmp dir");
+  }  
+  
+  [resLoader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");  
+  
+  NSLog(@"Wrote : %@", outPath);
+  
+  if (1) {
+    // Compare extracted file data to identical data attached as a project resource
+    
+    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSAssert(wroteMvidData, @"could not map .mov data");
+    
+    NSString *resPath = [AVFileUtil getResourcePath:outFilename];
+    NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
+    NSAssert(resMvidData, @"could not map .mov data");
+    
+    uint32_t resByteLength = [resMvidData length];
+    uint32_t wroteByteLength = [wroteMvidData length];
+    
+    // Converted 2x2_black_blue_16BPP.mvid should be 96 bytes
+    
+    BOOL sameLength = (resByteLength == wroteByteLength);
+    NSAssert(sameLength, @"sameLength");
+    BOOL same = [resMvidData isEqualToData:wroteMvidData];
+    NSAssert(same, @"same");
+    
+    // Verify that the emitted .mvid file has a valid magic number
+    
+    //uint32_t mvidNumBytes = [wroteMvidData length];
+    char *mvidBytes = (char*) [wroteMvidData bytes];
+    
+    MVFile *mvFilePtr = maxvid_file_map_open(mvidBytes);
+    
+    assert(mvFilePtr->header.numFrames == 2);
+    
+    maxvid_file_map_close(mvFilePtr);
+  }
+  
+  return;
+}
+
 + (void) test7zMvidBlackBlue2x2_16BPP
 {
 	id appDelegate = [[UIApplication sharedApplication] delegate];	
@@ -205,9 +331,11 @@
     NSAssert(worked, @"could not remove existing file with same name as tmp dir");
   }
   
+  NSAssert(![resLoader isReady], @"not ready yet");
+  
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;

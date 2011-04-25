@@ -26,9 +26,9 @@
   return [[[AVAppResourceLoader alloc] init] autorelease];
 }
 
-- (NSString*) _getMoviePath:(NSString*)movieFilename
+- (NSString*) _getMoviePath
 {
-  return [AVFileUtil getResourcePath:movieFilename];
+  return [AVFileUtil getResourcePath:self.movieFilename];
 }
 
 - (NSString*) _getAudioPath:(NSString*)audioFilename
@@ -44,7 +44,7 @@
   
   // Return TRUE if the mov file exists in the app resources
 
-  NSString *tmpMoviePath = [self _getMoviePath:self.movieFilename];
+  NSString *tmpMoviePath = [self _getMoviePath];
   
   if ([AVFileUtil fileExists:tmpMoviePath]) {
     isMovieReady = TRUE;
@@ -95,7 +95,7 @@
 		NSAssert(FALSE, @"resources not ready");
   }
   NSMutableArray *mArr = [NSMutableArray array];
-  NSString *tmpAnimationsPath = [self _getMoviePath:self.movieFilename];
+  NSString *tmpAnimationsPath = [self _getMoviePath];
   [mArr addObject:tmpAnimationsPath];  
   if (self.audioFilename != nil) {
     NSString *tmpTracksPath = [self _getAudioPath:self.audioFilename];

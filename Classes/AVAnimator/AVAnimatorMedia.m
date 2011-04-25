@@ -18,6 +18,8 @@
 #import "AVResourceLoader.h"
 #import "AVFrameDecoder.h"
 
+#import "AVAppResourceLoader.h"
+
 // Uncomment to enable debug output, note that this kill FPS performance of decoder!
 //#define DEBUG_OUTPUT
 
@@ -281,8 +283,8 @@
 - (BOOL) _loadResources
 {
 	NSLog(@"Started _loadResources");
-  NSAssert(self.resourceLoader, @"resourceLoader");
   
+  NSAssert(self.resourceLoader, @"resourceLoader");
 	BOOL isReady = [self.resourceLoader isReady];
   if (!isReady) {
     NSLog(@"Not Yet Ready in _loadResources");

@@ -25,6 +25,12 @@
 
 #import "AVImageFrameDecoder.h"
 
+#import "AVMvidFrameDecoder.h"
+
+#import "AVFileUtil.h"
+
+#import "AV7zQT2MvidResourceLoader.h"
+
 #import <QuartzCore/QuartzCore.h>
 
 #if defined(REGRESSION_TESTS)
@@ -398,15 +404,20 @@
 {
   NSString *resourceName;
   if (bpp == 16) {
-  resourceName = @"Bounce_16BPP_15FPS.mov";
+  resourceName = @"Bounce_16BPP_15FPS";
   } else if (bpp == 24) {
-   resourceName = @"Bounce_24BPP_15FPS.mov";
+   resourceName = @"Bounce_24BPP_15FPS";
   } else if (bpp == 32) {
-  resourceName = @"Bounce_32BPP_15FPS.mov";
+  resourceName = @"Bounce_32BPP_15FPS";
   } else {
     assert(0);
   }
 
+  NSString *videoResourceArchiveName = [NSString stringWithFormat:@"%@.mov.7z", resourceName];
+  NSString *videoResourceEntryName = [NSString stringWithFormat:@"%@.mov", resourceName];
+  NSString *videoResourceOutName = [NSString stringWithFormat:@"%@.mvid", resourceName];;
+  NSString *videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];  
+  
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
   // has no transforms applied to the AVAnimatorView.
@@ -423,14 +434,17 @@
   
   // Create loader that will read a movie file from app resources.
   
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = resourceName;
+  AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+  resLoader.archiveFilename = videoResourceArchiveName;
+  resLoader.movieFilename = videoResourceEntryName;
+  resLoader.outPath = videoResourceOutPath;
+
 	media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-	media.frameDecoder = frameDecoder;
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  media.frameDecoder = frameDecoder;
   
   if (frameDuration == -1.0) {
     frameDuration = AVAnimator30FPS;
@@ -747,7 +761,10 @@
 
 - (void) loadGradientColorWheelAnimation:(float)frameDuration
 {
-  NSString *videoResourceName = @"GradientColorWheel_2FPS_32BPP_Keyframes.mov";
+  NSString *videoResourceArchiveName = @"GradientColorWheel_2FPS_32BPP_Keyframes.mov.7z";
+  NSString *videoResourceEntryName = @"GradientColorWheel_2FPS_32BPP_Keyframes.mov";
+  NSString *videoResourceOutName = @"GradientColorWheel_2FPS_32BPP_Keyframes.mvid";
+  NSString *videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];
   
   // The color wheel is partially transparent, so set a blue color on the window
   // to verify that some of the blue is showing through.
@@ -767,13 +784,16 @@
   
   // Create loader that will read a movie file from app resources.
   
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = videoResourceName;
+	AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+  resLoader.archiveFilename = videoResourceArchiveName;
+  resLoader.movieFilename = videoResourceEntryName;
+  resLoader.outPath = videoResourceOutPath;
+  
 	media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   if (frameDuration != -1.0) {

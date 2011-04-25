@@ -100,25 +100,11 @@
   return;
 }
 
-// Define isMovieReady so that TRUE is returned if the mov file
-// has been decompressed already.
+// Output movie filename must be redefined
 
-- (BOOL) isMovieReady
+- (NSString*) _getMoviePath
 {
-  BOOL isMovieReady = FALSE;
-  
-  NSAssert(self.movieFilename, @"movieFilename is nil");
-  NSAssert(self.outPath, @"outPath is nil");
-  
-  // Return TRUE if the decoded mov file exists in the tmp dir
-  
-  NSString *tmpMoviePath = self.outPath;
-  
-  if ([AVFileUtil fileExists:tmpMoviePath]) {
-    isMovieReady = TRUE;
-  }
-  
-  return isMovieReady;
+ return self.outPath;
 }
 
 @end

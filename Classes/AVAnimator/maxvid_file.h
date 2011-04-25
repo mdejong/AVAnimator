@@ -26,6 +26,7 @@ typedef struct {
   uint32_t width;
   uint32_t height;
   uint32_t bpp;
+  // FIXME: is flaot 32 bit on 64 bit systems ?
   float frameDuration;
   uint32_t numFrames;
   // Padding out to 16 words, so that there is room to add additional fields later
@@ -107,8 +108,13 @@ uint32_t maxvid_file_emit_nopframe() {
 
 static inline
 MVFile* maxvid_file_map_open(void *buffer) {
-  MVFile *mvFilePtr = (MVFile *)buffer;  
-  assert(mvFilePtr->header.magic == MV_FILE_MAGIC);
+  assert(sizeof(MVFileHeader) == 16*4);
+  assert(sizeof(MVFrame) == 2*4);
+  
+  MVFile *mvFilePtr = (MVFile *)buffer;
+  uint32_t magic = mvFilePtr->header.magic;
+  assert(magic == MV_FILE_MAGIC);
+  assert(mvFilePtr->header.bpp == 16 || mvFilePtr->header.bpp == 24 || mvFilePtr->header.bpp == 32);
   return mvFilePtr;
 }
 

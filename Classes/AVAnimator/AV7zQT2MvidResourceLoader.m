@@ -58,10 +58,35 @@
   retcode = movdata_convert_maxvid_file(movPathCstr, movData, movNumBytes, phonyOutPath2Cstr);
   assert(retcode == 0);
   
+  // Remove tmp file that contains the .mov data
+  
+  worked = [[NSFileManager defaultManager] removeItemAtPath:phonyOutPath error:nil];
+  NSAssert(worked, @"could not remove tmp file");
+  
   // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
   
   worked = [[NSFileManager defaultManager] moveItemAtPath:phonyOutPath2 toPath:outPath error:nil];
   NSAssert(worked, @"moveItemAtPath failed for decode result");
+  
+  if (0) {
+    // Compare extracted file data to identical data attached as a project resource
+    
+    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSAssert(wroteMvidData, @"could not map .mov data");
+
+    NSString *tail = [outPath lastPathComponent];
+    NSString *resPath = [AVFileUtil getResourcePath:tail];
+    NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
+    NSAssert(resMvidData, @"could not map .mov data");
+
+    uint32_t resByteLength = [resMvidData length];
+    uint32_t wroteByteLength = [wroteMvidData length];
+    
+    BOOL sameLength = (resByteLength == wroteByteLength);
+    NSAssert(sameLength, @"sameLength");
+    BOOL same = [resMvidData isEqualToData:wroteMvidData];
+    NSAssert(same, @"same");
+  }
   
   [pool drain];
 }
