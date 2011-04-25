@@ -21,6 +21,23 @@
 
 #include "movdata.h"
 
+// Generate a compile time error if compiled in Thumb mode. This module executes
+// significantly faster in ARM mode because conditional instructions can be generated.
+// The whole project need not be compiled in ARM mode, just this module.
+
+#if defined(__arm__)
+# define COMPILE_ARM 1
+# if defined(__thumb__)
+#  define COMPILE_ARM_THUMB_ASM 1
+# else
+#  define COMPILE_ARM_ASM 1
+# endif
+#endif
+
+#if defined(COMPILE_ARM_THUMB_ASM)
+#error "Module should not be compiled in Thumb mode, enable ARM mode by adding -mno-thumb to file specific target flags"
+#endif
+
 // Chunks of data contain 1 to N samples and are stored in mdat.
 // The chunk contains an array of sample pointers and the
 // offset in the file where the chunk begins.
@@ -1942,6 +1959,9 @@ read_ARGB_and_premultiply(const char *ptr) {
  
 */
 
+// bitwise AND version of (num % pot)
+#define UINTMOD(ptr, pot) (((uint32_t)ptr) & (pot - 1))
+
 // 16 bit rgb555 pixels with no alpha channel
 // Works for (RBG555, RGB5551, or RGB565) though only XRRRRRGGGGGBBBBB is supported.
 
@@ -2172,7 +2192,7 @@ decode_rle_sample16(
         } else if (rle_code < -1) {
           // Read pixel value and repeat it -rle_code times in the frame buffer
           
-          uint32_t numTimesToRepeat = -rle_code;
+          uint32_t numPixels = -rle_code;
           
           // 16 bit pixels : rgb555 or rgb565
             
@@ -2182,34 +2202,53 @@ decode_rle_sample16(
           bytesRemaining -= 2;
           
 #ifdef DUMP_WHILE_DECODING
-          fprintf(stdout, "repeat 16 bit pixel 0x%X %d times\n", pixel, numTimesToRepeat);
+          fprintf(stdout, "repeat 16 bit pixel 0x%X %d times\n", pixel, numPixels);
 #endif // DUMP_WHILE_DECODING
           
-          assert((rowPtr + numTimesToRepeat - 1) < rowPtrMax);
+          assert((rowPtr + numPixels - 1) < rowPtrMax);
           
-          if (pixel == 0x0) {
-            bzero(rowPtr, numTimesToRepeat * sizeof(uint16_t));
-            rowPtr += numTimesToRepeat;
-          } else {
-            for (int i = 0; i < numTimesToRepeat; i++) {
+          if (numPixels <= 12) {
+            do {
               *rowPtr++ = pixel;
-            }
+            } while (--numPixels != 0);
+          } else {
+            if (pixel == 0x0) {
+              bzero(rowPtr, numPixels << 1);
+              rowPtr += numPixels;
+            } else {
+              // Use memset_pattern4() to fill whole words after making sure that the
+              // framebuffer is word aligned. A single pixel might need to be written
+              // to align the framebuffer, then a trailing pixel might be needed after
+              // a whole number of words has been written.
+              pixel |= (pixel << 16);
+              if (UINTMOD(rowPtr, sizeof(uint32_t)) != 0) {
+                // Framebuffer is half word aligned, write 16 bit pixel in the low half word
+                *rowPtr++ = pixel;
+                numPixels--;
+              }
+              const uint32_t numWords = numPixels >> 1;
+              memset_pattern4(rowPtr, &pixel, numWords << 2);
+              rowPtr += numWords << 1;
+              if (numPixels & 0x1) {
+                *rowPtr++ = pixel;
+              }
+            }            
           }
-          
         } else {
           // Greater than 0, copy pixels from input to output stream
           
           // 16 bit pixels
           
-          uint32_t numBytesToCopy = sizeof(uint16_t) * rle_code;
-            
+          uint32_t numBytesToCopy = rle_code << 1;
+          
           assert(bytesRemaining >= numBytesToCopy);
           
           bytesRemaining -= numBytesToCopy;
           
           assert((rowPtr + rle_code - 1) < rowPtrMax);
-            
-          for (int i = 0; i < rle_code; i++) {
+          
+          uint32_t numPixels = rle_code;
+          do {
             uint32_t pixel;
             READ_UINT16(pixel, samplePtr);
             
@@ -2218,8 +2257,7 @@ decode_rle_sample16(
 #endif // DUMP_WHILE_DECODING
             
             *rowPtr++ = pixel;
-          }
-
+          } while (--numPixels != 0);
         }        
       }
     }
@@ -2457,7 +2495,7 @@ decode_rle_sample24(
         } else if (rle_code < -1) {
           // Read pixel value and repeat it -rle_code times in the frame buffer
           
-          uint32_t numTimesToRepeat = -rle_code;
+          uint32_t numPixels = -rle_code;
           
           // 24 bit pixels : RGB
           // write 32 bit pixels : ARGB
@@ -2468,18 +2506,23 @@ decode_rle_sample24(
           bytesRemaining -= 3;
           
 #ifdef DUMP_WHILE_DECODING
-          fprintf(stdout, "repeat 24 bit pixel 0x%X %d times\n", pixel, numTimesToRepeat);
+          fprintf(stdout, "repeat 24 bit pixel 0x%X %d times\n", pixel, numPixels);
 #endif // DUMP_WHILE_DECODING
           
-          assert((rowPtr + numTimesToRepeat - 1) < rowPtrMax);
+          assert((rowPtr + numPixels - 1) < rowPtrMax);
           
-          if (pixel == 0x0) {
-            bzero(rowPtr, numTimesToRepeat * sizeof(uint32_t));
-            rowPtr += numTimesToRepeat;
-          } else {
-            for (int i = 0; i < numTimesToRepeat; i++) {
+          if (numPixels <= 6) {
+            do {
               *rowPtr++ = pixel;
+            } while (--numPixels != 0);
+          } else {
+            const uint32_t numBytes = numPixels << 2;
+            if (pixel == 0x0) {
+              bzero(rowPtr, numBytes);
+            } else {
+              memset_pattern4(rowPtr, &pixel, numBytes);
             }
+            rowPtr += numPixels;
           }
           
         } else {
@@ -2496,7 +2539,8 @@ decode_rle_sample24(
           
           assert((rowPtr + rle_code - 1) < rowPtrMax);
           
-          for (int i = 0; i < rle_code; i++) {
+          uint32_t numPixels = rle_code;
+          do {
             uint32_t pixel;
             READ_UINT24(pixel, samplePtr);
             
@@ -2505,7 +2549,7 @@ decode_rle_sample24(
 #endif // DUMP_WHILE_DECODING
             
             *rowPtr++ = pixel;
-          }
+          } while (--numPixels != 0);
           
         }        
       }
@@ -2744,7 +2788,7 @@ decode_rle_sample32(
         } else if (rle_code < -1) {
           // Read pixel value and repeat it -rle_code times in the frame buffer
           
-          uint32_t numTimesToRepeat = -rle_code;
+          uint32_t numPixels = -rle_code;
           
           // 32 bit pixels : ARGB
           
@@ -2754,26 +2798,31 @@ decode_rle_sample32(
           bytesRemaining -= 4;
           
 #ifdef DUMP_WHILE_DECODING
-          fprintf(stdout, "repeat 32 bit pixel 0x%X %d times\n", pixel, numTimesToRepeat);
+          fprintf(stdout, "repeat 32 bit pixel 0x%X %d times\n", pixel, numPixels);
 #endif // DUMP_WHILE_DECODING          
           
-          assert((rowPtr + numTimesToRepeat - 1) < rowPtrMax);
+          assert((rowPtr + numPixels - 1) < rowPtrMax);
           
-          if (pixel == 0x0) {
-            bzero(rowPtr, numTimesToRepeat * sizeof(uint32_t));
-            rowPtr += numTimesToRepeat;
-          } else {
-            for (int i = 0; i < numTimesToRepeat; i++) {
+          if (numPixels <= 6) {
+            do {
               *rowPtr++ = pixel;
+            } while (--numPixels != 0);
+          } else {
+            const uint32_t numBytes = numPixels << 2;
+            if (pixel == 0x0) {
+              bzero(rowPtr, numBytes);
+            } else {
+              memset_pattern4(rowPtr, &pixel, numBytes);
             }
-          }
+            rowPtr += numPixels;
+          }          
           
         } else {
           // Greater than 0, copy pixels from input to output stream
           
           // 32 bit pixels : ARGB
           
-          uint32_t numBytesToCopy = 4 * rle_code;
+          uint32_t numBytesToCopy = rle_code << 2;
           
           assert(bytesRemaining >= numBytesToCopy);
           
@@ -2781,7 +2830,8 @@ decode_rle_sample32(
           
           assert((rowPtr + rle_code - 1) < rowPtrMax);
           
-          for (int i = 0; i < rle_code; i++) {
+          uint32_t numPixels = rle_code;
+          do {
             uint32_t pixel;
             READ_AND_PREMULTIPLY(pixel, samplePtr);
             
@@ -2790,7 +2840,7 @@ decode_rle_sample32(
 #endif // DUMP_WHILE_DECODING
             
             *rowPtr++ = pixel;
-          }
+          } while (--numPixels != 0);
           
         }        
       }

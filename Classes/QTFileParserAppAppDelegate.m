@@ -477,7 +477,7 @@
 
 - (void) loadAlphaGhostLandscapeAnimation:(float)frameDuration
 {
-  int useMvid = 1;
+  int useMvid = 0;
 
   // Convert .mov to .mvid format before playing
   NSString *videoResourceArchiveName;

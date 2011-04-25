@@ -38,7 +38,7 @@
 
 // Non-Public methods
 
-- (NSString*) _getMoviePath:(NSString*)movieFilename;
+- (NSString*) _getMoviePath;
 
 - (NSString*) _getAudioPath:(NSString*)audioFilename;
 

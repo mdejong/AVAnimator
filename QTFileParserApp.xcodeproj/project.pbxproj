@@ -142,8 +142,8 @@
 		CD61994A12CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD61994912CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m */; };
 		CD659D62136390C1008AF6F9 /* AVMvidFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD659D61136390C1008AF6F9 /* AVMvidFrameDecoder.m */; };
 		CD659D63136390C1008AF6F9 /* AVMvidFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD659D61136390C1008AF6F9 /* AVMvidFrameDecoder.m */; };
-		CD6EF5A812F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; };
-		CD6EF5A912F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; };
+		CD6EF5A812F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; settings = {COMPILER_FLAGS = "-mno-thumb"; }; };
+		CD6EF5A912F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; settings = {COMPILER_FLAGS = "-mno-thumb"; }; };
 		CD7098B312F4A6BA00582B9B /* AVAnimatorLayerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD7098B212F4A6BA00582B9B /* AVAnimatorLayerTests.m */; };
 		CD7A02F012D261A900366AC6 /* AVAnimatorView.m in Sources */ = {isa = PBXBuildFile; fileRef = CD7A02EF12D261A900366AC6 /* AVAnimatorView.m */; };
 		CD7D2BF312D510CB0096EDF3 /* CountingLandscape01.png in Resources */ = {isa = PBXBuildFile; fileRef = CD7D2BEE12D510CB0096EDF3 /* CountingLandscape01.png */; };
