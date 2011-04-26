@@ -25,6 +25,8 @@
 @interface CGFrameBuffer : NSObject {
 @protected
 	char *m_pixels;
+	char *m_zeroCopyPixels;
+	NSData *m_zeroCopyMappedData;
 	size_t m_numBytes;
 	size_t m_width;
 	size_t m_height;
@@ -35,6 +37,8 @@
 }
 
 @property (readonly) char *pixels;
+@property (readonly) char *zeroCopyPixels;
+@property (nonatomic, copy) NSData *zeroCopyMappedData;
 @property (readonly) size_t numBytes;
 @property (readonly) size_t width;
 @property (readonly) size_t height;
@@ -74,5 +78,10 @@
 // Copy data from another framebuffer into this one
 
 - (void) copyPixels:(CGFrameBuffer *)anotherFrameBuffer;
+
+// Zero copy from an external read-only location
+
+- (void) zeroCopyPixels:(void*)zeroCopyPtr mappedData:(NSData*)mappedData;
+- (void) doneZeroCopyPixels;
 
 @end

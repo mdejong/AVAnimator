@@ -224,7 +224,7 @@
 // Decompress a .mov.7z file and convert the .mov data to .mvid
 
 + (void) testDecode7zMvidCompareToResource
-{
+{  
   NSString *archiveFilename = @"2x2_black_blue_16BPP.mov.7z";
   NSString *entryFilename = @"2x2_black_blue_16BPP.mov";
   NSString *outFilename = @"2x2_black_blue_16BPP.mvid";
@@ -265,7 +265,7 @@
     uint32_t resByteLength = [resMvidData length];
     uint32_t wroteByteLength = [wroteMvidData length];
     
-    // Converted 2x2_black_blue_16BPP.mvid should be 96 bytes
+    // Converted 2x2_black_blue_16BPP.mvid should be 12288 bytes
     
     BOOL sameLength = (resByteLength == wroteByteLength);
     NSAssert(sameLength, @"sameLength");
@@ -274,7 +274,6 @@
     
     // Verify that the emitted .mvid file has a valid magic number
     
-    //uint32_t mvidNumBytes = [wroteMvidData length];
     char *mvidBytes = (char*) [wroteMvidData bytes];
     
     MVFile *mvFilePtr = maxvid_file_map_open(mvidBytes);

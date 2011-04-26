@@ -1621,9 +1621,13 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
                uint32_t bpp,
                FILE *maxvidOutFile)
 {
+  uint32_t retcode = 0;
+
   assert(width > 0);
   assert(height > 0);
-  
+
+  void *frameBuffer = NULL;
+
   MovSample **frames = movData->frames;
   
   uint32_t *maxvidCodeBuffer = NULL;
@@ -1646,13 +1650,35 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
   
   numWritten = fwrite(header, sizeof(MVFileHeader), 1, maxvidOutFile);
   if (numWritten != 1) {
-    return MV_ERROR_CODE_WRITE_FAILED;
+    retcode = MV_ERROR_CODE_WRITE_FAILED;
+    goto RETCODE;
   }
   
   numWritten = fwrite(framesArray, framesArrayNumBytes, 1, maxvidOutFile);
   if (numWritten != 1) {
-    return MV_ERROR_CODE_WRITE_FAILED;
+    retcode = MV_ERROR_CODE_WRITE_FAILED;
+    goto RETCODE;
   }  
+  
+  // There is always going to be at least 1 keyframe in a file, so allocate on now
+  // instead of in the loop
+  
+  uint16_t *frameBuffer16 = NULL;
+  uint32_t *frameBuffer32 = NULL;
+  uint32_t bitDepth = movData->bitDepth;
+  
+  int frameBufferNumBytes;
+  if (bitDepth == 16) {
+    frameBufferNumBytes = sizeof(uint16_t) * width * height;
+    frameBuffer16 = valloc(frameBufferNumBytes);
+    bzero(frameBuffer16, sizeof(frameBufferNumBytes));
+    frameBuffer = frameBuffer16;
+  } else if (bitDepth == 24 || bitDepth == 32) {
+    frameBufferNumBytes = sizeof(uint32_t) * width * height;
+    frameBuffer32 = valloc(frameBufferNumBytes);
+    bzero(frameBuffer32, frameBufferNumBytes);
+    frameBuffer = frameBuffer32;
+  }
   
   // Loop over each frame and write contents to file
   
@@ -1661,23 +1687,33 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
     MVFrame *mvFrame = &framesArray[i];
     
     long offset = ftell(maxvidOutFile);
+
+    // keyframe property is set for normal frame and no-op frame
+    
+    uint32_t isKeyFrame = movsample_iskeyframe(frame);
+    
+    if (isKeyFrame) {
+      maxvid_frame_setkeyframe(mvFrame); 
+    }
+    
+    //fprintf(stdout, "Frame %d [%d %d] : iskeyframe %d\n", i, frame->offset, movsample_length(frame), movsample_iskeyframe(frame));
     
     if ((i > 0) && (frame == frames[i-1])) {
       // This frame is a no-op, since it duplicates data from the previous frame.
+      
       //fprintf(stdout, "Frame %d NOP\n", i);
       
-      maxvid_frame_setoffset(mvFrame, (uint32_t)offset);
-      maxvid_frame_setlength(mvFrame, 1 * sizeof(uint32_t));
-      maxvid_frame_setnopframe(mvFrame);
+      // Reading a no-op frame after a regular frame is a no-op. But, seeking to a no-op frame must start decoding
+      // at the original file offset that appears before the no-op frame. The complication is that multiple no-op
+      // frames can appear in a row, so deal with this by duplicating the offset and length of the previous frame
+      // when the no-op case is detected.
       
-      uint32_t nop_word = maxvid_file_emit_nopframe();      
-      uint32_t status = fwrite_word(maxvidOutFile, nop_word);
-      if (status) {
-        return status;
-      }
+      MVFrame *prevMvFrame = &framesArray[i-1];
+      
+      maxvid_frame_setoffset(mvFrame, maxvid_frame_offset(prevMvFrame));
+      maxvid_frame_setlength(mvFrame, maxvid_frame_length(prevMvFrame));
+      maxvid_frame_setnopframe(mvFrame);      
     } else {
-      //fprintf(stdout, "Frame %d [%d %d]\n", i, frame->offset, movsample_length(frame));
-      
       // If the current frame is a keyframe, then make sure it is offset to a page bound
       
       // Get pointer to the start of the delta data in the mapped file
@@ -1685,35 +1721,50 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
       char *mappedPtr = mappedMovData + frame->offset;
       uint32_t mappedNumBytes = movsample_length(frame);
       
-      uint32_t isKeyFrame = movsample_iskeyframe(frame);
-      
-      maxvid_frame_setoffset(mvFrame, (uint32_t)offset);
+      // A keyframe may need to emit zeros up to the start of the next page.
       
       if (isKeyFrame) {
-        maxvid_frame_setkeyframe(mvFrame);
+        offset = maxvid_file_padding_before_keyframe(maxvidOutFile, offset);
       }
       
-      // Convert frame of animation data to maxvid c4 encoding
-      
-      // FIXME: In the case of a keyframe, if the encoder is going to generate a "straight use" pointer
-      // then it needs to be aligned such that the entire decoded keyframe starts exactly on the page
-      // bound. It would then need to be filled with zeros to the next page bound also, so that a low
-      // level OS copy can copy some whole number of pages in order to do a diff. Don't implement this
-      // right away, it is an optimization and does not need to be done since a normal copy would work,
-      // it would just be a little slower. Thing is, a regular copy would not need the framebuffer to
-      // be decoded from the input compressed data.
-      
-      uint32_t retcode =    
-      movdata_convert_maxvid(mappedPtr, mappedNumBytes,
-                             isKeyFrame,
-                             &maxvidCodeBuffer,
-                             &maxvidCodeBufferNumBytes,
-                             maxvidOutFile,
-                             width,
-                             height,
-                             bpp);
-      if (retcode) {
-        return retcode;
+      maxvid_frame_setoffset(mvFrame, (uint32_t)offset);
+            
+      if (isKeyFrame) {
+        // A keyframe is a special case where a zero-copy optimization can be used.
+        // Extract the movdata into a framebuffer and write the contents
+        // of the framebuffer to the mvid file. Use the movdata module to extract
+        // the framebuffer contents instead of converting to c4 codes and then
+        // extracting so that this convert module works even when no code to decompress
+        // c4 codes is available.
+        
+        uint32_t status = process_rle_sample(mappedMovData, movData, frame, frameBuffer);
+        
+        if (status) {
+          retcode = status;
+          goto RETCODE;
+        }
+        
+        uint32_t numWritten = fwrite(frameBuffer, frameBufferNumBytes, 1, maxvidOutFile);
+        if (numWritten != 1) {
+          retcode = MV_ERROR_CODE_WRITE_FAILED;
+          goto RETCODE;
+        }
+      } else {
+        // Convert frame of animation data to maxvid c4 encoding
+        
+        uint32_t status =    
+        movdata_convert_maxvid(mappedPtr, mappedNumBytes,
+                               isKeyFrame,
+                               &maxvidCodeBuffer,
+                               &maxvidCodeBufferNumBytes,
+                               maxvidOutFile,
+                               width,
+                               height,
+                               bpp);
+        if (status) {
+          retcode = status;
+          goto RETCODE;
+        }        
       }
       
       // After data is written to the file, query the file position again to determine how many
@@ -1723,10 +1774,33 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
       offset = ftell(maxvidOutFile);
       uint32_t length = ((uint32_t)offset) - offsetBefore;
       
-      // Verify that the length in bytes is an exact number of words
-      assert((length % 4) == 0);
+      // Typically, the framebuffer is an even number of pixels.
+      // There is an odd case though, when emitting 16 bit pixels
+      // is is possible that the total number of pixels written
+      // is odd, so in this case the framebuffer is not a whole
+      // number of words.
+      
+      if (isKeyFrame && (bitDepth == 16)) {
+        assert((length % 2) == 0);
+        if ((length % 4) != 0) {
+          // Write a zero half-word to the file so that additional padding is in terms of whole words.
+          uint16_t zeroHalfword = 0;
+          size_t size = fwrite(&zeroHalfword, sizeof(zeroHalfword), 1, maxvidOutFile);
+          assert(size == 1);
+          offset = ftell(maxvidOutFile);
+        }
+      } else {
+        assert((length % 4) == 0);
+      }
       
       maxvid_frame_setlength(mvFrame, length);
+      
+      // In the case of a keyframe, zero pad up to the next page bound. Note that the "length"
+      // of the frame data does not include the zero padding.
+      
+      if (isKeyFrame) {
+        offset = maxvid_file_padding_after_keyframe(maxvidOutFile, offset);
+      }      
     }
   }
 
@@ -1748,12 +1822,14 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
   
   numWritten = fwrite(header, sizeof(MVFileHeader), 1, maxvidOutFile);
   if (numWritten != 1) {
-    return MV_ERROR_CODE_WRITE_FAILED;
+    retcode = MV_ERROR_CODE_WRITE_FAILED;
+    goto RETCODE;
   }
   
   numWritten = fwrite(framesArray, framesArrayNumBytes, 1, maxvidOutFile);
   if (numWritten != 1) {
-    return MV_ERROR_CODE_WRITE_FAILED;
+    retcode = MV_ERROR_CODE_WRITE_FAILED;
+    goto RETCODE;
   }
   
   // Once all valid data and headers have been written, it is now safe to write the
@@ -1766,16 +1842,27 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
   uint32_t magic = MV_FILE_MAGIC;
   uint32_t status = fwrite_word(maxvidOutFile, magic);
   if (status) {
-    return status;
+    retcode = status;
+    goto RETCODE;
   }
     
   // Cleanup
+
+RETCODE:
+  if (maxvidCodeBuffer) {
+    free(maxvidCodeBuffer);
+  }
+  if (header) {
+    free(header);
+  }
+  if (framesArray) {
+    free(framesArray);
+  }
+  if (frameBuffer) {
+    free(frameBuffer);
+  }
   
-  free(maxvidCodeBuffer);
-  free(header);
-  free(framesArray);
-  
-  return 0;
+  return retcode;
 }
 
 // Util function to open a .mov file and init a MovData member.

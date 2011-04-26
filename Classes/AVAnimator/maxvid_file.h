@@ -71,12 +71,12 @@ void maxvid_frame_setlength(MVFrame *mvFrame, uint32_t size) {
 
 static inline
 uint32_t maxvid_frame_iskeyframe(MVFrame *mvFrame) {
-  return (mvFrame->lengthAndFlags & MV_FRAME_IS_KEYFRAME);
+  return ((mvFrame->lengthAndFlags & MV_FRAME_IS_KEYFRAME) != 0);
 }
 
 static inline
 uint32_t maxvid_frame_isnopframe(MVFrame *mvFrame) {
-  return (mvFrame->lengthAndFlags & MV_FRAME_IS_NOPFRAME);
+  return ((mvFrame->lengthAndFlags & MV_FRAME_IS_NOPFRAME) != 0);
 }
 
 static inline
@@ -153,4 +153,48 @@ uint32_t maxvid_file_is_valid(FILE *inFile) {
     assert(magic == 0);
     return 0;
   }
+}
+
+// Emit zero length words up to the next page bound when emitting a keyframe.
+// Pass in the current offset, function returns the new offset. This method
+// will emit zero words of padding if exactly on the page bound already.
+
+static inline
+uint32_t maxvid_file_padding_before_keyframe(FILE *outFile, uint32_t offset) {
+  assert((offset % 4) == 0);
+  
+  const uint32_t boundSize = MV_PAGESIZE;
+  uint32_t bytesToBound = UINTMOD(offset, boundSize);
+  assert(bytesToBound >= 0 && bytesToBound <= boundSize);
+    
+  bytesToBound = boundSize - bytesToBound;
+  uint32_t wordsToBound = bytesToBound >> 2;
+  wordsToBound &= ((MV_PAGESIZE >> 2) - 1);
+
+  if (wordsToBound > 0) {
+    assert(bytesToBound == (wordsToBound * 4));
+    assert(wordsToBound < (boundSize / 4));
+  }
+
+  uint32_t zero = 0;
+  while (wordsToBound != 0) {
+    size_t size = fwrite(&zero, sizeof(zero), 1, outFile);
+    assert(size == 1);
+    wordsToBound--;
+  }
+  
+  offset = ftell(outFile);
+
+  assert(UINTMOD(offset, boundSize) == 0);
+  
+  return offset;
+}
+
+// Emit zero length words up to the next page bound after the keyframe data.
+// Pass in the current offset, function returns the new offset.
+// This method will emit zero words of padding if exactly on the page bound already.
+
+static inline
+uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
+  return maxvid_file_padding_before_keyframe(outFile, offset);
 }

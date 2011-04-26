@@ -254,7 +254,7 @@
       int actualFrameIndex = i + 1;
       MVFrame *frame = maxvid_file_frame(self->m_mvFile, actualFrameIndex);
       
-      if ((actualFrameIndex > 0) && maxvid_frame_isnopframe(frame)) {
+      if (maxvid_frame_isnopframe(frame)) {
         // This frame is a no-op, since it duplicates data from the previous frame.
       } else {
         if (maxvid_frame_iskeyframe(frame)) {
@@ -274,7 +274,7 @@
     int actualFrameIndex = frameIndex + 1;
     MVFrame *frame = maxvid_file_frame(self->m_mvFile, actualFrameIndex);
     
-    if ((actualFrameIndex > 0) && maxvid_frame_isnopframe(frame)) {
+    if (maxvid_frame_isnopframe(frame)) {
       // This frame is a no-op, since it duplicates data from the previous frame.
       //      fprintf(stdout, "Frame %d NOP\n", actualFrameIndex);
     } else {
@@ -293,12 +293,27 @@
       uint32_t status;
       
       uint32_t *inputBuffer32 = (uint32_t*) (mappedPtr + maxvid_frame_offset(frame));
-      uint32_t inputBuffer32NumWords = maxvid_frame_length(frame) >> 2;
+      uint32_t inputBuffer32NumBytes = maxvid_frame_length(frame);
 
-      if (bpp == 16) {
-        status = maxvid_decode_c4_sample16(frameBuffer, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
+      if (maxvid_frame_iskeyframe(frame)) {
+        // FIXME: use zero copy of pointer into mapped file, impl OS page copy in util class
+        if (bpp == 16) {
+          NSAssert(inputBuffer32NumBytes == (frameBufferSize * sizeof(uint16_t)), @"framebuffer num bytes");
+        } else {
+          NSAssert(inputBuffer32NumBytes == (frameBufferSize * sizeof(uint32_t)), @"framebuffer num bytes");
+        }
+        NSAssert(((uint32_t)inputBuffer32 % MV_PAGESIZE) == 0, @"framebuffer num bytes");
+        
+//        memcpy(frameBuffer, inputBuffer32, inputBuffer32NumBytes);
+  
+        [nextFrameBuffer zeroCopyPixels:inputBuffer32 mappedData:self.mappedData];
       } else {
-        status = maxvid_decode_c4_sample32(frameBuffer, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
+        uint32_t inputBuffer32NumWords = inputBuffer32NumBytes >> 2;
+        if (bpp == 16) {
+          status = maxvid_decode_c4_sample16(frameBuffer, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
+        } else {
+          status = maxvid_decode_c4_sample32(frameBuffer, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
+        }        
       }
     }
 	}

@@ -477,7 +477,7 @@
 
 - (void) loadAlphaGhostLandscapeAnimation:(float)frameDuration
 {
-  int useMvid = 0;
+  int useMvid = 1;
 
   // Convert .mov to .mvid format before playing
   NSString *videoResourceArchiveName;
@@ -783,6 +783,65 @@
   [self loadIntoMovieControls:media];
 }
 
+// This generic loading util will setup a resource loader and configure a Media
+// object to use the proper type of loader depending on wether the convertToMvid
+// flag is TRUE. If convertToMvid is FALSE, then a .mov will be decompressed
+// from a 7zip compressed archive. If convertToMvid is TRUE, then a .mov file
+// attached as a 7zip compressed file will be extracted and converted to a
+// .mvid format.
+
+- (void) genericResourceLoader:(NSString*)resourcePrefix
+                 convertToMvid:(BOOL)convertToMvid
+                         media:(AVAnimatorMedia*)media
+{
+  NSString *videoResourceArchiveName;
+  NSString *videoResourceEntryName;
+  NSString *videoResourceOutName;
+  NSString *videoResourceOutPath;
+  
+  if (convertToMvid) {
+    // Extract to /tmp/FILENAME.mvid
+    videoResourceArchiveName = [NSString stringWithFormat:@"%@.mov.7z", resourcePrefix];
+    videoResourceEntryName = [NSString stringWithFormat:@"%@.mov", resourcePrefix];
+    NSString *resourceTail = [resourcePrefix lastPathComponent];
+    videoResourceOutName = [NSString stringWithFormat:@"%@.mvid", resourceTail];
+    videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];    
+  } else {
+    // Extract to /tmp/FILENAME.mov
+    videoResourceArchiveName = [NSString stringWithFormat:@"%@.mov.7z", resourcePrefix];
+    videoResourceEntryName = [NSString stringWithFormat:@"%@.mov", resourcePrefix];
+    NSString *resourceTail = [resourcePrefix lastPathComponent];
+    videoResourceOutName = [NSString stringWithFormat:@"%@.mov", resourceTail];
+    videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];        
+  }
+  
+  if (convertToMvid) {
+    AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+    resLoader.archiveFilename = videoResourceArchiveName;
+    resLoader.movieFilename = videoResourceEntryName;
+    resLoader.outPath = videoResourceOutPath;
+
+    media.resourceLoader = resLoader;
+  } else {
+    AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+    resLoader.archiveFilename = videoResourceArchiveName;
+    resLoader.movieFilename = videoResourceEntryName;
+    resLoader.outPath = videoResourceOutPath;    
+    
+    media.resourceLoader = resLoader;
+  }
+  
+  if (convertToMvid) {
+    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+    media.frameDecoder = frameDecoder;
+  } else {
+    AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+    media.frameDecoder = frameDecoder;
+  }
+  
+  return;
+}
+
 // The Gradient Color wheel is the worst possible 32BPP animation, every pixel changes on
 // every frame, so all the frames are marked as keyframes.
 // Even though there are only 10 frames in the video, this animation takes up a whopping
@@ -793,11 +852,6 @@
 
 - (void) loadGradientColorWheelAnimation:(float)frameDuration
 {
-  NSString *videoResourceArchiveName = @"GradientColorWheel_2FPS_32BPP_Keyframes.mov.7z";
-  NSString *videoResourceEntryName = @"GradientColorWheel_2FPS_32BPP_Keyframes.mov";
-  NSString *videoResourceOutName = @"GradientColorWheel_2FPS_32BPP_Keyframes.mvid";
-  NSString *videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];
-  
   // The color wheel is partially transparent, so set a blue color on the window
   // to verify that some of the blue is showing through.
   
@@ -814,19 +868,11 @@
   
   AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  // Create loader that will read a movie file from app resources.
+  // Create loader to read from project resources and render frames (either from .mov or converted .mvid)
+
+  BOOL convertToMvid = FALSE;
   
-	AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
-  resLoader.archiveFilename = videoResourceArchiveName;
-  resLoader.movieFilename = videoResourceEntryName;
-  resLoader.outPath = videoResourceOutPath;
-  
-	media.resourceLoader = resLoader;
-  
-  // Create decoder that will generate frames from Quicktime Animation encoded data
-  
-  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
-	media.frameDecoder = frameDecoder;
+  [self genericResourceLoader:@"GradientColorWheel_2FPS_32BPP_Keyframes" convertToMvid:convertToMvid media:media];
   
   if (frameDuration != -1.0) {
     // Don't set a frame duration, use the 2.0 FPS encoded in the MOV file
