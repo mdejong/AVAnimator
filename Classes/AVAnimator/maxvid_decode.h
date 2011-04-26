@@ -51,8 +51,15 @@ typedef enum {
 #define MV16_NUM_PIXELS_ONE_PAGE (MV_PAGESIZE / sizeof(uint16_t))
 #define MV_NUM_WORDS_ONE_PAGE (MV_PAGESIZE / sizeof(uint32_t))
 
-// bitwise AND version of (num % pot)
+// bitwise AND version of (ptr % pot)
+
+#if defined(_LP64)
+// CPU uses 64 bit pointers, need additional cast to avoid compiler warning
+#define UINTMOD(ptr, pot) (((uint32_t)(uint64_t)ptr) & (pot - 1))
+#else
+// Regular 32 bit system
 #define UINTMOD(ptr, pot) (((uint32_t)ptr) & (pot - 1))
+#endif
 
 // These next two macros will decode 3 values from a word code
 // and save the results in const variables.

@@ -142,8 +142,8 @@
 					PBXFileDataSource_Warnings_ColumnID,
 				);
 			};
-			PBXPerProjectTemplateStateSaveDate = 325532575;
-			PBXWorkspaceStateSaveDate = 325532575;
+			PBXPerProjectTemplateStateSaveDate = 325539393;
+			PBXWorkspaceStateSaveDate = 325539393;
 		};
 		perUserProjectItems = {
 			CD0924F5135F5FF700708142 /* PlistBookmark */ = CD0924F5135F5FF700708142 /* PlistBookmark */;
@@ -182,6 +182,7 @@
 			CD5A923612E0F9E300B320C6 /* PBXTextBookmark */ = CD5A923612E0F9E300B320C6 /* PBXTextBookmark */;
 			CD5A92C412E0FF0600B320C6 /* PBXTextBookmark */ = CD5A92C412E0FF0600B320C6 /* PBXTextBookmark */;
 			CD5CF2491366AE9C0038D3A9 /* PBXTextBookmark */ = CD5CF2491366AE9C0038D3A9 /* PBXTextBookmark */;
+			CD5F949D1367575C00F919FF /* PBXTextBookmark */ = CD5F949D1367575C00F919FF /* PBXTextBookmark */;
 			CD659E681363BA22008AF6F9 /* PBXTextBookmark */ = CD659E681363BA22008AF6F9 /* PBXTextBookmark */;
 			CD7098DB12F4A93D00582B9B /* PBXTextBookmark */ = CD7098DB12F4A93D00582B9B /* PBXTextBookmark */;
 			CD709A4B12F4B5FA00582B9B /* PBXTextBookmark */ = CD709A4B12F4B5FA00582B9B /* PBXTextBookmark */;
@@ -202,7 +203,6 @@
 			CD9B833F1367432600CE10C4 /* PBXTextBookmark */ = CD9B833F1367432600CE10C4 /* PBXTextBookmark */;
 			CD9B83401367432600CE10C4 /* PBXTextBookmark */ = CD9B83401367432600CE10C4 /* PBXTextBookmark */;
 			CD9B83411367432600CE10C4 /* PBXTextBookmark */ = CD9B83411367432600CE10C4 /* PBXTextBookmark */;
-			CD9B83421367432600CE10C4 /* PBXTextBookmark */ = CD9B83421367432600CE10C4 /* PBXTextBookmark */;
 			CD9B83801367446500CE10C4 /* PBXTextBookmark */ = CD9B83801367446500CE10C4 /* PBXTextBookmark */;
 			CD9BF0DD1364EF6800FF5190 /* PBXTextBookmark */ = CD9BF0DD1364EF6800FF5190 /* PBXTextBookmark */;
 			CD9D6E2D13662B440033F516 /* PBXTextBookmark */ = CD9D6E2D13662B440033F516 /* PBXTextBookmark */;
@@ -613,7 +613,7 @@
 		ignoreCount = 0;
 		lineNumber = 1041;
 		location = RegressionTests;
-		modificationTime = 325534609.446901;
+		modificationTime = 325539656.193945;
 		originalNumberOfMultipleMatches = 1;
 		state = 2;
 	};
@@ -631,7 +631,7 @@
 		ignoreCount = 0;
 		lineNumber = 1041;
 		location = QTFileParserApp;
-		modificationTime = 325534609.446924;
+		modificationTime = 325539656.193993;
 		originalNumberOfMultipleMatches = 1;
 		state = 0;
 	};
@@ -784,7 +784,7 @@
 		ignoreCount = 0;
 		lineNumber = 244;
 		location = RegressionTests;
-		modificationTime = 325534609.44696;
+		modificationTime = 325539656.194019;
 		originalNumberOfMultipleMatches = 1;
 		state = 2;
 	};
@@ -870,7 +870,7 @@
 		);
 		executableSystemSymbolLevel = 0;
 		executableUserSymbolLevel = 0;
-		libgmallocEnabled = 0;
+		libgmallocEnabled = 1;
 		name = RegressionTests;
 		savedGlobals = {
 		};
@@ -890,6 +890,16 @@
 		vrLen = 718;
 		vrLoc = 47537;
 	};
+	CD5F949D1367575C00F919FF /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = CD61994812CD03FC0003AEAA /* AVQTAnimationFrameDecoder.h */;
+		name = "AVQTAnimationFrameDecoder.h: 15";
+		rLen = 0;
+		rLoc = 384;
+		rType = 0;
+		vrLen = 908;
+		vrLoc = 0;
+	};
 	CD6198BD12CCFC640003AEAA /* AVFrameDecoder.h */ = {
 		uiCtxt = {
 			sepNavIntBoundsRect = "{{0, 0}, {941, 1072}}";
@@ -908,8 +918,8 @@
 	};
 	CD61994812CD03FC0003AEAA /* AVQTAnimationFrameDecoder.h */ = {
 		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {941, 1536}}";
-			sepNavSelRange = "{298, 0}";
+			sepNavIntBoundsRect = "{{0, 0}, {941, 1600}}";
+			sepNavSelRange = "{384, 0}";
 			sepNavVisRange = "{0, 908}";
 			sepNavWindowFrame = "{{15, 0}, {1212, 773}}";
 		};
@@ -1255,16 +1265,6 @@
 		vrLen = 814;
 		vrLoc = 153;
 	};
-	CD9B83421367432600CE10C4 /* PBXTextBookmark */ = {
-		isa = PBXTextBookmark;
-		fRef = CD61994812CD03FC0003AEAA /* AVQTAnimationFrameDecoder.h */;
-		name = "AVQTAnimationFrameDecoder.h: 47";
-		rLen = 1243;
-		rLoc = 1155;
-		rType = 0;
-		vrLen = 984;
-		vrLoc = 1421;
-	};
 	CD9B83801367446500CE10C4 /* PBXTextBookmark */ = {
 		isa = PBXTextBookmark;
 		fRef = CD61994812CD03FC0003AEAA /* AVQTAnimationFrameDecoder.h */;
@@ -1411,7 +1411,7 @@
 		ignoreCount = 0;
 		lineNumber = 917;
 		location = QTFileParserApp;
-		modificationTime = 325534609.446826;
+		modificationTime = 325539656.193907;
 		originalNumberOfMultipleMatches = 1;
 		state = 2;
 	};
@@ -1637,7 +1637,7 @@
 		hitCount = 0;
 		ignoreCount = 0;
 		location = "";
-		modificationTime = 325534609.447556;
+		modificationTime = 325539656.194332;
 		originalNumberOfMultipleMatches = 1;
 		state = 2;
 		symbolName = AudioFormatProperty_TagForChannelLayout;
@@ -1653,7 +1653,7 @@
 		hitCount = 0;
 		ignoreCount = 0;
 		location = "";
-		modificationTime = 325534609.447581;
+		modificationTime = 325539656.194348;
 		originalNumberOfMultipleMatches = 1;
 		state = 2;
 		symbolName = AudioFormatProperty_TagForChannelLayout;

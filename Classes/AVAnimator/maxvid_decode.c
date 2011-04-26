@@ -332,12 +332,12 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
   MAXVID_ASSERT(getpagesize() == MV_PAGESIZE, "pagesize");
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   // The input buffer must be word aligned
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 initial alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 initial alignment");
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
   // The framebuffer must be word aligned to start out with
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 4) == 0, "frameBuffer16 initial alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 initial alignment");
   // In addition, the framebuffer must begin on a page boundry
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % MV_PAGESIZE) == 0, "frameBuffer16 initial page alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, MV_PAGESIZE) == 0, "frameBuffer16 initial page alignment");
   MAXVID_ASSERT(frameBufferSize > 0, "frameBufferSize");
   uint16_t * restrict inframeBuffer16 = frameBuffer16;
   uint16_t * restrict frameBuffer16Max = frameBuffer16 + frameBufferSize;
@@ -364,7 +364,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
@@ -412,9 +412,9 @@ DUPLABEL:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 2) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
   MAXVID_ASSERT((((frameBuffer16 + numPixels - 1) - inframeBuffer16) < frameBufferSize), "MV16_CODE_COPY past end of framebuffer");
 #endif  
   
@@ -464,7 +464,7 @@ DUPLABEL:
   MAXVID_ASSERT(opCode == opCodeSaved, "opCodeSaved");
   
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 4) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
 #endif // EXTRA_CHECKS  
   
   // numWords is numPixels/2, counts down to zero in the word8 loop.
@@ -532,7 +532,7 @@ DUPLABEL:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
@@ -573,7 +573,7 @@ DUPLABEL:
   MAXVID_ASSERT(numWords <= 6, "numWords");
   
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 4) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
   
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
   MAXVID_ASSERT(numWords == numWordsSaved, "numWordsSaved");
@@ -641,7 +641,7 @@ DUPLABEL:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 4) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
   
   MAXVID_ASSERT(frameBuffer16 == expectedDUPSmallPost8FrameBuffer16, "frameBuffer16 post8");
   MAXVID_ASSERT(numWords >= 0 && numWords <= 3, "numWords");
@@ -683,7 +683,7 @@ DUPLABEL:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 2) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
   
   MAXVID_ASSERT(frameBuffer16 == expectedDUPSmallFinalFrameBuffer16, "frameBuffer16 final");
 #endif    
@@ -718,10 +718,9 @@ DECODE:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 2) == 0, "frameBuffer16 alignment");
-  
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");  
   // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
 #endif
@@ -773,9 +772,9 @@ DECODE:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 2) == 0, "frameBuffer16 alignment");  
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
 #endif
   
   if ((opCode = (inW1 >> 30)) == SKIP) {
@@ -789,9 +788,9 @@ DECODE:
 #ifdef EXTRA_CHECKS
     MAXVID_ASSERT(((frameBuffer16 - inframeBuffer16) <= frameBufferSize), "post SKIP now past end of framebuffer");
     MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-    MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+    MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
     MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-    MAXVID_ASSERT(((uint32_t)frameBuffer16 % 2) == 0, "frameBuffer16 alignment");  
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
     // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
     MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
     prevInputBuffer32 = inputBuffer32;
@@ -833,9 +832,9 @@ DECODE:
     
 #ifdef EXTRA_CHECKS
     MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-    MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+    MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
     MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-    MAXVID_ASSERT(((uint32_t)frameBuffer16 % 2) == 0, "frameBuffer16 alignment");  
+    MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
     // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
     MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
     prevInputBuffer32 = inputBuffer32;
@@ -875,9 +874,9 @@ DECODE:
     
 #ifdef EXTRA_CHECKS
     MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-    MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+    MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
     MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-    MAXVID_ASSERT(((uint32_t)frameBuffer16 % 2) == 0, "frameBuffer16 alignment");  
+    MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
     // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
     MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
     prevInputBuffer32 = inputBuffer32;
@@ -912,7 +911,7 @@ DECODE:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 2) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
 #endif
   
   // Parse numPixels from inW1
@@ -1023,9 +1022,9 @@ COPYSMALL:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 2) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
   MAXVID_ASSERT((((frameBuffer16 + numPixels - 1) - inframeBuffer16) < frameBufferSize), "MV16_CODE_COPY past end of framebuffer");
 #endif  
   
@@ -1075,14 +1074,14 @@ COPYSMALL:
   MAXVID_ASSERT(opCode == opCodeSaved, "opCodeSaved");
   
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 4) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
 #endif // EXTRA_CHECKS  
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 2) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
   MAXVID_ASSERT((((frameBuffer16 + numPixels - 1) - inframeBuffer16) < frameBufferSize), "MV16_CODE_COPY past end of framebuffer");
 #endif
   
@@ -1118,8 +1117,8 @@ COPYSMALL:
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
   
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 4) == 0, "frameBuffer16 alignment");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
   
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
   MAXVID_ASSERT(numWords == numWordsSaved, "numWordsSaved");
@@ -1238,7 +1237,7 @@ COPYSMALL:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
   //MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
@@ -1309,9 +1308,9 @@ COPYBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 2) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
   MAXVID_ASSERT((((frameBuffer16 + numPixels - 1) - inframeBuffer16) < frameBufferSize), "MV16_CODE_COPY past end of framebuffer");
 #endif  
   
@@ -1361,14 +1360,14 @@ COPYBIG:
   MAXVID_ASSERT(opCode == opCodeSaved, "opCodeSaved");
   
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 4) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
 #endif // EXTRA_CHECKS  
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 2) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
   MAXVID_ASSERT((((frameBuffer16 + numPixels - 1) - inframeBuffer16) < frameBufferSize), "MV16_CODE_COPY past end of framebuffer");
 #endif
   
@@ -1406,8 +1405,8 @@ COPYBIG:
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
   
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 4) == 0, "frameBuffer16 alignment");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
   
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
   MAXVID_ASSERT(numWords == numWordsSaved, "numWordsSaved");
@@ -1449,7 +1448,7 @@ COPYBIG:
     WR5 = UINTMOD(inputBuffer32, BOUNDSIZE);
     
 #ifdef EXTRA_CHECKS
-    MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32");
+    MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
     MAXVID_ASSERT(WR5 >= 0 && WR5 <= BOUNDSIZE, "in bounds");
 #endif
     
@@ -1644,7 +1643,7 @@ COPYBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
   //MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
@@ -1713,9 +1712,9 @@ DUPBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 4) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
   MAXVID_ASSERT((((frameBuffer16 + numPixels - 1) - inframeBuffer16) < frameBufferSize), "MV16_CODE_COPY past end of framebuffer");
 #endif  
   
@@ -1724,7 +1723,7 @@ DUPBIG:
   MAXVID_ASSERT(opCode == opCodeSaved, "opCodeSaved");
   
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 4) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
 #endif // EXTRA_CHECKS  
   
 #ifdef EXTRA_CHECKS
@@ -1743,7 +1742,7 @@ DUPBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 4) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
   
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
   MAXVID_ASSERT(numWords == numWordsSaved, "numWordsSaved");
@@ -1810,7 +1809,7 @@ DUPBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 4) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
   
   MAXVID_ASSERT(frameBuffer16 == expectedDUPBigPost8FrameBuffer16, "frameBuffer16 post8");
   MAXVID_ASSERT(numWords >= 0 && numWords <= 3, "numWords");
@@ -1854,7 +1853,7 @@ DUPBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(((uint32_t)frameBuffer16 % 2) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
   
   MAXVID_ASSERT(frameBuffer16 == expectedDUPBigFinalFrameBuffer16, "frameBuffer16 final");
 #endif
@@ -2027,12 +2026,12 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
   MAXVID_ASSERT(getpagesize() == MV_PAGESIZE, "pagesize");
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   // The input buffer must be word aligned
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 initial alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 initial alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
   // The framebuffer is always word aligned
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 initial alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 initial alignment");
   // In addition, the framebuffer must begin on a page boundry
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % MV_PAGESIZE) == 0, "frameBuffer32 initial page alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, MV_PAGESIZE) == 0, "frameBuffer32 initial page alignment");
   MAXVID_ASSERT(frameBufferSize > 0, "frameBufferSize");
   uint32_t * restrict inframeBuffer32 = frameBuffer32;
   uint32_t * restrict frameBuffer32Max = frameBuffer32 + frameBufferSize;
@@ -2061,7 +2060,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
@@ -2155,9 +2154,9 @@ DUPLABEL:
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
   
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
   
   MAXVID_ASSERT(((frameBuffer32 - inframeBuffer32) < frameBufferSize), "DUP already past end of framebuffer");
   MAXVID_ASSERT((((frameBuffer32 + numPixels - 1) - inframeBuffer32) < frameBufferSize), "DUP past end of framebuffer");
@@ -2195,7 +2194,7 @@ DUPLABEL:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
@@ -2244,7 +2243,7 @@ DUPLABEL:
   MAXVID_ASSERT(numPixels <= 6, "numPixels");
   
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
   
   uint32_t *expectedDUPSmallPost8FrameBuffer32 = frameBuffer32 + numPixels;
@@ -2302,9 +2301,9 @@ DUPLABEL:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");  
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
 #endif
   
 #ifdef EXTRA_CHECKS  
@@ -2333,9 +2332,9 @@ DUPLABEL:
 DECODE:
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");  
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
 #endif
   
 #ifdef COMPILE_ARM_ASM
@@ -2464,9 +2463,9 @@ DECODE:
     
 #ifdef EXTRA_CHECKS
     MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-    MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+    MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
     MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-    MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");
+    MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
     // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
     MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
     prevInputBuffer32 += 1;
@@ -2509,7 +2508,7 @@ DECODE:
     
 #ifdef EXTRA_CHECKS
     MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-    MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+    MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
     // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
     MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
     prevInputBuffer32 = inputBuffer32;
@@ -2556,7 +2555,7 @@ DECODE:
     
 #ifdef EXTRA_CHECKS
     MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-    MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+    MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
     // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
     MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
     prevInputBuffer32 = inputBuffer32;
@@ -2591,9 +2590,9 @@ DECODE:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");  
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
 #endif  
   
   // At this point, opCode has been parsed from inW1. If not in ASM mode, then numPixels was parsed too.
@@ -2605,9 +2604,9 @@ DECODE:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");  
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
 #endif  
   
 #ifdef COMPILE_ARM_ASM  
@@ -2734,9 +2733,9 @@ COPYSMALL:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
 #endif  
   
 #ifdef EXTRA_CHECKS
@@ -2747,10 +2746,9 @@ COPYSMALL:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
   
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
   
@@ -2807,9 +2805,9 @@ COPYSMALL:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");  
 #endif
   
   // Read in next inW1 and inW2
@@ -2897,9 +2895,9 @@ COPYBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");  
 #endif  
   
 #ifdef EXTRA_CHECKS
@@ -2909,9 +2907,9 @@ COPYBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
   
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
   
@@ -2948,7 +2946,7 @@ COPYBIG:
     WR5 = UINTMOD(inputBuffer32, BOUNDSIZE);
     
 #ifdef EXTRA_CHECKS
-    MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32");
+    MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
     MAXVID_ASSERT(WR5 >= 0 && WR5 <= BOUNDSIZE, "in bounds");
 #endif
     
@@ -3096,7 +3094,7 @@ COPYBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 initial alignment");
   // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
   //MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
@@ -3178,9 +3176,9 @@ DUPBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 initial alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 initial alignment");
 #endif  
   
 #ifdef EXTRA_CHECKS
@@ -3212,10 +3210,9 @@ DUPBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");
-  
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");  
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
   
   //MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
@@ -3275,9 +3272,9 @@ DUPBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
-  MAXVID_ASSERT(((uint32_t)frameBuffer32 % 4) == 0, "frameBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
   
   MAXVID_ASSERT(frameBuffer32 == expectedDUPBigPost8FrameBuffer32, "frameBuffer32 post8");
   MAXVID_ASSERT(numPixels >= 0 && numPixels <= 3, "numPixels");
@@ -3291,7 +3288,7 @@ DUPBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
 #endif    

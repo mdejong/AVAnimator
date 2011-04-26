@@ -1056,7 +1056,7 @@ maxvid_encode_c4_sample16(
   MAXVID_ASSERT(pagesize == MV_PAGESIZE, "pagesize");
   MAXVID_ASSERT(inputBuffer32, "inputBuffer32");
   // The input buffer must be word aligned
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 initial alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 initial alignment");
   MAXVID_ASSERT(inputBufferNumWords > 0, "inputBufferNumWords");
   MAXVID_ASSERT(frameBufferNumPixels > 0, "frameBufferNumPixels");
   const uint32_t * restrict originalInputBuffer32 = inputBuffer32;
@@ -1444,7 +1444,7 @@ maxvid_encode_c4_sample32(
   MAXVID_ASSERT(pagesize == MV_PAGESIZE, "pagesize");
   MAXVID_ASSERT(inputBuffer32, "inputBuffer32");
   // The input buffer must be word aligned
-  MAXVID_ASSERT(((uint32_t)inputBuffer32 % 4) == 0, "inputBuffer32 initial alignment");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 initial alignment");
   MAXVID_ASSERT(inputBufferNumWords > 0, "inputBufferNumWords");
   MAXVID_ASSERT(frameBufferNumPixels > 0, "frameBufferNumPixels");
   const uint32_t * restrict originalInputBuffer32 = inputBuffer32;

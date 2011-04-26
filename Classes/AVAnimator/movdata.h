@@ -100,7 +100,7 @@ void movdata_free(MovData *movData);
 static
 inline
 uint32_t movsample_iskeyframe(MovSample *movSample) {
-  return (movSample->lengthAndFlags >> 24) & MOVSAMPLE_IS_KEYFRAME;
+  return ((movSample->lengthAndFlags >> 24) & MOVSAMPLE_IS_KEYFRAME) != 0;
 }
 
 static
