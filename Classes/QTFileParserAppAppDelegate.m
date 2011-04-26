@@ -182,6 +182,78 @@
   [self.animatorView.media startAnimator];  
 }
 
+// This generic loading util will setup a resource loader and configure a Media
+// object to use the proper type of loader depending on wether the convertToMvid
+// flag is TRUE. If convertToMvid is FALSE, then a .mov will be decompressed
+// from a 7zip compressed archive. If convertToMvid is TRUE, then a .mov file
+// attached as a 7zip compressed file will be extracted and converted to a
+// .mvid format.
+
+- (void) genericResourceLoader:(NSString*)resourcePrefix
+                 convertToMvid:(BOOL)convertToMvid
+                         media:(AVAnimatorMedia*)media
+{
+  NSString *videoResourceArchiveName;
+  NSString *videoResourceEntryName;
+  NSString *videoResourceOutName;
+  NSString *videoResourceOutPath;
+
+  NSString *mvidResFilename = [NSString stringWithFormat:@"%@.mvid.7z", [resourcePrefix lastPathComponent]];
+	NSString* mvidResPath = [[NSBundle mainBundle] pathForResource:mvidResFilename ofType:nil];
+  
+  BOOL convertToMvidLoader = TRUE;
+  
+  if (convertToMvid && (mvidResPath != nil)) {
+    // Extract existing FILENAME.mvid from FILENAME.mvid.7z attached as app resource
+    videoResourceArchiveName = [NSString stringWithFormat:@"%@.mvid.7z", resourcePrefix];
+    videoResourceEntryName = [NSString stringWithFormat:@"%@.mvid", resourcePrefix];
+    NSString *resourceTail = [resourcePrefix lastPathComponent];
+    videoResourceOutName = [NSString stringWithFormat:@"%@.mvid", resourceTail];
+    videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];
+    convertToMvidLoader = FALSE;
+  } else if (convertToMvid) {
+    // Extract to /tmp/FILENAME.mvid
+    videoResourceArchiveName = [NSString stringWithFormat:@"%@.mov.7z", resourcePrefix];
+    videoResourceEntryName = [NSString stringWithFormat:@"%@.mov", resourcePrefix];
+    NSString *resourceTail = [resourcePrefix lastPathComponent];
+    videoResourceOutName = [NSString stringWithFormat:@"%@.mvid", resourceTail];
+    videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];    
+  } else {
+    // Extract to /tmp/FILENAME.mov
+    videoResourceArchiveName = [NSString stringWithFormat:@"%@.mov.7z", resourcePrefix];
+    videoResourceEntryName = [NSString stringWithFormat:@"%@.mov", resourcePrefix];
+    NSString *resourceTail = [resourcePrefix lastPathComponent];
+    videoResourceOutName = [NSString stringWithFormat:@"%@.mov", resourceTail];
+    videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];        
+  }
+  
+  if (convertToMvidLoader) {
+    AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+    resLoader.archiveFilename = videoResourceArchiveName;
+    resLoader.movieFilename = videoResourceEntryName;
+    resLoader.outPath = videoResourceOutPath;
+    
+    media.resourceLoader = resLoader;
+  } else {
+    AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+    resLoader.archiveFilename = videoResourceArchiveName;
+    resLoader.movieFilename = videoResourceEntryName;
+    resLoader.outPath = videoResourceOutPath;    
+    
+    media.resourceLoader = resLoader;
+  }
+  
+  if (convertToMvid) {
+    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+    media.frameDecoder = frameDecoder;
+  } else {
+    AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+    media.frameDecoder = frameDecoder;
+  }
+  
+  return;
+}
+
 // This example is a portrait animation with a few frames of mostly black
 // with white text. PNG images are read from the app resources and the
 // decoded image data is stored in memory. This is useful for testing the max
@@ -412,11 +484,6 @@
   } else {
     assert(0);
   }
-
-  NSString *videoResourceArchiveName = [NSString stringWithFormat:@"%@.mov.7z", resourceName];
-  NSString *videoResourceEntryName = [NSString stringWithFormat:@"%@.mov", resourceName];
-  NSString *videoResourceOutName = [NSString stringWithFormat:@"%@.mvid", resourceName];;
-  NSString *videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];  
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -432,19 +499,9 @@
   
 	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  // Create loader that will read a movie file from app resources.
+  BOOL convertToMvid = TRUE;
   
-  AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
-  resLoader.archiveFilename = videoResourceArchiveName;
-  resLoader.movieFilename = videoResourceEntryName;
-  resLoader.outPath = videoResourceOutPath;
-
-	media.resourceLoader = resLoader;
-  
-  // Create decoder that will generate frames from Quicktime Animation encoded data
-  
-  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
-  media.frameDecoder = frameDecoder;
+  [self genericResourceLoader:resourceName convertToMvid:convertToMvid media:media];  
   
   if (frameDuration == -1.0) {
     frameDuration = AVAnimator30FPS;
@@ -476,24 +533,8 @@
 // to the graphics card.
 
 - (void) loadAlphaGhostLandscapeAnimation:(float)frameDuration
-{
-  int useMvid = 1;
-
-  // Convert .mov to .mvid format before playing
-  NSString *videoResourceArchiveName;
-  NSString *videoResourceEntryName;
-  NSString *videoResourceOutName;
-  NSString *videoResourceOutPath;
-  
-  if (useMvid) {
-    // Convert .mov to .mvid format before playing
-    videoResourceArchiveName = @"AlphaGhost.mov.7z";
-    videoResourceEntryName = @"AlphaGhost.mov";
-    videoResourceOutName = @"AlphaGhost.mvid";
-    videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];    
-  } else {
-    videoResourceEntryName = @"AlphaGhost.mov";    
-  }
+{  
+  NSString *resPrefix = @"AlphaGhost";
   
   // FIXME: Create example without the background animation, because it makes
   // the FPS unusable as a debug tool.
@@ -523,30 +564,10 @@
   
 	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  // Create loader that will read a movie file from app resources.
+  BOOL convertToMvid = TRUE;
   
-  if (useMvid) {
-    AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
-    resLoader.archiveFilename = videoResourceArchiveName;
-    resLoader.movieFilename = videoResourceEntryName;
-    resLoader.outPath = videoResourceOutPath;
-    
-    media.resourceLoader = resLoader;
-  } else {
-    AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-    resLoader.movieFilename = videoResourceEntryName;
-    media.resourceLoader = resLoader;    
-  }
-  
-  // Create decoder that will generate frames from Quicktime Animation encoded data
-  
-  if (useMvid) {
-    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
-    media.frameDecoder = frameDecoder;
-  } else {
-    AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-    media.frameDecoder = frameDecoder;
-  }  
+  [self genericResourceLoader:resPrefix convertToMvid:convertToMvid media:media];  
+
   // An alpha 480x320 animation seems to be able to hit about 15 to 20 FPS.
   // Not as good as 24bpp, but the alpha blending and premultiplicaiton
   // on each pixel are more costly in terms of CPU time.
@@ -571,8 +592,8 @@
 
 - (void) loadMatrixLettersLandscapeAnimation:(float)frameDuration
 {
-  NSString *resourceName;
-  resourceName = @"Matrix_480_320_10FPS_16BPP.mov";
+  NSString *resourcePrefix;
+  resourcePrefix = @"Matrix_480_320_10FPS_16BPP";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -585,16 +606,9 @@
   
 	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  // Create loader that will read a movie file from app resources.
+  BOOL convertToMvid = TRUE;
   
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = resourceName;
-	media.resourceLoader = resLoader;
-  
-  // Create decoder that will generate frames from Quicktime Animation encoded data
-  
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-	media.frameDecoder = frameDecoder;
+  [self genericResourceLoader:resourcePrefix convertToMvid:convertToMvid media:media];
   
   // Movie is 10FPS  
   // This animation can run smoothly at 30 FPS on a iPhone 3G,
@@ -783,65 +797,6 @@
   [self loadIntoMovieControls:media];
 }
 
-// This generic loading util will setup a resource loader and configure a Media
-// object to use the proper type of loader depending on wether the convertToMvid
-// flag is TRUE. If convertToMvid is FALSE, then a .mov will be decompressed
-// from a 7zip compressed archive. If convertToMvid is TRUE, then a .mov file
-// attached as a 7zip compressed file will be extracted and converted to a
-// .mvid format.
-
-- (void) genericResourceLoader:(NSString*)resourcePrefix
-                 convertToMvid:(BOOL)convertToMvid
-                         media:(AVAnimatorMedia*)media
-{
-  NSString *videoResourceArchiveName;
-  NSString *videoResourceEntryName;
-  NSString *videoResourceOutName;
-  NSString *videoResourceOutPath;
-  
-  if (convertToMvid) {
-    // Extract to /tmp/FILENAME.mvid
-    videoResourceArchiveName = [NSString stringWithFormat:@"%@.mov.7z", resourcePrefix];
-    videoResourceEntryName = [NSString stringWithFormat:@"%@.mov", resourcePrefix];
-    NSString *resourceTail = [resourcePrefix lastPathComponent];
-    videoResourceOutName = [NSString stringWithFormat:@"%@.mvid", resourceTail];
-    videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];    
-  } else {
-    // Extract to /tmp/FILENAME.mov
-    videoResourceArchiveName = [NSString stringWithFormat:@"%@.mov.7z", resourcePrefix];
-    videoResourceEntryName = [NSString stringWithFormat:@"%@.mov", resourcePrefix];
-    NSString *resourceTail = [resourcePrefix lastPathComponent];
-    videoResourceOutName = [NSString stringWithFormat:@"%@.mov", resourceTail];
-    videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];        
-  }
-  
-  if (convertToMvid) {
-    AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
-    resLoader.archiveFilename = videoResourceArchiveName;
-    resLoader.movieFilename = videoResourceEntryName;
-    resLoader.outPath = videoResourceOutPath;
-
-    media.resourceLoader = resLoader;
-  } else {
-    AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
-    resLoader.archiveFilename = videoResourceArchiveName;
-    resLoader.movieFilename = videoResourceEntryName;
-    resLoader.outPath = videoResourceOutPath;    
-    
-    media.resourceLoader = resLoader;
-  }
-  
-  if (convertToMvid) {
-    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
-    media.frameDecoder = frameDecoder;
-  } else {
-    AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-    media.frameDecoder = frameDecoder;
-  }
-  
-  return;
-}
-
 // The Gradient Color wheel is the worst possible 32BPP animation, every pixel changes on
 // every frame, so all the frames are marked as keyframes.
 // Even though there are only 10 frames in the video, this animation takes up a whopping
@@ -870,7 +825,11 @@
   
   // Create loader to read from project resources and render frames (either from .mov or converted .mvid)
 
-  BOOL convertToMvid = FALSE;
+  // Setting this to TRUE will load from "GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z" instead of converting
+  // from an existing .mov. This loads more quickly, and the attached .mvid.7z file compresses to a smaller
+  // size than the .mov.7z file.
+  
+  BOOL convertToMvid = TRUE;
   
   [self genericResourceLoader:@"GradientColorWheel_2FPS_32BPP_Keyframes" convertToMvid:convertToMvid media:media];
   
@@ -896,7 +855,7 @@
   // Create a plain UIView in portrait orientation and add a CALayer
   // in the center of this view.
   
-  NSString *videoResourceName = @"AlphaGhost.mov";
+  NSString *resPrefix = @"AlphaGhost";
   
   CGRect frame = CGRectMake(0, 0, 320, 480);
   UIView *mainView = [[[UIView alloc] initWithFrame:frame] autorelease];
@@ -950,16 +909,9 @@
   
   AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  // Create loader that will read a movie file from app resources.
+  BOOL convertToMvid = TRUE;
   
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = videoResourceName;
-	media.resourceLoader = resLoader;
-  
-  // Create decoder that will generate frames from Quicktime Animation encoded data
-  
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-	media.frameDecoder = frameDecoder;
+  [self genericResourceLoader:resPrefix convertToMvid:convertToMvid media:media];    
   
   if (frameDuration != -1.0) {
     media.animatorFrameDuration = frameDuration;
