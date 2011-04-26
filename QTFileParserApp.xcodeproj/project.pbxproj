@@ -147,6 +147,7 @@
 		CD6EF5A812F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; settings = {COMPILER_FLAGS = "-mno-thumb"; }; };
 		CD6EF5A912F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; settings = {COMPILER_FLAGS = "-mno-thumb"; }; };
 		CD7098B312F4A6BA00582B9B /* AVAnimatorLayerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD7098B212F4A6BA00582B9B /* AVAnimatorLayerTests.m */; };
+		CD75C0A013676F5D000DD6C4 /* Sweep15FPS_ANI.mov.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD75C09F13676F5D000DD6C4 /* Sweep15FPS_ANI.mov.7z */; };
 		CD7A02F012D261A900366AC6 /* AVAnimatorView.m in Sources */ = {isa = PBXBuildFile; fileRef = CD7A02EF12D261A900366AC6 /* AVAnimatorView.m */; };
 		CD7D2BF312D510CB0096EDF3 /* CountingLandscape01.png in Resources */ = {isa = PBXBuildFile; fileRef = CD7D2BEE12D510CB0096EDF3 /* CountingLandscape01.png */; };
 		CD7D2BF412D510CB0096EDF3 /* CountingLandscape02.png in Resources */ = {isa = PBXBuildFile; fileRef = CD7D2BEF12D510CB0096EDF3 /* CountingLandscape02.png */; };
@@ -330,6 +331,7 @@
 		CD6EF5A612F0F7920045659F /* movdata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = movdata.c; sourceTree = "<group>"; };
 		CD6EF5A712F0F7920045659F /* movdata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = movdata.h; sourceTree = "<group>"; };
 		CD7098B212F4A6BA00582B9B /* AVAnimatorLayerTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorLayerTests.m; sourceTree = "<group>"; };
+		CD75C09F13676F5D000DD6C4 /* Sweep15FPS_ANI.mov.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = Sweep15FPS_ANI.mov.7z; sourceTree = "<group>"; };
 		CD7A02EE12D261A900366AC6 /* AVAnimatorView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorView.h; sourceTree = "<group>"; };
 		CD7A02EF12D261A900366AC6 /* AVAnimatorView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorView.m; sourceTree = "<group>"; };
 		CD7D2BEE12D510CB0096EDF3 /* CountingLandscape01.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = CountingLandscape01.png; sourceTree = "<group>"; };
@@ -526,6 +528,7 @@
 			children = (
 				CDA1DC0512E61F37004C570F /* Icon.png */,
 				CD5006D812E23B95007038D0 /* Sweep15FPS_ANI.mov */,
+				CD75C09F13676F5D000DD6C4 /* Sweep15FPS_ANI.mov.7z */,
 				CD5006D912E23B95007038D0 /* Sweep15FPS.m4a */,
 				CD7E12B112E373190077CB9C /* Sweep15FPS.caf */,
 				CD9BF0981364EC2700FF5190 /* GradientColorWheel_2FPS_32BPP_Keyframes.mov.7z */,
@@ -909,6 +912,7 @@
 				CD2841921365F6FD007F229A /* AlphaGhost.mov.7z in Resources */,
 				CD4AAB3613675B270010148E /* GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z in Resources */,
 				CD4AABD513675FEF0010148E /* Matrix_480_320_10FPS_16BPP.mov.7z in Resources */,
+				CD75C0A013676F5D000DD6C4 /* Sweep15FPS_ANI.mov.7z in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

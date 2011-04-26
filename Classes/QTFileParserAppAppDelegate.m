@@ -202,6 +202,9 @@
 	NSString* mvidResPath = [[NSBundle mainBundle] pathForResource:mvidResFilename ofType:nil];
   
   BOOL convertToMvidLoader = TRUE;
+  if (convertToMvid == FALSE) {
+    convertToMvidLoader = FALSE;
+  }
   
   if (convertToMvid && (mvidResPath != nil)) {
     // Extract existing FILENAME.mvid from FILENAME.mvid.7z attached as app resource
@@ -744,14 +747,15 @@
   
 }
 
-// The sweep animation is a bit more computationally intensive, as it contains changes in each row
-// in each frame. This example shows an animation that runs at 15FPS and it synced to an audio track.
-// Because of the audio sync, this example only runs at 15FPS.
+// The sweep animation is a bit more computationally intensive, the delta in the image is limited to
+// a vertical region that moves to the left and right. This example shows an animation that runs at 15FPS
+// and it synced to an audio track. Because the damage region is small, this example can easily run at 60 FPS
+// when decoding from a .mov file with the audio disabled.
 
 - (void) loadSweepAnimation:(float)frameDuration
                   withSound:(BOOL)withSound
 {
-  NSString *videoResourceName = @"Sweep15FPS_ANI.mov";
+  NSString *videoResourceName = @"Sweep15FPS_ANI";
   
   NSString *audioResourceName = @"Sweep15FPS.m4a"; // AAC in a M4AF container
 //  NSString *audioResourceName = @"Sweep15FPS.caf"; // AAC in a CAF container
@@ -767,27 +771,27 @@
   
   AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  // Create loader that will read a movie file from app resources.
+  BOOL convertToMvid = FALSE;
   
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = videoResourceName;
+  [self genericResourceLoader:videoResourceName convertToMvid:convertToMvid media:media];  
+  
+  // Grab loader and add sound filename also
+  
+  AVAppResourceLoader *resLoader = (AVAppResourceLoader*) media.resourceLoader;
+  
   if (withSound) {
     resLoader.audioFilename = audioResourceName;
   }
-	media.resourceLoader = resLoader;
-  
-  // Create decoder that will generate frames from Quicktime Animation encoded data
-  
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-	media.frameDecoder = frameDecoder;
-  
+    
   // Movie runs only at 15FPS with sound.
   
   if (withSound) {
     media.animatorFrameDuration = AVAnimator15FPS;
   } else {
     if (frameDuration == -1.0) {
-      media.animatorFrameDuration = AVAnimator15FPS;      
+      media.animatorFrameDuration = AVAnimator15FPS;
+    } else {
+      media.animatorFrameDuration = frameDuration;
     }
   }
   
@@ -804,6 +808,9 @@
 // alpha takes a lot of CPU because it needs to be done for every pixel.
 // This series of frames would be better encoded as a set of PNG files, because there are no common
 // pixels so the delta would be the entire frame.
+//
+// Rendering from .mov will result in about 14 FPS for this worst case
+// Rendering from .mvid achives an impressive 30 FPS via keyframe zero copy optimization.
 
 - (void) loadGradientColorWheelAnimation:(float)frameDuration
 {
@@ -829,7 +836,7 @@
   // from an existing .mov. This loads more quickly, and the attached .mvid.7z file compresses to a smaller
   // size than the .mov.7z file.
   
-  BOOL convertToMvid = TRUE;
+  BOOL convertToMvid = FALSE;
   
   [self genericResourceLoader:@"GradientColorWheel_2FPS_32BPP_Keyframes" convertToMvid:convertToMvid media:media];
   
