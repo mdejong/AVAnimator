@@ -76,7 +76,8 @@ movdata_convert_maxvid_file(
                             char *inMovPath,
                             char *inMovData,
                             uint32_t inMovDataNumBytes,
-                            char *outMaxvidPath);
+                            char *outMaxvidPath,
+                            uint32_t genAdler);
 
 // Util to open and process headers of a .mov file
 

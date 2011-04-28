@@ -234,6 +234,9 @@
   resLoader.archiveFilename = archiveFilename;
   resLoader.movieFilename = entryFilename;
   resLoader.outPath = outPath;
+
+  // Make sure binary compare matches by forcing adler generation when debugging is off
+  resLoader.alwaysGenerateAdler = TRUE;
   
   // If the decode mov path exists currently, delete it so that this test case always
   // decodes the .mov from the .7z compressed Resource.
@@ -253,7 +256,7 @@
   NSLog(@"Wrote : %@", outPath);
   
   if (1) {
-    // Compare extracted file data to identical data attached as a project resource
+    // Compare generated mvid file data to identical data attached as a project resource
     
     NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
     NSAssert(wroteMvidData, @"could not map .mov data");

@@ -38,6 +38,7 @@ typedef struct {
 typedef struct {
     uint32_t offset; // file offset where sample data is located
     uint32_t lengthAndFlags; // length stored in lower 24 bits. Upper 8 bits contain flags.
+    uint32_t adler; // adler32 checksum of the decoded framebuffer
 } MVFrame;
 
 // A MVFile points to the start of the file, the header and frames can be accessed directly.
@@ -109,7 +110,7 @@ uint32_t maxvid_file_emit_nopframe() {
 static inline
 MVFile* maxvid_file_map_open(void *buffer) {
   assert(sizeof(MVFileHeader) == 16*4);
-  assert(sizeof(MVFrame) == 2*4);
+  assert(sizeof(MVFrame) == 3*4);
   
   MVFile *mvFilePtr = (MVFile *)buffer;
   uint32_t magic = mvFilePtr->header.magic;
@@ -198,3 +199,8 @@ static inline
 uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   return maxvid_file_padding_before_keyframe(outFile, offset);
 }
+
+uint32_t maxvid_adler32(
+                        uint32_t adler,
+                        unsigned char const *buf,
+                        uint32_t len);

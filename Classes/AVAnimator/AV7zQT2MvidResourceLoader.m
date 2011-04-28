@@ -14,7 +14,14 @@
 
 #import "AVFileUtil.h"
 
+#ifndef __OPTIMIZE__
+// Automatically define EXTRA_CHECKS when not optimizing (in debug mode)
+# define EXTRA_CHECKS
+#endif // DEBUG
+
 @implementation AV7zQT2MvidResourceLoader
+
+@synthesize alwaysGenerateAdler = m_alwaysGenerateAdler;
 
 + (AV7zQT2MvidResourceLoader*) aV7zQT2MvidResourceLoader
 {
@@ -29,7 +36,7 @@
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   
-  NSAssert([arr count] == 5, @"arr count");
+  NSAssert([arr count] == 6, @"arr count");
   
   // Pass ARCHIVE_PATH ARCHIVE_ENTRY_NAME TMP_PATH
   
@@ -38,6 +45,7 @@
   NSString *phonyOutPath = [arr objectAtIndex:2];
   NSString *phonyOutPath2 = [arr objectAtIndex:3];
   NSString *outPath = [arr objectAtIndex:4];
+  NSString *genAdlerNum = [arr objectAtIndex:5];
   
 #ifdef LOGGING
   NSLog(@"start 7zip extraction %@", archiveEntry);
@@ -65,7 +73,16 @@
 #endif // LOGGING  
   
   uint32_t retcode;
-  retcode = movdata_convert_maxvid_file(movPathCstr, movData, movNumBytes, phonyOutPath2Cstr);
+  
+  uint32_t genAdler = 0;
+#ifdef EXTRA_CHECKS
+  genAdler = 1;
+#endif // EXTRA_CHECKS
+  if ([genAdlerNum intValue]) {
+    genAdler = 1;
+  }
+  
+  retcode = movdata_convert_maxvid_file(movPathCstr, movData, movNumBytes, phonyOutPath2Cstr, genAdler);
   assert(retcode == 0);
   
   // Remove tmp file that contains the .mov data
@@ -97,8 +114,12 @@
   
   NSAssert(![phonyOutPath isEqualToString:phonyOutPath2], @"tmp out paths can't be the same");
   
-  NSArray *arr = [NSArray arrayWithObjects:archivePath, archiveEntry, phonyOutPath, phonyOutPath2, outPath, nil];
-  NSAssert([arr count] == 5, @"arr count");
+  uint32_t genAdler = self.alwaysGenerateAdler;
+  NSNumber *genAdlerNum = [NSNumber numberWithInt:genAdler];
+  NSAssert(genAdlerNum != nil, @"genAdlerNum");
+  
+  NSArray *arr = [NSArray arrayWithObjects:archivePath, archiveEntry, phonyOutPath, phonyOutPath2, outPath, genAdlerNum, nil];
+  NSAssert([arr count] == 6, @"arr count");
   
   [NSThread detachNewThreadSelector:@selector(decodeThreadEntryPoint:) toTarget:self.class withObject:arr];  
 }

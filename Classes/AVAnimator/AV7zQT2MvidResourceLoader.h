@@ -13,7 +13,10 @@
 #import "AV7zAppResourceLoader.h"
 
 @interface AV7zQT2MvidResourceLoader : AV7zAppResourceLoader {
+  BOOL m_alwaysGenerateAdler;
 }
+
+@property (nonatomic, assign) BOOL alwaysGenerateAdler;
 
 + (AV7zQT2MvidResourceLoader*) aV7zQT2MvidResourceLoader;
 

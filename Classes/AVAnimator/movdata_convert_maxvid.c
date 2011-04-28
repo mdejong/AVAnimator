@@ -1619,7 +1619,7 @@ static uint32_t
 process_frames(char * movPath, MovData *movData, char *mappedMovData,
                uint32_t width, uint32_t height,
                uint32_t bpp,
-               FILE *maxvidOutFile)
+               FILE *maxvidOutFile, uint32_t genAdler)
 {
   uint32_t retcode = 0;
 
@@ -1660,7 +1660,7 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
     goto RETCODE;
   }  
   
-  // There is always going to be at least 1 keyframe in a file, so allocate on now
+  // There is always going to be at least 1 keyframe in a file, so allocate now
   // instead of in the loop
   
   uint16_t *frameBuffer16 = NULL;
@@ -1749,6 +1749,11 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
           retcode = MV_ERROR_CODE_WRITE_FAILED;
           goto RETCODE;
         }
+        
+        if (genAdler) {
+          mvFrame->adler = maxvid_adler32(0, frameBuffer, frameBufferNumBytes);
+          assert(mvFrame->adler != 0);
+        }
       } else {
         // Convert frame of animation data to maxvid c4 encoding
         
@@ -1764,6 +1769,20 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
         if (status) {
           retcode = status;
           goto RETCODE;
+        }
+        
+        if (genAdler) {
+          // Apply the delta to the framebuffer and generate a new adler32 checksum
+          
+          uint32_t status = process_rle_sample(mappedMovData, movData, frame, frameBuffer);
+          
+          if (status) {
+            retcode = status;
+            goto RETCODE;
+          }
+          
+          mvFrame->adler = maxvid_adler32(0, frameBuffer, frameBufferNumBytes);
+          assert(mvFrame->adler != 0);
         }        
       }
       
@@ -1915,7 +1934,8 @@ movdata_convert_maxvid_file(
                             char *inMovPath,
                             char *inMovData,
                             uint32_t inMovDataNumBytes,
-                            char *outMaxvidPath)
+                            char *outMaxvidPath,
+                            uint32_t genAdler)
 {
   FILE *maxvidOutFile = fopen(outMaxvidPath, "w");
   if (maxvidOutFile == NULL) {
@@ -1933,7 +1953,7 @@ movdata_convert_maxvid_file(
   
   // Process each frame in the mov file, convert to maxvid frames
   
-  uint32_t result = process_frames(inMovPath, &movData, inMovData, width, height, bpp, maxvidOutFile);
+  uint32_t result = process_frames(inMovPath, &movData, inMovData, width, height, bpp, maxvidOutFile, genAdler);
   if (result) {
     return MV_ERROR_CODE_INVALID_INPUT;
   }
