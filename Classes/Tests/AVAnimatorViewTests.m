@@ -14,9 +14,15 @@
 #import "AVAnimatorMediaPrivate.h"
 
 #import "AVAppResourceLoader.h"
+#import "AV7zAppResourceLoader.h"
+#import "AV7zQT2MvidResourceLoader.h"
+
 #import "AVQTAnimationFrameDecoder.h"
+#import "AVMvidFrameDecoder.h"
 
 #import "AVImageFrameDecoder.h"
+
+#import "AVFileUtil.h"
 
 @interface AVAnimatorViewTests : NSObject {}
 @end
@@ -1316,7 +1322,9 @@
   return;
 }  
 
-+ (void) test16BPP
+// Decode .mov attached as a resource
+
++ (void) test16BPPMov
 {
 	id appDelegate = [[UIApplication sharedApplication] delegate];	
 	UIWindow *window = [appDelegate window];
@@ -1379,6 +1387,218 @@
   [media prepareToAnimate];
   
   BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(media.state == READY, @"isReadyToAnimate");
+  
+  // At this point, initial keyframe should be displayed
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");
+  
+  NSAssert(animatorView.image != nil, @"image");
+  
+  // Query pixel data at a specific pixel offset
+  
+  uint16_t pixel;
+  
+  [self getPixels16BPP:animatorView.image.CGImage
+                offset:0
+               nPixels:1
+              pixelPtr:&pixel];
+  
+  NSAssert(pixel == 0x0, @"pixel");
+  
+  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:5.0];
+  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  
+  return;
+}
+
+// Decode .mov.7z attached as a resource
+
++ (void) test16BPPMov7z
+{
+  BOOL worked;
+  
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *archiveFilename = @"Bounce_16BPP_15FPS.mov.7z";
+  NSString *entryFilename = @"Bounce_16BPP_15FPS.mov";  
+  NSString *outPath = [AVFileUtil getTmpDirPath:entryFilename];  
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Make sure that any already extracted archive file in the /tmp dir is removed
+  
+  worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+  NSAssert(worked, @"could not remove tmp file");
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  NSAssert(animatorView.renderSize.width == 0.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
+  
+  [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
+  
+  // Check that adding the animator to the window invoked loadViewImpl
+  
+  NSAssert(animatorView.renderSize.width == 480.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 320.0, @"renderSize.height");
+  
+  /*
+   // No transform should be defined, but default transform depends on
+   // the platform because iOS has a translate and negate transform by default.
+   CATransform3D transform = animatorView.layer.transform;
+   UIView *defaultView = [[[UIView alloc] initWithFrame:frame] autorelease];
+   CATransform3D defaultTransform = defaultView.layer.transform;
+   
+   //  NSAssert(CATransform3DIsIdentity(transform), @"not identity transform");
+   NSAssert(CATransform3DEqualToTransform(transform, defaultTransform), @"not default transform");
+   */
+  
+  // Wait until initial keyframe of data is loaded.
+  
+  NSAssert(media.isReadyToAnimate == FALSE, @"isReadyToAnimate");
+  
+  [media prepareToAnimate];
+  
+  worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(media.state == READY, @"isReadyToAnimate");
+  
+  // At this point, initial keyframe should be displayed
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");
+  
+  NSAssert(animatorView.image != nil, @"image");
+  
+  // Query pixel data at a specific pixel offset
+  
+  uint16_t pixel;
+  
+  [self getPixels16BPP:animatorView.image.CGImage
+                offset:0
+               nPixels:1
+              pixelPtr:&pixel];
+  
+  NSAssert(pixel == 0x0, @"pixel");
+  
+  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:5.0];
+  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  
+  return;
+}
+
+// Decode .mov.7z from resource and convert to .mvid
+
++ (void) test16BPPMov7zToMvid
+{
+  BOOL worked;
+  
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *archiveFilename = @"Bounce_16BPP_15FPS.mov.7z";
+  NSString *entryFilename = @"Bounce_16BPP_15FPS.mov";
+  NSString *outFilename = @"Bounce_16BPP_15FPS.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];  
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Make sure that any already extracted archive file in the /tmp dir is removed
+  
+  worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+  NSAssert(worked, @"could not remove tmp file");
+  NSLog(@"tmp file %@", outPath);
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  NSAssert(animatorView.renderSize.width == 0.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
+  
+  [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
+  
+  // Check that adding the animator to the window invoked loadViewImpl
+  
+  NSAssert(animatorView.renderSize.width == 480.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 320.0, @"renderSize.height");
+  
+  /*
+   // No transform should be defined, but default transform depends on
+   // the platform because iOS has a translate and negate transform by default.
+   CATransform3D transform = animatorView.layer.transform;
+   UIView *defaultView = [[[UIView alloc] initWithFrame:frame] autorelease];
+   CATransform3D defaultTransform = defaultView.layer.transform;
+   
+   //  NSAssert(CATransform3DIsIdentity(transform), @"not identity transform");
+   NSAssert(CATransform3DEqualToTransform(transform, defaultTransform), @"not default transform");
+   */
+  
+  // Wait until initial keyframe of data is loaded.
+  
+  NSAssert(media.isReadyToAnimate == FALSE, @"isReadyToAnimate");
+  
+  [media prepareToAnimate];
+  
+  worked = [RegressionTests waitUntilTrue:media
                                       selector:@selector(isReadyToAnimate)
                                    maxWaitTime:10.0];
   NSAssert(worked, @"worked");

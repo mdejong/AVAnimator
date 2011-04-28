@@ -70,7 +70,7 @@
   
 #ifdef LOGGING
   NSLog(@"done 7zip extraction %@, start encode", archiveEntry);
-#endif // LOGGING  
+#endif // LOGGING
   
   uint32_t retcode;
   

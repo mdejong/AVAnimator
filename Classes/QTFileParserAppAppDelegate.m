@@ -836,7 +836,7 @@
   // from an existing .mov. This loads more quickly, and the attached .mvid.7z file compresses to a smaller
   // size than the .mov.7z file.
   
-  BOOL convertToMvid = FALSE;
+  BOOL convertToMvid = TRUE;
   
   [self genericResourceLoader:@"GradientColorWheel_2FPS_32BPP_Keyframes" convertToMvid:convertToMvid media:media];
   
