@@ -298,7 +298,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
   register uint32_t WR1;
   register uint32_t WR2;
   register uint32_t WR3;
-  //register uint32_t WR4;
+  register uint32_t WR4;
   register uint32_t WR5;
 #endif // COMPILE_ARM_ASM
   
@@ -1167,34 +1167,26 @@ COPYSMALL:
                         [wr3] "+l" (WR3),
                         [wr4] "+l" (WR4)
                         );
+
+#else // COMPILE_ARM_ASM
+  memcpy(frameBuffer16, inputBuffer32, numWords << 2);
+  frameBuffer16 += numWords << 1;
+  inputBuffer32 += numWords;
+#endif // COMPILE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 == expectedCOPYSmallPost8FrameBuffer16, "COPY post word8 framebuffer");
   MAXVID_ASSERT(inputBuffer32 == expectedCOPYSmallPost8InputBuffer32, "COPY input post word8");
 #endif
   
-#else // COMPILE_ARM_ASM
-  memcpy(frameBuffer16, inputBuffer32, numPixels << 1);
-  frameBuffer16 += numPixels;
-  inputBuffer32 += (numPixels >> 1);
-  inputBuffer32 += (numPixels & 0x1);
-#endif // COMPILE_ARM_ASM
-  
-#if defined(COMPILE_ARM_ASM)
-  
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
-#endif // EXTRA_CHECKS
-  
-  // Write 1 more pixel in the case where copyNumPixels is odd
-  // Work around bug in gcc with asm, when extra checks is enabled.
-  
-#ifdef EXTRA_CHECKS
   if (numPixels & 0x1) {
     MAXVID_ASSERT(((frameBuffer16 - inframeBuffer16) < frameBufferSize), "COPY already past end of framebuffer");
   }
-#endif // EXTRA_CHECKS
+#endif // EXTRA_CHECKS  
   
+  // Write 1 more pixel in the case where copyNumPixels is odd    
   // WTF? GCC bug is emitting a load but it misses the incr in debug mode.
   // This looks like a compiler bug in ARM mode that should be reported.
   
@@ -1229,8 +1221,6 @@ COPYSMALL:
   MAXVID_ASSERT(frameBuffer16 == expectedCOPYSmallFinalFrameBuffer16, "expectedCOPYFinalFrameBuffer16");
   MAXVID_ASSERT(inputBuffer32 == expectedCOPYSmallFinalOutInputBuffer32, "expectedCOPYFinalOutInputBuffer32");
 #endif
-
-#endif // COMPILE_ARM_ASM
   
   // Load inW1 again. The final half word read above needs to be completed before
   // the next word can be read, so this read could stall for a couple of cycles.
@@ -1461,6 +1451,7 @@ COPYBIG:
     MAXVID_ASSERT(WR5 != MV_CACHE_LINE_SIZE, "invalid num words to bound");
     MAXVID_ASSERT(WR5 < MV_CACHE_LINE_SIZE, "invalid num words to bound");
     uint32_t *expectedPostAlignInputBuffer32 = inputBuffer32 + WR5;
+    MAXVID_ASSERT(UINTMOD(expectedPostAlignInputBuffer32, BOUNDSIZE) == 0, "input ptr should be at bound");
 #endif
     
 #if defined(COMPILE_ARM_ASM)
@@ -1490,13 +1481,13 @@ COPYBIG:
     
     for (; WR5 > 1; WR5 -= 2) {
       memcpy(frameBuffer16, inputBuffer32, sizeof(uint32_t) * 2);
-      frameBuffer16 += 2 * 2;
+      frameBuffer16 += 2 * sizeof(uint16_t);
       inputBuffer32 += 2;
     }
     if (WR5 == 1) {
       WR3 = *inputBuffer32++;
       *((uint32_t*)frameBuffer16) = WR3;
-      frameBuffer16 += 2;
+      frameBuffer16 += 1 * sizeof(uint16_t);
     }
 #endif // COMPILE_ARM_ASM
     
@@ -1575,14 +1566,11 @@ COPYBIG:
                         [wr8] "+l" (WR8)
                         );
 #else // COMPILE_ARM_ASM
-  memcpy(frameBuffer16, inputBuffer32, numPixels << 1);
-  frameBuffer16 += numPixels;
-  inputBuffer32 += (numPixels >> 1);
-  inputBuffer32 += (numPixels & 0x1);    
+  memcpy(frameBuffer16, inputBuffer32, numWords << 2);
+  frameBuffer16 += numWords << 1;
+  inputBuffer32 += numWords;
 #endif // COMPILE_ARM_ASM
     
-#if defined(COMPILE_ARM_ASM)
-  
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 == expectedCOPYBigPost8FrameBuffer16, "COPY post word8 framebuffer");
   MAXVID_ASSERT(inputBuffer32 == expectedCOPYBigPost8InputBuffer32, "COPY input post word8");
@@ -1590,21 +1578,17 @@ COPYBIG:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
-#endif // EXTRA_CHECKS
-  
-  // Write 1 more pixel in the case where copyNumPixels is odd
-  // Work around bug in gcc with asm, when extra checks is enabled.
-  
-#ifdef EXTRA_CHECKS
   if (numPixels & 0x1) {
     MAXVID_ASSERT(((frameBuffer16 - inframeBuffer16) < frameBufferSize), "COPY already past end of framebuffer");
   }
 #endif // EXTRA_CHECKS
   
+  // Write 1 more pixel in the case where copyNumPixels is odd
+  
+#if defined(COMPILE_ARM_ASM)
   // WTF? GCC bug is emitting a load but it misses the incr in debug mode.
   // This looks like a compiler bug in ARM mode that should be reported.
   
-#if defined(COMPILE_ARM_ASM)
   __asm__ __volatile__ (
                         // if (numPixels & 0x1)
                         "tst %[numPixels], #0x1\n\t"
@@ -1629,9 +1613,7 @@ COPYBIG:
   if (numPixels & 0x1) {
     MAXVID_ASSERT((WR4 >> 16) == 0, "high half must be zero");
   }
-#endif // EXTRA_CHECKS  
-
-#endif // COMPILE_ARM_ASM
+#endif // EXTRA_CHECKS
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 == expectedCOPYBigFinalFrameBuffer16, "expectedCOPYFinalFrameBuffer16");

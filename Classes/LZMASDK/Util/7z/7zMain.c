@@ -508,7 +508,7 @@ int MY_CDECL unused_main(int numargs, char *args[])
 // a single file is extracted by passing a non-NULL entryName,
 // then the file data is written to the path indicated by entryPath.
 
-#define DEBUG_OUTPUT
+//#define DEBUG_OUTPUT
 
 int do7z_extract_entry(char *archivePath, char *entryName, char *entryPath)
 {
@@ -683,6 +683,12 @@ int do7z_extract_entry(char *archivePath, char *entryName, char *entryPath)
             }
             Buf_Free(&buf, &g_Alloc);
           }
+          
+          if (0) {
+            printf("Extracting ");
+            PrintString(temp);
+            printf("\n");
+          }          
           
           res = SzArEx_Extract(&db, &lookStream.s, i,
                                &blockIndex, &outBuffer, &outBufferSize,

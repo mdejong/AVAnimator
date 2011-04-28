@@ -163,9 +163,6 @@
   
   [self _mapFile];
   
-  // FIXME: might want to map, then copy header, then unmap ?
-  // Basically, we want the header info without the whole file being mapped.
-  
 	self->m_isOpen = TRUE;
 	return TRUE;
 }
@@ -194,6 +191,8 @@
 
 - (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex
 {
+  [self _mapFile];
+  
   // Get from queue of frame buffers!
   
   CGFrameBuffer *nextFrameBuffer = [self _getNextFramebuffer];
@@ -218,8 +217,6 @@
   
 	// Get the number of frames directly from the header
 	// instead of invoking method to query self.numFrames.
-  
-  [self _mapFile];
   
   int numFrames = [self numFrames];
   
