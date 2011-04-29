@@ -429,6 +429,21 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 	}
 }
 
+- (void) osCopyImpl:(void*)srcPtr
+{  
+#if defined(USE_MACH_VM_ALLOCATE)
+  kern_return_t ret;
+  vm_address_t src = (vm_address_t) srcPtr;
+  vm_address_t dst = (vm_address_t) self.pixels;
+  ret = vm_copy((vm_map_t) mach_task_self(), src, (vm_size_t) self.numBytes, dst);
+  if (ret != KERN_SUCCESS) {
+    assert(0);
+  }
+#else
+  memcpy(self.pixels, anotherFrameBufferPixelsPtr, anotherFrameBuffer.numBytes);
+#endif  
+}
+
 - (void) copyPixels:(CGFrameBuffer *)anotherFrameBuffer
 {
   assert(self.numBytes == anotherFrameBuffer.numBytes);
@@ -447,17 +462,21 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
     anotherFrameBufferPixelsPtr = anotherFrameBuffer.pixels;
   }
   
-#if defined(USE_MACH_VM_ALLOCATE)
-  kern_return_t ret;
-  vm_address_t src = (vm_address_t) anotherFrameBufferPixelsPtr;
-  vm_address_t dst = (vm_address_t) self.pixels;
-  ret = vm_copy((vm_map_t) mach_task_self(), src, (vm_size_t) self.numBytes, dst);
-  if (ret != KERN_SUCCESS) {
-    assert(0);
-  }
-#else
-  memcpy(self.pixels, anotherFrameBufferPixelsPtr, anotherFrameBuffer.numBytes);
-#endif
+  [self osCopyImpl:anotherFrameBufferPixelsPtr];
+}
+
+// Copy the contents of the zero copy buffer to the allocated framebuffer and
+// release the zero copy bytes.
+
+- (void) zeroCopyToPixels
+{
+  assert(self.zeroCopyPixels != NULL);
+    
+  [self osCopyImpl:self.zeroCopyPixels];
+  
+  // Release zero copy buffer
+  
+  [self doneZeroCopyPixels];
 }
 
 - (void)dealloc {

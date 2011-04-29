@@ -82,6 +82,7 @@
 // Zero copy from an external read-only location
 
 - (void) zeroCopyPixels:(void*)zeroCopyPtr mappedData:(NSData*)mappedData;
+- (void) zeroCopyToPixels;
 - (void) doneZeroCopyPixels;
 
 @end

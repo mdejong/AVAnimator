@@ -17,6 +17,8 @@
 # define EXTRA_CHECKS
 #endif // DEBUG
 
+//#define ALWAYS_CHECK_ADLER
+
 @implementation AVMvidFrameDecoder
 
 @synthesize filePath = m_filePath;
@@ -201,7 +203,7 @@
   // Get from queue of frame buffers!
   
   CGFrameBuffer *nextFrameBuffer = [self _getNextFramebuffer];
-    
+  
   // Double check that the current frame is not the exact same object as the one we pass as
   // the next frame buffer. This should not happen, and we can't copy the buffer into itself.
   
@@ -272,6 +274,12 @@
     // Don't set frameIndex for the first frame (frameIndex == -1)
     if (lastKeyframeIndex > -1) {
       frameIndex = lastKeyframeIndex;
+      
+#ifdef EXTRA_CHECKS
+      int actualFrameIndex = frameIndex + 1;
+      MVFrame *frame = maxvid_file_frame(self->m_mvFile, actualFrameIndex);
+      NSAssert(maxvid_frame_iskeyframe(frame) == 1, @"frame must be a keyframe");
+#endif // EXTRA_CHECKS      
     }
   }
   
@@ -302,6 +310,12 @@
           [nextFrameBuffer copyPixels:self.currentFrameBuffer];
         }
         self.currentFrameBuffer = nextFrameBuffer;
+      } else {
+        // In the case where the current cgframebuffer contains is a zero copy pointer, need to
+        // explicitly copy the data from the zero copy buffer to the framebuffer.
+        if (self.currentFrameBuffer.zeroCopyPixels != NULL) {
+          [self.currentFrameBuffer zeroCopyToPixels];
+        }
       }
       
       uint32_t status;
@@ -318,7 +332,9 @@
           NSAssert(inputBuffer32NumBytes == (frameBufferSize * sizeof(uint32_t)), @"framebuffer num bytes");
         }
         NSAssert(((uint32_t)inputBuffer32 % MV_PAGESIZE) == 0, @"framebuffer num bytes");
-        
+#endif // EXTRA_CHECKS
+    
+#if defined(EXTRA_CHECKS) || defined(ALWAYS_CHECK_ADLER)
         // If mvid file has adler checksum for frame, verify that it matches
         
         if (frame->adler != 0) {
@@ -340,13 +356,14 @@
           status = maxvid_decode_c4_sample32(frameBuffer, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
         }
         NSAssert(status == 0, @"status");
-#ifdef EXTRA_CHECKS
+        
+#if defined(EXTRA_CHECKS) || defined(ALWAYS_CHECK_ADLER)
         // If mvid file has adler checksum for frame, verify that it matches the decoded framebuffer contents    
         if (frame->adler != 0) {
           uint32_t frameAdler = maxvid_adler32(0, (unsigned char*)frameBuffer, frameBufferNumBytes);
           NSAssert(frame->adler == frameAdler, @"frameAdler");
         }        
-#endif // EXTRA_CHECKS        
+#endif // EXTRA_CHECKS
       }
     }
 	}

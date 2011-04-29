@@ -88,7 +88,7 @@
   // Remove tmp file that contains the .mov data
   
   worked = [[NSFileManager defaultManager] removeItemAtPath:phonyOutPath error:nil];
-  NSAssert(worked, @"could not remove tmp file");
+  //NSAssert(worked, @"could not remove tmp file");
   
   // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
   

@@ -133,6 +133,7 @@
 		CD5006DB12E23B95007038D0 /* Sweep15FPS.m4a in Resources */ = {isa = PBXBuildFile; fileRef = CD5006D912E23B95007038D0 /* Sweep15FPS.m4a */; };
 		CD5006DC12E23B95007038D0 /* Sweep15FPS_ANI.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD5006D812E23B95007038D0 /* Sweep15FPS_ANI.mov */; };
 		CD5006DD12E23B95007038D0 /* Sweep15FPS.m4a in Resources */ = {isa = PBXBuildFile; fileRef = CD5006D912E23B95007038D0 /* Sweep15FPS.m4a */; };
+		CD535613136A2C0800FF72D4 /* AVFrameDecoderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD535612136A2C0800FF72D4 /* AVFrameDecoderTests.m */; };
 		CD5AEE3112D8F32F00A50135 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE3012D8F32F00A50135 /* AVFoundation.framework */; };
 		CD5AEE3512D8F33700A50135 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE3412D8F33700A50135 /* AudioToolbox.framework */; };
 		CD5AEE3912D8F34300A50135 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE3812D8F34300A50135 /* QuartzCore.framework */; };
@@ -313,6 +314,7 @@
 		CD4DA91012E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = JigsawPuzzle_205_99_10FPS_16BPP.mov; sourceTree = "<group>"; };
 		CD5006D812E23B95007038D0 /* Sweep15FPS_ANI.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Sweep15FPS_ANI.mov; sourceTree = "<group>"; };
 		CD5006D912E23B95007038D0 /* Sweep15FPS.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = Sweep15FPS.m4a; sourceTree = "<group>"; };
+		CD535612136A2C0800FF72D4 /* AVFrameDecoderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVFrameDecoderTests.m; sourceTree = "<group>"; };
 		CD5AECF412D8F28200A50135 /* RegressionTests.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RegressionTests.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD5AECF612D8F28200A50135 /* RegressionTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "RegressionTests-Info.plist"; sourceTree = "<group>"; };
 		CD5AEE3012D8F32F00A50135 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
@@ -595,6 +597,7 @@
 				CD3F4F1212D8FA0A0067FDDF /* AVAnimatorViewTests.m */,
 				CD7098B212F4A6BA00582B9B /* AVAnimatorLayerTests.m */,
 				CD922D0D136206290024AFBB /* AVResourceLoaderTests.m */,
+				CD535612136A2C0800FF72D4 /* AVFrameDecoderTests.m */,
 				CD288D3E12D93865005F0EEA /* 2x2_black_blue_16BPP.mov */,
 				CD8265DE1364D5EE00640B94 /* 2x2_black_blue_16BPP.mvid */,
 				CD922D24136206DE0024AFBB /* 2x2_black_blue_16BPP.mov.7z */,
@@ -1100,6 +1103,7 @@
 				CD0BD03F1363523800D8287A /* movdata_convert_maxvid.c in Sources */,
 				CD0BD14413635EDD00D8287A /* AVFileUtil.m in Sources */,
 				CD659D62136390C1008AF6F9 /* AVMvidFrameDecoder.m in Sources */,
+				CD535613136A2C0800FF72D4 /* AVFrameDecoderTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

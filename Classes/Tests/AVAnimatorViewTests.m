@@ -1445,7 +1445,7 @@
   // Make sure that any already extracted archive file in the /tmp dir is removed
   
   worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
-  NSAssert(worked, @"could not remove tmp file");
+  //NSAssert(worked, @"could not remove tmp file");
   
   // Create loader that will read a movie file from app resources.
   
@@ -1551,7 +1551,7 @@
   // Make sure that any already extracted archive file in the /tmp dir is removed
   
   worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
-  NSAssert(worked, @"could not remove tmp file");
+  //NSAssert(worked, @"could not remove tmp file");
   NSLog(@"tmp file %@", outPath);
   
   // Create loader that will read a movie file from app resources.
