@@ -24,9 +24,7 @@
 // The name of the archive resource file. For example: "XYZ.mov.7z"
 @property (nonatomic, copy) NSString *archiveFilename;
 
-// The fully qualified filename for the extracted data. For example: "XYZ.mov.7z"
-// If outPath is not set, then a path in the tmp dir will be automatically
-// constructed using the movieFilename property.
+// The fully qualified filename for the extracted data. For example: "XYZ.mov"
 @property (nonatomic, copy) NSString *outPath;
 
 + (AV7zAppResourceLoader*) aV7zAppResourceLoader;

@@ -1,31 +1,29 @@
 //
-//  AV7zQT2MvidResourceLoader.h
+//  AV7zApng2MvidResourceLoader.m
 //
-//  Created by Moses DeJong on 4/22/11.
-//
-//  License terms defined in License.txt.
+//  Created by Moses DeJong on 5/2/11.
 //
 
-#import "AV7zQT2MvidResourceLoader.h"
+#import "AV7zApng2MvidResourceLoader.h"
 
-#import "LZMAExtractor.h"
-
-#import "movdata_convert_maxvid.h"
+#import "apng_convert_maxvid.h"
 
 #import "AVFileUtil.h"
+
+#import "LZMAExtractor.h"
 
 #ifndef __OPTIMIZE__
 // Automatically define EXTRA_CHECKS when not optimizing (in debug mode)
 # define EXTRA_CHECKS
 #endif // DEBUG
 
-@implementation AV7zQT2MvidResourceLoader
+@implementation AV7zApng2MvidResourceLoader
 
 @synthesize alwaysGenerateAdler = m_alwaysGenerateAdler;
 
-+ (AV7zQT2MvidResourceLoader*) aV7zQT2MvidResourceLoader
++ (AV7zApng2MvidResourceLoader*) aV7zApng2MvidResourceLoader
 {
-  return [[[AV7zQT2MvidResourceLoader alloc] init] autorelease];
+  return [[[AV7zApng2MvidResourceLoader alloc] init] autorelease];
 }
 
 // This method is invoked in the secondary thread to decode the contents of the archive entry
@@ -55,18 +53,13 @@
   worked = [LZMAExtractor extractArchiveEntry:archivePath archiveEntry:archiveEntry outPath:phonyOutPath];
   assert(worked);
   
-  // The archive .mov file is extracted to a phony tmp path like "/tmp/15354345345", convert the
-  // animation codec data to a maxvid file (another tmp path).
-
-  NSData *mappedData = [NSData dataWithContentsOfMappedFile:phonyOutPath];
-  NSAssert(mappedData, @"could not map .mov data");
+  // The .apng from the archive is extracted to a phony tmp path like "/tmp/15354345345", convert the
+  // APNG data and save into another tmp path.
   
-  char *movPathCstr = (char*) [phonyOutPath UTF8String];
-  char *movData = (char*) [mappedData bytes];
-  uint32_t movNumBytes = [mappedData length];
+  char *apngPathCstr = (char*) [phonyOutPath UTF8String];
   char *phonyOutPath2Cstr = (char*) [phonyOutPath2 UTF8String];
   
-  assert(strcmp(movPathCstr, phonyOutPath2Cstr) != 0);
+  assert(strcmp(apngPathCstr, phonyOutPath2Cstr) != 0);
   
 #ifdef LOGGING
   NSLog(@"done 7zip extraction %@, start encode", archiveEntry);
@@ -82,13 +75,13 @@
     genAdler = 1;
   }
   
-  retcode = movdata_convert_maxvid_file(movPathCstr, movData, movNumBytes, phonyOutPath2Cstr, genAdler);
+  retcode = apng_convert_maxvid_file(apngPathCstr, phonyOutPath2Cstr, genAdler);  
   assert(retcode == 0);
   
-  // Remove tmp file that contains the .mov data
+  // Remove tmp file that contains the .apng data
   
   worked = [[NSFileManager defaultManager] removeItemAtPath:phonyOutPath error:nil];
-  //NSAssert(worked, @"could not remove tmp file");
+  NSAssert(worked, @"could not remove tmp file");
   
   // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
   

@@ -28,6 +28,7 @@ typedef enum {
 #define MV_ERROR_CODE_INVALID_INPUT 1
 #define MV_ERROR_CODE_INVALID_FILENAME 2
 #define MV_ERROR_CODE_WRITE_FAILED 3
+#define MV_ERROR_CODE_READ_FAILED 4
 
 // These bit packing macros should not be invoked in user code
 
