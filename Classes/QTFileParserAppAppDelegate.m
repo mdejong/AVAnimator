@@ -31,6 +31,8 @@
 
 #import "AV7zQT2MvidResourceLoader.h"
 
+#import "AV7zApng2MvidResourceLoader.h"
+
 #import <QuartzCore/QuartzCore.h>
 
 #if defined(REGRESSION_TESTS)
@@ -536,7 +538,12 @@
 // to the graphics card.
 
 - (void) loadAlphaGhostLandscapeAnimation:(float)frameDuration
-{  
+{
+  if (1) {
+    [self loadAPNGAlphaGhostLandscapeAnimation:frameDuration];
+    return;
+  }
+  
   NSString *resPrefix = @"AlphaGhost";
   
   // FIXME: Create example without the background animation, because it makes
@@ -585,6 +592,67 @@
 
   [self loadIntoMovieControls:media];
 }
+
+// Load alpha ghost animation from a compressed APNG file.
+
+- (void) loadAPNGAlphaGhostLandscapeAnimation:(float)frameDuration
+{
+  // Animate color shift for window, background shows through the ghost.
+  // Note that enabling this color shift makes the FPS output in the
+  // CoreAnimation Instrument useless since it always shows 60 FPS.
+  
+  if (0) {
+    
+    self.window.backgroundColor = [UIColor redColor];
+    [UIView beginAnimations:nil context:NULL];
+    [UIView setAnimationDuration:5.0];
+    [UIView setAnimationRepeatCount:3.5];
+    [UIView setAnimationRepeatAutoreverses:TRUE];
+    self.window.backgroundColor = [UIColor blueColor];
+    [UIView commitAnimations];
+    
+  }
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  self.animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  
+  // Create Media object and link it to the animatorView
+  
+	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+
+  NSString *archiveFilename = @"AlphaGhost_opt_nc.apng.7z";
+  NSString *entryFilename = @"AlphaGhost_opt_nc.apng";
+  NSString *outFilename = @"AlphaGhost_opt_nc.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+    
+  AV7zApng2MvidResourceLoader *resLoader = [AV7zApng2MvidResourceLoader aV7zApng2MvidResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+	media.resourceLoader = resLoader;
+   
+  media.frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  
+  // An alpha 480x320 animation seems to be able to hit about 15 to 20 FPS.
+  // Not as good as 24bpp, but the alpha blending and premultiplicaiton
+  // on each pixel are more costly in terms of CPU time.
+  
+  if (frameDuration == -1.0) {
+    frameDuration = 1.0 / 2.0;
+  }  
+  
+	media.animatorFrameDuration = frameDuration;
+  
+	media.animatorRepeatCount = 150;
+  
+  [self loadIntoMovieControls:media];
+}
+
+// AlphaGhost_opt_nc.apng.7z
 
 // This landscape animation shows an effect like the one seen
 // in "The Matrix". The movie file is not very small (700K),
