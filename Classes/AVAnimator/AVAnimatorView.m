@@ -215,6 +215,11 @@
 
 - (void) attachMedia:(AVAnimatorMedia*)inMedia
 {
+  if (self.mediaObj == inMedia) {
+    // Detaching and the reattaching the same media is a no-op
+    return;
+  }
+  
   if (inMedia == nil) {
     // Detach case
     

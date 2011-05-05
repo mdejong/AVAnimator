@@ -309,11 +309,11 @@
   }
   
   NSAssert(self.frameDecoder, @"frameDecoder");
+
+	NSLog(@"%@", [NSString stringWithFormat:@"frameDecoder openForReading \"%@\"", [videoPath lastPathComponent]]);
   
 	BOOL worked = [self.frameDecoder openForReading:videoPath];
 	NSAssert(worked, @"frameDecoder openForReading failed");
-  
-	NSLog(@"%@", [NSString stringWithFormat:@"frameDecoder openForReading \"%@\"", [videoPath lastPathComponent]]);
     
   // Read frame duration from movie by default. If user explicitly indicated a frame duration
   // the use it instead of what appears in the movie.

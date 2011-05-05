@@ -157,7 +157,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 	// transformation has been applied. Once the bitmap
 	// context has been captured, it should be rendered with
 	// no transformations. Also note that the colorspace
-	// is always ARGBwith no alpha, the bitmap capture happens
+	// is always ARGB with no alpha, the bitmap capture happens
 	// *after* any colors in the image have been converted to RGB pixels.
 
 	size_t w = view.layer.bounds.size.width;
