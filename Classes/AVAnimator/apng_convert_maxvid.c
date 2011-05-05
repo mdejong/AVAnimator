@@ -469,13 +469,15 @@ process_apng_frame(
   uint32_t genAdler = userDataPtr->genAdler;
   
   const uint32_t framebufferNumBytes = width * height * sizeof(uint32_t);
-    
+
+#ifdef DEBUG_PRINT_FRAME_DURATION
   printf("process_apng_frame(fbPtr, framei=%d, width=%d, height=%d, delta_x=%d, delta_y=%d, delta_width=%d, delta_height=%d, delay_num=%d, delay_den=%d, bpp=%d, ptr)\n",
          framei,
          width, height,
          delta_x, delta_y, delta_width, delta_height,
          delay_num, delay_den,
          bpp);
+#endif
 
   if (framei == 0) {
     // Save width/height from initial frame
@@ -503,7 +505,9 @@ process_apng_frame(
   int numFramesDelay = round(delay / userDataPtr->frameDuration);
   assert(numFramesDelay >= 1);
   
+#ifdef DEBUG_PRINT_FRAME_DURATION
   fprintf(stdout, "APNG frame index %d corresponds to MVID frame index %d\n", framei, userDataPtr->outFrame);
+#endif
   
   // Get the frame that this APNG frame corresponds to
   
@@ -641,7 +645,9 @@ process_apng_frame(
     }
   }
   
+#ifdef DEBUG_PRINT_FRAME_DURATION
   fprintf(stdout, "frame delay after APNG frame %d is %d\n", framei, numFramesDelay);
+#endif
   
   return 0;
 }

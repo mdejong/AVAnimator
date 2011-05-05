@@ -538,12 +538,7 @@
 // to the graphics card.
 
 - (void) loadAlphaGhostLandscapeAnimation:(float)frameDuration
-{
-  if (1) {
-    [self loadAPNGAlphaGhostLandscapeAnimation:frameDuration];
-    return;
-  }
-  
+{  
   NSString *resPrefix = @"AlphaGhost";
   
   // FIXME: Create example without the background animation, because it makes
@@ -1126,6 +1121,10 @@
     }
     case 17: {
       [self loadCoreAnimationGhostAnimation:frameDuration];
+      break;
+    }
+    case 18: {
+      [self loadAPNGAlphaGhostLandscapeAnimation:frameDuration];
       break;
     }      
   }
