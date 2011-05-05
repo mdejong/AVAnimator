@@ -261,6 +261,10 @@
 		CDECCF6612D31BBE0067D2EE /* BouncingBalls28.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4812D31BBE0067D2EE /* BouncingBalls28.png */; };
 		CDECCF6712D31BBE0067D2EE /* BouncingBalls29.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4912D31BBE0067D2EE /* BouncingBalls29.png */; };
 		CDECCF6812D31BBE0067D2EE /* BouncingBalls30.png in Resources */ = {isa = PBXBuildFile; fileRef = CDECCF4A12D31BBE0067D2EE /* BouncingBalls30.png */; };
+		CDF7F8801373322C00E1A57B /* 2x2_alpha_reveal_32BPP.apng in Resources */ = {isa = PBXBuildFile; fileRef = CDF7F87F1373322C00E1A57B /* 2x2_alpha_reveal_32BPP.apng */; };
+		CDF7F8DD137334FD00E1A57B /* 2x2_alpha_reveal_palette.apng in Resources */ = {isa = PBXBuildFile; fileRef = CDF7F8DC137334FD00E1A57B /* 2x2_alpha_reveal_palette.apng */; };
+		CDF7F8F41373374400E1A57B /* 2x2_black_blue_1LD_opt.apng in Resources */ = {isa = PBXBuildFile; fileRef = CDF7F8F31373374400E1A57B /* 2x2_black_blue_1LD_opt.apng */; };
+		CDF7F95D13733C6B00E1A57B /* 2x2_nop.apng in Resources */ = {isa = PBXBuildFile; fileRef = CDF7F95C13733C6B00E1A57B /* 2x2_nop.apng */; };
 		CDFAD89512D3D50F009DEAF3 /* Counting01.png in Resources */ = {isa = PBXBuildFile; fileRef = CDFAD88D12D3D50F009DEAF3 /* Counting01.png */; };
 		CDFAD89612D3D50F009DEAF3 /* Counting02.png in Resources */ = {isa = PBXBuildFile; fileRef = CDFAD88E12D3D50F009DEAF3 /* Counting02.png */; };
 		CDFAD89712D3D50F009DEAF3 /* Counting03.png in Resources */ = {isa = PBXBuildFile; fileRef = CDFAD88F12D3D50F009DEAF3 /* Counting03.png */; };
@@ -459,6 +463,10 @@
 		CDECCF4812D31BBE0067D2EE /* BouncingBalls28.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls28.png; sourceTree = "<group>"; };
 		CDECCF4912D31BBE0067D2EE /* BouncingBalls29.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls29.png; sourceTree = "<group>"; };
 		CDECCF4A12D31BBE0067D2EE /* BouncingBalls30.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = BouncingBalls30.png; sourceTree = "<group>"; };
+		CDF7F87F1373322C00E1A57B /* 2x2_alpha_reveal_32BPP.apng */ = {isa = PBXFileReference; lastKnownFileType = file; path = 2x2_alpha_reveal_32BPP.apng; sourceTree = "<group>"; };
+		CDF7F8DC137334FD00E1A57B /* 2x2_alpha_reveal_palette.apng */ = {isa = PBXFileReference; lastKnownFileType = file; path = 2x2_alpha_reveal_palette.apng; sourceTree = "<group>"; };
+		CDF7F8F31373374400E1A57B /* 2x2_black_blue_1LD_opt.apng */ = {isa = PBXFileReference; lastKnownFileType = file; path = 2x2_black_blue_1LD_opt.apng; sourceTree = "<group>"; };
+		CDF7F95C13733C6B00E1A57B /* 2x2_nop.apng */ = {isa = PBXFileReference; lastKnownFileType = file; path = 2x2_nop.apng; sourceTree = "<group>"; };
 		CDFAD88D12D3D50F009DEAF3 /* Counting01.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Counting01.png; sourceTree = "<group>"; };
 		CDFAD88E12D3D50F009DEAF3 /* Counting02.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Counting02.png; sourceTree = "<group>"; };
 		CDFAD88F12D3D50F009DEAF3 /* Counting03.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Counting03.png; sourceTree = "<group>"; };
@@ -635,6 +643,10 @@
 				CDE660A9136F8A7E00F4E8E6 /* 2x2_black_blue_24BPP.apng */,
 				CD0ACFA7136F999100A203DF /* 2x2_black_blue_24BPP_opt_nc.apng.7z */,
 				CDCB181512EF659E00E52D3E /* 2x2_nop.mov */,
+				CDF7F95C13733C6B00E1A57B /* 2x2_nop.apng */,
+				CDF7F87F1373322C00E1A57B /* 2x2_alpha_reveal_32BPP.apng */,
+				CDF7F8DC137334FD00E1A57B /* 2x2_alpha_reveal_palette.apng */,
+				CDF7F8F31373374400E1A57B /* 2x2_black_blue_1LD_opt.apng */,
 				CDA2BADA12F0AA4000F299B4 /* Silence3S.wav */,
 			);
 			path = Tests;
@@ -1039,6 +1051,10 @@
 				CD9BF0991364EC2700FF5190 /* GradientColorWheel_2FPS_32BPP_Keyframes.mov.7z in Resources */,
 				CDE660AA136F8A7E00F4E8E6 /* 2x2_black_blue_24BPP.apng in Resources */,
 				CD0ACFA8136F999100A203DF /* 2x2_black_blue_24BPP_opt_nc.apng.7z in Resources */,
+				CDF7F8801373322C00E1A57B /* 2x2_alpha_reveal_32BPP.apng in Resources */,
+				CDF7F8DD137334FD00E1A57B /* 2x2_alpha_reveal_palette.apng in Resources */,
+				CDF7F8F41373374400E1A57B /* 2x2_black_blue_1LD_opt.apng in Resources */,
+				CDF7F95D13733C6B00E1A57B /* 2x2_nop.apng in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

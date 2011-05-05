@@ -2163,6 +2163,8 @@
   NSAssert([frameDecoder hasAlphaChannel] == FALSE, @"hasAlphaChannel");
   
   NSAssert(media.currentFrame == 0, @"currentFrame");
+
+  NSAssert([frameDecoder numFrames] == 3, @"numFrames");
   
   NSAssert(animatorView.image != nil, @"image");
   

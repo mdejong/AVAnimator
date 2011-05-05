@@ -23,6 +23,7 @@ typedef struct {
   uint32_t height;
   uint32_t bpp;
   uint32_t genAdler;
+  uint32_t *cgFrameBuffer;
 } LibapngUserData;
 
 // Read a big endian uint32_t from a char* and store in result (ARGB).
@@ -37,26 +38,38 @@ uint8_t alphaTables[TABLEMAX*TABLEMAX];
 static
 int alphaTablesInitialized = 0;
 
-static inline
-uint32_t PREMULTIPLY_UTIL(uint32_t pixel) 
-{
-  // Input : ARGB (non-premultiplied)
-  // Output : ARGB (premultiplied)
+// Input is a ARGB (non-premultiplied) pixel.
+// Output is a ABGR (premultiplied) pixel for CoreGraphics bitmap.
 
+static inline
+uint32_t argb_to_abgr_and_premultiply(uint32_t pixel)
+{
   uint32_t alpha = (pixel >> 24) & 0xFF;
   uint32_t red = (pixel >> 16) & 0xFF;
   uint32_t green = (pixel >> 8) & 0xFF;
   uint32_t blue = (pixel >> 0) & 0xFF;
   
   uint8_t * restrict alphaTable = &alphaTables[alpha * TABLEMAX];
-  return (alpha << 24) | (alphaTable[red] << 16) | (alphaTable[green] << 8) | alphaTable[blue];
+  return (alpha << 24) | (alphaTable[blue] << 16) | (alphaTable[green] << 8) | alphaTable[red];
 }
 
-#define PREMULTIPLY(result, pixel) result = PREMULTIPLY_UTIL(pixel)
+// Input is a ARGB where A is always 0xFF
+// Output is a ABGR pixel for CoreGraphics bitmap.
+
+static inline
+uint32_t argb_to_abgr(uint32_t pixel)
+{
+  uint32_t alpha = (pixel >> 24) & 0xFF;
+  uint32_t red = (pixel >> 16) & 0xFF;
+  uint32_t green = (pixel >> 8) & 0xFF;
+  uint32_t blue = (pixel >> 0) & 0xFF;
+  
+  return (alpha << 24) | (blue << 16) | (green << 8) | red;
+}
 
 //#define TO_RGBA(red, green, blue, alpha) ((red << 24)|  (green << 16) | (blue << 8) | alpha)
-
 #define TO_ARGB(red, green, blue, alpha) ((alpha << 24)|  (red << 16) | (green << 8) | blue)
+#define TO_ABGR(red, green, blue, alpha) ((alpha << 24)|  (blue << 16) | (green << 8) | red)
 
 static
 void init_alphaTables() {
@@ -118,7 +131,7 @@ void init_alphaTables() {
       //uint32_t in_pixel_be = htonl(in_pixel); // pixel in BE byte order
       uint32_t pixel = in_pixel; // native byte order
       uint32_t premult_pixel_le;
-      PREMULTIPLY(premult_pixel_le, pixel);
+      premult_pixel_le = argb_to_abgr_and_premultiply(pixel);
       
       // Compare read_ARGB_and_premultiply() result to known good value
       
@@ -132,25 +145,10 @@ void init_alphaTables() {
       if (round_alpha == 0) {
         round_red = round_green = round_blue = 0;
       }
-      uint32_t expected_pixel_le = TO_ARGB(round_red, round_green, round_blue, round_alpha);
-                                          
+      uint32_t expected_pixel_le = TO_ABGR(round_red, round_green, round_blue, round_alpha);
+      
       if (premult_pixel_le != expected_pixel_le) {
-        uint8_t premult_pixel_alpha = (premult_pixel_le >> 24) & 0xFF;
-        uint8_t premult_pixel_red = (premult_pixel_le >> 16) & 0xFF;
-        uint8_t premult_pixel_green = (premult_pixel_le >> 8) & 0xFF;
-        uint8_t premult_pixel_blue = (premult_pixel_le >> 0) & 0xFF;
-        
-        uint8_t rounded_pixel_alpha = (expected_pixel_le >> 24) & 0xFF;
-        uint8_t rounded_pixel_red = (expected_pixel_le >> 16) & 0xFF;
-        uint8_t rounded_pixel_green = (expected_pixel_le >> 8) & 0xFF;
-        uint8_t rounded_pixel_blue = (expected_pixel_le >> 0) & 0xFF;        
-        
-        assert(premult_pixel_alpha == rounded_pixel_alpha);
-        assert(premult_pixel_red == rounded_pixel_red);
-        assert(premult_pixel_green == rounded_pixel_green);
-        assert(premult_pixel_blue == rounded_pixel_blue);
-        
-        assert(premult_pixel_le == expected_pixel_le);
+        assert(0);
       }
     }
   }
@@ -526,7 +524,32 @@ process_apng_frame(
     if (maxvid_frame_iskeyframe(prevMvFrame)) {
       maxvid_frame_setkeyframe(mvFrame);
     }
+    
+    // Note that an adler is not generated for a no-op frame
+    
   } else {
+    
+    // Each pixel in the framebuffer must be prepared before it can be passed to the CoreGraphics framebuffer.
+    // ARGB must be pre-multiplied and converted to ABGR.
+    
+    if (userDataPtr->cgFrameBuffer == NULL) {
+      userDataPtr->cgFrameBuffer = malloc(framebufferNumBytes);
+      memset(userDataPtr->cgFrameBuffer, 0, framebufferNumBytes);
+    }
+    
+    uint32_t count = width * height;
+    uint32_t *inPtr = framebuffer;
+    uint32_t *outPtr = userDataPtr->cgFrameBuffer;  
+    if (bpp == 32) {
+      do {
+        *outPtr++ = argb_to_abgr_and_premultiply(*inPtr++);
+      } while (--count != 0);
+    } else {
+      // 24 BPP : no need to premultiply since alpha is always 0xFF
+      do {
+        *outPtr++ = argb_to_abgr(*inPtr++);
+      } while (--count != 0);    
+    }    
     
     // Each frame is emitted as a keyframe
     
@@ -546,28 +569,14 @@ process_apng_frame(
     
     if (isKeyFrame) {
       // A keyframe is a special case where a zero-copy optimization can be used.
-      
-      if (bpp == 32) {
-        // If 32 bpp pixels have an alpha value other than 1.0, premultiply pixels before writing to .mvid file
-        
-        uint32_t count = width * height;
-        uint32_t *pixelPtr = framebuffer + count - 1;
-        do {
-          uint32_t pixel = *pixelPtr;
-          uint32_t result;
-          PREMULTIPLY(result, pixel);
-          *pixelPtr = result;
-          pixelPtr--;
-        } while (--count != 0);
-      }
-      
-      uint32_t numWritten = fwrite(framebuffer, framebufferNumBytes, 1, maxvidOutFile);
+            
+      uint32_t numWritten = fwrite(userDataPtr->cgFrameBuffer, framebufferNumBytes, 1, maxvidOutFile);
       if (numWritten != 1) {
         return WRITE_ERROR;
       }
       
       if (genAdler) {
-        mvFrame->adler = maxvid_adler32(0, (unsigned char*)framebuffer, framebufferNumBytes);
+        mvFrame->adler = maxvid_adler32(0, (unsigned char*)userDataPtr->cgFrameBuffer, framebufferNumBytes);
         assert(mvFrame->adler != 0);
       }
     } else {
@@ -655,6 +664,10 @@ apng_convert_maxvid_file(
   MVFileHeader *mvHeader = NULL;
   MVFrame *mvFramesArray = NULL;
   
+  LibapngUserData userData;
+  memset(&userData, 0, sizeof(LibapngUserData));
+  assert(userData.cgFrameBuffer == NULL);  
+  
 #undef RETCODE
 #define RETCODE(status) \
 if (status != 0) { \
@@ -726,17 +739,14 @@ goto retcode; \
   if (numWritten != 1) {
     RETCODE(WRITE_ERROR);
   }  
+
+  // Init user data passed to libapng_main()
   
-  // Pass the dump filename directory as the user data. Specific filenames will be
-  // constructed in the callback function.
-  
-  LibapngUserData userData;
-  memset(&userData, 0, sizeof(LibapngUserData));
   userData.maxvidOutFile = maxvidOutFile;
   userData.mvFramesArray = mvFramesArray;
   userData.frameDuration = frameDuration;
   userData.genAdler = genAdler;
-
+  
   // Invoke library interface to parse frames from .apng file and render to .mvid
   
   status = libapng_main(inAPNGFile, process_apng_frame, &userData);
@@ -789,6 +799,10 @@ goto retcode; \
   
 retcode:
   libapng_close(inAPNGFile);
+  
+  if (userData.cgFrameBuffer) {
+    free(userData.cgFrameBuffer);
+  }  
   
   if (maxvidOutFile) {
     fclose(maxvidOutFile);

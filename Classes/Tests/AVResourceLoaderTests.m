@@ -671,4 +671,502 @@
   return;
 }
 
+// Convert an APNG that contains 32 bit pixels with an alpha channel.
+// This animation contains 2 frame, the first is all black. The
+// second frame is all transparent pixels.
+
++ (void) testApng2x2AlphaReveal_32BPP
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resFilename = @"2x2_alpha_reveal_32BPP.apng";
+  NSString *outFilename = @"2x2_alpha_reveal_32BPP.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  // If the converted mov path exists currently, delete it so that this test case always converts.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file with same name as tmp dir");
+  }
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 2, 2);
+  UIView *view = [[[UIView alloc] initWithFrame:frame] autorelease];
+  CALayer *viewLayer = view.layer;
+  
+  AVAnimatorLayer *avLayerObj = [AVAnimatorLayer aVAnimatorLayer:viewLayer];
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  [avLayerObj attachMedia:media];
+  
+  // Create loader that will decompress a movie from a 7zip archive attached
+  // as an application resource.
+  
+  AVApng2MvidResourceLoader *resLoader = [AVApng2MvidResourceLoader aVApng2MvidResourceLoader];
+  resLoader.movieFilename = resFilename;
+  resLoader.outPath = outPath;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  [window addSubview:view];
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(media.state == READY, @"isReadyToAnimate");
+  
+  // The mvid file should have the 32BPP flag set
+  
+  NSAssert([frameDecoder hasAlphaChannel] == TRUE, @"hasAlphaChannel");
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");
+  
+  NSAssert(avLayerObj.image != nil, @"image");
+  
+  NSAssert(media.prevFrame == nil, @"prev frame not set properly");
+  
+  uint32_t pixel[4];
+  
+  // First frame is all black pixels
+  
+  [self getPixels32BPP:avLayerObj.image.CGImage
+                offset:0
+               nPixels:4
+              pixelPtr:&pixel[0]];
+  
+  NSAssert(pixel[0] == ((0xFF << 24) | 0x0), @"pixel");  
+  NSAssert(pixel[1] == ((0xFF << 24) | 0x0), @"pixel");  
+  NSAssert(pixel[2] == ((0xFF << 24) | 0x0), @"pixel");  
+  NSAssert(pixel[3] == ((0xFF << 24) | 0x0), @"pixel");
+  
+  // Double check that the contents field matches the core graphics image
+  
+  NSAssert(avLayerObj.image.CGImage != nil, @"CGImage is nil");
+  NSAssert((id)avLayerObj.image.CGImage == viewLayer.contents, @"contents not set");
+  
+  // Second frame is all transparent pixels
+  
+  UIImage *frameBefore = avLayerObj.image;
+  
+  [media showFrame:1];
+  
+  UIImage *frameAfter = avLayerObj.image;
+  
+  NSAssert(frameAfter != nil, @"image");
+  NSAssert(frameBefore != frameAfter, @"image");
+  
+  [self getPixels32BPP:avLayerObj.image.CGImage
+                offset:0
+               nPixels:4
+              pixelPtr:&pixel[0]];
+  
+  NSAssert(pixel[0] == 0, @"pixel");  
+  NSAssert(pixel[1] == 0, @"pixel");  
+  NSAssert(pixel[2] == 0, @"pixel");  
+  NSAssert(pixel[3] == 0, @"pixel");
+  
+  // Double check that the contents field matches the core graphics image
+  
+  NSAssert(avLayerObj.image.CGImage != nil, @"CGImage is nil");
+  NSAssert((id)avLayerObj.image.CGImage == viewLayer.contents, @"contents not set");  
+  
+  return;
+}
+
+// Same alpha reveal test as above, but this time the pixels are stored
+// in a 256 palette with transparent pixels in the palette. This logic
+// test the png8 parsing logic, as well as logic in the translation to
+// mvid format which checks for 32BPP pixels. In this case, the transparent
+// pixels are not discovered until the second frame, so the initial frame
+// is seen as 24BPP, but the mvid header is written as 32BPP after all
+// frames have been processed.
+
++ (void) testApng2x2AlphaReveal_Palette
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resFilename = @"2x2_alpha_reveal_palette.apng";
+  NSString *outFilename = @"2x2_alpha_reveal_palette.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  // If the converted mov path exists currently, delete it so that this test case always converts.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file with same name as tmp dir");
+  }
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 2, 2);
+  UIView *view = [[[UIView alloc] initWithFrame:frame] autorelease];
+  CALayer *viewLayer = view.layer;
+  
+  AVAnimatorLayer *avLayerObj = [AVAnimatorLayer aVAnimatorLayer:viewLayer];
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  [avLayerObj attachMedia:media];
+  
+  // Create loader that will decompress a movie from a 7zip archive attached
+  // as an application resource.
+  
+  AVApng2MvidResourceLoader *resLoader = [AVApng2MvidResourceLoader aVApng2MvidResourceLoader];
+  resLoader.movieFilename = resFilename;
+  resLoader.outPath = outPath;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  [window addSubview:view];
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(media.state == READY, @"isReadyToAnimate");
+  
+  // The mvid file should have the 32BPP flag set
+  
+  NSAssert([frameDecoder hasAlphaChannel] == TRUE, @"hasAlphaChannel");
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");
+  
+  NSAssert(avLayerObj.image != nil, @"image");
+  
+  NSAssert(media.prevFrame == nil, @"prev frame not set properly");
+  
+  uint32_t pixel[4];
+  
+  // First frame is all black pixels
+  
+  [self getPixels32BPP:avLayerObj.image.CGImage
+                offset:0
+               nPixels:4
+              pixelPtr:&pixel[0]];
+  
+  NSAssert(pixel[0] == ((0xFF << 24) | 0x0), @"pixel");  
+  NSAssert(pixel[1] == ((0xFF << 24) | 0x0), @"pixel");  
+  NSAssert(pixel[2] == ((0xFF << 24) | 0x0), @"pixel");  
+  NSAssert(pixel[3] == ((0xFF << 24) | 0x0), @"pixel");
+  
+  // Double check that the contents field matches the core graphics image
+  
+  NSAssert(avLayerObj.image.CGImage != nil, @"CGImage is nil");
+  NSAssert((id)avLayerObj.image.CGImage == viewLayer.contents, @"contents not set");
+  
+  // Second frame is all transparent pixels
+  
+  UIImage *frameBefore = avLayerObj.image;
+  
+  [media showFrame:1];
+  
+  UIImage *frameAfter = avLayerObj.image;
+  
+  NSAssert(frameAfter != nil, @"image");
+  NSAssert(frameBefore != frameAfter, @"image");
+  
+  [self getPixels32BPP:avLayerObj.image.CGImage
+                offset:0
+               nPixels:4
+              pixelPtr:&pixel[0]];
+  
+  NSAssert(pixel[0] == 0, @"pixel");  
+  NSAssert(pixel[1] == 0, @"pixel");  
+  NSAssert(pixel[2] == 0, @"pixel");  
+  NSAssert(pixel[3] == 0, @"pixel");
+  
+  // Double check that the contents field matches the core graphics image
+  
+  NSAssert(avLayerObj.image.CGImage != nil, @"CGImage is nil");
+  NSAssert((id)avLayerObj.image.CGImage == viewLayer.contents, @"contents not set");  
+  
+  return;
+}
+
+// This test case reads an APNG that makes use of a palette that has no alpha.
+// The second frame contains a delta that writes over the second row of black
+// pixels with blue. This test case checks the optimized delta frames are being
+// processed correctly by the libapng logic. A minimal delta will typically use
+// alpha table values, but the actual generated image does not make use of
+// an alpha channel. By checking that the generated .mvid file uses 24BPP pixels,
+// this test verifies that the 24 vs 32 BPP pixel detection logic is working properly.
+
++ (void) testApng2x2BlackBlue1LD_Palette
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resFilename = @"2x2_black_blue_1LD_opt.apng";
+  NSString *outFilename = @"2x2_black_blue_1LD_opt.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  // If the converted mov path exists currently, delete it so that this test case always converts.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file with same name as tmp dir");
+  }
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 2, 2);
+  UIView *view = [[[UIView alloc] initWithFrame:frame] autorelease];
+  CALayer *viewLayer = view.layer;
+  
+  AVAnimatorLayer *avLayerObj = [AVAnimatorLayer aVAnimatorLayer:viewLayer];
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  [avLayerObj attachMedia:media];
+  
+  // Create loader that will decompress a movie from a 7zip archive attached
+  // as an application resource.
+  
+  AVApng2MvidResourceLoader *resLoader = [AVApng2MvidResourceLoader aVApng2MvidResourceLoader];
+  resLoader.movieFilename = resFilename;
+  resLoader.outPath = outPath;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  [window addSubview:view];
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(media.state == READY, @"isReadyToAnimate");
+  
+  // The mvid file should have the 24BPP flag set
+  
+  NSAssert([frameDecoder hasAlphaChannel] == FALSE, @"hasAlphaChannel");
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");
+  
+  NSAssert(avLayerObj.image != nil, @"image");
+  
+  NSAssert(media.prevFrame == nil, @"prev frame not set properly");
+  
+  uint32_t pixel[4];
+  
+  // First frame is all black pixels
+  
+  [self getPixels32BPP:avLayerObj.image.CGImage
+                offset:0
+               nPixels:4
+              pixelPtr:&pixel[0]];
+  
+  NSAssert(pixel[0] == ((0xFF << 24) | 0x0), @"pixel");  
+  NSAssert(pixel[1] == ((0xFF << 24) | 0x0), @"pixel");  
+  NSAssert(pixel[2] == ((0xFF << 24) | 0x0), @"pixel");  
+  NSAssert(pixel[3] == ((0xFF << 24) | 0x0), @"pixel");
+  
+  // Double check that the contents field matches the core graphics image
+  
+  NSAssert(avLayerObj.image.CGImage != nil, @"CGImage is nil");
+  NSAssert((id)avLayerObj.image.CGImage == viewLayer.contents, @"contents not set");
+  
+  // Second frame is all transparent pixels
+  
+  UIImage *frameBefore = avLayerObj.image;
+  
+  [media showFrame:1];
+  
+  UIImage *frameAfter = avLayerObj.image;
+  
+  NSAssert(frameAfter != nil, @"image");
+  NSAssert(frameBefore != frameAfter, @"image");
+  
+  [self getPixels32BPP:avLayerObj.image.CGImage
+                offset:0
+               nPixels:4
+              pixelPtr:&pixel[0]];
+  
+  NSAssert(pixel[0] == ((0xFF << 24) | 0x0), @"pixel");  
+  NSAssert(pixel[1] == ((0xFF << 24) | 0x0), @"pixel");
+  NSAssert(pixel[2] == ((0xFF << 24) | 0xFF), @"pixel");  
+  NSAssert(pixel[3] == ((0xFF << 24) | 0xFF), @"pixel");
+  
+  // Double check that the contents field matches the core graphics image
+  
+  NSAssert(avLayerObj.image.CGImage != nil, @"CGImage is nil");
+  NSAssert((id)avLayerObj.image.CGImage == viewLayer.contents, @"contents not set");  
+  
+  return;
+}
+
+// Test NOP frame detection in the APNG decoder. The second frame in this animation is a NOP.
+
++ (void) testNopFrameAPNG
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resFilename = @"2x2_nop.apng";
+  NSString *outFilename = @"2x2_nop.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  // If the converted mov path exists currently, delete it so that this test case always converts.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file with same name as tmp dir");
+  }
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 2, 2);
+  UIView *view = [[[UIView alloc] initWithFrame:frame] autorelease];
+  CALayer *viewLayer = view.layer;
+  
+  AVAnimatorLayer *avLayerObj = [AVAnimatorLayer aVAnimatorLayer:viewLayer];
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  [avLayerObj attachMedia:media];
+  
+  // Create loader that will decompress a movie from a 7zip archive attached
+  // as an application resource.
+  
+  AVApng2MvidResourceLoader *resLoader = [AVApng2MvidResourceLoader aVApng2MvidResourceLoader];
+  resLoader.movieFilename = resFilename;
+  resLoader.outPath = outPath;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  [window addSubview:view];
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(media.state == READY, @"isReadyToAnimate");
+  
+  // The mvid file should have the 24BPP flag set
+  
+  NSAssert([frameDecoder hasAlphaChannel] == FALSE, @"hasAlphaChannel");
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");
+  
+  NSAssert(avLayerObj.image != nil, @"image");
+  
+  NSAssert(media.prevFrame == nil, @"prev frame not set properly");
+  
+  uint32_t pixel[4];
+  
+  // First frame is all black pixels
+  
+  [self getPixels32BPP:avLayerObj.image.CGImage
+                offset:0
+               nPixels:4
+              pixelPtr:&pixel[0]];
+  
+  NSAssert(pixel[0] == ((0xFF << 24) | 0x0), @"pixel");  
+  NSAssert(pixel[1] == ((0xFF << 24) | 0x0), @"pixel");  
+  NSAssert(pixel[2] == ((0xFF << 24) | 0x0), @"pixel");  
+  NSAssert(pixel[3] == ((0xFF << 24) | 0x0), @"pixel");
+  
+  // Double check that the contents field matches the core graphics image
+  
+  NSAssert(avLayerObj.image.CGImage != nil, @"CGImage is nil");
+  NSAssert((id)avLayerObj.image.CGImage == viewLayer.contents, @"contents not set");
+  
+  // Second frame is all black pixels, advancing to the second
+  // frame is a no-op since no pixels changed as compared to
+  // the first frame.
+  
+  UIImage *imageBefore = avLayerObj.image;
+  
+  [media showFrame:1];
+  
+  UIImage *imageAfter = avLayerObj.image;
+  
+  NSAssert(imageBefore == imageAfter, @"advancing to 2nd frame changed the image");  
+  
+  // Third frame is all blue pixels
+  
+  UIImage *frameBefore = avLayerObj.image;
+  
+  [media showFrame:2];
+  
+  UIImage *frameAfter = avLayerObj.image;
+  
+  NSAssert(frameAfter != nil, @"image");
+  NSAssert(frameBefore != frameAfter, @"image");
+  
+  [self getPixels32BPP:avLayerObj.image.CGImage
+                offset:0
+               nPixels:4
+              pixelPtr:&pixel[0]];
+  
+  NSAssert(pixel[0] == ((0xFF << 24) | 0xFF), @"pixel");  
+  NSAssert(pixel[1] == ((0xFF << 24) | 0xFF), @"pixel");
+  NSAssert(pixel[2] == ((0xFF << 24) | 0xFF), @"pixel");  
+  NSAssert(pixel[3] == ((0xFF << 24) | 0xFF), @"pixel");
+  
+  // Double check that the contents field matches the core graphics image
+  
+  NSAssert(avLayerObj.image.CGImage != nil, @"CGImage is nil");
+  NSAssert((id)avLayerObj.image.CGImage == viewLayer.contents, @"contents not set");  
+  
+  return;
+}
+
 @end
