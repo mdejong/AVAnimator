@@ -217,40 +217,12 @@
 		CDCB181612EF659E00E52D3E /* 2x2_nop.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDCB181512EF659E00E52D3E /* 2x2_nop.mov */; };
 		CDCE474A12DA98D0005BF94A /* Bounce_32BPP_15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */; };
 		CDCE474B12DA98D0005BF94A /* Bounce_32BPP_15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */; };
+		CDD9888F1371F4A60072C06B /* libapng.c in Sources */ = {isa = PBXBuildFile; fileRef = CDD9888D1371F4A60072C06B /* libapng.c */; };
+		CDD988901371F4A60072C06B /* libapng.c in Sources */ = {isa = PBXBuildFile; fileRef = CDD9888D1371F4A60072C06B /* libapng.c */; };
 		CDE65F03136F7C9700F4E8E6 /* apng_convert_maxvid.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65F01136F7C9700F4E8E6 /* apng_convert_maxvid.c */; };
 		CDE65F04136F7CA000F4E8E6 /* apng_convert_maxvid.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65F01136F7C9700F4E8E6 /* apng_convert_maxvid.c */; };
 		CDE65F07136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDE65F06136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m */; };
 		CDE65F08136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDE65F06136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m */; };
-		CDE66005136F84C000F4E8E6 /* png.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FEF136F84C000F4E8E6 /* png.c */; };
-		CDE66006136F84C000F4E8E6 /* pngerror.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FF3136F84C000F4E8E6 /* pngerror.c */; };
-		CDE66007136F84C000F4E8E6 /* pngget.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FF4136F84C000F4E8E6 /* pngget.c */; };
-		CDE66008136F84C000F4E8E6 /* pngmem.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FF7136F84C000F4E8E6 /* pngmem.c */; };
-		CDE66009136F84C000F4E8E6 /* pngpread.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FF8136F84C000F4E8E6 /* pngpread.c */; };
-		CDE6600A136F84C000F4E8E6 /* pngread.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FFA136F84C000F4E8E6 /* pngread.c */; };
-		CDE6600B136F84C000F4E8E6 /* pngrio.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FFB136F84C000F4E8E6 /* pngrio.c */; };
-		CDE6600C136F84C000F4E8E6 /* pngrtran.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FFC136F84C000F4E8E6 /* pngrtran.c */; };
-		CDE6600D136F84C000F4E8E6 /* pngrutil.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FFD136F84C000F4E8E6 /* pngrutil.c */; };
-		CDE6600E136F84C000F4E8E6 /* pngset.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FFE136F84C000F4E8E6 /* pngset.c */; };
-		CDE6600F136F84C000F4E8E6 /* pngtrans.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE66000136F84C000F4E8E6 /* pngtrans.c */; };
-		CDE66010136F84C000F4E8E6 /* pngwio.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE66001136F84C000F4E8E6 /* pngwio.c */; };
-		CDE66011136F84C000F4E8E6 /* pngwrite.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE66002136F84C000F4E8E6 /* pngwrite.c */; };
-		CDE66012136F84C000F4E8E6 /* pngwtran.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE66003136F84C000F4E8E6 /* pngwtran.c */; };
-		CDE66013136F84C000F4E8E6 /* pngwutil.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE66004136F84C000F4E8E6 /* pngwutil.c */; };
-		CDE66014136F84C000F4E8E6 /* png.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FEF136F84C000F4E8E6 /* png.c */; };
-		CDE66015136F84C000F4E8E6 /* pngerror.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FF3136F84C000F4E8E6 /* pngerror.c */; };
-		CDE66016136F84C000F4E8E6 /* pngget.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FF4136F84C000F4E8E6 /* pngget.c */; };
-		CDE66017136F84C000F4E8E6 /* pngmem.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FF7136F84C000F4E8E6 /* pngmem.c */; };
-		CDE66018136F84C000F4E8E6 /* pngpread.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FF8136F84C000F4E8E6 /* pngpread.c */; };
-		CDE66019136F84C000F4E8E6 /* pngread.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FFA136F84C000F4E8E6 /* pngread.c */; };
-		CDE6601A136F84C000F4E8E6 /* pngrio.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FFB136F84C000F4E8E6 /* pngrio.c */; };
-		CDE6601B136F84C000F4E8E6 /* pngrtran.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FFC136F84C000F4E8E6 /* pngrtran.c */; };
-		CDE6601C136F84C000F4E8E6 /* pngrutil.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FFD136F84C000F4E8E6 /* pngrutil.c */; };
-		CDE6601D136F84C000F4E8E6 /* pngset.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE65FFE136F84C000F4E8E6 /* pngset.c */; };
-		CDE6601E136F84C000F4E8E6 /* pngtrans.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE66000136F84C000F4E8E6 /* pngtrans.c */; };
-		CDE6601F136F84C000F4E8E6 /* pngwio.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE66001136F84C000F4E8E6 /* pngwio.c */; };
-		CDE66020136F84C000F4E8E6 /* pngwrite.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE66002136F84C000F4E8E6 /* pngwrite.c */; };
-		CDE66021136F84C000F4E8E6 /* pngwtran.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE66003136F84C000F4E8E6 /* pngwtran.c */; };
-		CDE66022136F84C000F4E8E6 /* pngwutil.c in Sources */ = {isa = PBXBuildFile; fileRef = CDE66004136F84C000F4E8E6 /* pngwutil.c */; };
 		CDE66096136F884800F4E8E6 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = CDE66095136F884800F4E8E6 /* libz.dylib */; };
 		CDE66097136F885B00F4E8E6 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = CDE66095136F884800F4E8E6 /* libz.dylib */; };
 		CDE660AA136F8A7E00F4E8E6 /* 2x2_black_blue_24BPP.apng in Resources */ = {isa = PBXBuildFile; fileRef = CDE660A9136F8A7E00F4E8E6 /* 2x2_black_blue_24BPP.apng */; };
@@ -439,32 +411,12 @@
 		CDC38D5B12F1F06C00D55CE8 /* AVAnimatorLayerPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorLayerPrivate.h; sourceTree = "<group>"; };
 		CDCB181512EF659E00E52D3E /* 2x2_nop.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 2x2_nop.mov; sourceTree = "<group>"; };
 		CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Bounce_32BPP_15FPS.mov; sourceTree = "<group>"; };
+		CDD9888D1371F4A60072C06B /* libapng.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = libapng.c; sourceTree = "<group>"; };
+		CDD9888E1371F4A60072C06B /* libapng.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = libapng.h; sourceTree = "<group>"; };
 		CDE65F01136F7C9700F4E8E6 /* apng_convert_maxvid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = apng_convert_maxvid.c; sourceTree = "<group>"; };
 		CDE65F02136F7C9700F4E8E6 /* apng_convert_maxvid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = apng_convert_maxvid.h; sourceTree = "<group>"; };
 		CDE65F05136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVApng2MvidResourceLoader.h; sourceTree = "<group>"; };
 		CDE65F06136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVApng2MvidResourceLoader.m; sourceTree = "<group>"; };
-		CDE65FEF136F84C000F4E8E6 /* png.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = png.c; sourceTree = "<group>"; };
-		CDE65FF0136F84C000F4E8E6 /* png.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = png.h; sourceTree = "<group>"; };
-		CDE65FF1136F84C000F4E8E6 /* pngconf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pngconf.h; sourceTree = "<group>"; };
-		CDE65FF2136F84C000F4E8E6 /* pngdebug.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pngdebug.h; sourceTree = "<group>"; };
-		CDE65FF3136F84C000F4E8E6 /* pngerror.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngerror.c; sourceTree = "<group>"; };
-		CDE65FF4136F84C000F4E8E6 /* pngget.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngget.c; sourceTree = "<group>"; };
-		CDE65FF5136F84C000F4E8E6 /* pnginfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pnginfo.h; sourceTree = "<group>"; };
-		CDE65FF6136F84C000F4E8E6 /* pnglibconf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pnglibconf.h; sourceTree = "<group>"; };
-		CDE65FF7136F84C000F4E8E6 /* pngmem.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngmem.c; sourceTree = "<group>"; };
-		CDE65FF8136F84C000F4E8E6 /* pngpread.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngpread.c; sourceTree = "<group>"; };
-		CDE65FF9136F84C000F4E8E6 /* pngpriv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pngpriv.h; sourceTree = "<group>"; };
-		CDE65FFA136F84C000F4E8E6 /* pngread.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngread.c; sourceTree = "<group>"; };
-		CDE65FFB136F84C000F4E8E6 /* pngrio.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngrio.c; sourceTree = "<group>"; };
-		CDE65FFC136F84C000F4E8E6 /* pngrtran.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngrtran.c; sourceTree = "<group>"; };
-		CDE65FFD136F84C000F4E8E6 /* pngrutil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngrutil.c; sourceTree = "<group>"; };
-		CDE65FFE136F84C000F4E8E6 /* pngset.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngset.c; sourceTree = "<group>"; };
-		CDE65FFF136F84C000F4E8E6 /* pngstruct.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pngstruct.h; sourceTree = "<group>"; };
-		CDE66000136F84C000F4E8E6 /* pngtrans.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngtrans.c; sourceTree = "<group>"; };
-		CDE66001136F84C000F4E8E6 /* pngwio.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngwio.c; sourceTree = "<group>"; };
-		CDE66002136F84C000F4E8E6 /* pngwrite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngwrite.c; sourceTree = "<group>"; };
-		CDE66003136F84C000F4E8E6 /* pngwtran.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngwtran.c; sourceTree = "<group>"; };
-		CDE66004136F84C000F4E8E6 /* pngwutil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pngwutil.c; sourceTree = "<group>"; };
 		CDE66095136F884800F4E8E6 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
 		CDE660A9136F8A7E00F4E8E6 /* 2x2_black_blue_24BPP.apng */ = {isa = PBXFileReference; lastKnownFileType = file; path = 2x2_black_blue_24BPP.apng; sourceTree = "<group>"; };
 		CDECC75112BC6CA6001A372F /* AVResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVResourceLoader.h; sourceTree = "<group>"; };
@@ -554,7 +506,6 @@
 		080E96DDFE201D6D7F000001 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
-				CDE65FEE136F84C000F4E8E6 /* libpng */,
 				CD922D8813620A310024AFBB /* LZMASDK */,
 				CD15C2C412BC9BDC00A26588 /* MovieControls */,
 				CDECC74E12BC6CA6001A372F /* AVAnimator */,
@@ -759,35 +710,6 @@
 			path = 7z;
 			sourceTree = "<group>";
 		};
-		CDE65FEE136F84C000F4E8E6 /* libpng */ = {
-			isa = PBXGroup;
-			children = (
-				CDE65FEF136F84C000F4E8E6 /* png.c */,
-				CDE65FF0136F84C000F4E8E6 /* png.h */,
-				CDE65FF1136F84C000F4E8E6 /* pngconf.h */,
-				CDE65FF2136F84C000F4E8E6 /* pngdebug.h */,
-				CDE65FF3136F84C000F4E8E6 /* pngerror.c */,
-				CDE65FF4136F84C000F4E8E6 /* pngget.c */,
-				CDE65FF5136F84C000F4E8E6 /* pnginfo.h */,
-				CDE65FF6136F84C000F4E8E6 /* pnglibconf.h */,
-				CDE65FF7136F84C000F4E8E6 /* pngmem.c */,
-				CDE65FF8136F84C000F4E8E6 /* pngpread.c */,
-				CDE65FF9136F84C000F4E8E6 /* pngpriv.h */,
-				CDE65FFA136F84C000F4E8E6 /* pngread.c */,
-				CDE65FFB136F84C000F4E8E6 /* pngrio.c */,
-				CDE65FFC136F84C000F4E8E6 /* pngrtran.c */,
-				CDE65FFD136F84C000F4E8E6 /* pngrutil.c */,
-				CDE65FFE136F84C000F4E8E6 /* pngset.c */,
-				CDE65FFF136F84C000F4E8E6 /* pngstruct.h */,
-				CDE66000136F84C000F4E8E6 /* pngtrans.c */,
-				CDE66001136F84C000F4E8E6 /* pngwio.c */,
-				CDE66002136F84C000F4E8E6 /* pngwrite.c */,
-				CDE66003136F84C000F4E8E6 /* pngwtran.c */,
-				CDE66004136F84C000F4E8E6 /* pngwutil.c */,
-			);
-			path = libpng;
-			sourceTree = "<group>";
-		};
 		CDECC74E12BC6CA6001A372F /* AVAnimator */ = {
 			isa = PBXGroup;
 			children = (
@@ -835,6 +757,8 @@
 				CD0BD03A1363523800D8287A /* movdata_convert_maxvid.c */,
 				CDE65F02136F7C9700F4E8E6 /* apng_convert_maxvid.h */,
 				CDE65F01136F7C9700F4E8E6 /* apng_convert_maxvid.c */,
+				CDD9888D1371F4A60072C06B /* libapng.c */,
+				CDD9888E1371F4A60072C06B /* libapng.h */,
 				CD0BD14213635EDD00D8287A /* AVFileUtil.h */,
 				CD0BD14313635EDD00D8287A /* AVFileUtil.m */,
 			);
@@ -1169,22 +1093,8 @@
 				CD659D63136390C1008AF6F9 /* AVMvidFrameDecoder.m in Sources */,
 				CDE65F04136F7CA000F4E8E6 /* apng_convert_maxvid.c in Sources */,
 				CDE65F08136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m in Sources */,
-				CDE66014136F84C000F4E8E6 /* png.c in Sources */,
-				CDE66015136F84C000F4E8E6 /* pngerror.c in Sources */,
-				CDE66016136F84C000F4E8E6 /* pngget.c in Sources */,
-				CDE66017136F84C000F4E8E6 /* pngmem.c in Sources */,
-				CDE66018136F84C000F4E8E6 /* pngpread.c in Sources */,
-				CDE66019136F84C000F4E8E6 /* pngread.c in Sources */,
-				CDE6601A136F84C000F4E8E6 /* pngrio.c in Sources */,
-				CDE6601B136F84C000F4E8E6 /* pngrtran.c in Sources */,
-				CDE6601C136F84C000F4E8E6 /* pngrutil.c in Sources */,
-				CDE6601D136F84C000F4E8E6 /* pngset.c in Sources */,
-				CDE6601E136F84C000F4E8E6 /* pngtrans.c in Sources */,
-				CDE6601F136F84C000F4E8E6 /* pngwio.c in Sources */,
-				CDE66020136F84C000F4E8E6 /* pngwrite.c in Sources */,
-				CDE66021136F84C000F4E8E6 /* pngwtran.c in Sources */,
-				CDE66022136F84C000F4E8E6 /* pngwutil.c in Sources */,
 				CD0ACF29136F927300A203DF /* AV7zApng2MvidResourceLoader.m in Sources */,
+				CDD9888F1371F4A60072C06B /* libapng.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1242,22 +1152,8 @@
 				CD535613136A2C0800FF72D4 /* AVFrameDecoderTests.m in Sources */,
 				CDE65F03136F7C9700F4E8E6 /* apng_convert_maxvid.c in Sources */,
 				CDE65F07136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m in Sources */,
-				CDE66005136F84C000F4E8E6 /* png.c in Sources */,
-				CDE66006136F84C000F4E8E6 /* pngerror.c in Sources */,
-				CDE66007136F84C000F4E8E6 /* pngget.c in Sources */,
-				CDE66008136F84C000F4E8E6 /* pngmem.c in Sources */,
-				CDE66009136F84C000F4E8E6 /* pngpread.c in Sources */,
-				CDE6600A136F84C000F4E8E6 /* pngread.c in Sources */,
-				CDE6600B136F84C000F4E8E6 /* pngrio.c in Sources */,
-				CDE6600C136F84C000F4E8E6 /* pngrtran.c in Sources */,
-				CDE6600D136F84C000F4E8E6 /* pngrutil.c in Sources */,
-				CDE6600E136F84C000F4E8E6 /* pngset.c in Sources */,
-				CDE6600F136F84C000F4E8E6 /* pngtrans.c in Sources */,
-				CDE66010136F84C000F4E8E6 /* pngwio.c in Sources */,
-				CDE66011136F84C000F4E8E6 /* pngwrite.c in Sources */,
-				CDE66012136F84C000F4E8E6 /* pngwtran.c in Sources */,
-				CDE66013136F84C000F4E8E6 /* pngwutil.c in Sources */,
 				CD0ACF2A136F927300A203DF /* AV7zApng2MvidResourceLoader.m in Sources */,
+				CDD988901371F4A60072C06B /* libapng.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

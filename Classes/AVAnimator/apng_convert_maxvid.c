@@ -12,7 +12,18 @@
 #include "maxvid_encode.h"
 #include "maxvid_file.h"
 
-#include "png.h"
+#include "libapng.h"
+
+typedef struct {
+  FILE *maxvidOutFile;
+  MVFrame *mvFramesArray;
+  float frameDuration;
+  uint32_t outFrame;
+  uint32_t width;
+  uint32_t height;
+  uint32_t bpp;
+  uint32_t genAdler;
+} LibapngUserData;
 
 // Read a big endian uint32_t from a char* and store in result (ARGB).
 // Each pixel needs to be multiplied by the alpha channel value.
@@ -270,11 +281,16 @@ apng_decode_chunk_name(
   return;
 }
 
+// This utility method scans the PNG chunks before frame decoding begins. This logic is needed to detect the framerate
+// before actually decoding frame data.
+
+//#define DEBUG_PRINT_FRAME_DURATION
+
 uint32_t
 apng_decode_frame_duration(
                            FILE *fp,
                            float *outFrameDurationPtr,
-                           uint32_t *numMaxvidFramesPtr,
+                           uint32_t *numOutputFramesPtr,
                            uint32_t *numApngFramesPtr)
 {
   uint32_t len, chunk, crc;
@@ -282,8 +298,10 @@ apng_decode_frame_duration(
   uint32_t status;
   
   uint32_t apngNumFrames = 0;
-  uint32_t mvidNumFrames = 0;
-  //char chunkNameBuffer[4+1];
+  uint32_t outputNumFrames = 0;
+#ifdef DEBUG_PRINT_FRAME_DURATION
+  char chunkNameBuffer[4+1];
+#endif
   
   fcTLChunkType fcTLChunk;
   
@@ -299,13 +317,17 @@ retcode = status; \
 goto retcode; \
 }  
   
-  //printf("Reading APNG chunks...\n");
+#ifdef DEBUG_PRINT_FRAME_DURATION
+  printf("Reading APNG chunks...\n");
+#endif
   status = fseek(fp, 0, SEEK_END);
   if (status != 0) {
     RETCODE(READ_ERROR);
   }
   uint32_t endOffset = ftell(fp);
-  //printf("file length %d\n", (int)ftell(fp));
+#ifdef DEBUG_PRINT_FRAME_DURATION
+  printf("file length %d\n", (int)ftell(fp));
+#endif
   
   // Seek past PNG signature
   
@@ -313,11 +335,13 @@ goto retcode; \
   if (status != 0) {
     RETCODE(READ_ERROR);
   }
-    
+  
   do {
     // LENGTH
     
-    //fprintf(stdout, "offet %d : before chunk read : eof %d\n", (int)ftell(fp), feof(fp));
+#ifdef DEBUG_PRINT_FRAME_DURATION
+    fprintf(stdout, "offet %d : before chunk read : eof %d\n", (int)ftell(fp), feof(fp));
+#endif
     
     if (fread_word(fp, &len)) {
       RETCODE(READ_ERROR);
@@ -329,16 +353,18 @@ goto retcode; \
       RETCODE(READ_ERROR);
     }
     
-    //apng_decode_chunk_name(chunk, chunkNameBuffer);
-    //fprintf(stdout, "offet %d : chunk 0x%X \"%s\" : len %d\n", (int)ftell(fp), chunk, chunkNameBuffer, len);
-        
+#ifdef DEBUG_PRINT_FRAME_DURATION
+    apng_decode_chunk_name(chunk, chunkNameBuffer);
+    fprintf(stdout, "offet %d : chunk 0x%X \"%s\" : len %d\n", (int)ftell(fp), chunk, chunkNameBuffer, len);
+#endif
+    
     if (chunk == ACTL_CHUNK) {
       // acTL
       
       // The acTL is quite useless because we can't assume that it appears before the fcTL      
     } else if (chunk == FCTL_CHUNK) {
       // fcTL : read from stream but avoid structure packing issues!
-            
+      
       if (fread_word(fp, &fcTLChunk.sequence_number) != 0 ||
           fread_word(fp, &fcTLChunk.width) != 0 ||
           fread_word(fp, &fcTLChunk.height) != 0 ||
@@ -353,7 +379,9 @@ goto retcode; \
       
       float frameDuration = (float) fcTLChunk.delay_num / (float) fcTLChunk.delay_den;
       
-      //fprintf(stdout, "frameDuration (%d) = %f\n", fcTLChunk.sequence_number, frameDuration);
+#ifdef DEBUG_PRINT_FRAME_DURATION
+      fprintf(stdout, "frameDuration (%d) = %f\n", fcTLChunk.sequence_number, frameDuration);
+#endif
       
       if (frameDurations == NULL) {
         frameDurationsSize = 16;
@@ -390,10 +418,10 @@ goto retcode; \
     if (fread_word(fp, &crc)) {
       RETCODE(READ_ERROR);
     }
-      
+    
   } while (((int)ftell(fp)) < endOffset);
-
-  // Iterate over each frame delay in the apng file and determine how many mvid frames this is
+  
+  // Iterate over each frame delay in the apng file and determine how many output frames there will be
   
   assert(apngNumFrames > 0);
   
@@ -403,15 +431,15 @@ goto retcode; \
     int numFramesDelay = round(duration / smallestFrameDuration);
     assert(numFramesDelay >= 1);
     
-    mvidNumFrames++;
+    outputNumFrames++;
     
     if (numFramesDelay > 1) {
-      mvidNumFrames += (numFramesDelay - 1);
+      outputNumFrames += (numFramesDelay - 1);
     }
   }
   
   *outFrameDurationPtr = smallestFrameDuration;  
-  *numMaxvidFramesPtr = mvidNumFrames;
+  *numOutputFramesPtr = outputNumFrames;
   *numApngFramesPtr = apngNumFrames;
   
   retcode = 0;
@@ -425,24 +453,207 @@ retcode:
   return retcode;
 }
 
+// This callback is invoked when a specific framebuffer has been decoded from the APNG file
+
+static int
+process_apng_frame(
+                   uint32_t* framebuffer,
+                   uint32_t framei,
+                   uint32_t width, uint32_t height,
+                   uint32_t delta_x, uint32_t delta_y, uint32_t delta_width, uint32_t delta_height,
+                   uint32_t delay_num, uint32_t delay_den,
+                   uint32_t bpp,
+                   void *userData)
+{
+  LibapngUserData *userDataPtr = (LibapngUserData*)userData;
+  FILE *maxvidOutFile = userDataPtr->maxvidOutFile;
+  MVFrame *mvFramesArray = userDataPtr->mvFramesArray;
+  uint32_t genAdler = userDataPtr->genAdler;
+  
+  const uint32_t framebufferNumBytes = width * height * sizeof(uint32_t);
+    
+  printf("process_apng_frame(fbPtr, framei=%d, width=%d, height=%d, delta_x=%d, delta_y=%d, delta_width=%d, delta_height=%d, delay_num=%d, delay_den=%d, bpp=%d, ptr)\n",
+         framei,
+         width, height,
+         delta_x, delta_y, delta_width, delta_height,
+         delay_num, delay_den,
+         bpp);
+
+  if (framei == 0) {
+    // Save width/height from initial frame
+    userDataPtr->width = width;
+    userDataPtr->height = height;
+  }
+  
+  // The bpp value can only be 24 or 32 (alpha), but there is a possibility of a weird edge case when dealing with palette mode images.
+  // It is possible that 1 or more frames could be reported as 24 BPP because only opaque pixels are used, but then later frames
+  // are reported as 32 BPP with an alpha channel because palette entries with a transparency value were used. Deal with this edge
+  // case by recording the largest BPP value reported for all frames. The result of this edge case is that we don't know if there
+  // is an alpha channel until all the pixels in all the frames have been processed.
+  
+  if (bpp > userDataPtr->bpp) {
+    userDataPtr->bpp = bpp;
+  }
+  
+  // In the case where the first frame is hidden, this callback is not invoked for the first frame in the APNG file.
+  
+  // Query the delay between the previous frame and this one. If this value is longer than 1 frame
+  // then no-op frames appear in between the two APNG frames.
+  
+  float delay = (float) delay_num / (float) delay_den;
+  
+  int numFramesDelay = round(delay / userDataPtr->frameDuration);
+  assert(numFramesDelay >= 1);
+  
+  fprintf(stdout, "APNG frame index %d corresponds to MVID frame index %d\n", framei, userDataPtr->outFrame);
+  
+  // Get the frame that this APNG frame corresponds to
+  
+  MVFrame *mvFrame = &mvFramesArray[userDataPtr->outFrame++];
+  
+  // In the case where this frame is exactly the same as the previous frame, then delta_x, delta_y, delta_width, delta_height are all zero
+  
+  if (delta_x == 0 && delta_y == 0 && delta_width == 0 && delta_height == 0) {
+    // The no-op delta case
+    assert(userDataPtr->outFrame > 0);
+    
+    MVFrame *prevMvFrame = mvFrame - 1;
+    
+    maxvid_frame_setoffset(mvFrame, maxvid_frame_offset(prevMvFrame));
+    maxvid_frame_setlength(mvFrame, maxvid_frame_length(prevMvFrame));
+    maxvid_frame_setnopframe(mvFrame);
+    
+    if (maxvid_frame_iskeyframe(prevMvFrame)) {
+      maxvid_frame_setkeyframe(mvFrame);
+    }
+  } else {
+    
+    // Each frame is emitted as a keyframe
+    
+    uint32_t isKeyFrame = 1;
+    
+    long offset = ftell(maxvidOutFile);
+    
+    if (isKeyFrame) {
+      offset = maxvid_file_padding_before_keyframe(maxvidOutFile, offset);
+    }    
+    
+    maxvid_frame_setoffset(mvFrame, (uint32_t)offset);
+    
+    if (isKeyFrame) {
+      maxvid_frame_setkeyframe(mvFrame);
+    }    
+    
+    if (isKeyFrame) {
+      // A keyframe is a special case where a zero-copy optimization can be used.
+      
+      if (bpp == 32) {
+        // If 32 bpp pixels have an alpha value other than 1.0, premultiply pixels before writing to .mvid file
+        
+        uint32_t count = width * height;
+        uint32_t *pixelPtr = framebuffer + count - 1;
+        do {
+          uint32_t pixel = *pixelPtr;
+          uint32_t result;
+          PREMULTIPLY(result, pixel);
+          *pixelPtr = result;
+          pixelPtr--;
+        } while (--count != 0);
+      }
+      
+      uint32_t numWritten = fwrite(framebuffer, framebufferNumBytes, 1, maxvidOutFile);
+      if (numWritten != 1) {
+        return WRITE_ERROR;
+      }
+      
+      if (genAdler) {
+        mvFrame->adler = maxvid_adler32(0, (unsigned char*)framebuffer, framebufferNumBytes);
+        assert(mvFrame->adler != 0);
+      }
+    } else {
+      // Delta frames not generated currently
+      assert(0);
+    }
+    
+    // After data is written to the file, query the file position again to determine how many
+    // words were written.
+    
+    uint32_t offsetBefore = (uint32_t)offset;
+    offset = ftell(maxvidOutFile);
+    uint32_t length = ((uint32_t)offset) - offsetBefore;
+    
+    // Typically, the framebuffer is an even number of pixels.
+    // There is an odd case though, when emitting 16 bit pixels
+    // is is possible that the total number of pixels written
+    // is odd, so in this case the framebuffer is not a whole
+    // number of words.
+    
+    if (isKeyFrame && (bpp == 16)) {
+      assert((length % 2) == 0);
+      if ((length % 4) != 0) {
+        // Write a zero half-word to the file so that additional padding is in terms of whole words.
+        uint16_t zeroHalfword = 0;
+        size_t size = fwrite(&zeroHalfword, sizeof(zeroHalfword), 1, maxvidOutFile);
+        assert(size == 1);
+        offset = ftell(maxvidOutFile);
+      }
+    } else {
+      assert((length % 4) == 0);
+    }
+    
+    maxvid_frame_setlength(mvFrame, length);
+    
+    // In the case of a keyframe, zero pad up to the next page bound. Note that the "length"
+    // of the frame data does not include the zero padding.
+    
+    if (isKeyFrame) {
+      offset = maxvid_file_padding_after_keyframe(maxvidOutFile, offset);
+    }      
+  }
+  
+  // When the delay after the frame is longer than 1 frame, emit no-op frames
+  
+  if (numFramesDelay > 1) {
+    assert(userDataPtr->outFrame > 0);
+    
+    for (int count = numFramesDelay; count > 1; count--) {
+      MVFrame *mvFrame = &mvFramesArray[userDataPtr->outFrame];
+      MVFrame *prevMvFrame = &mvFramesArray[userDataPtr->outFrame-1];
+      
+      maxvid_frame_setoffset(mvFrame, maxvid_frame_offset(prevMvFrame));
+      maxvid_frame_setlength(mvFrame, maxvid_frame_length(prevMvFrame));
+      maxvid_frame_setnopframe(mvFrame);
+      
+      if (maxvid_frame_iskeyframe(prevMvFrame)) {
+        maxvid_frame_setkeyframe(mvFrame);
+      }
+      
+      userDataPtr->outFrame++;
+    }
+  }
+  
+  fprintf(stdout, "frame delay after APNG frame %d is %d\n", framei, numFramesDelay);
+  
+  return 0;
+}
+
+// Exported API entry point, this method will convert a .apng file to a .mvid file in the tmp dir
+
 uint32_t
 apng_convert_maxvid_file(
-                         char *inAPNGPath,
-                         char *outMaxvidPath,
-                         uint32_t genAdler)
+               char *inAPNGPath,
+               char *outMaxvidPath,
+               uint32_t genAdler)
 {
   // File and pointers that need to be cleaned up
   
-  png_byte* pixels = NULL;
-	png_byte** row_ptrs = NULL;
-  FILE *fp = NULL;
-  FILE *maxvidOutFile = NULL;
   uint32_t retcode = 0;
   
-  MVFileHeader *mvHeader = NULL;
-  MVFrame *mvFramesArray = NULL;  
+  FILE *inAPNGFile = NULL;
+  FILE *maxvidOutFile = NULL;
   
-	png_structp *pngReadStructPtr = NULL;
+  MVFileHeader *mvHeader = NULL;
+  MVFrame *mvFramesArray = NULL;
   
 #undef RETCODE
 #define RETCODE(status) \
@@ -450,44 +661,26 @@ if (status != 0) { \
 retcode = status; \
 goto retcode; \
 }
-
+  
   // These don't need to be cleaned up at function exit
   
-  png_uint_32 width;
-  png_uint_32 height;
   uint32_t numApngFrames;
-  uint32_t numMaxvidFrames;
+  uint32_t numOutputFrames;
   uint32_t status;
   float frameDuration;
-  uint32_t bpp;
-  uint32_t frameBufferNumBytes;
-  uint32_t *frameBuffer;
-  
+    
   init_alphaTables();
   
-	// header for testing if it is a png
-	png_byte header[8];
-	
   // FIXME: test to check that filename ends with ".apng" wither here or in caller
   
-	// open file as binary
-	fp = fopen(inAPNGPath, "rb");
-	if (!fp) {
-    RETCODE(UNSUPPORTED_FILE);
-  }
-	
-	// read the header
-	fread(header, 1, 8, fp);
-	
-	// test if png
-	int is_png = !png_sig_cmp(header, 0, 8);
-	if (!is_png) {
+  inAPNGFile = libapng_open(inAPNGPath);
+	if (inAPNGFile == NULL) {
     RETCODE(UNSUPPORTED_FILE);
   }
 	
   // Read header in PNG file and determine the framerate
   
-  status = apng_decode_frame_duration(fp, &frameDuration, &numMaxvidFrames, &numApngFrames);
+  status = apng_decode_frame_duration(inAPNGFile, &frameDuration, &numOutputFrames, &numApngFrames);
   if (status != 0) {
     RETCODE(READ_ERROR);
   }
@@ -500,11 +693,8 @@ goto retcode; \
     RETCODE(UNSUPPORTED_FILE);
   }
   
-  fseek(fp, 8, SEEK_SET);
-  
-  // Setup mvid file
-  
-  // open output file as binary
+  // open output .mvid file as binary
+
 	maxvidOutFile = fopen(outMaxvidPath, "wb");
 	if (!maxvidOutFile) {
     RETCODE(WRITE_ERROR);
@@ -517,7 +707,7 @@ goto retcode; \
   // are iterated over. But, this assumes that we know the duration first. Need to figure
   // out how many mv frames there are in the util function.
   
-  const uint32_t framesArrayNumBytes = sizeof(MVFrame) * numMaxvidFrames;
+  const uint32_t framesArrayNumBytes = sizeof(MVFrame) * numOutputFrames;
   mvFramesArray = malloc(framesArrayNumBytes);
   memset(mvFramesArray, 0, framesArrayNumBytes);  
   
@@ -535,388 +725,42 @@ goto retcode; \
   numWritten = fwrite(mvFramesArray, framesArrayNumBytes, 1, maxvidOutFile);
   if (numWritten != 1) {
     RETCODE(WRITE_ERROR);
-  }
+  }  
   
-	// create png struct
+  // Pass the dump filename directory as the user data. Specific filenames will be
+  // constructed in the callback function.
   
-	png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-	if (!png_ptr) {
-    RETCODE(READ_ERROR);
-  }
-  pngReadStructPtr = &png_ptr;
-	
-	// create png info struct
-	png_infop info_ptr = png_create_info_struct(png_ptr);
-	if (!info_ptr) {
-    RETCODE(READ_ERROR);
-	}
-	
-	// create png info struct
-	png_infop end_info = png_create_info_struct(png_ptr);
-	if (!end_info) {
-    RETCODE(READ_ERROR);
-	}
-	
-	// png error stuff, not sure libpng man suggests this.
-	if (setjmp(png_jmpbuf(png_ptr))) {
-    RETCODE(READ_ERROR);
-  }
-	
-	// init png reading
-	png_init_io(png_ptr, fp);
-	
-	// let libpng know you already read the first 8 bytes
-	png_set_sig_bytes(png_ptr, 8);
-	
-	// read all the info up to the image data
-	png_read_info(png_ptr, info_ptr);
-	
-  // Must be .apng file, regular PNG images contain only 1 frame, they can't be animated.
-  
-	if(!png_get_valid(png_ptr, info_ptr, PNG_INFO_acTL)) {
-    RETCODE(UNSUPPORTED_FILE);
-  }
-	
-	// variables to pass to get info
-	int bit_depth, color_type;
-	
-	bit_depth = png_get_bit_depth(png_ptr, info_ptr);
-	color_type = png_get_color_type(png_ptr, info_ptr);
-  
-  // Expand color table values to RGB
-	if( color_type == PNG_COLOR_TYPE_PALETTE ) {
-		png_set_palette_to_rgb( png_ptr );
-  }
-  // Transparency represented as alpha
-	if( png_get_valid( png_ptr, info_ptr, PNG_INFO_tRNS ) ) {
-		png_set_tRNS_to_alpha (png_ptr);
-  }
-  // Reduce 16 bit samples to 8 bit samples (48 bit RGB) -> (24 bit RGB)
-	if( bit_depth == 16 ) {
-		png_set_strip_16( png_ptr );
-  }
-  // Expand samples less than 8 bits to 8 bits.
-	else if( bit_depth < 8 ) {
-		png_set_packing( png_ptr );
-  }
-  // Convert greyscale to RGB
-  if (color_type == PNG_COLOR_TYPE_GRAY ||
-      color_type == PNG_COLOR_TYPE_GRAY_ALPHA) {
-    png_set_gray_to_rgb(png_ptr);
-  }
-  // Emit RGBA for RGB values with no alpha channel
-  if (color_type == PNG_COLOR_TYPE_RGB ||
-      color_type == PNG_COLOR_TYPE_GRAY) {
-    png_uint_32 filler = 0xFF;
-    png_set_add_alpha(png_ptr, filler, PNG_FILLER_AFTER);
-  }
+  LibapngUserData userData;
+  memset(&userData, 0, sizeof(LibapngUserData));
+  userData.maxvidOutFile = maxvidOutFile;
+  userData.mvFramesArray = mvFramesArray;
+  userData.frameDuration = frameDuration;
+  userData.genAdler = genAdler;
 
-  // If no alpha or trns is used, don't bother with premultiply and set header properly.
-  // Note that this depend on the actual data stored in the apng file, if none of
-  // the pixels are transparent then this logic will emit a 24 bpp mvid file.
+  // Invoke library interface to parse frames from .apng file and render to .mvid
   
-  // FIXME: unclear if this covers conversion with alpha, like with a table that maps to a trns 
-  
-  if (color_type & PNG_COLOR_MASK_ALPHA) {
-    bpp = 32;
-  } else {
-    bpp = 24;
+  status = libapng_main(inAPNGFile, process_apng_frame, &userData);
+  if (status != 0) {
+    RETCODE(status);
   }
   
-  /*
-   Color    Allowed    Interpretation
-   Type    Bit Depths
-   
-   0       1,2,4,8,16  Each pixel is a grayscale sample.
-   
-   2       8,16        Each pixel is an R,G,B triple.
-   
-   3       1,2,4,8     Each pixel is a palette index; a PLTE chunk must appear.
-   
-   4       8,16        Each pixel is a grayscale sample, followed by an alpha sample.
-   
-   6       8,16        Each pixel is an R,G,B triple, followed by an alpha sample.   
-   */
-  
-  // Swap B and R, so that pixel format written by libpng is ARGB
-  png_set_bgr(png_ptr);
-  
-	png_read_update_info(png_ptr, info_ptr);
-	
-	// get info about png
-	png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
-               NULL, NULL, NULL);
-	
-	int bits;
-	switch (color_type)
-	{
-		case PNG_COLOR_TYPE_GRAY:
-      assert(0); // greyscale should be converted to RGB
-			bits = 1;
-			break;
-			
-		case PNG_COLOR_TYPE_GRAY_ALPHA:
-      assert(0); // greyscale should be converted to RGBA
-			bits = 2;
-			break;
-			
-		case PNG_COLOR_TYPE_RGB:
-      assert(0); // RGB should be converted to RGBA
-			bits = 3;
-			break;
-			
-		case PNG_COLOR_TYPE_RGB_ALPHA:
-			bits = 4;
-			break;
-      
-    default:
-      assert(0); // greyscale should be converted to RGBA      
-	}
-  
-  // Allocated framebuffer
-
-  frameBufferNumBytes = width * height * bits;
-  pixels = (png_byte*)calloc(width * height * bits, sizeof(png_byte));
-  assert(pixels);
-  frameBuffer = (uint32_t*)pixels;
-	row_ptrs = (png_byte**)malloc(height * sizeof(png_bytep));
-  assert(row_ptrs);
-  
-  int i;
-	for (i=0; i<height; i++) {
-		row_ptrs[i] = pixels + i*width*bits;
-  }
-  
-  uint32_t firstFrameIsHidden = 0;
-  uint32_t numCombinedApngFrames = png_get_num_frames(png_ptr, info_ptr);
-  if (numApngFrames == (numCombinedApngFrames - 1)) {
-    // The first frame is hidden, it is not animated.
-    firstFrameIsHidden = 1;
-  } else {
-    assert(numApngFrames == numCombinedApngFrames);    
-  }
-  
-  fprintf(stdout, "frameDuration = %f\n", frameDuration);
-  
-  // Once the framerate is know, each frame delay can be defined in terms of the framerate.
-  // Decode the data for each frame, convert to mvid frames, and then write one frame at a time.
-  
-  int mvFramei = 0;
-  
-  uint32_t singlePixel = 0;
-  uint32_t couldBeNoOpSinglePixel = 0;
-  
-	for (int framei = 0; framei < numCombinedApngFrames; framei++)
-  {
-		png_uint_32 next_frame_width, next_frame_height, next_frame_x_offset, next_frame_y_offset;
-		png_uint_16 next_frame_delay_num, next_frame_delay_den;
-		png_byte next_frame_dispose_op, next_frame_blend_op;
-		
-    png_read_frame_head(png_ptr, info_ptr);
-    
-    if (png_get_valid(png_ptr, info_ptr, PNG_INFO_fcTL))
-    {
-      if (framei == 0) {
-        assert(firstFrameIsHidden == 0);
-      }
-      
-      png_get_next_frame_fcTL(png_ptr, info_ptr, 
-                              &next_frame_width, &next_frame_height, &next_frame_x_offset, &next_frame_y_offset,
-                              &next_frame_delay_num, &next_frame_delay_den, &next_frame_dispose_op,
-                              &next_frame_blend_op);
-      
-      fprintf(stdout, "fcTL frame : x,y %d,%d : w/h %d/%d\n", next_frame_x_offset, next_frame_y_offset,
-              next_frame_width, next_frame_height);
-      
-      if (next_frame_x_offset == 0 && next_frame_y_offset == 0 && next_frame_width == 1 && next_frame_height == 1) {
-        // Special case of a 1x1 frame at the origin. apngopt will write a frame like this when there is no change
-        // from one frame to the next. Check for the edge case of an actual 1x1 image that does change, before
-        // emitting a no-op.
-
-        couldBeNoOpSinglePixel = 1;
-        singlePixel = frameBuffer[0];
-      } else {
-        couldBeNoOpSinglePixel = 0;
-      }
-    }
-    else
-    {
-      // the first frame doesn't have an fcTL so it must be a hidden frame. Note that the data
-      // is extracted to the framebuffer, but the next frame should also be a keyframe so the
-      // data for this frame will not be used.
-      
-      assert(framei == 0);
-      assert(firstFrameIsHidden == 1);
-      
-      next_frame_width = png_get_image_width(png_ptr, info_ptr);
-      next_frame_height = png_get_image_height(png_ptr, info_ptr);
-    }
-		
-		png_read_image(png_ptr, row_ptrs);
-		
-    // Don't emit a mvid frame for a hidden initial frame. The hidden frame has no delay info.
-    
-    if (framei == 0 && firstFrameIsHidden) {
-      continue;
-    }
-    
-    // Query the delay between the previous frame and this one. If this value is longer than 1 frame
-    // then no-op frames appear in between the two APNG frames.
-    
-    float delay = (float) next_frame_delay_num / (float) next_frame_delay_den;
-    
-    int numFramesDelay = round(delay / frameDuration);
-    assert(numFramesDelay >= 1);
-    
-    fprintf(stdout, "APNG frame %d corresponds to MVID frame %d\n", framei, mvFramei);
-    
-    // Get the frame that this APNG frame corresponds to
-    
-    MVFrame *mvFrame = &mvFramesArray[mvFramei++];
-    
-    if (couldBeNoOpSinglePixel) {
-      if (singlePixel == frameBuffer[0]) {
-        // The no-op case
-      } else {
-        // First pixel is not the same, treat as a keyframe
-        couldBeNoOpSinglePixel = 0;
-      }
-    }
-    
-    if (couldBeNoOpSinglePixel) {
-      // The no-op case
-      
-      MVFrame *prevMvFrame = mvFrame - 1;
-      
-      maxvid_frame_setoffset(mvFrame, maxvid_frame_offset(prevMvFrame));
-      maxvid_frame_setlength(mvFrame, maxvid_frame_length(prevMvFrame));
-      maxvid_frame_setnopframe(mvFrame);
-      
-      if (maxvid_frame_iskeyframe(prevMvFrame)) {
-        maxvid_frame_setkeyframe(mvFrame);
-      }
-    } else {
-      
-      // Each frame is emitted as a keyframe
-      
-      uint32_t isKeyFrame = 1;
-      
-      long offset = ftell(maxvidOutFile);
-      
-      if (isKeyFrame) {
-        offset = maxvid_file_padding_before_keyframe(maxvidOutFile, offset);
-      }    
-      
-      maxvid_frame_setoffset(mvFrame, (uint32_t)offset);
-      
-      if (isKeyFrame) {
-        maxvid_frame_setkeyframe(mvFrame);
-      }    
-      
-      if (isKeyFrame) {
-        // A keyframe is a special case where a zero-copy optimization can be used.
-        
-        if (bpp == 32) {
-          // If 32 bpp pixels have an alpha value other than 1.0, premultiply pixels before writing to .mvid file
-          
-          uint32_t count = width * height;
-          uint32_t *pixelPtr = frameBuffer + count - 1;
-          do {
-            uint32_t pixel = *pixelPtr;
-            uint32_t result;
-            PREMULTIPLY(result, pixel);
-            *pixelPtr = result;
-            pixelPtr--;
-          } while (--count != 0);
-        }
-        
-        uint32_t numWritten = fwrite(frameBuffer, frameBufferNumBytes, 1, maxvidOutFile);
-        if (numWritten != 1) {
-          RETCODE(WRITE_ERROR);
-        }
-        
-        if (genAdler) {
-          mvFrame->adler = maxvid_adler32(0, (unsigned char*)frameBuffer, frameBufferNumBytes);
-          assert(mvFrame->adler != 0);
-        }
-      } else {
-        // Delta frames not generated currently
-        assert(0);
-      }
-      
-      // After data is written to the file, query the file position again to determine how many
-      // words were written.
-      
-      uint32_t offsetBefore = (uint32_t)offset;
-      offset = ftell(maxvidOutFile);
-      uint32_t length = ((uint32_t)offset) - offsetBefore;
-      
-      // Typically, the framebuffer is an even number of pixels.
-      // There is an odd case though, when emitting 16 bit pixels
-      // is is possible that the total number of pixels written
-      // is odd, so in this case the framebuffer is not a whole
-      // number of words.
-      
-      if (isKeyFrame && (bpp == 16)) {
-        assert((length % 2) == 0);
-        if ((length % 4) != 0) {
-          // Write a zero half-word to the file so that additional padding is in terms of whole words.
-          uint16_t zeroHalfword = 0;
-          size_t size = fwrite(&zeroHalfword, sizeof(zeroHalfword), 1, maxvidOutFile);
-          assert(size == 1);
-          offset = ftell(maxvidOutFile);
-        }
-      } else {
-        assert((length % 4) == 0);
-      }
-      
-      maxvid_frame_setlength(mvFrame, length);
-      
-      // In the case of a keyframe, zero pad up to the next page bound. Note that the "length"
-      // of the frame data does not include the zero padding.
-      
-      if (isKeyFrame) {
-        offset = maxvid_file_padding_after_keyframe(maxvidOutFile, offset);
-      }      
-    }
-    
-    // When the delay after the frame is longer than 1 frame, emit no-op frames
-    
-    if (numFramesDelay > 1) {
-      assert(mvFramei > 0);
-      
-      for (int count = numFramesDelay; count > 1; count--) {
-        MVFrame *mvFrame = &mvFramesArray[mvFramei];
-        MVFrame *prevMvFrame = &mvFramesArray[mvFramei-1];
-        
-        maxvid_frame_setoffset(mvFrame, maxvid_frame_offset(prevMvFrame));
-        maxvid_frame_setlength(mvFrame, maxvid_frame_length(prevMvFrame));
-        maxvid_frame_setnopframe(mvFrame);
-        
-        if (maxvid_frame_iskeyframe(prevMvFrame)) {
-          maxvid_frame_setkeyframe(mvFrame);
-        }
-        
-        mvFramei++;
-      }
-    }
-    
-    fprintf(stdout, "frame delay after APNG frame %d is %d\n", framei, numFramesDelay);    
-	}
-	
-	png_read_end(png_ptr, NULL);
+  // Rewrite the maxvid headers, once all frames have been emitted
   
   // Write .mvid headers again, now that info is up to date
   
+  assert(userData.width);
+  assert(userData.height);
+  assert(userData.bpp);
+  
   mvHeader->magic = 0; // magic still not valid
-  mvHeader->width = width;
-  mvHeader->height = height;
-  mvHeader->bpp = bpp;
+  mvHeader->width = userData.width;
+  mvHeader->height = userData.height;
+  mvHeader->bpp = userData.bpp;
   
   mvHeader->frameDuration = frameDuration;
   assert(mvHeader->frameDuration > 0.0);
   
-  mvHeader->numFrames = numMaxvidFrames;
+  mvHeader->numFrames = numOutputFrames;
   
   (void)fseek(maxvidOutFile, 0L, SEEK_SET);
   
@@ -941,29 +785,22 @@ goto retcode; \
   status = fwrite_word(maxvidOutFile, magic);
   if (status) {
     RETCODE(WRITE_ERROR);
-  }
+  }  
   
 retcode:
-  if (fp) {
-    fclose(fp);
-  }
+  libapng_close(inAPNGFile);
+  
   if (maxvidOutFile) {
     fclose(maxvidOutFile);
-  }  
-  if (row_ptrs) {
-    free(row_ptrs);
   }
-  if (pixels) {
-    free(pixels);
-  }
+  
   if (mvHeader) {
     free(mvHeader);
   }
   if (mvFramesArray) {
     free(mvFramesArray);
-  }
-  if (pngReadStructPtr) {
-    png_destroy_read_struct(&png_ptr, (png_infopp) NULL, (png_infopp) NULL);
-  }
+  }  
+  
 	return retcode;
 }
+

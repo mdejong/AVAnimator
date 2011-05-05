@@ -628,6 +628,8 @@
   NSString *entryFilename = @"AlphaGhost_opt_nc.apng";
   NSString *outFilename = @"AlphaGhost_opt_nc.mvid";
   NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  NSLog(@"outPath = %@", outPath);
     
   AV7zApng2MvidResourceLoader *resLoader = [AV7zApng2MvidResourceLoader aV7zApng2MvidResourceLoader];
   resLoader.archiveFilename = archiveFilename;
