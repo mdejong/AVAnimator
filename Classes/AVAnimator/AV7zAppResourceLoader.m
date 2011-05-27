@@ -12,6 +12,8 @@
 
 #import "LZMAExtractor.h"
 
+//#define LOGGING
+
 @implementation AV7zAppResourceLoader
 
 @synthesize archiveFilename = m_archiveFilename;
@@ -43,10 +45,18 @@
   NSString *archiveEntry = [arr objectAtIndex:1];
   NSString *phonyOutPath = [arr objectAtIndex:2];
   NSString *outPath = [arr objectAtIndex:3];
-    
+
+#ifdef LOGGING
+  NSLog(@"start 7zip extraction %@", archiveEntry);
+#endif // LOGGING  
+  
   BOOL worked;
   worked = [LZMAExtractor extractArchiveEntry:archivePath archiveEntry:archiveEntry outPath:phonyOutPath];
   assert(worked);
+  
+#ifdef LOGGING
+  NSLog(@"done 7zip extraction %@", archiveEntry);
+#endif // LOGGING  
   
   // Move phony tmp filename to the expected filename once writes are complete
   

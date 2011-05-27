@@ -360,16 +360,20 @@ convert_maxvid_rle_sample16(
 // either copied, skipped, or duped matches the expected number of pixels.
     
     // If starting line is not the first line, encode as skip pixels op.
-    
+    // Note that maxvid16_code() can only skip up to 0xFFFF pixels in
+    // one op code, so iterate over lines to skip.
+
     if (starting_line > 0) {
-      uint32_t skipNumPixels = starting_line * frameBufferWidth;
-      assert(skipNumPixels != 0);
-      uint32_t m16_skipCode = maxvid16_code(SKIP, skipNumPixels);
-      numCodesWordIn--; numCodesWordOut++;
-      assert(numCodesWordIn > 0);
-      *maxvidCodes++ = m16_skipCode;
-      
-      totalNumPixelsConverted += skipNumPixels;
+      for (int i = 0; i < starting_line; i++ ) {
+        uint32_t skipNumPixels = frameBufferWidth;
+        assert(skipNumPixels != 0);
+        uint32_t m16_skipCode = maxvid16_code(SKIP, skipNumPixels);
+        numCodesWordIn--; numCodesWordOut++;
+        assert(numCodesWordIn > 0);
+        *maxvidCodes++ = m16_skipCode;
+        
+        totalNumPixelsConverted += skipNumPixels;        
+      }
     }
     
 //    rowPtr = frameBuffer + (current_line * frameBufferWidth);
@@ -1534,10 +1538,10 @@ movdata_convert_maxvid(
   assert(width > 0);
   assert(height > 0);
     
-  // Ensure that the code buffer is at least 4 times the size of the movdata buffer.
+  // Ensure that the code buffer is at least 10 times the size of the movdata buffer.
   // The code buffer is always in terms of whole words.
 
-  uint32_t byteLength = movSampleBufferNumBytes * 4;
+  uint32_t byteLength = movSampleBufferNumBytes * 10;
   byteLength += (byteLength % sizeof(uint32_t));
   assert(byteLength > 0);
   assert((byteLength % 4) == 0);

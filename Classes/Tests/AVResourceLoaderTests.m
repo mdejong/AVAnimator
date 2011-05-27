@@ -1169,4 +1169,82 @@
   return;
 }
 
+// Decompress example where all pixels of 480x320 frame are the same, first all black, then all blue.
+// This basically checks to make sure that a run of 72 pages of pixels does not exceed 17 bit value limits.
+
++ (void) testDecodeFullScreenAllSame
+{  
+  NSString *archiveFilename = @"480x320_black_blue_16BPP.mov.7z";
+  NSString *entryFilename = @"480x320_black_blue_16BPP.mov";
+  NSString *outFilename = @"480x320_black_blue_16BPP.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  
+  // Make sure binary compare matches by forcing adler generation when debugging is off
+  resLoader.alwaysGenerateAdler = TRUE;
+  
+  // If the decode mov path exists currently, delete it so that this test case always
+  // decodes the .mov from the .7z compressed Resource.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file with same name as tmp dir");
+  }  
+  
+  [resLoader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSLog(@"Wrote : %@", outPath);
+  
+  return;
+}
+
+// Decompress example like above, except that many pixels in the 480x320 buffer are the same, so
+// a large skip value would be generated. This logic tests the 16 bit value range for skip
+// num pixels in the .mov to .mvid convert logic.
+
++ (void) testDecodeFullScreenBigSkip
+{  
+  NSString *archiveFilename = @"480x320_black_blue_1LD_16BPP.mov.7z";
+  NSString *entryFilename = @"480x320_black_blue_1LD_16BPP.mov";
+  NSString *outFilename = @"480x320_black_blue_1LD_16BPP.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  
+  // Make sure binary compare matches by forcing adler generation when debugging is off
+  resLoader.alwaysGenerateAdler = TRUE;
+  
+  // If the decode mov path exists currently, delete it so that this test case always
+  // decodes the .mov from the .7z compressed Resource.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file with same name as tmp dir");
+  }  
+  
+  [resLoader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSLog(@"Wrote : %@", outPath);
+  
+  return;
+}
+
 @end
+
