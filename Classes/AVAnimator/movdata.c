@@ -1463,6 +1463,17 @@ process_sample_tables(FILE *movFile, MovData *movData) {
   bzero(movData->samples, sizeof(MovSample) * num_samples);
   movData->numSamples = num_samples;
   
+  // The duration can't be 1, this type of input could be exported by certain
+  // programs (After Effects). Don't know how to deal with this input, since the frame rate
+  // would be seen as 600 FPS. Generate error in this case.
+
+  if (smallest_duration == 1) {
+    movData->errCode = ERR_INVALID_FIELD;
+    snprintf(movData->errMsg, sizeof(movData->errMsg),
+             "found invalid smallest sample duration, re-exporting from Quicktime may fix this");
+    return 1;
+  }  
+  
   // Use the effective frame rate to calculate the approx FPS and
   // the total number of frames in the track.
   
