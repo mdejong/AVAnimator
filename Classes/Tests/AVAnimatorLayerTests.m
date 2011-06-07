@@ -142,4 +142,9 @@
   return;
 }
 
+// Note that the opaque property is documented to have no effect on a CALayer when
+// explicitly providing an image for the contents. Also, a AVAnimatorLayer can't
+// be expected to set properties of the view that contains the layer, so if opaque
+// were to be set on the outer layer, then the calling code would need to do that.
+ 
 @end

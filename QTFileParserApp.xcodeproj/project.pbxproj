@@ -551,7 +551,6 @@
 				29B97317FDCFA39411CA2CEA /* Resources */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
-				CDE66095136F884800F4E8E6 /* libz.dylib */,
 			);
 			name = CustomTemplate;
 			sourceTree = "<group>";
@@ -602,6 +601,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				CDE66095136F884800F4E8E6 /* libz.dylib */,
 				CD5AEE3012D8F32F00A50135 /* AVFoundation.framework */,
 				CD5AEE3412D8F33700A50135 /* AudioToolbox.framework */,
 				CD5AEE3812D8F34300A50135 /* QuartzCore.framework */,

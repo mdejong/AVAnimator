@@ -57,6 +57,8 @@
 {
   NSAssert(self.media, @"media is nil");
   NSAssert(self.media.frameDecoder, @"frameDecoder is nil");
+  
+  self->mediaDidLoad = TRUE;
 	return;
 }
 
@@ -73,8 +75,11 @@
     [self.mediaObj detachFromRenderer:self];
     self.mediaObj = nil;
     self.imageObj = nil;
+    self->mediaDidLoad = FALSE;
     return;
   }
+  
+  self->mediaDidLoad = FALSE;
   
   [self.mediaObj detachFromRenderer:self];
   self.mediaObj = inMedia;

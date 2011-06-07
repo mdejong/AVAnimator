@@ -2416,4 +2416,89 @@
   return;  
 }
 
+// This test case checks for proper setting of the opaque property of the AVAnimatorView.
+// The built-in UIImageView seems to implicitly reset the opaque property every time
+// the UIImageView.image property is changed. This could lead to sub-optimal performance
+// because the hardware would not know that the view does not need to be blended.
+
++ (void) testImageViewOpaqueProperty
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");
+  
+  NSString *videoResourceName = @"Sweep15FPS_ANI.mov";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = videoResourceName;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = AVAnimator15FPS;
+  
+  media.animatorRepeatCount = 2;
+  
+  NSAssert(animatorView.renderSize.width == 0.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 0.0, @"renderSize.height");
+  
+  [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
+  
+  // Check that adding the animator to the window invoked loadViewImpl
+  
+  NSAssert(animatorView.renderSize.width == 480.0, @"renderSize.width");
+  NSAssert(animatorView.renderSize.height == 320.0, @"renderSize.height");
+  
+  // Wait until initial keyframe of data is loaded.
+  
+  NSAssert(media.isReadyToAnimate == FALSE, @"isReadyToAnimate");
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(media.state == READY, @"isReadyToAnimate");
+  
+  // At this point, initial keyframe should be displayed
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");
+  
+  NSAssert(animatorView.image != nil, @"image");
+  
+  // The opaque property should be TRUE since the images do not contain
+  // an alpha channel.
+
+  NSAssert(animatorView.opaque == TRUE, @"opaque");
+  
+  // Advance to the second frame and check the opaque property again
+  
+  [media showFrame:1];
+
+  NSAssert(animatorView.opaque == TRUE, @"opaque");
+  
+  return;
+}
+
 @end

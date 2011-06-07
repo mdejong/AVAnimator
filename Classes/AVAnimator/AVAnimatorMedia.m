@@ -1410,6 +1410,8 @@
   // If media is ready, then display initial keyframe
   
   if (self.isReadyToAnimate) {
+    [self.renderer mediaDidLoad];
+    
     [self showFrame:0];
   }
 }

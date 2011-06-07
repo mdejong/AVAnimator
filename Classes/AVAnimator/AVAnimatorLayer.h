@@ -23,6 +23,7 @@
   CALayer *m_layerObj;
 	AVAnimatorMedia *m_mediaObj;
 	UIImage *m_imageObj;
+	BOOL mediaDidLoad;
 }
 
 // public properties
