@@ -1073,6 +1073,179 @@
   return;
 }
 
+// This test attaches a media object, then detaches it, then
+// attaches the media again. Reattaching should remap the
+// shared memory file and query the opacity settings.
+
++ (void) testReattachMediaMov
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 200, 200);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");
+  
+  [animatorView attachMedia:nil];
+  
+  NSAssert(animatorView.media == nil, @"media");
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  [window addSubview:animatorView];
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  // The media was not attached on load, so currentFrame is still -1
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");  
+  
+  // The media is now ready, attaching will display the first keyframe.
+  
+  [animatorView attachMedia:media];
+  
+  NSAssert(animatorView.media == media, @"media");
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");
+  
+  [animatorView attachMedia:nil];
+  
+  NSAssert(animatorView.media == nil, @"media");
+  
+  // Detech from renderer implicity invoked stopAnimator
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");
+  
+  // Attach media a second time.
+  
+  [animatorView attachMedia:media];  
+  
+  // Opacity should have been queried from frame decoder
+  
+  NSAssert(animatorView.opaque == TRUE, @"opaque");  
+  
+  return;
+}
+
+// This test attaches a media object, then detaches it, then
+// attaches the media again. Reattaching should remap the
+// shared memory file and query the opacity settings. This
+// test is identical to the one above except that it uses
+// a mvid frame decoder.
+
++ (void) testReattachMediaMvid
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 200, 200);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");
+  
+  [animatorView attachMedia:nil];
+  
+  NSAssert(animatorView.media == nil, @"media");
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  [window addSubview:animatorView];
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  // The media was not attached on load, so currentFrame is still -1
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");  
+  
+  // The media is now ready, attaching will display the first keyframe.
+  
+  [animatorView attachMedia:media];
+  
+  NSAssert(animatorView.media == media, @"media");
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");
+  
+  [animatorView attachMedia:nil];
+  
+  NSAssert(animatorView.media == nil, @"media");
+  
+  // Detech from renderer implicity invoked stopAnimator
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");
+  
+  // Attach media a second time.
+  
+  [animatorView attachMedia:media];
+  
+  // Opacity should have been queried from frame decoder
+  
+  NSAssert(animatorView.opaque == TRUE, @"opaque");
+  
+  return;
+}
+
+// FIXME: add opaque check for media that has a 32BPP pixel format.
+// Need to verify that attaching and then advancing to another
+// frame continues to set the opaque property of the view
+// even as frames advance.
+
 // This test uses two different media objects and attaches
 // them to the animator view. When attaching a media element,
 // the initial keyframe is displayed. The second attach

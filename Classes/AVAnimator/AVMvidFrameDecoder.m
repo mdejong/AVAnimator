@@ -89,7 +89,8 @@
 	int renderHeight = [self height];
   
   NSAssert(renderWidth > 0 && renderHeight > 0, @"renderWidth or renderHeight is zero");
-  
+
+  NSAssert(m_mvFile, @"m_mvFile");  
   int bitsPerPixel = m_mvFile->header.bpp;
   
 	CGFrameBuffer *cgFrameBuffer1 = [CGFrameBuffer cGFrameBufferWithBppDimensions:bitsPerPixel width:renderWidth height:renderHeight];
@@ -459,6 +460,8 @@
 
 - (BOOL) hasAlphaChannel
 {
+  // Ensure that media file is mapped, then query BPP
+  [self _mapFile];
   NSAssert(self->m_mvFile, @"m_mvFile");
   uint32_t bpp = self->m_mvFile->header.bpp;
   if (bpp == 16 || bpp == 24) {
