@@ -58,7 +58,7 @@
   NSString *genAdlerNum = [arr objectAtIndex:3];
   
 #ifdef LOGGING
-  NSLog(@"start .apng -> .mvid conversion %@", [resPath lastPathComponent]);
+  NSLog(@"start .apng -> .mvid conversion \"%@\"", [resPath lastPathComponent]);
 #endif // LOGGING
   
   uint32_t retcode;
@@ -79,11 +79,15 @@
     
   // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
   
+  if ([[NSFileManager defaultManager] fileExistsAtPath:outPath]) {
+    [[NSFileManager defaultManager] removeItemAtPath:outPath error:NULL];
+  }
+  
   BOOL worked = [[NSFileManager defaultManager] moveItemAtPath:phonyOutPath toPath:outPath error:nil];
   NSAssert(worked, @"moveItemAtPath failed for decode result");
   
 #ifdef LOGGING
-  NSLog(@"done converting .apng to .mvid %@", [outPath lastPathComponent]);
+  NSLog(@"done converting .apng to .mvid \"%@\"", [outPath lastPathComponent]);
 #endif // LOGGING
   
   [pool drain];

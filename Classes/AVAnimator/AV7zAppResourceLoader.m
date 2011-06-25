@@ -60,6 +60,10 @@
   
   // Move phony tmp filename to the expected filename once writes are complete
   
+  if ([[NSFileManager defaultManager] fileExistsAtPath:outPath]) {
+    [[NSFileManager defaultManager] removeItemAtPath:outPath error:NULL];
+  }  
+  
   worked = [[NSFileManager defaultManager] moveItemAtPath:phonyOutPath toPath:outPath error:nil];
   NSAssert(worked, @"moveItemAtPath failed for decode result");
   

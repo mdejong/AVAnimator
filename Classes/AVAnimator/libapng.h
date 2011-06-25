@@ -62,4 +62,7 @@ libapng_close(FILE *apngFILE);
 uint32_t
 libapng_main(FILE *apngFile, libapng_frame_func frame_func, void *userData);
 
+float
+libapng_frame_delay(uint32_t numerator, uint32_t denominator);
+
 #endif

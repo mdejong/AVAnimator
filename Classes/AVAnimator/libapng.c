@@ -989,3 +989,44 @@ libapng_main(FILE *apngFile, libapng_frame_func frame_func, void *userData)
   
   return retcode;
 }
+
+// Calculate the wall clock time that a specific frame will be displayed for.
+// This logic has to take into account the fact that the delay times indicated
+// in an APNG file could be zero.
+
+//#define DEBUG_PRINT_FRAME_DURATION
+
+float
+libapng_frame_delay(uint32_t numerator, uint32_t denominator)
+{
+  // frameDuration : time that specific frame will be visible
+  // 1/100 is the default if both numerator and denominator are zero
+  
+  float frameDuration;
+  float fnumerator;
+  float fdenominator;
+  
+  if (denominator == 0) {
+    // denominator is 0, treat as 1/100 of a second
+    fdenominator = 100.0f;
+  } else {
+    fdenominator = (float) denominator;
+  }
+  
+  if (numerator == 0) {
+    // if numerator is zero, use maximum frame rate of 30 FPS
+    fnumerator = 1.0f;
+    fdenominator = 30.0f;
+  } else {
+    fnumerator = (float) numerator;
+  }
+  
+  frameDuration = fnumerator / fdenominator;
+  
+#ifdef DEBUG_PRINT_FRAME_DURATION
+  fprintf(stdout, "numerator / denominator = %d / %d\n", numerator, denominator);
+  fprintf(stdout, "fnumerator / fdenominator = %f / %f = %f\n", fnumerator, fdenominator, frameDuration);
+#endif     
+  
+  return frameDuration;
+}

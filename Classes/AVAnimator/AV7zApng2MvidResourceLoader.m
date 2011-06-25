@@ -85,6 +85,10 @@
   
   // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
   
+  if ([[NSFileManager defaultManager] fileExistsAtPath:outPath]) {
+    [[NSFileManager defaultManager] removeItemAtPath:outPath error:NULL];
+  }  
+  
   worked = [[NSFileManager defaultManager] moveItemAtPath:phonyOutPath2 toPath:outPath error:nil];
   NSAssert(worked, @"moveItemAtPath failed for decode result");
   

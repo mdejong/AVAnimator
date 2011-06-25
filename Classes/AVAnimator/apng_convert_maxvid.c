@@ -374,8 +374,8 @@ goto retcode; \
           fread(&fcTLChunk.blend_op, 1, 1, fp) != 1) {
         return READ_ERROR;
       }
-      
-      float frameDuration = (float) fcTLChunk.delay_num / (float) fcTLChunk.delay_den;
+
+      float frameDuration = libapng_frame_delay(fcTLChunk.delay_num, fcTLChunk.delay_den);
       
 #ifdef DEBUG_PRINT_FRAME_DURATION
       fprintf(stdout, "frameDuration (%d) = %f\n", fcTLChunk.sequence_number, frameDuration);
@@ -394,10 +394,13 @@ goto retcode; \
         frameDurations = tmp;
       }
       frameDurations[apngNumFrames++] = frameDuration;
+#ifdef DEBUG_PRINT_FRAME_DURATION
+      fprintf(stdout, "frameDurations[%d] = %f\n", (apngNumFrames-1), frameDurations[apngNumFrames-1]);
+#endif
       
       if (frameDuration < smallestFrameDuration) {
         smallestFrameDuration = frameDuration;
-      }
+      } 
       
       len -= (sizeof(uint32_t) * 5) + (sizeof(uint16_t) * 2) + (sizeof(uint8_t) * 2);
     }
@@ -421,13 +424,17 @@ goto retcode; \
   
   // Iterate over each frame delay in the apng file and determine how many output frames there will be
   
-  assert(apngNumFrames > 0);
+  if (apngNumFrames < 2) {
+    RETCODE(UNSUPPORTED_FILE);
+  }
   
   for (int i=0; i < apngNumFrames; i++) {
     float duration = frameDurations[i];
     
     int numFramesDelay = round(duration / smallestFrameDuration);
-    assert(numFramesDelay >= 1);
+    if (numFramesDelay < 1) {
+      assert(numFramesDelay >= 1);
+    }
     
     outputNumFrames++;
     
@@ -500,10 +507,11 @@ process_apng_frame(
   // Query the delay between the previous frame and this one. If this value is longer than 1 frame
   // then no-op frames appear in between the two APNG frames.
   
-  float delay = (float) delay_num / (float) delay_den;
-  
+  float delay = libapng_frame_delay(delay_num, delay_den);  
   int numFramesDelay = round(delay / userDataPtr->frameDuration);
-  assert(numFramesDelay >= 1);
+  if (numFramesDelay < 1) {
+    assert(numFramesDelay >= 1);
+  }
   
 #ifdef DEBUG_PRINT_FRAME_DURATION
   fprintf(stdout, "APNG frame index %d corresponds to MVID frame index %d\n", framei, userDataPtr->outFrame);
@@ -822,5 +830,57 @@ retcode:
   }  
   
 	return retcode;
+}
+
+// This method tests a local file to determine if it is an APNG with multiple frames. It is possible that
+// a regular non-animated .png file would be downloaded. This is a design flaw in the APNG design, but
+// basically we need to work around it by scanning the contents of the .png to see if it is in fact animated.
+// This method will return 0 if the file is in fact an animated PNG, otherwise a non-zero result indicates
+// that the file can't be parsed as an APNG.
+
+uint32_t
+apng_verify_png_is_animated(char *inAPNGPath)
+{
+  FILE *inAPNGFile = NULL;
+  uint32_t retcode = 1000;
+  
+  uint32_t numApngFrames;
+  uint32_t numOutputFrames;
+  uint32_t status;
+  float frameDuration;  
+  
+#undef RETCODE
+#define RETCODE(status) \
+if (status != 0) { \
+retcode = status; \
+goto retcode; \
+}  
+  
+  inAPNGFile = libapng_open(inAPNGPath);
+	if (inAPNGFile == NULL) {
+    RETCODE(UNSUPPORTED_FILE);
+  }
+	
+  // Read header in PNG file and determine the framerate
+  
+  status = apng_decode_frame_duration(inAPNGFile, &frameDuration, &numOutputFrames, &numApngFrames);
+  if (status != 0) {
+    RETCODE(READ_ERROR);
+  }
+  
+  // If fewer than animation frames, then it will not be possible to animate.
+  // This could happen when there is only a single frame in a PNG file, for example.
+  // It might also happen in a 2 frame .apng where the first frame is marked as hidden.
+  
+  if (numApngFrames < 2) {
+    RETCODE(UNSUPPORTED_FILE);
+  }
+ 
+  retcode = 0;
+  
+retcode:
+  libapng_close(inAPNGFile);
+  
+  return retcode;
 }
 

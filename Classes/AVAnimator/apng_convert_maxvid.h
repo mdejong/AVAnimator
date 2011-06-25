@@ -49,3 +49,6 @@ apng_convert_maxvid_file(
                             char *inAPNGPath,
                             char *outMaxvidPath,
                             uint32_t genAdler);
+
+uint32_t
+apng_verify_png_is_animated(char *inAPNGPath);
