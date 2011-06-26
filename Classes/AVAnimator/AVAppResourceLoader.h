@@ -23,6 +23,9 @@
   BOOL m_isReady;
 }
 
+// Both filename properties can be either a fully qualified file path
+// or a simple filename. A simple filename is assumed to be a resource.
+
 @property (nonatomic, copy) NSString *movieFilename;
 @property (nonatomic, copy) NSString *audioFilename;
 

@@ -29,7 +29,7 @@
 // This method is invoked in the secondary thread to decode the contents of the archive entry
 // and write it to an output file (typically in the tmp dir).
 
-//#define LOGGING
+#define LOGGING
 
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -85,12 +85,7 @@
   
   // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
   
-  if ([[NSFileManager defaultManager] fileExistsAtPath:outPath]) {
-    [[NSFileManager defaultManager] removeItemAtPath:outPath error:NULL];
-  }  
-  
-  worked = [[NSFileManager defaultManager] moveItemAtPath:phonyOutPath2 toPath:outPath error:nil];
-  NSAssert(worked, @"moveItemAtPath failed for decode result");
+  [AVFileUtil renameFile:phonyOutPath2 toPath:outPath];
   
 #ifdef LOGGING
   NSLog(@"done encode %@", [outPath lastPathComponent]);

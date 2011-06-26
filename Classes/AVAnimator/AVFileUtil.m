@@ -59,4 +59,31 @@
   return tmpPath;
 }
 
++ (NSString*) getQualifiedFilenameOrResource:(NSString*)filename
+{
+  if ([filename hasPrefix:@"/"]) {
+    if ([[NSFileManager defaultManager] fileExistsAtPath:filename isDirectory:NULL]) {
+      return filename;
+    } else {
+      return nil;
+    }
+  } else {
+    return [AVFileUtil getResourcePath:filename];
+  }
+}
+
++ (void) renameFile:(NSString*)path toPath:(NSString*)toPath
+{
+  // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
+  
+  if ([[NSFileManager defaultManager] fileExistsAtPath:toPath]) {
+    [[NSFileManager defaultManager] removeItemAtPath:toPath error:NULL];
+  }
+  
+  BOOL worked = [[NSFileManager defaultManager] moveItemAtPath:path toPath:toPath error:nil];
+  NSAssert(worked, @"moveItemAtPath failed for decode result");
+  
+  return;
+}
+
 @end

@@ -60,12 +60,7 @@
   
   // Move phony tmp filename to the expected filename once writes are complete
   
-  if ([[NSFileManager defaultManager] fileExistsAtPath:outPath]) {
-    [[NSFileManager defaultManager] removeItemAtPath:outPath error:NULL];
-  }  
-  
-  worked = [[NSFileManager defaultManager] moveItemAtPath:phonyOutPath toPath:outPath error:nil];
-  NSAssert(worked, @"moveItemAtPath failed for decode result");
+  [AVFileUtil renameFile:phonyOutPath toPath:outPath];
   
   [pool drain];
 }
@@ -96,9 +91,9 @@
   // Superclass load method asserts that self.movieFilename is not nil
   [super load];
 
-  NSString *archiveFilename = self.archiveFilename;
-  NSAssert(archiveFilename, @"archiveFilename");
-  NSString *archivePath = [AVFileUtil getResourcePath:archiveFilename];
+  NSString *qualPath = [AVFileUtil getQualifiedFilenameOrResource:self.archiveFilename];
+  NSAssert(qualPath, @"qualPath");
+
   NSString *archiveEntry = self.movieFilename;
   NSString *outPath = self.outPath;
   NSAssert(outPath, @"outPath not defined");
@@ -109,7 +104,7 @@
 
   NSString *phonyOutPath = [AVFileUtil generateUniqueTmpPath];
 
-  [self _detachNewThread:archivePath archiveEntry:archiveEntry phonyOutPath:phonyOutPath outPath:outPath];
+  [self _detachNewThread:qualPath archiveEntry:archiveEntry phonyOutPath:phonyOutPath outPath:outPath];
   
   return;
 }

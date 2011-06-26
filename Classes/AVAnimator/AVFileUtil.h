@@ -34,4 +34,19 @@
 
 + (NSString*) generateUniqueTmpPath;
 
+// If the filename is fully qualified, then check that the file
+// exists and return nil if it does not exist. If the filename
+// is a simple filename, then check that a resource file with
+// that filename exists and return nil if the resource does not exist.
+// In either case, a fully qualified path of a file that is known
+// to exist is returned, otherwise nil.
+
++ (NSString*) getQualifiedFilenameOrResource:(NSString*)filename;
+
+// Rename the file at path to the file indicated by toPath.
+// This util method will remove an existing file at toPath
+// and assert that the move operation was successful.
+
++ (void) renameFile:(NSString*)path toPath:(NSString*)toPath;
+
 @end

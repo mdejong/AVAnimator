@@ -28,12 +28,26 @@
 
 - (NSString*) _getMoviePath
 {
-  return [AVFileUtil getResourcePath:self.movieFilename];
+  // If movieFilename is a fully qualified path that indicates an existing file,
+  // the load that file directly. This makes it possible to use a file from the
+  // tmp dir or some other location. If the file name is not fully qualified
+  // then it must be a resource filename.
+  
+  NSString *qualPath = [AVFileUtil getQualifiedFilenameOrResource:self.movieFilename];
+  NSAssert(qualPath, @"qualPath");  
+  return qualPath;
 }
 
 - (NSString*) _getAudioPath:(NSString*)audioFilename
 {
-  return [AVFileUtil getResourcePath:audioFilename];
+  // If audioFilename is a fully qualified path that indicates an existing file,
+  // the load that file directly. This makes it possible to use a file from the
+  // tmp dir or some other location. If the file name is not fully qualified
+  // then it must be a resource filename.  
+  
+  NSString *qualPath = [AVFileUtil getQualifiedFilenameOrResource:audioFilename];
+  NSAssert(qualPath, @"qualPath");  
+  return qualPath;
 }
 
 - (BOOL) isMovieReady

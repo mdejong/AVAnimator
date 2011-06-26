@@ -43,7 +43,7 @@
 // This method is invoked in the secondary thread to decode the contents of the archive entry
 // and write it to an output file (typically in the tmp dir).
 
-//#define LOGGING
+#define LOGGING
 
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -79,12 +79,7 @@
     
   // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
   
-  if ([[NSFileManager defaultManager] fileExistsAtPath:outPath]) {
-    [[NSFileManager defaultManager] removeItemAtPath:outPath error:NULL];
-  }
-  
-  BOOL worked = [[NSFileManager defaultManager] moveItemAtPath:phonyOutPath toPath:outPath error:nil];
-  NSAssert(worked, @"moveItemAtPath failed for decode result");
+  [AVFileUtil renameFile:phonyOutPath toPath:outPath];
   
 #ifdef LOGGING
   NSLog(@"done converting .apng to .mvid \"%@\"", [outPath lastPathComponent]);
@@ -125,7 +120,11 @@
   // Superclass load method asserts that self.movieFilename is not nil
   [super load];
   
-  NSString *resPath = [AVFileUtil getResourcePath:self.movieFilename];
+  // If movie filename is already fully qualified, then don't qualify it as a resource path
+  
+  NSString *qualPath = [AVFileUtil getQualifiedFilenameOrResource:self.movieFilename];
+  NSAssert(qualPath, @"qualPath");
+  
   NSString *outPath = self.outPath;
   NSAssert(outPath, @"outPath not defined");
   
@@ -135,7 +134,7 @@
   
   NSString *phonyOutPath = [AVFileUtil generateUniqueTmpPath];
   
-  [self _detachNewThread:resPath phonyOutPath:phonyOutPath outPath:outPath];
+  [self _detachNewThread:qualPath phonyOutPath:phonyOutPath outPath:outPath];
   
   return;
 }
