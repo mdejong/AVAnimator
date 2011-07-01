@@ -553,6 +553,11 @@
 		return;
 	}
   
+  // Implicitly rewind before playing, this basically just deallocates any previous
+  // play resources in the frame decoder.
+  
+  [self rewind];  
+  
 	// Can only transition from PAUSED to ANIMATING via unpause
   
 	assert(self.state != PAUSED);
@@ -560,7 +565,7 @@
 	assert(self.state == READY || self.state == STOPPED);
   
 	self.state = ANIMATING;
-  
+    
 	// Animation is broken up into two stages. Assume there are two frames that
 	// should be displayed at times T1 and T2. At time T1 + animatorFrameDuration/4
 	// check the audio clock offset and use that time to schedule a callback to
@@ -763,7 +768,6 @@
                                                         object:self];
 
     [self stopAnimator];
-    [self rewind];
     [self startAnimator];
   } else {
     // Schedule a display callback right away, the pause could have have been delivered between a decode
@@ -1232,7 +1236,6 @@
   
 	if (self.animatorRepeatCount > 0) {
 		self.animatorRepeatCount = self.animatorRepeatCount - 1;
-    [self rewind];
 		[self startAnimator];
 	} else {
 		[self doneAnimator];
