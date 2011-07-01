@@ -465,6 +465,20 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   [self osCopyImpl:anotherFrameBufferPixelsPtr];
 }
 
+// Explicitly memcopy pixels instead of an OS level page copy,
+// this is useful only when we want to deallocate the mapped
+// memory and an os copy would keep that memory mapped.
+
+- (void) memcopyPixels:(CGFrameBuffer *)anotherFrameBuffer
+{
+  assert(self.numBytes == anotherFrameBuffer.numBytes);
+  assert(self.zeroCopyMappedData == nil);
+  
+  void *anotherFrameBufferPixelsPtr = anotherFrameBuffer.zeroCopyPixels;
+  
+  memcpy(self.pixels, anotherFrameBufferPixelsPtr, anotherFrameBuffer.numBytes);
+}
+
 // Copy the contents of the zero copy buffer to the allocated framebuffer and
 // release the zero copy bytes.
 

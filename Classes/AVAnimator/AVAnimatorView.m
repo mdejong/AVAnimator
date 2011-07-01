@@ -34,9 +34,10 @@
   
 	self.image = nil;
   
+  // Detach but don't bother making a copy of the final image
+  
   if (self.mediaObj) {
-    [self.mediaObj detachFromRenderer:self];
-    self.mediaObj = nil;
+    [self.mediaObj detachFromRenderer:self copyFinalFrame:FALSE];
   }
   
   [super dealloc];
@@ -267,9 +268,10 @@
   }
   
   if (inMedia == nil) {
-    // Detach case
+    // Detach case, not attaching another media object so copy
+    // the last rendered frame.
     
-    [self.mediaObj detachFromRenderer:self];
+    [self.mediaObj detachFromRenderer:self copyFinalFrame:TRUE];
     self.mediaObj = nil;
     self->mediaDidLoad = FALSE;
     return;
@@ -281,7 +283,7 @@
 
   self->mediaDidLoad = FALSE;
   
-  [self.mediaObj detachFromRenderer:self];
+  [self.mediaObj detachFromRenderer:self copyFinalFrame:FALSE];
   self.mediaObj = inMedia;
   [self.mediaObj attachToRenderer:self];
 }
@@ -291,6 +293,19 @@
 - (AVAnimatorMedia*) media
 {
   return self->m_mediaObj;
+}
+
+// Implement these methods to raise an error if they are accidently invoked by the user of this class.
+// These methods should not be used since they are part of the UIImageView animation logic.
+
+- (void) startAnimation
+{
+  NSAssert(FALSE, @"should invoke startAnimation on media object instead");
+}
+
+- (void) stopAnimation
+{
+  NSAssert(FALSE, @"should invoke stopAnimator on media object instead");
 }
 
 @end

@@ -154,15 +154,20 @@ typedef enum AVAnimatorPlayerState {
 // static ctor : create media object in autorelease pool
 + (AVAnimatorMedia*) aVAnimatorMedia;
 
+// Start animating at the initial frame
 - (void) startAnimator;
+// Stop animating, currentFrame indicates the last rendered frame
 - (void) stopAnimator;
 
 - (BOOL) isAnimatorRunning;
 - (BOOL) isInitializing;
 - (void) doneAnimator;
 
+// Pause animator at the current frame
 - (void) pause;
+// Restart animator at the current frame
 - (void) unpause;
+// Rewind the current frame
 - (void) rewind;
 
 - (void) prepareToAnimate;
@@ -178,6 +183,6 @@ typedef enum AVAnimatorPlayerState {
 
 - (void) attachToRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer;
 
-- (void) detachFromRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer;
+- (void) detachFromRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer copyFinalFrame:(BOOL)copyFinalFrame;
 
 @end

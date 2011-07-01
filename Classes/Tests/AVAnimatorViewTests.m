@@ -997,6 +997,42 @@
   return;
 }
 
+// This test case checks that the view.image property can be set to nil
+// to indicate that no image should be displayed in the view.
+
++ (void) testSetImageToNil
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+
+  NSString *resourceName = @"1x1.gif";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  
+  CGRect frame = CGRectMake(0, 0, 2, 2);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  [window addSubview:animatorView];
+  
+  // Set image property of the view to a 1x1 image
+  
+  UIImage *image = [UIImage imageWithContentsOfFile:resPath];
+  NSAssert(image, @"image");
+
+  NSAssert(animatorView.image == nil, @"image should initially be nil");
+  animatorView.image = image;
+  NSAssert(animatorView.image != nil, @"image is nil");
+  NSAssert(animatorView.image == image, @"image");
+
+  // Now set the image propert to nil to make sure that clear the current image.
+
+  animatorView.image = nil;
+  NSAssert(animatorView.image == nil, @"image");
+  
+  return;
+}
+
 // This test checks the implementation of the attachMedia method
 // in the AVAnimatorView class. Only a single media item can be
 // attached to a rendering view at a time, and only an attached
@@ -2673,5 +2709,11 @@
   
   return;
 }
+
+// FIXME: Add test case that checks the "currentFrame" value when playing media with no looping. The
+// final value of currentFrame should be the last frame after stopAnimator is invoked.
+
+// The media object detach operation should make a copy of the final frame when nil is passed,
+// so that the view will continue to display the same visual info while the media unmaps the files.
 
 @end

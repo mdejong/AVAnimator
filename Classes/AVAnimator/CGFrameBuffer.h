@@ -79,6 +79,10 @@
 
 - (void) copyPixels:(CGFrameBuffer *)anotherFrameBuffer;
 
+// USe memcopy() as opposed to an OS level page copy
+
+- (void) memcopyPixels:(CGFrameBuffer *)anotherFrameBuffer;
+
 // Zero copy from an external read-only location
 
 - (void) zeroCopyPixels:(void*)zeroCopyPtr mappedData:(NSData*)mappedData;

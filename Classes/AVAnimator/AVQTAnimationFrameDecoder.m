@@ -419,6 +419,34 @@ int num_words(uint32_t numBytes)
   }
 }
 
+- (UIImage*) copyCurrentFrame
+{
+  NSAssert(self.currentFrameBuffer, @"currentFrameBuffer");
+  
+  // Create an in-memory copy of the current frame buffer and return a new image wrapped around the copy
+  
+  CGFrameBuffer *cgFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:self.currentFrameBuffer.bitsPerPixel
+                                                                         width:self.currentFrameBuffer.width
+                                                                        height:self.currentFrameBuffer.height];
+  
+  // Using the OS level copy means that a small portion of the mapped memory will stay around, only the copied part.
+  // Might be more efficient, unknown.
+  
+  //[cgFrameBuffer copyPixels:self.currentFrameBuffer];
+  [cgFrameBuffer memcopyPixels:self.currentFrameBuffer];
+  
+  CGImageRef imgRef = [cgFrameBuffer createCGImageRef];
+  NSAssert(imgRef, @"CGImageRef returned by createCGImageRef is NULL");
+  
+  UIImage *uiImage = [UIImage imageWithCGImage:imgRef];
+  CGImageRelease(imgRef);
+  
+  NSAssert(cgFrameBuffer.isLockedByDataProvider, @"image buffer should be locked by frame UIImage");
+  
+  NSAssert(uiImage, @"uiImage is nil");
+  return uiImage;  
+}
+
 // Limit resouce usage by letting go of framebuffers and an optional input buffer.
 // Note that we keep the file open and the parsed data in memory, because reloading
 // that data would be expensive.

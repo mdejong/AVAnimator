@@ -16,6 +16,8 @@
 #import "AVAppResourceLoader.h"
 #import "AVQTAnimationFrameDecoder.h"
 
+#import "AVFileUtil.h"
+
 @interface AVAnimatorLayerTests : NSObject {}
 @end
 
@@ -138,6 +140,44 @@
   
   NSAssert(avLayerObj.image.CGImage != nil, @"CGImage is nil");
   NSAssert((id)avLayerObj.image.CGImage == viewLayer.contents, @"contents not set");  
+  
+  return;
+}
+
+// This test case checks that the layer.image property can be set to nil
+// to indicate that no image should be displayed in the layer.
+
++ (void) testSetImageToNil
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"1x1.gif";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  
+  CGRect frame = CGRectMake(0, 0, 2, 2);
+  UIView *view = [[[UIView alloc] initWithFrame:frame] autorelease];
+  CALayer *viewLayer = view.layer;
+  
+  AVAnimatorLayer *avLayerObj = [AVAnimatorLayer aVAnimatorLayer:viewLayer];
+  
+  [window addSubview:view];
+  
+  // Set image property of the view to a 1x1 image
+  
+  UIImage *image = [UIImage imageWithContentsOfFile:resPath];
+  NSAssert(image, @"image");
+  
+  NSAssert(avLayerObj.image == nil, @"image should initially be nil");
+  avLayerObj.image = image;
+  NSAssert(avLayerObj.image != nil, @"image is nil");
+  NSAssert(avLayerObj.image == image, @"image");
+  
+  // Now set the image propert to nil to make sure that clear the current image.
+  
+  avLayerObj.image = nil;
+  NSAssert(avLayerObj.image == nil, @"image");
   
   return;
 }

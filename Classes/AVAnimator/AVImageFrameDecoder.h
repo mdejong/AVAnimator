@@ -25,6 +25,7 @@
   NSArray *m_urls;
   NSArray *m_dataObjs;
   NSArray *m_cachedImageObjs;
+  UIImage *m_currentFrame;
   BOOL m_resourceUsageLimit;
 }
 
@@ -32,6 +33,7 @@
 @property (nonatomic, copy) NSArray *urls;
 @property (nonatomic, copy) NSArray *dataObjs;
 @property (nonatomic, copy) NSArray *cachedImageObjs;
+@property (nonatomic, retain) UIImage *currentFrame;
 
 + (NSArray*) arrayWithNumberedNames:(NSString*)filenamePrefix
                          rangeStart:(NSInteger)rangeStart

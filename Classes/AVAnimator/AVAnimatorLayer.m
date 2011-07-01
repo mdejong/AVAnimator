@@ -27,7 +27,12 @@
 @synthesize imageObj = m_imageObj;
 
 - (void) dealloc {
-  [self attachMedia:nil];
+  // Detach but don't bother making a copy of the final image
+  
+  if (self.mediaObj) {
+    [self.mediaObj detachFromRenderer:self copyFinalFrame:FALSE];
+  }
+  
   [AutoPropertyRelease releaseProperties:self thisClass:AVAnimatorLayer.class];  
   [super dealloc];
 }
@@ -70,9 +75,10 @@
   }
   
   if (inMedia == nil) {
-    // Detach case
+    // Detach case, not attaching another media object so copy
+    // the last rendered frame.
     
-    [self.mediaObj detachFromRenderer:self];
+    [self.mediaObj detachFromRenderer:self copyFinalFrame:TRUE];
     self.mediaObj = nil;
     self.imageObj = nil;
     self->mediaDidLoad = FALSE;
@@ -81,7 +87,7 @@
   
   self->mediaDidLoad = FALSE;
   
-  [self.mediaObj detachFromRenderer:self];
+  [self.mediaObj detachFromRenderer:self copyFinalFrame:FALSE];
   self.mediaObj = inMedia;
   self.imageObj = nil;
   [self.mediaObj attachToRenderer:self];

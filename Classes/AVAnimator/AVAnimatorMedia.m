@@ -663,13 +663,10 @@
     self.avAudioPlayer.currentTime = 0.0;
   }
   
-  self.currentFrame = -1;
 	self.repeatedFrameCount = 0;
   
 	self.prevFrame = nil;
 	self.nextFrame = nil;
-  
-	[self.frameDecoder rewind];
   
 	// Reset idle timer
 	
@@ -680,6 +677,9 @@
   
 	[[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorDidStopNotification
                                                       object:self];
+  
+  // Note that invoking stopAnimator leaves the current frame at the same value,
+  // the frame and frame decoder do not automatically rewind.
   
 	return;
 }
@@ -763,6 +763,7 @@
                                                         object:self];
 
     [self stopAnimator];
+    [self rewind];
     [self startAnimator];
   } else {
     // Schedule a display callback right away, the pause could have have been delivered between a decode
@@ -808,7 +809,8 @@
 - (void) rewind
 {
 	[self stopAnimator];
-  [self startAnimator];
+  self.currentFrame = -1;
+  [self.frameDecoder rewind];
 }
 
 - (void) doneAnimator
@@ -1223,6 +1225,7 @@
   
 	if (self.animatorRepeatCount > 0) {
 		self.animatorRepeatCount = self.animatorRepeatCount - 1;
+    [self rewind];
 		[self startAnimator];
 	} else {
 		[self doneAnimator];
@@ -1416,15 +1419,31 @@
   }
 }
 
-
-- (void) detachFromRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer
+- (void) detachFromRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer copyFinalFrame:(BOOL)copyFinalFrame
 {
   NSAssert(renderer, @"renderer can't be nil");
+
+  [self stopAnimator];
+
+  // If copyFinalFrame is true, then the media object is being detached and it will not be
+  // replaced with another media object right away. The OS might be putting the app into
+  // the background and the view will need to retain the same visual data so that the
+  // animations will look correct. Make a copy of the buffer to ensure that the original
+  // frame buffer is released.
+
+  if (copyFinalFrame) {
+    UIImage *finalFrameCopy = [self.frameDecoder copyCurrentFrame];
+    self.renderer.image = finalFrameCopy;
+  } else {
+    self.renderer.image = nil;
+  }
+
   self.renderer = nil;
   
-  [self stopAnimator];
+  self.prevFrame = nil;
+  self.nextFrame = nil;
   
-  // Tell decoder it is now resource constrained
+  // The view and the media objects should have dropped all references to frame buffer objects now.
   
   [self.frameDecoder resourceUsageLimit:TRUE];
 }

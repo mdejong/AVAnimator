@@ -44,6 +44,15 @@
 
 - (BOOL) isResourceUsageLimit;
 
+// Return a copy of the last frame returned via advanceToFrame.
+// This copy will not be associated with the frame decoder and
+// it will not contain any external references to shared memory.
+// This method is useful only for the case where holding onto a
+// ref to the final frame will waste significant resources, for
+// example if the normal frames hold references to mapped memory.
+
+- (UIImage*) copyCurrentFrame;
+
 // Properties
 
 // Dimensions of each frame

@@ -14,6 +14,7 @@
 @synthesize urls = m_urls;
 @synthesize dataObjs = m_dataObjs;
 @synthesize cachedImageObjs = m_cachedImageObjs;
+@synthesize currentFrame = m_currentFrame;
 
 - (void) dealloc {
   [AutoPropertyRelease releaseProperties:self thisClass:AVImageFrameDecoder.class];
@@ -127,7 +128,13 @@
   NSData *data = [self.dataObjs objectAtIndex:newFrameIndex];
 	UIImage *img = [UIImage imageWithData:data];
   NSAssert(img, @"img is nil");
+  self.currentFrame = img;
   return img;
+}
+
+- (UIImage*) copyCurrentFrame
+{
+  return self.currentFrame;
 }
 
 - (void) resourceUsageLimit:(BOOL)enabled

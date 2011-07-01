@@ -50,6 +50,12 @@
 	return FALSE;
 }
 
+- (UIImage*) copyCurrentFrame
+{
+  [self doesNotRecognizeSelector:_cmd];
+	return nil;
+}
+
 // Properties
 
 - (NSUInteger) width
