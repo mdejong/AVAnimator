@@ -476,6 +476,17 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   
   void *anotherFrameBufferPixelsPtr = anotherFrameBuffer.zeroCopyPixels;
   
+  if (anotherFrameBufferPixelsPtr) {
+    // other framebuffer has a zero copy pixel buffer, this happes when a keyframe
+    // is followed by a delta frame. Use the original zero copy pointer as the
+    // source for a OS level page copy operation, but don't modify the state of
+    // the other frame buffer in any way since it could be used by the graphics
+    // subsystem currently.
+  } else {
+    // copy bytes from other framebuffer
+    anotherFrameBufferPixelsPtr = anotherFrameBuffer.pixels;
+  }
+  
   memcpy(self.pixels, anotherFrameBufferPixelsPtr, anotherFrameBuffer.numBytes);
 }
 

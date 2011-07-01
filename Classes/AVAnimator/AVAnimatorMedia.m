@@ -928,8 +928,11 @@
           @"\tcurrentTime: ", currentTime);
 	}
 #endif	
+    
+  float aboutHalf = (self.animatorFrameDuration / 2.0);
+  aboutHalf -= aboutHalf / 20.0f;
   
-	if (currentTime < (self.animatorFrameDuration / 2.0)) {
+	if (currentTime < aboutHalf) {
 		// Ignore reported times until they are at least half way to the
 		// first frame time. The audio could take a moment to start and it
 		// could report a number of zero or less than zero times. Keep
@@ -1221,6 +1224,10 @@
 #endif
 	[self stopAnimator];
 	
+  // Done displaying frames, explicitly set self.currentFrame to the last frame
+
+  self.currentFrame = self.animatorNumFrames - 1;    
+  
 	// Continue to loop animator until loop counter reaches 0
   
 	if (self.animatorRepeatCount > 0) {
@@ -1429,7 +1436,7 @@
   // replaced with another media object right away. The OS might be putting the app into
   // the background and the view will need to retain the same visual data so that the
   // animations will look correct. Make a copy of the buffer to ensure that the original
-  // frame buffer is released.
+  // frame buffer is released. Note that copyCurrentFrame could return nil.
 
   if (copyFinalFrame) {
     UIImage *finalFrameCopy = [self.frameDecoder copyCurrentFrame];
@@ -1437,11 +1444,15 @@
   } else {
     self.renderer.image = nil;
   }
-
+  
   self.renderer = nil;
   
   self.prevFrame = nil;
   self.nextFrame = nil;
+  
+  // implicitly rewind the state of this media object after it is detached from the renderer.
+
+  [self rewind];
   
   // The view and the media objects should have dropped all references to frame buffer objects now.
   

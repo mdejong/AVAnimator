@@ -161,6 +161,7 @@
   CALayer *viewLayer = view.layer;
   
   AVAnimatorLayer *avLayerObj = [AVAnimatorLayer aVAnimatorLayer:viewLayer];
+  NSAssert(avLayerObj, @"avLayerObj");
   
   [window addSubview:view];
   

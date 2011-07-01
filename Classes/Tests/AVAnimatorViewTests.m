@@ -30,6 +30,8 @@
 #define REPEATED_FRAME_WARN_COUNT 10
 #define REPEATED_FRAME_DONE_COUNT 20
 
+static int notifiy_testAnimateToLastFrame_flag = 0;
+
 // The methods named test* will be automatically invoked by the RegressionTests harness.
 
 @implementation AVAnimatorViewTests
@@ -203,10 +205,10 @@
   NSAssert(media.decodedSecondFrame == FALSE, @"decodedSecondFrame");
   
   // Generate a time delta that is very close to the initial decode interval (0.5 sec)
-  // but just a little small than the interval. Does not advance the frame.
+  // but just a little smaller than the interval. Does not advance the frame.
 
   media.audioSimulatedStartTime = [NSDate date];
-  media.audioSimulatedNowTime = [NSDate dateWithTimeInterval:0.49 sinceDate:media.audioSimulatedStartTime];
+  media.audioSimulatedNowTime = [NSDate dateWithTimeInterval:0.47 sinceDate:media.audioSimulatedStartTime];
 
   [media _animatorDecodeInitialFrameCallback:nil];
   
@@ -1277,6 +1279,143 @@
   return;
 }
 
+// This test detached a media object from a view when no current frame
+// is defined for the media (and the frame decoder). This should set
+// the image property on the view to nil.
+
++ (void) testDetachMvidWithNoCurrentFrame
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 200, 200);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  // The current frame should be zero at this point
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");  
+  
+  [media rewind];
+
+  NSAssert(media.currentFrame == -1, @"currentFrame");
+  
+  // Detach media from view with no current frame available, this
+  // should just nil out the image, it should not assert.
+  
+  [animatorView attachMedia:nil];
+  
+  NSAssert(animatorView.media == nil, @"media");  
+  NSAssert(animatorView.image == nil, @"image");  
+    
+  return;
+}
+
+// Same test as above but using the Quicktime frame decoder
+
++ (void) testDetachQTWithNoCurrentFrame
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 200, 200);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  // The current frame should be zero at this point
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");  
+  
+  [media rewind];
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");
+  
+  // Detach media from view with no current frame available, this
+  // should just nil out the image, it should not assert.
+  
+  [animatorView attachMedia:nil];
+  
+  NSAssert(animatorView.media == nil, @"media");  
+  NSAssert(animatorView.image == nil, @"image");  
+  
+  return;
+}
+
+
 // FIXME: add opaque check for media that has a 32BPP pixel format.
 // Need to verify that attaching and then advancing to another
 // frame continues to set the opaque property of the view
@@ -1477,6 +1616,95 @@
   return;
 }
 
+// This test case checks the media.currentFrame property for a media object
+// that is played and then implicitly stopped at the end of the animation.
+// The implicit call to stopAnimator leaves the media.currentFrame set to
+// the very last frame in the animation.
+
++ (void) testAnimateToLastFrame
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+  
+  // Create a plain AVAnimatorView without a movie controls and display
+  // in portrait mode. This setup involves no containing views and
+  // has no transforms applied to the AVAnimatorView.
+  
+  CGRect frame = CGRectMake(0, 0, 2, 2);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];  
+  animatorView.animatorOrientation = UIImageOrientationLeft;
+  
+  // Create Media object and link it to the animatorView
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  [window addSubview:animatorView];
+  
+  [animatorView attachMedia:media];
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  // At this point, initial keyframe should be displayed
+  
+  NSAssert(media.currentFrame == 0, @"currentFrame");
+  
+  // Play the animation and wait for the done animating notification.
+  
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(notifiy_testAnimateToLastFrame:) 
+                                               name:AVAnimatorDoneNotification
+                                             object:media];  
+  
+  [media startAnimator];
+  
+  // Wait for notification to be delivered
+  
+  notifiy_testAnimateToLastFrame_flag = 0;
+  
+  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:5.0];
+  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+
+  NSAssert(notifiy_testAnimateToLastFrame_flag == 1, @"notifiy_testAnimateToLastFrame_flag");
+  
+  // Verify that the current frame is the final frame in the animation.
+  
+  NSAssert(media.currentFrame == 1, @"currentFrame");
+  
+  // FIXME: now detach the media and check that the view still has a "current image"
+  // which is a copy of the data from the final frame. The media object should have
+  // been set to resource constrained now.
+  
+  return;
+}
+
+// This method is invoked when a AVAnimatorDoneNotification is delivered in the above test
+
++ (void) notifiy_testAnimateToLastFrame:(NSNotification*)notification {
+  notifiy_testAnimateToLastFrame_flag = 1;
+  
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
 
 // Get a pixel value from an image
 

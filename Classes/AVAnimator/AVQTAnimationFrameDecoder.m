@@ -421,7 +421,9 @@ int num_words(uint32_t numBytes)
 
 - (UIImage*) copyCurrentFrame
 {
-  NSAssert(self.currentFrameBuffer, @"currentFrameBuffer");
+  if (self.currentFrameBuffer == nil) {
+    return nil;
+  }  
   
   // Create an in-memory copy of the current frame buffer and return a new image wrapped around the copy
   

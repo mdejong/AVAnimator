@@ -112,10 +112,14 @@
 
 - (void) setImage:(UIImage*)image
 {
-  NSAssert(image, @"image");
-  self.imageObj = image;
-  CGImageRef cgImage = image.CGImage;
-  self.layer.contents = (id) cgImage;
+  if (image == nil) {
+    self.imageObj = nil;
+    self.layer.contents = nil;
+  } else {
+    self.imageObj = image;
+    CGImageRef cgImage = image.CGImage;
+    self.layer.contents = (id) cgImage;
+  }
 }
 
 - (UIImage*) image
