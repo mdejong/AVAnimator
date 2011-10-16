@@ -778,8 +778,8 @@
 				CD0BD03A1363523800D8287A /* movdata_convert_maxvid.c */,
 				CDE65F02136F7C9700F4E8E6 /* apng_convert_maxvid.h */,
 				CDE65F01136F7C9700F4E8E6 /* apng_convert_maxvid.c */,
-				CDD9888D1371F4A60072C06B /* libapng.c */,
 				CDD9888E1371F4A60072C06B /* libapng.h */,
+				CDD9888D1371F4A60072C06B /* libapng.c */,
 				CD0BD14213635EDD00D8287A /* AVFileUtil.h */,
 				CD0BD14313635EDD00D8287A /* AVFileUtil.m */,
 			);

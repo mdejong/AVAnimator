@@ -2,6 +2,8 @@
 //  Created by Moses DeJong on 4/22/11.
 //
 //  License terms defined in License.txt.
+//
+// File related utility functions.
 
 #import "AVFileUtil.h"
 

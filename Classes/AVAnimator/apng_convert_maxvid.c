@@ -1,8 +1,8 @@
-/*
- *  apng_convert_maxvid.h
- *
- *  Created by Moses DeJong on 4/29/11.
- */
+// apng convert to maxvid module
+//
+//  License terms defined in License.txt.
+//
+// This module defines logic that convert from an APNG to a memory mapped maxvid file.
 
 #include "apng_convert_maxvid.h"
 

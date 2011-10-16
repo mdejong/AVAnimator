@@ -1,11 +1,8 @@
-/*
- *  maxvid_file.c
- *  QTDecodeAnimationByteOrderTestApp
- *
- *  Created by Moses DeJong on 4/19/11.
- *  Copyright 2011 `. All rights reserved.
- *
- */
+// maxvid_file module
+//
+//  License terms defined in License.txt.
+//
+// This module defines the format and logic to read and write a maxvid file.
 
 #include "maxvid_file.h"
 

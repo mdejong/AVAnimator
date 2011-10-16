@@ -1,11 +1,8 @@
-/*
- *  maxvid_encode.h
- *  QTDecodeAnimationByteOrderTestApp
- *
- *  Created by Moses DeJong on 2/24/11.
- *  Copyright 2011 __MyCompanyName__. All rights reserved.
- *
- */
+// maxvid_encode module
+//
+//  License terms defined in License.txt.
+//
+// This module defines the encoder portion of the maxvid video codec for iOS.
 
 #import "maxvid_decode.h"
 

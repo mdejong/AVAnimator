@@ -1,11 +1,8 @@
-/*
- *  maxvid_encode.c
- *  QTDecodeAnimationByteOrderTestApp
- *
- *  Created by Moses DeJong on 2/24/11.
- *  Copyright 2011 __MyCompanyName__. All rights reserved.
- *
- */
+// maxvid_encode module
+//
+//  License terms defined in License.txt.
+//
+// This module defines the encoder portion of the maxvid video codec for iOS.
 
 // Note that EXTRA_CHECKS is conditionally define and then undefined in this header, so it
 // must appear before the EXTRA_CHECKS logic below.

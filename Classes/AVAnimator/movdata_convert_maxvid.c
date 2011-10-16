@@ -1,4 +1,4 @@
-// movdata module
+// movdata conversion module
 //
 //  License terms defined in License.txt.
 //

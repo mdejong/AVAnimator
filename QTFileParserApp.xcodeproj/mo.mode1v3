@@ -275,14 +275,14 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>13</integer>
+									<integer>48</integer>
 									<integer>4</integer>
 									<integer>1</integer>
 									<integer>0</integer>
 								</array>
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateVisibleRectKey</key>
-							<string>{{0, 0}, {383, 755}}</string>
+							<string>{{0, 365}, {383, 755}}</string>
 						</dict>
 						<key>PBXTopSmartGroupGIDs</key>
 						<array/>
@@ -319,7 +319,7 @@
 								<key>PBXProjectModuleGUID</key>
 								<string>1CE0B20306471E060097A5F4</string>
 								<key>PBXProjectModuleLabel</key>
-								<string>AVAnimatorMedia.m</string>
+								<string>apng_convert_maxvid.c</string>
 								<key>PBXSplitModuleInNavigatorKey</key>
 								<dict>
 									<key>Split0</key>
@@ -327,11 +327,11 @@
 										<key>PBXProjectModuleGUID</key>
 										<string>1CE0B20406471E060097A5F4</string>
 										<key>PBXProjectModuleLabel</key>
-										<string>AVAnimatorMedia.m</string>
+										<string>apng_convert_maxvid.c</string>
 										<key>_historyCapacity</key>
 										<integer>0</integer>
 										<key>bookmark</key>
-										<string>CD0AD5E013BE669D0065AA2C</string>
+										<string>CD5318E9144ACC3F0076C5DC</string>
 										<key>history</key>
 										<array>
 											<string>CDECCFE012D31E570067D2EE</string>
@@ -343,8 +343,6 @@
 											<string>CDBA6B4212DC5216001B44EB</string>
 											<string>CD191B9812DCF5D500F4CC72</string>
 											<string>CD191BAF12DCF5D500F4CC72</string>
-											<string>CD191BB112DCF5D500F4CC72</string>
-											<string>CD191BB212DCF5D500F4CC72</string>
 											<string>CD191BB512DCF5D500F4CC72</string>
 											<string>CD82737912DF6D19004E680A</string>
 											<string>CD5A92C412E0FF0600B320C6</string>
@@ -356,7 +354,6 @@
 											<string>CDC38E6D12F1FA3E00D55CE8</string>
 											<string>CD7098DB12F4A93D00582B9B</string>
 											<string>CDF7059C12F4DF5400E32440</string>
-											<string>CD4DD2E812F737A70065ABA0</string>
 											<string>CDE8F8E6135E870A0037FD70</string>
 											<string>CDE8F8E7135E870A0037FD70</string>
 											<string>CDE8F8E8135E870A0037FD70</string>
@@ -375,25 +372,14 @@
 											<string>CD83B2A41361311B00ACD1E1</string>
 											<string>CD922E2E13620FA40024AFBB</string>
 											<string>CD92303C13621E8D0024AFBB</string>
-											<string>CD0BD055136352E600D8287A</string>
 											<string>CD2742441364A7340096029B</string>
-											<string>CD2742561364A77B0096029B</string>
-											<string>CD2742BE1364AAB00096029B</string>
 											<string>CD2743B41364BF1E0096029B</string>
-											<string>CD28417E1365F6D5007F229A</string>
-											<string>CD28417F1365F6D5007F229A</string>
-											<string>CD2841801365F6D5007F229A</string>
-											<string>CD2841821365F6D5007F229A</string>
-											<string>CD2841BF1365F977007F229A</string>
-											<string>CDFD675C13661D3500AD1913</string>
-											<string>CDFD675D13661D3500AD1913</string>
 											<string>CD9B82CE13673BBE00CE10C4</string>
 											<string>CDA17E0A1367722C008E7B40</string>
 											<string>CD55D956136A196500640ED3</string>
 											<string>CD55D9F5136A204F00640ED3</string>
 											<string>CDE65FD9136F849700F4E8E6</string>
 											<string>CDE65FDA136F849700F4E8E6</string>
-											<string>CDE65FDC136F849700F4E8E6</string>
 											<string>CDE65FDD136F849700F4E8E6</string>
 											<string>CDE65FDE136F849700F4E8E6</string>
 											<string>CDE65FDF136F849700F4E8E6</string>
@@ -404,35 +390,49 @@
 											<string>CD0ACFC7136F9B7B00A203DF</string>
 											<string>CD0ACFC8136F9B7B00A203DF</string>
 											<string>CD0ACFF1136F9E0400A203DF</string>
-											<string>CDD988951371F4C50072C06B</string>
-											<string>CDC7A67A137252EA00A06DED</string>
-											<string>CDF7F95313733BE900E1A57B</string>
 											<string>CD143E6E13825C1B00963BBE</string>
 											<string>CDCC53761385FFE5002E51AB</string>
 											<string>CD39E49D138D8CC600E492BC</string>
-											<string>CD9A36BC13904B14003F70BC</string>
 											<string>CDD8BE0F1398554C004C667F</string>
-											<string>CDEAAB1F1399536A0051E296</string>
 											<string>CD55E38C139DB4470021013E</string>
 											<string>CD55E595139DCAAE0021013E</string>
 											<string>CDF3660213A6D6D500A4D79C</string>
-											<string>CDDF5C9713B55B680000F355</string>
 											<string>CDC6F54713B56B0700BAE3D0</string>
-											<string>CDC6F58413B56D4600BAE3D0</string>
 											<string>CD45FE9013BD8E0200C318FC</string>
 											<string>CD45FEBD13BD903C00C318FC</string>
 											<string>CD45FECC13BD911500C318FC</string>
 											<string>CD45FF4213BD976B00C318FC</string>
-											<string>CD45FF5E13BD984D00C318FC</string>
 											<string>CD45FF5F13BD984D00C318FC</string>
 											<string>CD45FF6113BD984D00C318FC</string>
 											<string>CD45FFA913BD9C0C00C318FC</string>
 											<string>CDDFD7F013BE36E60072F884</string>
-											<string>CD0AD5A013BE61380065AA2C</string>
-											<string>CD0AD5BE13BE62BC0065AA2C</string>
-											<string>CD0AD5CB13BE63730065AA2C</string>
 											<string>CD0AD5CC13BE63730065AA2C</string>
-											<string>CD0AD5CD13BE63730065AA2C</string>
+											<string>CD718A1813D10AE900222169</string>
+											<string>CD1A044813D93E33004F201E</string>
+											<string>CDC1571813F1BD8D00636E8F</string>
+											<string>CDC1571913F1BD8D00636E8F</string>
+											<string>CD92570C13F36307005C4550</string>
+											<string>CD7AF39913F46C490072C15D</string>
+											<string>CD87219B144AA9FE00042E01</string>
+											<string>CD4AC260144AC9D4001919F5</string>
+											<string>CD4AC261144AC9D4001919F5</string>
+											<string>CD4AC262144AC9D4001919F5</string>
+											<string>CD4AC263144AC9D4001919F5</string>
+											<string>CD4AC264144AC9D4001919F5</string>
+											<string>CD4AC265144AC9D4001919F5</string>
+											<string>CD4AC266144AC9D4001919F5</string>
+											<string>CD4AC267144AC9D4001919F5</string>
+											<string>CD4AC268144AC9D4001919F5</string>
+											<string>CD4AC269144AC9D4001919F5</string>
+											<string>CD4AC26A144AC9D4001919F5</string>
+											<string>CD4AC26D144AC9D4001919F5</string>
+											<string>CD4AC26E144AC9D4001919F5</string>
+											<string>CD4AC26F144AC9D4001919F5</string>
+											<string>CD4AC270144AC9D4001919F5</string>
+											<string>CD4AC271144AC9D4001919F5</string>
+											<string>CD5318E2144ACC3F0076C5DC</string>
+											<string>CD5318E3144ACC3F0076C5DC</string>
+											<string>CD5318E4144ACC3F0076C5DC</string>
 										</array>
 									</dict>
 									<key>SplitCount</key>
@@ -444,14 +444,14 @@
 							<key>GeometryConfiguration</key>
 							<dict>
 								<key>Frame</key>
-								<string>{{0, 0}, {963, 602}}</string>
+								<string>{{0, 0}, {963, 638}}</string>
 								<key>RubberWindowFrame</key>
 								<string>18 64 1368 814 0 0 1440 878 </string>
 							</dict>
 							<key>Module</key>
 							<string>PBXNavigatorGroup</string>
 							<key>Proportion</key>
-							<string>602pt</string>
+							<string>638pt</string>
 						</dict>
 						<dict>
 							<key>ContentConfiguration</key>
@@ -464,14 +464,14 @@
 							<key>GeometryConfiguration</key>
 							<dict>
 								<key>Frame</key>
-								<string>{{0, 607}, {963, 166}}</string>
+								<string>{{0, 643}, {963, 130}}</string>
 								<key>RubberWindowFrame</key>
 								<string>18 64 1368 814 0 0 1440 878 </string>
 							</dict>
 							<key>Module</key>
 							<string>XCDetailModule</string>
 							<key>Proportion</key>
-							<string>166pt</string>
+							<string>130pt</string>
 						</dict>
 					</array>
 					<key>Proportion</key>
@@ -490,9 +490,9 @@
 			</array>
 			<key>TableOfContents</key>
 			<array>
-				<string>CD0AD57113BE5E8B0065AA2C</string>
+				<string>CD5318E6144ACC3F0076C5DC</string>
 				<string>1CE0B1FE06471DED0097A5F4</string>
-				<string>CD0AD57213BE5E8B0065AA2C</string>
+				<string>CD5318E7144ACC3F0076C5DC</string>
 				<string>1CE0B20306471E060097A5F4</string>
 				<string>1CE0B20506471E060097A5F4</string>
 			</array>
@@ -899,12 +899,7 @@
 	<integer>5</integer>
 	<key>WindowOrderList</key>
 	<array>
-		<string>1C530D57069F1CE1000CFCEE</string>
-		<string>CD0AD5A313BE61380065AA2C</string>
-		<string>CD0AD5A513BE61380065AA2C</string>
-		<string>1C78EAAD065D492600B07095</string>
 		<string>CDECC73912BC6A8C001A372F</string>
-		<string>1CD10A99069EF8BA00B06720</string>
 		<string>/Users/mo/Development/QTAnimationiPhone/QTFileParserApp/QTFileParserApp.xcodeproj</string>
 	</array>
 	<key>WindowString</key>
@@ -985,7 +980,7 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>CDECC73912BC6A8C001A372F</string>
-				<string>CD0AD57313BE5E8B0065AA2C</string>
+				<string>CD5318E8144ACC3F0076C5DC</string>
 				<string>1CD0528F0623707200166675</string>
 				<string>XCMainBuildResultsModuleGUID</string>
 			</array>
@@ -1107,13 +1102,13 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>1CD10A99069EF8BA00B06720</string>
-				<string>CD0AD57413BE5E8B0065AA2C</string>
+				<string>CD4AC280144ACA4A001919F5</string>
 				<string>1C162984064C10D400B95A72</string>
-				<string>CD0AD57513BE5E8B0065AA2C</string>
-				<string>CD0AD57613BE5E8B0065AA2C</string>
-				<string>CD0AD57713BE5E8B0065AA2C</string>
-				<string>CD0AD57813BE5E8B0065AA2C</string>
-				<string>CD0AD57913BE5E8B0065AA2C</string>
+				<string>CD4AC281144ACA4A001919F5</string>
+				<string>CD4AC282144ACA4A001919F5</string>
+				<string>CD4AC283144ACA4A001919F5</string>
+				<string>CD4AC284144ACA4A001919F5</string>
+				<string>CD4AC285144ACA4A001919F5</string>
 			</array>
 			<key>ToolbarConfiguration</key>
 			<string>xcode.toolbar.config.debugV3</string>
@@ -1147,7 +1142,7 @@
 										<key>PBXProjectModuleGUID</key>
 										<string>1CDD528C0622207200134675</string>
 										<key>PBXProjectModuleLabel</key>
-										<string>AVAnimatorMedia.h</string>
+										<string>QTFileParserAppAppDelegate.m</string>
 										<key>StatusBarVisibility</key>
 										<true/>
 									</dict>
@@ -1203,8 +1198,8 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>1C530D57069F1CE1000CFCEE</string>
-				<string>CD0AD59D13BE612C0065AA2C</string>
-				<string>CD0AD59E13BE612C0065AA2C</string>
+				<string>CD872199144AA9FC00042E01</string>
+				<string>CD87219A144AA9FC00042E01</string>
 				<string>1CDD528C0622207200134675</string>
 				<string>1CD0528E0623707200166675</string>
 			</array>
@@ -1269,7 +1264,7 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>1C78EAAD065D492600B07095</string>
-				<string>CD0AD59F13BE612C0065AA2C</string>
+				<string>CD4AC286144ACA4A001919F5</string>
 				<string>1C78EAAC065D492600B07095</string>
 			</array>
 			<key>ToolbarConfiguration</key>
@@ -1279,7 +1274,7 @@
 			<key>WindowToolGUID</key>
 			<string>1C78EAAD065D492600B07095</string>
 			<key>WindowToolIsVisible</key>
-			<false/>
+			<true/>
 		</dict>
 		<dict>
 			<key>Identifier</key>

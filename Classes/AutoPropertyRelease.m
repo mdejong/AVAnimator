@@ -8,6 +8,7 @@
 #import "AutoPropertyRelease.h"
 
 #import <objc/runtime.h>
+#import <objc/message.h>
 
 //#define LOGGING
 
@@ -44,8 +45,10 @@
 		// @property (nonatomic) NSMutableString* mstr2; -> [T@"NSMutableString",N,V_mstr2] (IGNORE)
 		// @property(retain) id idRetain; -> "T@,&,VidRetain" (release ref with & component)
 		// @property(copy) id idCopy; -> "T@,C,VidCopy" (release ref with C component)
-		// @property (nonatomic, copy, setter=mySetterStr) NSString* setterStr; ->
+		// @property (nonatomic, copy, setter=mySetterStr:) NSString* setterStr; ->
 		//		[T@"NSString",C,N,SmySetterStr:,V_setterStr] (release C via "mySetterStr:")
+		// @property (nonatomic, copy) NSString* prop1; (but no @synthesize) ->
+		//		[T@"NSString",C,N] (should still release via setProp1:nil)
 
 		if (attrs[0] != 'T' || attrs[1] != '@') {
 			// attrs does not start with string "T@"
@@ -90,22 +93,21 @@
 		
 		NSString *ivarPart = [mComponents lastObject];
 		
-		// The property must have an associated ivar, if it does not then
-		// this property is invalid likely because the user forgot to
-		// @synthesize the method that set the ivar.
+    // A property should have an associated ivar, but it is possible that
+    // a property can be declared and then be implemented with a getter
+    // and a setter but without using @synthesize. Handle this case
+    // by looking at the last element in the components array and
+    // treating it as a ivar if it looks like "Vprop1".
 
-		if ([ivarPart length] < 2 || [ivarPart characterAtIndex:0] != 'V') {
-#if defined(LOGGING)
-			NSLog(@"skipping property \"%s\", likely lacking @synthesize",
-				   property_getName(property));
-#endif			
-			continue;
-		}
-
-		ivarPart = [ivarPart substringFromIndex:1];
+    BOOL iVarSynthesizeFound = FALSE;
+    
+    if ([ivarPart length] > 1 && [ivarPart characterAtIndex:0] == 'V') {
+      iVarSynthesizeFound = TRUE;
+      [mComponents removeLastObject];
+      ivarPart = [ivarPart substringFromIndex:1];
+    }
 
 		[mComponents removeObjectAtIndex:0];
-		[mComponents removeLastObject];
 		NSArray *typeComponents = [NSArray arrayWithArray:mComponents];
 
 		BOOL isReadOnly = FALSE;
@@ -141,6 +143,14 @@
 			// We also need to set the ivar to nil after releasing the
 			// object so that this logic can be invoked twice.
 
+      if (iVarSynthesizeFound == FALSE) {
+#if defined(LOGGING)
+        NSLog(@"skipping property \"%s\" since associated ivar was not declared in @synthesize",
+              property_getName(property));
+#endif
+        continue;
+      }
+      
 			void *ivarObj = NULL;
 			Ivar ivar = object_getInstanceVariable(obj, [ivarPart UTF8String], &ivarObj);
 			NSAssert(ivar, @"ivar not returned by object_getInstanceVariable");
@@ -148,7 +158,7 @@
 			object_setIvar(obj, ivar, nil);
 
 #if defined(LOGGING)
-			NSLog(@"released readonly id obj->%s", ivar_getName(ivar));
+			NSLog(@"released readonly id obj->%s and set to nil", ivar_getName(ivar));
 #endif
 		} else if (releaseObject) {
 			if (propSetterMethodName == nil) {
@@ -164,6 +174,22 @@
 			
 			SEL setPropertySelector = NSSelectorFromString(propSetterMethodName);
 			NSAssert(setPropertySelector, @"property setter selector is invalid");
+      
+      // If a property was not synthesized, then it is possible that the class might not
+      // implement a setter. A class like this will still compile, even though it will
+      // not function properly.
+      
+      if (iVarSynthesizeFound == FALSE) {
+        if (class_respondsToSelector(thisClass, setPropertySelector) == FALSE) {
+#if defined(LOGGING)
+          NSLog(@"skipping property \"%s\" since it does not respond to the selector \"%@\"", 
+                property_getName(property),
+                propSetterMethodName);
+#endif			
+          continue;
+        }
+      }
+      
 			objc_msgSend(obj, setPropertySelector, nil);
 
 #if defined(LOGGING)
