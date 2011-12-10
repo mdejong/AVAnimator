@@ -602,7 +602,7 @@
   // overlaySubview completely covers self.view and contains
   // all the movie control widgets.
   
-  self.overlaySubview = [[UIView alloc] initWithFrame:frame];
+  self.overlaySubview = [[[UIView alloc] initWithFrame:frame] autorelease];
   
   [self.view addSubview:self.overlaySubview];
   

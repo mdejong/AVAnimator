@@ -374,7 +374,7 @@ void compose3(unsigned char * dst, unsigned int dstbytes, unsigned char * src, u
         else
           if (a != 0)
           {
-            if (a2 = (*dp)>>24)
+            if ((a2 = (*dp)>>24))
             {
               u = a*255;
               v = (255-a)*a2;
@@ -438,7 +438,7 @@ void compose4(unsigned char * dst, unsigned int dstbytes, unsigned char * src, u
         else
           if (a != 0)
           {
-            if (a2 = (*dp)>>24)
+            if ((a2 = (*dp)>>24))
             {
               u = a*255;
               v = (255-a)*a2;
@@ -498,7 +498,7 @@ void compose6(unsigned char * dst, unsigned int dstbytes, unsigned char * src, u
         else
           if (a != 0)
           {
-            if (a2 = (*dp)>>24)
+            if ((a2 = (*dp)>>24))
             {
               u = a*255;
               v = (255-a)*a2;

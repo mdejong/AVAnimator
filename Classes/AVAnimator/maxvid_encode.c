@@ -710,8 +710,8 @@ NEXTSEGMENT:
     uint32_t inword = *sPtr->inputBuffer32++;
     
     MV16_READ_OP_VAL_NUM(inword, opCode, val, num);
-    opCode + 0;
-    val + 0;
+    //opCode + 0;
+    //val + 0;
     
 #ifdef EXTRA_CHECKS
     assert(val == 0);
@@ -969,7 +969,7 @@ maxvid_encode_sample16_c4_encode_copycodes(FILE *fp, uint32_t encodeFlags,
 #endif    
     
     int status;
-    if (status = fwrite_word(fp, copyCode)) {
+    if ((status = fwrite_word(fp, copyCode))) {
       return status;
     }
     
@@ -981,7 +981,7 @@ maxvid_encode_sample16_c4_encode_copycodes(FILE *fp, uint32_t encodeFlags,
       uint32_t nextWord = maxvid16_pixelincode_next_word(mvPicPtr, &numPixelWritten);
       
       int status;
-      if (status = fwrite_word(fp, nextWord)) {
+      if ((status = fwrite_word(fp, nextWord))) {
         return status;
       }
       
@@ -1319,7 +1319,7 @@ maxvid_encode_sample32_c4_encode_copycodes(FILE *fp, uint32_t encodeFlags,
     }    
     
     int status;
-    if (status = fwrite_word(fp, copyCode)) {
+    if ((status = fwrite_word(fp, copyCode))) {
       return status;
     }
     
@@ -1363,7 +1363,7 @@ maxvid_encode_sample32_c4_encode_copycodes(FILE *fp, uint32_t encodeFlags,
       uint32_t pixel = *inputBuffer32++;
       
       int status;
-      if (status = fwrite_word(fp, pixel)) {
+      if ((status = fwrite_word(fp, pixel))) {
         return status;
       }
       

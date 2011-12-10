@@ -476,8 +476,7 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
       if (width == 0.0 && height == 0.0) {
         movData->errCode = ERR_INVALID_FIELD;
         snprintf(movData->errMsg, sizeof(movData->errMsg),
-                 "invalid track width/height of zero, mov can only contain a single video track",
-                 width, height);
+                 "invalid track width/height of zero, mov can only contain a single video track");
         return 1;
       }      
       

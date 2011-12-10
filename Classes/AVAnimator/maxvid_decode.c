@@ -143,7 +143,7 @@ void maxvid_test_assert_util_c4(int cond) {
 
   if (cond == 0) {
     // This is handy so that one can set a breakpoint on this assert call
-    *((uint32_t*)NULL) = 0;
+    *((volatile uint32_t*)NULL) = 0;
   }
 
 #endif // COMPILE_ARM_ASM
