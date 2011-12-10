@@ -1439,10 +1439,13 @@
   // replaced with another media object right away. The OS might be putting the app into
   // the background and the view will need to retain the same visual data so that the
   // animations will look correct. Make a copy of the buffer to ensure that the original
-  // frame buffer is released. Note that copyCurrentFrame could return nil.
+  // frame buffer is released. In the case where the original frame buffer is part of
+  // a large memory mapped region, this logic will make sure that the large memory map
+  // will be released while the app is in the background.
+  // Note that duplicateCurrentFrame could return nil.
 
   if (copyFinalFrame) {
-    UIImage *finalFrameCopy = [self.frameDecoder copyCurrentFrame];
+    UIImage *finalFrameCopy = [self.frameDecoder duplicateCurrentFrame];
     self.renderer.image = finalFrameCopy;
   } else {
     self.renderer.image = nil;

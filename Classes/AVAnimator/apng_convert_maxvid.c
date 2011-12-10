@@ -629,6 +629,7 @@ process_apng_frame(
     
     if (isKeyFrame) {
       offset = maxvid_file_padding_after_keyframe(maxvidOutFile, offset);
+      assert(offset > 0); // silence compiler/analyzer warning
     }      
   }
   

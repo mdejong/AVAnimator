@@ -1458,6 +1458,7 @@ process_sample_tables(FILE *movFile, MovData *movData) {
     assert(num_samples == movData->sampleSizeTableNumEntries);
   }
   
+  assert(num_samples > 0);
   movData->samples = malloc(sizeof(MovSample) * num_samples);
   bzero(movData->samples, sizeof(MovSample) * num_samples);
   movData->numSamples = num_samples;

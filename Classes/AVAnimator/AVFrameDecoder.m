@@ -50,7 +50,7 @@
 	return FALSE;
 }
 
-- (UIImage*) copyCurrentFrame
+- (UIImage*) duplicateCurrentFrame
 {
   [self doesNotRecognizeSelector:_cmd];
 	return nil;

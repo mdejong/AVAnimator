@@ -1881,8 +1881,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Make sure that any already extracted archive file in the /tmp dir is removed
   
-  worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
-  //NSAssert(worked, @"could not remove tmp file");
+  [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
   
   // Create loader that will read a movie file from app resources.
   
@@ -1987,8 +1986,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Make sure that any already extracted archive file in the /tmp dir is removed
   
-  worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
-  //NSAssert(worked, @"could not remove tmp file");
+  [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
   NSLog(@"tmp file %@", outPath);
   
   // Create loader that will read a movie file from app resources.

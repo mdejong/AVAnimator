@@ -1682,6 +1682,8 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
     frameBuffer32 = valloc(frameBufferNumBytes);
     bzero(frameBuffer32, frameBufferNumBytes);
     frameBuffer = frameBuffer32;
+  } else {
+    assert(0);
   }
   
   // Loop over each frame and write contents to file

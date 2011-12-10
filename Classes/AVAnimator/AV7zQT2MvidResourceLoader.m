@@ -85,10 +85,9 @@
   retcode = movdata_convert_maxvid_file(movPathCstr, movData, movNumBytes, phonyOutPath2Cstr, genAdler);
   assert(retcode == 0);
   
-  // Remove tmp file that contains the .mov data
+  // Remove tmp file that contains the .mov data, ignore if the file does not exist
   
-  worked = [[NSFileManager defaultManager] removeItemAtPath:phonyOutPath error:nil];
-  //NSAssert(worked, @"could not remove tmp file");
+  [[NSFileManager defaultManager] removeItemAtPath:phonyOutPath error:nil];
   
   // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
   

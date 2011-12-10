@@ -132,7 +132,7 @@
   return img;
 }
 
-- (UIImage*) copyCurrentFrame
+- (UIImage*) duplicateCurrentFrame
 {
   return self.currentFrame;
 }

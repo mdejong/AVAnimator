@@ -391,7 +391,7 @@
   }
 }
 
-- (UIImage*) copyCurrentFrame
+- (UIImage*) duplicateCurrentFrame
 {
   if (self.currentFrameBuffer == nil) {
     return nil;

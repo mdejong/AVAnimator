@@ -419,7 +419,7 @@ int num_words(uint32_t numBytes)
   }
 }
 
-- (UIImage*) copyCurrentFrame
+- (UIImage*) duplicateCurrentFrame
 {
   if (self.currentFrameBuffer == nil) {
     return nil;

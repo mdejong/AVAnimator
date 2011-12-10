@@ -353,6 +353,7 @@ void compose3(unsigned char * dst, unsigned int dstbytes, unsigned char * src, u
         case 4: col = (sp[i>>1] & mask4[i&1]) >> shift4[i&1]; break;
         case 2: col = (sp[i>>2] & mask2[i&3]) >> shift2[i&3]; break;
         case 1: col = (sp[i>>3] & mask1[i&7]) >> shift1[i&7]; break;
+        default: assert(0);
       }
       
       b = commonPtr->pal[col][0];

@@ -51,7 +51,7 @@
 // ref to the final frame will waste significant resources, for
 // example if the normal frames hold references to mapped memory.
 
-- (UIImage*) copyCurrentFrame;
+- (UIImage*) duplicateCurrentFrame;
 
 // Properties
 
