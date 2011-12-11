@@ -13,8 +13,20 @@
 # endif
 #endif
 
-#ifdef COMPILE_ARM
+// Xcode 4.2 supports clang only, but the ARM asm integration depends on specifics
+// of register allocation and as a result only works when compiled with gcc.
 
+#if defined(__clang__)
+#  define COMPILE_CLANG 1
+#endif // defined(__clang__)
+
+// For CLANG build on ARM, skip this entire module and use custom ARM asm imp instead.
+
+#if defined(COMPILE_CLANG) && defined(COMPILE_ARM)
+# define USE_GENERATED_ARM_ASM 1
+#endif // SKIP __clang__ && ARM
+
+#if defined(USE_GENERATED_ARM_ASM)
 	.text
 	.align 2
 	.globl _maxvid_decode_c4_sample16
@@ -441,5 +453,5 @@ L27:
 	ldmfd	sp!, {r4, r5, r6, r7, pc}
 
 #else
-  // No-op when COMPILE_ARM is not defined
+  // No-op when USE_GENERATED_ARM_ASM is not defined
 #endif

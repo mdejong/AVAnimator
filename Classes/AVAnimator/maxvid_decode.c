@@ -59,9 +59,13 @@
 
 // For CLANG build on ARM, skip this entire module and use custom ARM asm imp instead.
 
-#if defined(COMPILE_CLANG) && defined(COMPILE_ARM_ASM)
+#if defined(COMPILE_CLANG) && defined(COMPILE_ARM)
+#define USE_GENERATED_ARM_ASM 1
+#endif // SKIP __clang__ && ARM
+
+#if defined(USE_GENERATED_ARM_ASM)
   // No-op, skip compilation of this entire module!
-#else // defined(COMPILE_CLANG) && defined(COMPILE_ARM_ASM)
+#else // defined(USE_GENERATED_ARM_ASM)
 
 #ifdef COMPILE_ARM_ASM
 #define ASM_NOP __asm__ __volatile__ ("nop");
@@ -3376,4 +3380,4 @@ DONELABEL:
   return 0;
 }
 
-#endif // defined(COMPILE_CLANG) && defined(COMPILE_ARM_ASM)
+#endif // defined(USE_GENERATED_ARM_ASM)

@@ -17,11 +17,11 @@
 		CD0ACFA8136F999100A203DF /* 2x2_black_blue_24BPP_opt_nc.apng.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD0ACFA7136F999100A203DF /* 2x2_black_blue_24BPP_opt_nc.apng.7z */; };
 		CD0BCEB313634F7E00D8287A /* AV7zQT2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD0BCEB213634F7E00D8287A /* AV7zQT2MvidResourceLoader.m */; };
 		CD0BCEB413634F7E00D8287A /* AV7zQT2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD0BCEB213634F7E00D8287A /* AV7zQT2MvidResourceLoader.m */; };
-		CD0BD03C1363523800D8287A /* maxvid_decode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0341363523800D8287A /* maxvid_decode.c */; settings = {COMPILER_FLAGS = "-mno-thumb"; }; };
+		CD0BD03C1363523800D8287A /* maxvid_decode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0341363523800D8287A /* maxvid_decode.c */; };
 		CD0BD03D1363523800D8287A /* maxvid_encode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0361363523800D8287A /* maxvid_encode.c */; };
 		CD0BD03E1363523800D8287A /* maxvid_file.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0381363523800D8287A /* maxvid_file.c */; };
 		CD0BD03F1363523800D8287A /* movdata_convert_maxvid.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD03A1363523800D8287A /* movdata_convert_maxvid.c */; };
-		CD0BD0401363523800D8287A /* maxvid_decode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0341363523800D8287A /* maxvid_decode.c */; settings = {COMPILER_FLAGS = "-mno-thumb"; }; };
+		CD0BD0401363523800D8287A /* maxvid_decode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0341363523800D8287A /* maxvid_decode.c */; };
 		CD0BD0411363523800D8287A /* maxvid_encode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0361363523800D8287A /* maxvid_encode.c */; };
 		CD0BD0421363523800D8287A /* maxvid_file.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0381363523800D8287A /* maxvid_file.c */; };
 		CD0BD0431363523800D8287A /* movdata_convert_maxvid.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD03A1363523800D8287A /* movdata_convert_maxvid.c */; };
@@ -151,8 +151,8 @@
 		CD61994A12CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD61994912CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m */; };
 		CD659D62136390C1008AF6F9 /* AVMvidFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD659D61136390C1008AF6F9 /* AVMvidFrameDecoder.m */; };
 		CD659D63136390C1008AF6F9 /* AVMvidFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD659D61136390C1008AF6F9 /* AVMvidFrameDecoder.m */; };
-		CD6EF5A812F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; settings = {COMPILER_FLAGS = "-mno-thumb"; }; };
-		CD6EF5A912F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; settings = {COMPILER_FLAGS = "-mno-thumb"; }; };
+		CD6EF5A812F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; };
+		CD6EF5A912F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; };
 		CD7098B312F4A6BA00582B9B /* AVAnimatorLayerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD7098B212F4A6BA00582B9B /* AVAnimatorLayerTests.m */; };
 		CD75C0A013676F5D000DD6C4 /* Sweep15FPS_ANI.mov.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD75C09F13676F5D000DD6C4 /* Sweep15FPS_ANI.mov.7z */; };
 		CD7A02F012D261A900366AC6 /* AVAnimatorView.m in Sources */ = {isa = PBXBuildFile; fileRef = CD7A02EF12D261A900366AC6 /* AVAnimatorView.m */; };
