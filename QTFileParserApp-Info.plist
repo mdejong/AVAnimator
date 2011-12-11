@@ -28,5 +28,10 @@
 	<true/>
 	<key>NSMainNibFile</key>
 	<string>MainWindow</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv6</string>
+		<string>armv7</string>
+	</array>
 </dict>
 </plist>
