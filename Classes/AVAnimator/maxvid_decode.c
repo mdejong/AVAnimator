@@ -50,6 +50,19 @@
 # endif
 #endif
 
+// Xcode 4.2 supports clang only, but the ARM asm integration depends on specifics
+// of register allocation and as a result only works when compiled with gcc.
+
+#if defined(__clang__)
+#  define COMPILE_CLANG 1
+#endif // defined(__clang__)
+
+// For CLANG build on ARM, skip this entire module and use custom ARM asm imp instead.
+
+#if defined(COMPILE_CLANG) && defined(COMPILE_ARM_ASM)
+  // No-op, skip compilation of this entire module!
+#else // defined(COMPILE_CLANG) && defined(COMPILE_ARM_ASM)
+
 #ifdef COMPILE_ARM_ASM
 #define ASM_NOP __asm__ __volatile__ ("nop");
 #else
@@ -3363,3 +3376,4 @@ DONELABEL:
   return 0;
 }
 
+#endif // defined(COMPILE_CLANG) && defined(COMPILE_ARM_ASM)

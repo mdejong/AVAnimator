@@ -129,6 +129,8 @@
 		CD3F4ECE12D8F6B00067FDDF /* RegressionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD3F4ECC12D8F6B00067FDDF /* RegressionTests.m */; };
 		CD3F4ECF12D8F6B00067FDDF /* ViewLoadTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD3F4ECD12D8F6B00067FDDF /* ViewLoadTests.m */; };
 		CD3F4F1312D8FA0A0067FDDF /* AVAnimatorViewTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD3F4F1212D8FA0A0067FDDF /* AVAnimatorViewTests.m */; };
+		CD45EC6114955B6800FD0C6A /* maxvid_decode_arm.s in Sources */ = {isa = PBXBuildFile; fileRef = CD45EC6014955B6800FD0C6A /* maxvid_decode_arm.s */; };
+		CD45EC6214955B6800FD0C6A /* maxvid_decode_arm.s in Sources */ = {isa = PBXBuildFile; fileRef = CD45EC6014955B6800FD0C6A /* maxvid_decode_arm.s */; };
 		CD4AAB3613675B270010148E /* GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD4AAB3513675B270010148E /* GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z */; };
 		CD4AABD513675FEF0010148E /* Matrix_480_320_10FPS_16BPP.mov.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD4AABD413675FEF0010148E /* Matrix_480_320_10FPS_16BPP.mov.7z */; };
 		CD4DA91112E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD4DA91012E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov */; };
@@ -333,6 +335,7 @@
 		CD3F4ECD12D8F6B00067FDDF /* ViewLoadTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ViewLoadTests.m; sourceTree = "<group>"; };
 		CD3F4F1212D8FA0A0067FDDF /* AVAnimatorViewTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorViewTests.m; sourceTree = "<group>"; };
 		CD3F4F7E12D8FF620067FDDF /* AVAnimatorViewPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorViewPrivate.h; sourceTree = "<group>"; };
+		CD45EC6014955B6800FD0C6A /* maxvid_decode_arm.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = maxvid_decode_arm.s; sourceTree = "<group>"; };
 		CD4AAB3513675B270010148E /* GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z; sourceTree = "<group>"; };
 		CD4AABD413675FEF0010148E /* Matrix_480_320_10FPS_16BPP.mov.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = Matrix_480_320_10FPS_16BPP.mov.7z; sourceTree = "<group>"; };
 		CD4DA91012E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = JigsawPuzzle_205_99_10FPS_16BPP.mov; sourceTree = "<group>"; };
@@ -770,6 +773,7 @@
 				CD6EF5A612F0F7920045659F /* movdata.c */,
 				CD0BD0351363523800D8287A /* maxvid_decode.h */,
 				CD0BD0341363523800D8287A /* maxvid_decode.c */,
+				CD45EC6014955B6800FD0C6A /* maxvid_decode_arm.s */,
 				CD0BD0371363523800D8287A /* maxvid_encode.h */,
 				CD0BD0361363523800D8287A /* maxvid_encode.c */,
 				CD0BD0391363523800D8287A /* maxvid_file.h */,
@@ -1126,6 +1130,7 @@
 				CDE65F08136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m in Sources */,
 				CD0ACF29136F927300A203DF /* AV7zApng2MvidResourceLoader.m in Sources */,
 				CDD9888F1371F4A60072C06B /* libapng.c in Sources */,
+				CD45EC6114955B6800FD0C6A /* maxvid_decode_arm.s in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1185,6 +1190,7 @@
 				CDE65F07136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m in Sources */,
 				CD0ACF2A136F927300A203DF /* AV7zApng2MvidResourceLoader.m in Sources */,
 				CDD988901371F4A60072C06B /* libapng.c in Sources */,
+				CD45EC6214955B6800FD0C6A /* maxvid_decode_arm.s in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
