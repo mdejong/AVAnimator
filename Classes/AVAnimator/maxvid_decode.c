@@ -404,6 +404,12 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
 #endif  
   
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ goto DECODE\n\t"
+                        :
+                        );
+#endif // COMPILE_ARM_ASM  
   goto DECODE;
   
 DUPLABEL:
@@ -581,6 +587,13 @@ DUPLABEL:
   MAXVID_ASSERT(numWords > 0, "numWords");
 #endif
   
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ if (numWords > 6) goto DUPBIG\n\t"
+                        :
+                        );
+#endif // COMPILE_ARM_ASM  
+  
   if (numWords > 6) {
     goto DUPBIG;
   }
@@ -729,6 +742,13 @@ DUPLABEL:
 #endif // EXTRA_CHECKS  
 #endif // COMPILE_ARM_ASM  
   
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ fall through to DECODE\n\t"
+                        :
+                        );
+#endif // COMPILE_ARM_ASM  
+  
 DECODE:
 #ifdef COMPILE_ARM_ASM
   // These checks are done before the read, after the DECODE label
@@ -745,17 +765,17 @@ DECODE:
   __asm__ __volatile__ (
                         "@ DECODE\n\t"
                         "2:\n\t"
-                        // if ((opCode = (inW1 >> 30)) == SKIP)
+                        "@ if ((opCode = (inW1 >> 30)) == SKIP) ...\n\t"
                         "movs %[opCode], %[inW1], lsr #30\n\t"
                         "addeq %[frameBuffer16], %[frameBuffer16], %[inW1], lsl #1\n\t"
                         "ldreq %[inW1], [%[inputBuffer32]], #4\n\t"
                         "beq 2b\n\t"
-                        // if (COPY1 == (inW1 >> 16)) ...
+                        "@ if (COPY1 == (inW1 >> 16)) ...\n\t"
                         "cmp %[copyOnePixelHighHalfWordConstRegister], %[inW1], lsr #16\n\t"
                         "streqh %[inW1], [%[frameBuffer16]], #2\n\t"
                         "ldreq %[inW1], [%[inputBuffer32]], #4\n\t"
                         "beq 2b\n\t"
-                        // if (DUP2 == (inW1 >> 16)) ...
+                        "@ if (DUP2 == (inW1 >> 16)) ...\n\t"
                         "cmp %[dupTwoPixelsHighHalfWordConstRegister], %[inW1], lsr #16\n\t"
                         "streqh %[inW1], [%[frameBuffer16]], #2\n\t"
                         "streqh %[inW1], [%[frameBuffer16]], #2\n\t"
@@ -863,7 +883,7 @@ DECODE:
     inW1Saved = inW1;
     MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
 #endif
-    
+        
     goto DECODE;
   }
   
@@ -969,6 +989,13 @@ DECODE:
                         [opCode] "+l" (opCode)
                         );
 #endif // COMPILE_ARM_ASM  
+
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ if (opCode == DUP) goto DUP\n\t"
+                        :
+                        );
+#endif // COMPILE_ARM_ASM    
   
   if (opCode == DUP) {
     // COPY
@@ -994,6 +1021,12 @@ DECODE:
                         );
 #endif // COMPILE_ARM_ASM
   
+#ifdef COMPILE_ARM_ASM  
+  __asm__ __volatile__ (
+                        "@ if (opCode == DONE) goto DONELABEL\n\t"
+                        );  
+#endif // COMPILE_ARM_ASM  
+  
   if (opCode == DONE) {
 #ifdef EXTRA_CHECKS
     MAXVID_ASSERT(numPixels == 0, "numPixels");
@@ -1003,6 +1036,12 @@ DECODE:
   }
   
   // numWords > 7, COPYBIG, else COPYSMALL
+  
+#ifdef COMPILE_ARM_ASM  
+  __asm__ __volatile__ (
+                        "@ if (numWords > 7) goto COPYBIG\n\t"
+                        );
+#endif // COMPILE_ARM_ASM  
   
   if (numPixels >= (8*2)) {
 #ifdef EXTRA_CHECKS
@@ -1287,6 +1326,13 @@ COPYSMALL:
   MAXVID_ASSERT(dupTwoPixelsHighHalfWordConstRegister == dupTwoPixelsHighHalfWord, "dupTwoPixelsHighHalfWordConstRegister");
   MAXVID_ASSERT(extractNumPixelsHighHalfWordConstRegister == ((0xFFFF << 16) | extractNumPixelsHighHalfWord), "extractNumPixelsHighHalfConstRegister");
 #endif // EXTRA_CHECKS  
+#endif // COMPILE_ARM_ASM  
+  
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ goto DECODE\n\t"
+                        :
+                        );
 #endif // COMPILE_ARM_ASM  
   
   goto DECODE;
@@ -1671,7 +1717,7 @@ COPYBIG:
   __asm__ __volatile__ (
                         "mov %[constReg3], #2\n\t"
                         "mvn %[constReg2], #0xC000\n\t"
-                        "orr %[constReg3], %[constReg3], %[constReg1], lsr #1\n\t"                        
+                        "orr %[constReg3], %[constReg3], %[constReg1], lsr #1\n\t"
                         :
                         [constReg1] "+l" (copyOnePixelHighHalfWordConstRegister),
                         [constReg2] "+l" (extractNumPixelsHighHalfWordConstRegister),
@@ -1685,7 +1731,14 @@ COPYBIG:
 #endif // EXTRA_CHECKS  
 #endif // COMPILE_ARM_ASM  
   
-  goto DECODE;  
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ goto DECODE\n\t"
+                        :
+                        );
+#endif // COMPILE_ARM_ASM  
+  
+  goto DECODE;
   
 DUPBIG:
   // This block is just here to work around what appears to be a compiler bug related to a label.
@@ -1887,6 +1940,13 @@ DUPBIG:
 #endif // COMPILE_ARM_ASM
   
 #undef pixel32Alias
+  
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ goto DECODE\n\t"
+                        :
+                        );
+#endif // COMPILE_ARM_ASM  
   
   goto DECODE;
   
@@ -2119,6 +2179,13 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
 #endif // EXTRA_CHECKS
 #endif // COMPILE_ARM_ASM  
   
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ goto DECODE\n\t"
+                        :
+                        );
+#endif // COMPILE_ARM_ASM  
+  
   goto DECODE;
   
 DUPLABEL:
@@ -2233,6 +2300,13 @@ DUPLABEL:
   MAXVID_ASSERT(numPixels > 0, "numPixels");
 #endif
   
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ if (numWords > 6) goto DUPBIG\n\t"
+                        :
+                        );
+#endif // COMPILE_ARM_ASM  
+  
   if (numPixels > 6) {
     goto DUPBIG;
   }
@@ -2327,6 +2401,13 @@ DUPLABEL:
   MAXVID_ASSERT(opCodeMaskConstRegister == opCodeMask, "opCodeMaskConstRegister");
 #endif // EXTRA_CHECKS
 #endif // COMPILE_ARM_ASM
+  
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ fall through to DECODE\n\t"
+                        :
+                        );
+#endif // COMPILE_ARM_ASM  
   
 DECODE:
 #ifdef EXTRA_CHECKS
@@ -2619,8 +2700,15 @@ DECODE:
                         );
 #endif // COMPILE_ARM_ASM  
   
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ if (opCode == DUP) goto DUP\n\t"
+                        :
+                        );
+#endif // COMPILE_ARM_ASM  
+  
   if (opCode == DUP) {
-    // COPY
+    // DUP
     
 #ifdef EXTRA_CHECKS
     numPixels = inW1 >> 8+2;
@@ -2650,6 +2738,12 @@ DECODE:
                         [opCode] "+l" (opCode)
                         );
 #endif // COMPILE_ARM_ASM
+  
+#ifdef COMPILE_ARM_ASM  
+  __asm__ __volatile__ (
+                        "@ if (opCode == DONE) goto DONELABEL\n\t"
+                        );  
+#endif // COMPILE_ARM_ASM  
   
   if (opCode == DONE) {
 #ifdef EXTRA_CHECKS
@@ -2710,6 +2804,12 @@ DECODE:
   
   // A COPYBIG loop must has more than 7 words to write
   // A COPYSMALL loops has 7 or fewer
+  
+#ifdef COMPILE_ARM_ASM  
+  __asm__ __volatile__ (
+                        "@ if (numWords > 7) goto COPYBIG\n\t"
+                        );
+#endif // COMPILE_ARM_ASM  
   
   if (numPixels > 7) {
     goto COPYBIG;
@@ -2869,6 +2969,13 @@ COPYSMALL:
   MAXVID_ASSERT(dupTwoConstRegister == dupTwoPixelsWord, "dupTwoConstRegister");
   MAXVID_ASSERT(opCodeMaskConstRegister == opCodeMask, "opCodeMaskConstRegister");
 #endif // EXTRA_CHECKS
+#endif // COMPILE_ARM_ASM  
+  
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ goto DECODE\n\t"
+                        :
+                        );
 #endif // COMPILE_ARM_ASM  
   
   goto DECODE;
@@ -3153,7 +3260,14 @@ COPYBIG:
 #endif // EXTRA_CHECKS
 #endif // COMPILE_ARM_ASM  
   
-  goto DECODE;  
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ goto DECODE\n\t"
+                        :
+                        );
+#endif // COMPILE_ARM_ASM  
+  
+  goto DECODE;
   
 DUPBIG:
   // This block is just here to work around what appears to be a compiler bug related to a label.
@@ -3351,6 +3465,13 @@ DUPBIG:
   MAXVID_ASSERT(dupTwoConstRegister == dupTwoPixelsWord, "dupTwoConstRegister");
   MAXVID_ASSERT(opCodeMaskConstRegister == opCodeMask, "opCodeMaskConstRegister");
 #endif // EXTRA_CHECKS
+#endif // COMPILE_ARM_ASM  
+  
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ goto DECODE\n\t"
+                        :
+                        );
 #endif // COMPILE_ARM_ASM  
   
   goto DECODE;
