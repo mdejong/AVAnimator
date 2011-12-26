@@ -91,6 +91,13 @@
                                                name:AVAnimatorDidStopNotification 
                                              object:self.animatorView.media];
 
+  // This final notification would only be invoked if the loading process failed.
+  
+	[[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(animatorFailedToLoadNotification:)
+                                               name:AVAnimatorFailedToLoadNotification
+                                             object:self.animatorView.media];
+  
 	// Kick off loading operation and disable user touch events until
 	// finished loading.
   
@@ -135,6 +142,10 @@
   
 	[[NSNotificationCenter defaultCenter] removeObserver:self
                                                   name:AVAnimatorDidStopNotification
+                                                object:self.animatorView.media];
+
+	[[NSNotificationCenter defaultCenter] removeObserver:self
+                                                  name:AVAnimatorFailedToLoadNotification
                                                 object:self.animatorView.media];
     
 	// Remove MovieControls and contained views, if the animator was just stopped
@@ -217,6 +228,14 @@
 
 - (void)animatorDidStopNotification:(NSNotification*)notification {
 //	NSLog( @"animatorDidStopNotification" );	
+}
+
+// Invoked if the loading process failed. For example, when a movie
+// file is not in the proper format, or shared memory could not be
+// allocated for the frame decoder.
+
+- (void)animatorFailedToLoadNotification:(NSNotification*)notification {
+	NSLog( @"animatorFailedToLoadNotification" );  
 }
 
 @end

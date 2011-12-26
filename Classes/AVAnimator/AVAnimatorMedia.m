@@ -456,6 +456,8 @@
 		return;
 	} else if (self.state == PREPPING) {
 		return;
+	} else if (self.state == FAILED) {
+		return;
 	} else if (self.state == STOPPED && !self.isReadyToAnimate) {
 		// Edge case where an earlier prepare was canceled and
 		// the animator never became ready to animate.
@@ -566,8 +568,10 @@
   
 	// If still preparing, just set a flag so that the animator
 	// will start when the prep operation is finished.
-  
-	if (self.state < READY) {
+
+	if (self.state == FAILED) {
+		return;
+	} else if (self.state < READY) {
 		self.startAnimatorWhenReady = TRUE;
 		return;
 	}
@@ -669,6 +673,8 @@
 
 	if (self.state == STOPPED) {
 		// When already stopped, don't generate another AVAnimatorDidStopNotification
+		return;
+	} else if (self.state == FAILED) {
 		return;
 	}
   
@@ -1441,6 +1447,14 @@
 {
   NSAssert(renderer, @"renderer can't be nil");
   self.renderer = renderer;
+  
+  // If media load failed previously, then a renderer can't be attached now
+  
+  if (self.state == FAILED) {
+    [self.renderer mediaAttached:FALSE];
+    self.renderer = nil;
+    return FALSE;
+  }
   
   // If the media is still loading, then we are not ready to attach
   // to the renderer just yet. This method will be invoked again

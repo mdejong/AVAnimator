@@ -280,7 +280,7 @@
   NSAssert(nUtil.wasLoadFailedDelivered == TRUE, @"wasLoadFailedDelivered");
   
   // When the media could not be attached to the view properly as part of the load
-  // process, the view still contains a reference to the media object.
+  // process, both references in the media and the view are set to nil.
   
   NSAssert(animatorView.media == nil, @"animatorView still connected to media");
   NSAssert(media.renderer == nil, @"media still connected to animatorView");
@@ -380,8 +380,123 @@
   return;
 }
 
-// FIXME: attempt to attach to a media in the FAIL state should not work!
+// In this test case a media object will fail to load. Later a view renderer
+// will be attached, but this attach should fail because the media is in a FAIL state.
+// of the media object during the load phase. This test case also invokes media
+// APIs to make sure they no-op when in the FAILED state.
+
++ (void) testMvidFailOnAttachAfterFailToLoad
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
+  
+  // Create view that would be the render destination for the media
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  
+  // Add the view to the containing window and visit the event loop so that the
+  // window system setup is complete.
+  
+  [window addSubview:animatorView];
+  NSAssert(animatorView.window != nil, @"not added to window");
+  
+  // Create Media object
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  [animatorView attachMedia:media];
+  NSAssert(media.renderer == animatorView, @"media.renderer");
+  NSAssert(media == animatorView.media, @"renderer.media");
+  
+  // Create loader that will attempt to read the phone path from the filesystem
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  frameDecoder.simulateMemoryMapFailure = TRUE;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  // Attach object that will receive a notification if delivered
+  
+  NotificationUtil *nUtil = [NotificationUtil notificationUtil];
+  [nUtil setupNotification:media];
+  
+  // Prepare to animate, this should fail in async callback
+  
+  NSAssert(media.isReadyToAnimate == FALSE, @"isReadyToAnimate");
+  
+  [media prepareToAnimate];
+  
+  // Wait for a moment to see if media object was loaded. Note that the
+  // isReadyToAnimate is TRUE when loading works. In this case, attaching
+  // the media to the view did not work, but that is not the same thing
+  // as failing to load.
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:0.5];
+  NSAssert(worked == FALSE, @"!worked");
+  
+  // The result of attempting to load an empty .mvid file is a media object in the FAILED state
+  
+  NSAssert(media.state == FAILED, @"media.state");
+  
+  NSAssert(nUtil.wasLoadFailedDelivered == TRUE, @"wasLoadFailedDelivered");
+    
+  NSAssert(animatorView.media == nil, @"animatorView still connected to media");
+  NSAssert(media.renderer == nil, @"media still connected to animatorView");
+  
+  // Clearing the map fail flag should put things back into a working state.
+  // But, because the media failed to load, it can't be used via an attach.
+  
+  frameDecoder.simulateMemoryMapFailure = FALSE;
+  
+  [animatorView attachMedia:media];
+  
+  NSAssert(animatorView.media == nil, @"animatorView still connected to media");
+  NSAssert(media.renderer == nil, @"media still connected to animatorView");
+
+  // Invoking start or stop on a media object in the FAILED state is a no-op.
+  
+  NSAssert(media.state == FAILED, @"media.state");  
+  
+  [media startAnimator];
+  
+  NSAssert(media.state == FAILED, @"media.state");
+
+  [media stopAnimator];
+
+  NSAssert(media.state == FAILED, @"media.state");
+
+  [media pause];
+  
+  NSAssert(media.state == FAILED, @"media.state");
+
+  [media unpause];
+  
+  NSAssert(media.state == FAILED, @"media.state");
+
+  [media rewind];
+  
+  NSAssert(media.state == FAILED, @"media.state");
+  
+  // Invoking prepareToAnimate in the FAILED state is a no-op
+
+  [media prepareToAnimate];
+  
+  NSAssert(media.state == FAILED, @"media.state");
+  
+  return;
+}
 
 @end // AVAnimatorMediaTests
-
-
