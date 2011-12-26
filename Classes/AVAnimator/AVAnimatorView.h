@@ -49,9 +49,10 @@
 
 // Implement AVAnimatorMediaRendererProtocol protocol
 
-// Invoked once media is loaded
+// Invoked with TRUE argument once renderer has been attached to loaded media,
+// otherwise FALSE is passed to indicate the renderer could not be attached
 
-- (void) mediaDidLoad;
+- (void) mediaAttached:(BOOL)worked;
 
 // Note that the superclass implicitly defines setImage
 

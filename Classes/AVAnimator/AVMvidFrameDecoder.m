@@ -26,6 +26,11 @@
 @synthesize currentFrameBuffer = m_currentFrameBuffer;
 @synthesize cgFrameBuffers = m_cgFrameBuffers;
 
+
+#if defined(REGRESSION_TESTS)
+@synthesize simulateMemoryMapFailure = m_simulateMemoryMapFailure;
+#endif // REGRESSION_TESTS
+
 - (void) dealloc
 {
   [self close];
@@ -76,6 +81,12 @@
   return [[[AVMvidFrameDecoder alloc] init] autorelease];
 }
 
+- (MVFileHeader*) _getHeader
+{
+  NSAssert(self->m_isOpen == TRUE, @"isOpen");
+  return &self->m_mvHeader;
+}
+
 - (void) _allocFrameBuffers
 {
 	// create buffers used for loading image data
@@ -90,8 +101,8 @@
   
   NSAssert(renderWidth > 0 && renderHeight > 0, @"renderWidth or renderHeight is zero");
 
-  NSAssert(m_mvFile, @"m_mvFile");  
-  int bitsPerPixel = m_mvFile->header.bpp;
+  NSAssert(m_mvFile, @"m_mvFile");
+  uint32_t bitsPerPixel = [self _getHeader]->bpp;
   
 	CGFrameBuffer *cgFrameBuffer1 = [CGFrameBuffer cGFrameBufferWithBppDimensions:bitsPerPixel width:renderWidth height:renderHeight];
   CGFrameBuffer *cgFrameBuffer2 = [CGFrameBuffer cGFrameBufferWithBppDimensions:bitsPerPixel width:renderWidth height:renderHeight];
@@ -141,18 +152,95 @@
   return cgFrameBuffer;
 }
 
-// Private utils to map the .mvid file into memory
+// This utility method will read the header data from an mvid
+// file without mapping it into memory. The contents of the
+// header will be copied so that header metadata can be
+// queried without having to map the whole file. A mvid file
+// can't be changed after the header is written, so it is safe
+// to cache the contents of the header and then map and unmap
+// the whole file as needed without worry of an invalid cache.
 
-- (void) _mapFile {
+- (BOOL) _openAndCopyHeader
+{
+  MVFileHeader *hPtr = &self->m_mvHeader;
+
+  char* filenameCstr = (char*)[self.filePath UTF8String];
+  FILE *fp = fopen(filenameCstr, "rb");
+  if (fp == NULL) {
+    // Return FALSE to indicate that the file could not be opened
+    return FALSE;
+  }
+  
+  BOOL worked = TRUE;
+  
+  // Copy the whole header into the struct. Any valid file will
+  // contain a whole header, so if the read does not work then
+  // the file is not valid.
+  
+  assert(sizeof(MVFileHeader) == 16*4);
+  assert(sizeof(MVFrame) == 3*4);
+  
+  int numRead = fread(hPtr, sizeof(MVFileHeader), 1, fp);
+  if (numRead != 1) {
+    // Could not read header from file, it must be empty or invalid
+    worked = FALSE;
+  }
+  
+  
+  if (worked) {
+    uint32_t magic = hPtr->magic;
+    if (magic != MV_FILE_MAGIC) {
+      // Reading the header worked, but if the magic number is not valid then
+      // this is not a valid maxvid file. Could have been another kind of file
+      // or could have been a partially written maxvid file.
+      
+      worked = FALSE;
+    }
+    
+    if (worked) {
+      uint32_t bpp = hPtr->bpp;
+      NSAssert(bpp == 16 || bpp == 24 || bpp == 32, @"bpp must be 16, 24, 32");
+    }
+  }
+  
+  fclose(fp);
+  return worked;
+}
+
+// Private utils to map the .mvid file into memory.
+// Return TRUE if memory map was successful or file is already mapped.
+// Otherwise, returns FALSE when memory map was not successful.
+
+- (BOOL) _mapFile {
   if (self.mappedData == nil) {
     // Might need to map a very large mvid file in terms of 24 Meg chunks,
     // would want to write it that way?
-    self.mappedData = [NSData dataWithContentsOfMappedFile:self.filePath];
-    NSAssert(self.mappedData, @"could not map file");
+
+    BOOL memoryMapFailed = FALSE;
+
+#if defined(REGRESSION_TESTS)
+    if (self.simulateMemoryMapFailure) {
+      memoryMapFailed = TRUE;
+    }
+#endif // REGRESSION_TESTS
+
+    if (memoryMapFailed == FALSE) {    
+      self.mappedData = [NSData dataWithContentsOfMappedFile:self.filePath];
+      if (self.mappedData == nil) {
+        memoryMapFailed = TRUE;
+      }
+    }
+    
+    if (memoryMapFailed == TRUE) {
+      return FALSE;
+    }
+    
     self->m_resourceUsageLimit = FALSE;
     void *mappedPtr = (void*)[self.mappedData bytes];
     self->m_mvFile = maxvid_file_map_open(mappedPtr);
-  }  
+  }
+  
+  return TRUE;
 }
 
 - (void) _unmapFile {
@@ -165,15 +253,28 @@
 
 - (BOOL) openForReading:(NSString*)moviePath
 {
-	if (self->m_isOpen)
+	if (self->m_isOpen) {
 		return FALSE;
-
-  NSAssert([[moviePath pathExtension] isEqualToString:@"mvid"], @"filename must end with .mvid");
-
+  }
+  
+  if (![[moviePath pathExtension] isEqualToString:@"mvid"]) {
+    return FALSE;
+  }
+  
   self.filePath = moviePath;
   
-  [self _mapFile];
+  // Opening the file will verify that the header is correct to ensure that the file was not
+  // partially written. The header will then be read so that this object has access to
+  // the data contained in the header. Note that the file need not be successfully mapped
+  // into memory at this point. It is possible that many files could be open but the file
+  // need not be mapped into memory until it is actually used.  
   
+  BOOL worked = [self _openAndCopyHeader];
+  if (!worked) {
+    self.filePath = nil;
+    return FALSE;
+  }
+
 	self->m_isOpen = TRUE;
 	return TRUE;
 }
@@ -202,7 +303,9 @@
 
 - (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex
 {
-  [self _mapFile];
+  // The movie data must have been mapped into memory by the time advanceToFrame is invoked
+  
+  NSAssert(self.mappedData, @"file not mapped");
   
   // Get from queue of frame buffers!
   
@@ -245,8 +348,8 @@
   NSAssert(mappedPtr, @"mappedPtr");
   
   void *frameBuffer = (void*)nextFrameBuffer.pixels;
-  uint32_t frameBufferSize = self->m_mvFile->header.width * self->m_mvFile->header.height;
-  uint32_t bpp = self->m_mvFile->header.bpp;
+  uint32_t frameBufferSize = [self width] * [self height];
+  uint32_t bpp = [self _getHeader]->bpp;
   uint32_t frameBufferNumBytes;
   if (bpp == 16) {
     frameBufferNumBytes = frameBufferSize * sizeof(uint16_t);
@@ -421,19 +524,32 @@
   return uiImage;  
 }
 
-// Limit resouce usage by letting go of framebuffers and an optional input buffer.
-// Note that we keep the file open and the parsed data in memory, because reloading
-// that data would be expensive.
-
 - (void) resourceUsageLimit:(BOOL)enabled
 {
-  self->m_resourceUsageLimit = enabled;
+  self->m_resourceUsageLimit = enabled;  
+}
+
+- (BOOL) allocateDecodeResources
+{
+  NSAssert(self->m_isOpen == TRUE, @"isOpen");
   
-  if (enabled) {
-    [self _freeFrameBuffers];
-    [self _unmapFile];
-  } else {
+  [self resourceUsageLimit:FALSE];
+  
+  // FIXME: should this logic also allocate input buffers and frame buffers?
+  
+  BOOL worked = [self _mapFile];
+  if (!worked) {
+    return FALSE;
   }
+  return TRUE;
+}
+
+- (void) releaseDecodeResources
+{
+  [self resourceUsageLimit:TRUE];
+  
+  [self _freeFrameBuffers];
+  [self _unmapFile];
 }
 
 - (BOOL) isResourceUsageLimit
@@ -453,14 +569,12 @@
 
 - (NSUInteger) width
 {
-  NSAssert(self->m_mvFile, @"m_mvFile");
-  return self->m_mvFile->header.width;
+  return [self _getHeader]->width;
 }
 
 - (NSUInteger) height
 {
-  NSAssert(self->m_mvFile, @"m_mvFile");
-  return self->m_mvFile->header.height;
+  return [self _getHeader]->height;
 }
 
 - (BOOL) isOpen
@@ -470,8 +584,7 @@
 
 - (NSUInteger) numFrames
 {
-  NSAssert(self->m_mvFile, @"m_mvFile");
-  return self->m_mvFile->header.numFrames;
+  return [self _getHeader]->numFrames;
 }
 
 - (int) frameIndex
@@ -483,17 +596,15 @@
 
 - (NSTimeInterval) frameDuration
 {
-  NSAssert(self->m_mvFile, @"m_mvFile");
-  float frameDuration = self->m_mvFile->header.frameDuration;
+  float frameDuration = [self _getHeader]->frameDuration;
   return frameDuration;
 }
 
+// Note that the file need to be open in order to query the bpp, but it need not be mapped.
+
 - (BOOL) hasAlphaChannel
 {
-  // Ensure that media file is mapped, then query BPP
-  [self _mapFile];
-  NSAssert(self->m_mvFile, @"m_mvFile");
-  uint32_t bpp = self->m_mvFile->header.bpp;
+  uint32_t bpp = [self _getHeader]->bpp;
   if (bpp == 16 || bpp == 24) {
     return FALSE;
   } else if (bpp == 32) {

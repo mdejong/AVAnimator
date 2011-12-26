@@ -35,12 +35,19 @@
 
 - (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex;
 
-// A frame decoder may be asked to limit memory usage or deallocate
-// resources when it is not being actively used. When TRUE is passed
-// as the enabled flag, the frame decoder should deallocate as
-// many resources as possible.
+// Decoding frames may require additional resources that are not required
+// to open the file and examine the header contents. This method will
+// allocate decoding resources that are required to actually decode the
+// video frames from a specific file. It is possible that allocation
+// could fail, for example if decoding would require too much memory.
+// The caller would need to check for a FALSE return value to determine
+// how to handle the case where allocation of decode resources fails.
 
-- (void) resourceUsageLimit:(BOOL)enabled;
+- (BOOL) allocateDecodeResources;
+
+- (void) releaseDecodeResources;
+
+// Returns TRUE if resources are "limited" meaning decode resource are not allocated.
 
 - (BOOL) isResourceUsageLimit;
 

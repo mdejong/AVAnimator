@@ -147,6 +147,7 @@
 		CD5AEE4112D8F35600A50135 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE4012D8F35600A50135 /* UIKit.framework */; };
 		CD5AEE4512D8F35C00A50135 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE4412D8F35C00A50135 /* Foundation.framework */; };
 		CD5AEE4912D8F36500A50135 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE4812D8F36500A50135 /* CoreGraphics.framework */; };
+		CD5BC94F14A3F2CA00185880 /* AVAnimatorMediaTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD5BC94E14A3F2CA00185880 /* AVAnimatorMediaTests.m */; };
 		CD6198BF12CCFC640003AEAA /* AVFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */; };
 		CD61994A12CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD61994912CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m */; };
 		CD659D62136390C1008AF6F9 /* AVMvidFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD659D61136390C1008AF6F9 /* AVMvidFrameDecoder.m */; };
@@ -351,6 +352,7 @@
 		CD5AEE4012D8F35600A50135 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		CD5AEE4412D8F35C00A50135 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		CD5AEE4812D8F36500A50135 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		CD5BC94E14A3F2CA00185880 /* AVAnimatorMediaTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorMediaTests.m; sourceTree = "<group>"; };
 		CD6198BD12CCFC640003AEAA /* AVFrameDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVFrameDecoder.h; sourceTree = "<group>"; };
 		CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVFrameDecoder.m; sourceTree = "<group>"; };
 		CD61994812CD03FC0003AEAA /* AVQTAnimationFrameDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVQTAnimationFrameDecoder.h; sourceTree = "<group>"; };
@@ -644,6 +646,7 @@
 				CD7098B212F4A6BA00582B9B /* AVAnimatorLayerTests.m */,
 				CD922D0D136206290024AFBB /* AVResourceLoaderTests.m */,
 				CD535612136A2C0800FF72D4 /* AVFrameDecoderTests.m */,
+				CD5BC94E14A3F2CA00185880 /* AVAnimatorMediaTests.m */,
 				CD288D3E12D93865005F0EEA /* 2x2_black_blue_16BPP.mov */,
 				CD8265DE1364D5EE00640B94 /* 2x2_black_blue_16BPP.mvid */,
 				CD922D24136206DE0024AFBB /* 2x2_black_blue_16BPP.mov.7z */,
@@ -1191,6 +1194,7 @@
 				CD0ACF2A136F927300A203DF /* AV7zApng2MvidResourceLoader.m in Sources */,
 				CDD988901371F4A60072C06B /* libapng.c in Sources */,
 				CD45EC6214955B6800FD0C6A /* maxvid_decode_arm.s in Sources */,
+				CD5BC94F14A3F2CA00185880 /* AVAnimatorMediaTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

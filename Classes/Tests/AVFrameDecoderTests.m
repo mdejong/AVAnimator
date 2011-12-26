@@ -39,6 +39,11 @@
   NSAssert([frameDecoder frameIndex] == -1, @"frameIndex");
   NSAssert([frameDecoder numFrames] == 30, @"numFrames");
   
+  // Explicitly allocate decode resources as media is not attached to a view
+  
+  BOOL worked = [frameDecoder allocateDecodeResources];
+  NSAssert(worked, @"worked");
+  
   UIImage* img;
   NSAutoreleasePool *pool;
   
@@ -257,6 +262,212 @@
   
   [self doSeekTests:frameDecoder];
   
+  return;
+}
+
+// This test case checks for the case where a resource is ready (meaning the file could be decoded)
+// but the decoder could not decode frames because a resource was not available. This could happen
+// when the decoder fails to map all the memory for a given file.
+
++ (void) testMovDecoderSimulateMapFailure
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+  
+  // The resource loader should be "ready" at this point because the decoded
+  // file should be available in the app resources.
+  
+  BOOL isReady = [resLoader isReady];
+  NSAssert(isReady, @"isReady");
+  
+  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  
+	NSArray *resourcePathsArr = [resLoader getResources];  
+	NSAssert([resourcePathsArr count] == 1, @"expected 1 resource paths");
+	NSString *videoPath = [resourcePathsArr objectAtIndex:0];
+  
+  BOOL worked = [frameDecoder openForReading:videoPath];
+	NSAssert(worked, @"frameDecoder openForReading failed");
+
+  // By default, usage limit is TRUE
+  
+  NSAssert([frameDecoder isResourceUsageLimit] == TRUE, @"initial isResourceUsageLimit");
+
+  worked = [frameDecoder allocateDecodeResources];
+  NSAssert(worked, @"allocateDecodeResources");
+
+  NSAssert([frameDecoder isResourceUsageLimit] == FALSE, @"isResourceUsageLimit");
+  
+  // At this point the frame decoder has read the header, but it has not
+  // yet attempted to map the whole file into memory.
+  
+  UIImage *frame;
+  
+  frame = [frameDecoder advanceToFrame:0];
+  
+  // The file would be mapped at this point. Unmap it.
+  
+  [frameDecoder releaseDecodeResources];
+  
+  NSAssert([frameDecoder isResourceUsageLimit] == TRUE, @"isResourceUsageLimit");
+  
+  // Now simulate a map failure by setting a special flag only avalable in test mode
+  
+  frameDecoder.simulateMemoryMapFailure = TRUE;
+  
+  // Test the FALSE return value when allocation of decode resources (mmap memory) fails
+  
+  worked = [frameDecoder allocateDecodeResources];
+  NSAssert(worked == FALSE, @"allocateDecodeResources should have failed");
+  
+  // Release allocated resources, this basically checks that deallocation is still
+  // done without error even when the memory map failed.
+  
+  [frameDecoder releaseDecodeResources];
+  
+  return;
+}
+
+// This test case checks for the case where a resource is ready (meaning the file could be decoded)
+// but the decoder could not decode frames because a resource was not available. This could happen
+// when the decoder fails to map all the memory for a given file.
+
++ (void) testMvidDecoderSimulateMapFailure
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+  
+  // The resource loader should be "ready" at this point because the decoded
+  // file should be available in the app resources.
+  
+  BOOL isReady = [resLoader isReady];
+  NSAssert(isReady, @"isReady");
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  
+	NSArray *resourcePathsArr = [resLoader getResources];  
+	NSAssert([resourcePathsArr count] == 1, @"expected 1 resource paths");
+	NSString *videoPath = [resourcePathsArr objectAtIndex:0];
+
+  BOOL worked;
+  
+  // Test that openForReading fails if filename does not end in ".mvid"
+  
+  NSString *phonyVideoPath = [videoPath stringByReplacingOccurrencesOfString:@".mvid" withString:@".moo"];
+  
+  worked = [frameDecoder openForReading:phonyVideoPath];
+	NSAssert(worked == FALSE, @"frameDecoder openForReading should have failed");
+  
+  // Now use the real filename that ends in ".mvid", this should work
+  
+  worked = [frameDecoder openForReading:videoPath];
+	NSAssert(worked, @"frameDecoder openForReading failed");
+  
+  // By default, usage limit is TRUE
+  
+  NSAssert([frameDecoder isResourceUsageLimit] == TRUE, @"initial isResourceUsageLimit");
+  
+  worked = [frameDecoder allocateDecodeResources];
+  NSAssert(worked, @"allocateDecodeResources");
+  
+  NSAssert([frameDecoder isResourceUsageLimit] == FALSE, @"isResourceUsageLimit");
+  
+  // At this point the frame decoder has read the header, but it has not
+  // yet attempted to map the whole file into memory.
+  
+  UIImage *frame;
+  
+  frame = [frameDecoder advanceToFrame:0];
+    
+  // The file would be mapped at this point. Unmap it.
+  
+  [frameDecoder releaseDecodeResources];
+  
+  NSAssert([frameDecoder isResourceUsageLimit] == TRUE, @"isResourceUsageLimit");
+  
+  // Now simulate a map failure by setting a special flag only avalable in test mode
+  
+  frameDecoder.simulateMemoryMapFailure = TRUE;
+  
+  // Test the FALSE return value when allocation of decode resources (mmap memory) fails
+  
+  worked = [frameDecoder allocateDecodeResources];
+  NSAssert(worked == FALSE, @"allocateDecodeResources should have failed");
+  
+  // Release allocated resources, this basically checks that deallocation is still
+  // done without error even when the memory map failed.
+  
+  [frameDecoder releaseDecodeResources];
+  
+  return;
+}
+
+// This test case will create a media object from a file that has a magic number
+// that does not match the expected .mvid magic number.
+
++ (void) testMvidFailToOpenInvalidFile
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];  
+  NSData *knownGoodData = [NSData dataWithContentsOfFile:resPath];
+  
+  NSMutableData *mData = [NSMutableData dataWithData:knownGoodData];
+
+  char bytes[] = { '\x4', '\x5', '\x6', '\x7' };
+  
+  NSRange range = NSMakeRange(0, 4);
+  [mData replaceBytesInRange:range withBytes:bytes];
+  
+  // Get tmp dir path and create an empty file with the .mvid extension
+  
+  NSString *tmpFilename = @"Invalid.mvid";
+  NSString *tmpDir = NSTemporaryDirectory();
+  NSString *tmpPath = [tmpDir stringByAppendingPathComponent:tmpFilename];
+  
+  [mData writeToFile:tmpPath options:NSDataWritingAtomic error:nil];
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = tmpPath;
+  
+  // The resource loader should be "ready" at this point because the decoded
+  // file should be available in the app resources.
+  
+  BOOL isReady = [resLoader isReady];
+  NSAssert(isReady, @"isReady");
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  
+	NSArray *resourcePathsArr = [resLoader getResources];  
+	NSAssert([resourcePathsArr count] == 1, @"expected 1 resource paths");
+	NSString *videoPath = [resourcePathsArr objectAtIndex:0];
+  
+  BOOL worked;
+  
+  worked = [frameDecoder openForReading:videoPath];
+	NSAssert(worked == FALSE, @"frameDecoder openForReading should have failed");
+      
   return;
 }
 

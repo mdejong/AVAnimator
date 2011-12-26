@@ -14,7 +14,10 @@
 
 @protocol AVAnimatorMediaRendererProtocol
 
-- (void) mediaDidLoad;
+// Invoked with TRUE argument once renderer has been attached to loaded media,
+// otherwise FALSE is passed to indicate the renderer could not be attached
+
+- (void) mediaAttached:(BOOL)worked;
 
 // setter for obj.image property
 

@@ -142,6 +142,17 @@
   self->m_resourceUsageLimit = enabled;
 }
 
+- (BOOL) allocateDecodeResources
+{
+  [self resourceUsageLimit:FALSE];
+  return TRUE;
+}
+
+- (void) releaseDecodeResources
+{
+  [self resourceUsageLimit:TRUE];
+}
+
 - (BOOL) isResourceUsageLimit
 {
   return self->m_resourceUsageLimit;

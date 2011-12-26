@@ -14,6 +14,9 @@
 // private properties declaration for AVAnimatorLayer class
 #import "AVAnimatorLayerPrivate.h"
 
+// private method in Media class
+#include "AVAnimatorMediaPrivate.h"
+
 #import "AutoPropertyRelease.h"
 
 // AVAnimatorLayer class
@@ -56,14 +59,21 @@
   return self;
 }
 
-// This method is invoked once resources have been loaded by the media
+// Invoked with TRUE argument once renderer has been attached to loaded media,
+// otherwise FALSE is passed to indicate the renderer could not be attached
 
-- (void) mediaDidLoad
+- (void) mediaAttached:(BOOL)worked
 {
-  NSAssert(self.media, @"media is nil");
-  NSAssert(self.media.frameDecoder, @"frameDecoder is nil");
+  if (worked) {
+    NSAssert(self.media, @"media is nil");
+    NSAssert(self.media.frameDecoder, @"frameDecoder is nil");
+
+    self->mediaDidLoad = TRUE;
+  } else {
+    self->m_mediaObj = nil;
+    self->mediaDidLoad = FALSE;
+  }
   
-  self->mediaDidLoad = TRUE;
 	return;
 }
 
@@ -85,11 +95,10 @@
     return;
   }
   
-  self->mediaDidLoad = FALSE;
-  
   [self.mediaObj detachFromRenderer:self copyFinalFrame:FALSE];
   self.mediaObj = inMedia;
   self.imageObj = nil;
+  self->mediaDidLoad = FALSE;
   [self.mediaObj attachToRenderer:self];
 }
 

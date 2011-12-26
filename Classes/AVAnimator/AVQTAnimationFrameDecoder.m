@@ -46,6 +46,10 @@ int num_words(uint32_t numBytes)
 @synthesize currentFrameBuffer = m_currentFrameBuffer;
 @synthesize cgFrameBuffers = m_cgFrameBuffers;
 
+#if defined(REGRESSION_TESTS)
+@synthesize simulateMemoryMapFailure = m_simulateMemoryMapFailure;
+#endif // REGRESSION_TESTS
+
 + (AVQTAnimationFrameDecoder*) aVQTAnimationFrameDecoder
 {
   return [[[AVQTAnimationFrameDecoder alloc] init] autorelease];
@@ -285,6 +289,29 @@ int num_words(uint32_t numBytes)
   self.currentFrameBuffer = nil;
 }
 
+// Private utils to map the .mvid file into memory.
+// Return TRUE if memory map was successful or file is already mapped.
+// Otherwise, returns FALSE when memory map was not successful.
+
+#ifdef USE_MMAP
+
+- (BOOL) _mapFile {
+  if (self.mappedData == nil) {
+    self.mappedData = [NSData dataWithContentsOfMappedFile:self.filePath];
+    if (self.mappedData == nil) {
+      return FALSE;
+    }
+    self->m_resourceUsageLimit = FALSE;
+  }
+  return TRUE;
+}
+
+- (void) _unmapFile {
+  self.mappedData = nil;
+}
+
+#endif // USE_MMAP
+
 - (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex
 {
   // Get from queue of frame buffers!
@@ -334,11 +361,7 @@ int num_words(uint32_t numBytes)
   MovSample **frames = movData->frames;
   
 #ifdef USE_MMAP
-  if (self.mappedData == nil) {
-    self.mappedData = [NSData dataWithContentsOfMappedFile:self.filePath];
-    NSAssert(self.mappedData, @"could not map movie file");
-    self->m_resourceUsageLimit = FALSE;
-  }
+  NSAssert(self.mappedData, @"mappedData");
   char *mappedPtr = (char*) [self.mappedData bytes];
   NSAssert(mappedPtr, @"mappedPtr");
 #endif // USE_MMAP
@@ -449,30 +472,47 @@ int num_words(uint32_t numBytes)
   return uiImage;  
 }
 
-// Limit resouce usage by letting go of framebuffers and an optional input buffer.
-// Note that we keep the file open and the parsed data in memory, because reloading
-// that data would be expensive.
-
 - (void) resourceUsageLimit:(BOOL)enabled
 {
   self->m_resourceUsageLimit = enabled;
+}
+
+- (BOOL) allocateDecodeResources
+{
+  [self resourceUsageLimit:FALSE];
   
-  if (enabled) {
-    [self _freeFrameBuffers];
-  } else {
+  // FIXME: should this logic also allocate input buffers and frame buffers?
+  
+#if defined(REGRESSION_TESTS)
+  if (self.simulateMemoryMapFailure) {
+    return FALSE;
   }
+#endif // REGRESSION_TESTS
   
 #ifdef USE_MMAP
-  if (enabled) {
-    self.mappedData = nil;
+  BOOL worked = [self _mapFile];
+  if (!worked) {
+    return FALSE;
   }
+#endif // USE_MMAP
+  return TRUE;
+}
+
+// Release decode resources by letting go of framebuffers and an optional input buffer.
+// Note that we keep the file open and the parsed data in memory, because reloading
+// that data would be expensive.
+
+- (void) releaseDecodeResources
+{
+  [self resourceUsageLimit:TRUE];
+  
+  [self _freeFrameBuffers];
+  
+#ifdef USE_MMAP
+  [self _unmapFile];
 #else
-  if (enabled) {    
-    [self _freeInputBuffer];
-  } else {
-    // No-op
-  }  
-#endif
+  [self _freeInputBuffer];
+#endif // USE_MMAP
 }
 
 - (BOOL) isResourceUsageLimit

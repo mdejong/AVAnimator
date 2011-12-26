@@ -78,4 +78,11 @@
 
 -(void) _setAudioSessionCategory;
 
+// These next two method should be invoked from a renderer to signal
+// when this media item is attached to and detached from a renderer.
+
+- (BOOL) attachToRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer;
+
+- (void) detachFromRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer copyFinalFrame:(BOOL)copyFinalFrame;
+
 @end

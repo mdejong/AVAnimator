@@ -13,21 +13,30 @@
 
 @interface AVMvidFrameDecoder : AVFrameDecoder {
   NSString *m_filePath;
+  MVFileHeader m_mvHeader;
   MVFile *m_mvFile;
-	BOOL m_isOpen;  
+  BOOL m_isOpen;
   NSData *m_mappedData;
   
   CGFrameBuffer *m_currentFrameBuffer;  
 	NSArray *m_cgFrameBuffers;
   
-	int frameIndex;
+  int frameIndex;
   BOOL m_resourceUsageLimit;
+
+#if defined(REGRESSION_TESTS)
+  BOOL m_simulateMemoryMapFailure;
+#endif // REGRESSION_TESTS
 }
 
 @property (nonatomic, copy) NSString *filePath;
 @property (nonatomic, copy) NSData *mappedData;
 @property (nonatomic, retain) CGFrameBuffer *currentFrameBuffer;
 @property (nonatomic, copy) NSArray *cgFrameBuffers;
+
+#if defined(REGRESSION_TESTS)
+@property (nonatomic, assign) BOOL simulateMemoryMapFailure;
+#endif // REGRESSION_TESTS
 
 + (AVMvidFrameDecoder*) aVMvidFrameDecoder;
 
@@ -47,11 +56,17 @@
 
 - (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex;
 
-// A frame decoder may be asked to limit memory usage or deallocate
-// resources when it is not being actively used. When enabled, the
-// frame decoder should deallocate memory where possible.
+// Decoding frames may require additional resources that are not required
+// to open the file and examine the header contents. This method will
+// allocate decoding resources that are required to actually decode the
+// video frames from a specific file. It is possible that allocation
+// could fail, for example if decoding would require too much memory.
+// The caller would need to check for a FALSE return value to determine
+// how to handle the case where allocation of decode resources fails.
 
-- (void) resourceUsageLimit:(BOOL)enabled;
+- (BOOL) allocateDecodeResources;
+
+- (void) releaseDecodeResources;
 
 // Return the current frame buffer, this is the buffer that was most recently written to via
 // a call to advanceToFrame. Returns nil on init or after a rewind operation.

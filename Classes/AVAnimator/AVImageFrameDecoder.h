@@ -60,7 +60,17 @@
 
 - (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex;
 
-- (void) resourceUsageLimit:(BOOL)enabled;
+// Decoding frames may require additional resources that are not required
+// to open the file and examine the header contents. This method will
+// allocate decoding resources that are required to actually decode the
+// video frames from a specific file. It is possible that allocation
+// could fail, for example if decoding would require too much memory.
+// The caller would need to check for a FALSE return value to determine
+// how to handle the case where allocation of decode resources fails.
+
+- (BOOL) allocateDecodeResources;
+
+- (void) releaseDecodeResources;
 
 - (BOOL) isResourceUsageLimit;
 

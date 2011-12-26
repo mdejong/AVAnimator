@@ -310,10 +310,15 @@
   
   NSAssert(self.frameDecoder, @"frameDecoder");
 
-	NSLog(@"%@", [NSString stringWithFormat:@"frameDecoder openForReading \"%@\"", [videoPath lastPathComponent]]);
+  NSLog(@"%@", [NSString stringWithFormat:@"frameDecoder openForReading \"%@\"", [videoPath lastPathComponent]]);
   
-	BOOL worked = [self.frameDecoder openForReading:videoPath];
-	NSAssert(worked, @"frameDecoder openForReading failed");
+  BOOL worked = [self.frameDecoder openForReading:videoPath];
+  
+  if (!worked) {
+    NSLog(@"frameDecoder openForReading failed");
+    self.state = FAILED;
+    return TRUE;
+  }
     
   // Read frame duration from movie by default. If user explicitly indicated a frame duration
   // the use it instead of what appears in the movie.
@@ -330,19 +335,9 @@
 	self.animatorNumFrames = [self.frameDecoder numFrames];
 	assert(self.animatorNumFrames >= 2);
   
-  // Tell the renderer that this media had been loaded
-  
   NSAssert(self.currentFrame == -1, @"currentFrame");
-  
-  if (self.renderer) {
-    [self.renderer mediaDidLoad];
-
-    [self showFrame:0];
     
-    NSAssert(self.currentFrame == 0, @"currentFrame");
-  }
-  
-	// Create AVAudioPlayer that plays audio from the file on disk
+	// Set url that will be the source for audio played in the app
   
   if (audioPath) {
     NSURL *url = [NSURL fileURLWithPath:audioPath];
@@ -385,23 +380,53 @@
   // Test to see if the all resources have been loaded. If they have, then
   // stop invoking the load callback and get ready to play.
   
-	BOOL ready = [self _loadResources];
+  BOOL ready = [self _loadResources];
   if (!ready) {
-    // Note that the prep timer is not invalidated in this case
+    // Not ready yet, continue with callbacks. Note that we don't cancel
+    // the prep timer, so this method is invoked again after a delay.
     return;
   }
-  
+    
 	// Finish up init state
   
 	[self.animatorPrepTimer invalidate];
 	self.animatorPrepTimer = nil;  
   
+  // If loading failed at this point, then the file data must be invalid.
+  
+  if (self.state == FAILED) {
+    [[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorFailedToLoadNotification
+                                                        object:self];
+    
+    return;
+  }
+  
+  // Media should now be ready to attach to the video renderer. If there is no renderer at this
+  // point then it could still be attached later.
+  
+	self.state = READY;
+	self.isReadyToAnimate = TRUE;
+  
+  if (self.renderer) {
+    
+    BOOL worked = [self attachToRenderer:self.renderer];
+
+    if (worked == FALSE) {
+      // If attaching to the renderer failed, then the whole loading process fails
+      
+      self.state = FAILED;
+      self.isReadyToAnimate = FALSE;
+      
+      [[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorFailedToLoadNotification
+                                                          object:self];
+      
+      return;
+    }
+  }
+  
 	// Init audio data
 	
 	[self _createAudioPlayer];
-      
-	self.state = READY;
-	self.isReadyToAnimate = TRUE;
   
   // Send out a notification that indicates that the movie is now fully loaded
   // and is ready to play.
@@ -1409,24 +1434,42 @@
 // A media item can only be attached to a renderer that has been
 // added to the window system and is ready to animate. So, as
 // soon as a renderer is attached, the media item should display
-// the initial keyframe.
+// the initial keyframe. This attach method is invoked from
+// a render module or from this module.
 
-- (void) attachToRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer
+- (BOOL) attachToRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer
 {
   NSAssert(renderer, @"renderer can't be nil");
   self.renderer = renderer;
-
-  // Tell decoder that it is no longer resource constrained
   
-  [self.frameDecoder resourceUsageLimit:FALSE];
+  // If the media is still loading, then we are not ready to attach
+  // to the renderer just yet. This method will be invoked again
+  // when the loading process is complete.
   
-  // If media is ready, then display initial keyframe
-  
-  if (self.isReadyToAnimate) {
-    [self.renderer mediaDidLoad];
-    
-    [self showFrame:0];
+  if (self.isReadyToAnimate == FALSE) {
+    return TRUE;
   }
+  
+  // Attempt to allocate decode resources, if these resources
+  // can't be allocated then the attach will not be successful.
+  
+  BOOL worked = [self.frameDecoder allocateDecodeResources];
+  
+  if (worked) {
+    // Allocated resources and ready to begin playback, signal the
+    // renderer that the media was loaded successfully. In the
+    // case where attach is called while loading, the loading process
+    // will fail if this attach fails.
+    
+    [self.renderer mediaAttached:TRUE];
+    [self showFrame:0];
+    NSAssert(self.currentFrame == 0, @"currentFrame");
+  } else {
+    [self.renderer mediaAttached:FALSE];
+    self.renderer = nil;
+  }
+  
+  return worked;
 }
 
 - (void) detachFromRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer copyFinalFrame:(BOOL)copyFinalFrame
@@ -1462,7 +1505,7 @@
   
   // The view and the media objects should have dropped all references to frame buffer objects now.
   
-  [self.frameDecoder resourceUsageLimit:TRUE];
+  [self.frameDecoder releaseDecodeResources];
 }
 
 @end

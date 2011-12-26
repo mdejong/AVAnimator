@@ -12,8 +12,7 @@
 // If RegressionTestsJustThisModule is defined, then only the tests in the
 // indicated module will be executed.
 
-//#define RegressionTestsJustThisModule @"TextTableDataTests"
-//#define RegressionTestsJustThisModule @"iPracticeAppDelegateTests"
+//#define RegressionTestsJustThisModule @"AVAnimatorMediaTests"
 
 @implementation RegressionTests
 
@@ -159,18 +158,38 @@
   [anInvocation setSelector:selector];
   [anInvocation setTarget:object];
   
-  for (int numSeconds = (int) round(maxWaitTime) ; numSeconds > 0 ; numSeconds--) {
-    BOOL state;
-    
+  // Invoke test condition method once before the timing loop is entered, so that the
+  // event loop will not be entered if the condition is initially TRUE.
+
+  BOOL state;
+  
+  [anInvocation invoke];
+  [anInvocation getReturnValue:&state];
+
+  if (state) {
+    return TRUE;
+  }
+
+  // The condition is FALSE, so enter the event loop and wait for 1 second
+  // each iteration through the loop. The logic below makes sure that the
+  // 1 second wait will be done at least once, even if wait time is less
+  // than a full second.
+  
+  int numSeconds = (int) round(maxWaitTime);
+  if (numSeconds < 1) {
+    numSeconds = 1;
+  }
+  
+  for ( ; numSeconds > 0 ; numSeconds--) {
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1.0];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+
     [anInvocation invoke];
     [anInvocation getReturnValue:&state];
 
     if (state) {
       return TRUE;
-    }
-    
-    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1.0];
-    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+    }    
   }
   
   return FALSE;

@@ -20,6 +20,13 @@
 #define AVAnimator10FPS (1.0/10)
 #define AVAnimator5FPS (1.0/5)
 
+// AVAnimatorFailedToLoadNotification is delivered after the contents of
+// loaded resources are found to be invalid. For example, if a decoder
+// expected files to be in a certain format, but they were not. Then
+// loading the media object can fail with this notification. This fail
+// to load notification could also be delivered if a media object could
+// not attach to an associated view.
+
 // AVAnimatorPreparedToAnimateNotification is delivered after resources
 // have been loaded and the view is ready to animate.
 
@@ -34,6 +41,7 @@
 // AVAnimatorDoneNotification is invoked when done animating, if a number of loops were
 // requested then the done notification is delivered once all the loops have been played.
 
+#define AVAnimatorFailedToLoadNotification @"AVAnimatorFailedToLoadNotification"
 #define AVAnimatorPreparedToAnimateNotification @"AVAnimatorPreparedToAnimateNotification"
 #define AVAnimatorDidStartNotification @"AVAnimatorDidStartNotification"
 #define AVAnimatorDidStopNotification @"AVAnimatorDidStopNotification"
@@ -48,12 +56,13 @@
 
 typedef enum AVAnimatorPlayerState {
 	ALLOCATED = 0,
-	LOADED = 1,
-	PREPPING = 2,
-	READY = 3,
-	ANIMATING = 4,
-	STOPPED = 5,
-	PAUSED = 6
+	LOADED,
+	FAILED,
+	PREPPING,
+	READY,
+	ANIMATING,
+	STOPPED,
+	PAUSED
 } AVAnimatorPlayerState;
 
 @interface AVAnimatorMedia : NSObject {
@@ -177,12 +186,5 @@ typedef enum AVAnimatorPlayerState {
 // should only be called when the animator is not running.
 
 - (void) showFrame: (NSInteger) frame;
-
-// These next two method should be invoked from a renderer to signal
-// when this media item is attached to and detached from a renderer.
-
-- (void) attachToRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer;
-
-- (void) detachFromRenderer:(id<AVAnimatorMediaRendererProtocol>)renderer copyFinalFrame:(BOOL)copyFinalFrame;
 
 @end
