@@ -499,4 +499,196 @@
   return;
 }
 
+// This test case checks the implementation of AVAnimatorView and how
+// it holds a ref to the media object. A view must hold a ref to the
+// media so that the media can be detached properly in the dealloc case.
+
++ (void) testMediaAndAVAnimatorViewRefCounts
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
+  
+  // Create view that would be the render destination for the media
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  
+  // Add the view to the containing window and visit the event loop so that the
+  // window system setup is complete.
+  
+  [window addSubview:animatorView];
+  NSAssert(animatorView.window != nil, @"not added to window");
+  
+  // Create Media object
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Create loader that will attempt to read the phone path from the filesystem
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+    
+  [media prepareToAnimate];
+  
+  // Wait for a moment to see if media object was loaded. Note that the
+  // isReadyToAnimate is TRUE when loading works. In this case, attaching
+  // the media to the view did not work, but that is not the same thing
+  // as failing to load.
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:0.5];
+  NSAssert(worked, @"worked");
+  
+  // The media should have been loaded, it would not have been attached to the view
+  // at this point.
+  
+  NSAssert(media.state == READY, @"media.state");
+  
+  NSAssert(animatorView.media == nil, @"animatorView connected to media");
+  NSAssert(media.renderer == nil, @"media connected to animatorView");
+  
+  int viewRefCountBefore = [animatorView retainCount];
+  int mediaRefCountBefore = [media retainCount];
+  
+  [animatorView attachMedia:media];
+  
+  NSAssert(animatorView.media == media, @"animatorView not connected to media");
+  NSAssert(media.renderer == animatorView, @"media not connected to animatorView");
+
+  int viewRefCountAfter = [animatorView retainCount];
+  int mediaRefCountAfter = [media retainCount];
+
+  // The AVAnimatorView holds a ref to the media in the view
+  
+  NSAssert(viewRefCountBefore == viewRefCountAfter, @"view ref count was incremented by attach");
+  NSAssert((mediaRefCountBefore + 1) == mediaRefCountAfter, @"media ref count was not incremented by attach");
+
+  // Detaching the media should drop the ref count
+  
+  [animatorView attachMedia:nil];
+  
+  viewRefCountAfter = [animatorView retainCount];
+  mediaRefCountAfter = [media retainCount];
+
+  NSAssert(viewRefCountBefore == viewRefCountAfter, @"view ref count was incremented by attach");
+  NSAssert(mediaRefCountBefore == mediaRefCountAfter, @"media ref count was not incremented by attach");
+  
+  // Now reattach and let the cleanup happen in the auto release pool logic, should not leak
+  
+  [animatorView attachMedia:media];
+  
+  return;
+}
+
+// This test case checks the implementation of AVAnimatorLayer and how
+// it holds a ref to the media object. A view must hold a ref to the
+// media so that the media can be detached properly in the dealloc case.
+
++ (void) testMediaAndAVAnimatorLayerRefCounts
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];	
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
+  
+  // Create view that would be the render destination for the media
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);  
+  UIView *view = [[[UIView alloc] initWithFrame:frame] autorelease];
+  CALayer *viewLayer = view.layer;
+  
+  AVAnimatorLayer *avLayerObj = [AVAnimatorLayer aVAnimatorLayer:viewLayer];
+  NSAssert(avLayerObj, @"avLayerObj");
+  
+  [window addSubview:view];
+
+  NSAssert(view.window != nil, @"not added to window");
+  
+  // Create Media object
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Create loader that will attempt to read the phone path from the filesystem
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+	media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  [media prepareToAnimate];
+  
+  // Wait for a moment to see if media object was loaded. Note that the
+  // isReadyToAnimate is TRUE when loading works. In this case, attaching
+  // the media to the view did not work, but that is not the same thing
+  // as failing to load.
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:0.5];
+  NSAssert(worked, @"worked");
+  
+  // The media should have been loaded, it would not have been attached to the view
+  // at this point.
+  
+  NSAssert(media.state == READY, @"media.state");
+  
+  NSAssert(avLayerObj.media == nil, @"animatorView connected to media");
+  NSAssert(media.renderer == nil, @"media connected to animatorView");
+  
+  int viewRefCountBefore = [avLayerObj retainCount];
+  int mediaRefCountBefore = [media retainCount];
+  
+  [avLayerObj attachMedia:media];
+  
+  NSAssert(avLayerObj.media == media, @"animatorView not connected to media");
+  NSAssert(media.renderer == avLayerObj, @"media not connected to animatorView");
+  
+  int viewRefCountAfter = [avLayerObj retainCount];
+  int mediaRefCountAfter = [media retainCount];
+  
+  // The AVAnimatorLayer holds a ref to the media in the view
+  
+  NSAssert(viewRefCountBefore == viewRefCountAfter, @"view ref count was incremented by attach");
+  NSAssert((mediaRefCountBefore + 1) == mediaRefCountAfter, @"media ref count was not incremented by attach");
+  
+  // Detaching the media should drop the ref count
+  
+  [avLayerObj attachMedia:nil];
+  
+  viewRefCountAfter = [avLayerObj retainCount];
+  mediaRefCountAfter = [media retainCount];
+  
+  NSAssert(viewRefCountBefore == viewRefCountAfter, @"view ref count was incremented by attach");
+  NSAssert(mediaRefCountBefore == mediaRefCountAfter, @"media ref count was not incremented by attach");
+  
+  // Now reattach and let the cleanup happen in the auto release pool logic, should not leak
+  
+  [avLayerObj attachMedia:media];
+  
+  return;
+}
+
+// FIXME:
+// Load media and attach to view, then deallocate the view by dropping all refs.
+// This should detach from the media object.
+
 @end // AVAnimatorMediaTests

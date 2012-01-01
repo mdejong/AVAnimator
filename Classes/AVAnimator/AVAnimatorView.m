@@ -13,6 +13,8 @@
 
 #import "AVAnimatorMedia.h"
 
+#import "AutoPropertyRelease.h"
+
 // private properties declaration for AVAnimatorView class
 #include "AVAnimatorViewPrivate.h"
 
@@ -43,6 +45,7 @@
     [self.mediaObj detachFromRenderer:self copyFinalFrame:FALSE];
   }
   
+  [AutoPropertyRelease releaseProperties:self thisClass:AVAnimatorView.class];
   [super dealloc];
 }
 
