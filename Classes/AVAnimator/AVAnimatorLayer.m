@@ -72,7 +72,7 @@
 
     self->mediaDidLoad = TRUE;
   } else {
-    self->m_mediaObj = nil;
+    self.mediaObj = nil;
     self->mediaDidLoad = FALSE;
   }
   

@@ -186,16 +186,6 @@
   return obj;
 }
 
-// FIXME: Remove this static ctor that accepts a renderer, should use attach
-
-+ (AVAnimatorMedia*) aVAnimatorMedia:(id<AVAnimatorMediaRendererProtocol>)renderer
-{
-  AVAnimatorMedia *obj = [[AVAnimatorMedia alloc] init];
-  [obj autorelease];
-  obj.renderer = renderer;
-  return obj;  
-}
-
 - (id) init
 {
   if (self = [super init]) {

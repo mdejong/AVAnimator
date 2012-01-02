@@ -170,7 +170,7 @@
     self->mediaDidLoad = TRUE;
     [self _setOpaqueFromDecoder];
   } else {
-    self->m_mediaObj = nil;
+    self.mediaObj = nil;
     self->mediaDidLoad = FALSE;
   }
   
