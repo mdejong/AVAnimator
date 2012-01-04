@@ -153,9 +153,15 @@
 	self.resourceLoader = nil;
   self.frameDecoder = nil;
   
-	self.animatorPrepTimer = nil;
+  // FIXME: better to just use AutoTimer here
+  
+  [self.animatorPrepTimer invalidate];
+  self.animatorPrepTimer = nil;
+  [self.animatorReadyTimer invalidate];
   self.animatorReadyTimer = nil;
+  [self.animatorDecodeTimer invalidate];
   self.animatorDecodeTimer = nil;
+  [self.animatorDisplayTimer invalidate];
   self.animatorDisplayTimer = nil;
   
 	// Reset the delegate state for the audio player object
@@ -471,6 +477,8 @@
 //  }
   
 	// Schedule a callback that will do the prep operation
+  
+	NSAssert(self.animatorPrepTimer == nil, @"animatorPrepTimer");
   
 	self.animatorPrepTimer = [NSTimer timerWithTimeInterval: 0.10
                                                     target: self
@@ -795,7 +803,7 @@
     // and a display operation, so a pending display needs to be done ASAP. If there was no pending
     // display, then the display operation will do nothing.
     
-    NSAssert(self.animatorDisplayTimer == nil, @"animatorDecodeTimer not nil");
+    NSAssert(self.animatorDisplayTimer == nil, @"animatorDisplayTimer not nil");
     
     NSTimeInterval displayDelta = 0.001;
     
