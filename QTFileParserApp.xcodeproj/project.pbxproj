@@ -148,6 +148,9 @@
 		CD5AEE4512D8F35C00A50135 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE4412D8F35C00A50135 /* Foundation.framework */; };
 		CD5AEE4912D8F36500A50135 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE4812D8F36500A50135 /* CoreGraphics.framework */; };
 		CD5BC94F14A3F2CA00185880 /* AVAnimatorMediaTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD5BC94E14A3F2CA00185880 /* AVAnimatorMediaTests.m */; };
+		CD5F5C4714CCD809005A2809 /* SegmentedMappedData.m in Sources */ = {isa = PBXBuildFile; fileRef = CD5F5C4614CCD809005A2809 /* SegmentedMappedData.m */; };
+		CD5F5C4814CCD809005A2809 /* SegmentedMappedData.m in Sources */ = {isa = PBXBuildFile; fileRef = CD5F5C4614CCD809005A2809 /* SegmentedMappedData.m */; };
+		CD5F5C4B14CCDC97005A2809 /* SegmentedMappedDataTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD5F5C4A14CCDC97005A2809 /* SegmentedMappedDataTests.m */; };
 		CD6198BF12CCFC640003AEAA /* AVFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */; };
 		CD61994A12CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD61994912CD03FC0003AEAA /* AVQTAnimationFrameDecoder.m */; };
 		CD659D62136390C1008AF6F9 /* AVMvidFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD659D61136390C1008AF6F9 /* AVMvidFrameDecoder.m */; };
@@ -353,6 +356,9 @@
 		CD5AEE4412D8F35C00A50135 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		CD5AEE4812D8F36500A50135 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		CD5BC94E14A3F2CA00185880 /* AVAnimatorMediaTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorMediaTests.m; sourceTree = "<group>"; };
+		CD5F5C4514CCD809005A2809 /* SegmentedMappedData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SegmentedMappedData.h; sourceTree = "<group>"; };
+		CD5F5C4614CCD809005A2809 /* SegmentedMappedData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SegmentedMappedData.m; sourceTree = "<group>"; };
+		CD5F5C4A14CCDC97005A2809 /* SegmentedMappedDataTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SegmentedMappedDataTests.m; sourceTree = "<group>"; };
 		CD6198BD12CCFC640003AEAA /* AVFrameDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVFrameDecoder.h; sourceTree = "<group>"; };
 		CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVFrameDecoder.m; sourceTree = "<group>"; };
 		CD61994812CD03FC0003AEAA /* AVQTAnimationFrameDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVQTAnimationFrameDecoder.h; sourceTree = "<group>"; };
@@ -642,6 +648,7 @@
 				CD3F4ECB12D8F6B00067FDDF /* RegressionTests.h */,
 				CD3F4ECC12D8F6B00067FDDF /* RegressionTests.m */,
 				CD3F4ECD12D8F6B00067FDDF /* ViewLoadTests.m */,
+				CD5F5C4A14CCDC97005A2809 /* SegmentedMappedDataTests.m */,
 				CD3F4F1212D8FA0A0067FDDF /* AVAnimatorViewTests.m */,
 				CD7098B212F4A6BA00582B9B /* AVAnimatorLayerTests.m */,
 				CD922D0D136206290024AFBB /* AVResourceLoaderTests.m */,
@@ -789,6 +796,8 @@
 				CDD9888D1371F4A60072C06B /* libapng.c */,
 				CD0BD14213635EDD00D8287A /* AVFileUtil.h */,
 				CD0BD14313635EDD00D8287A /* AVFileUtil.m */,
+				CD5F5C4514CCD809005A2809 /* SegmentedMappedData.h */,
+				CD5F5C4614CCD809005A2809 /* SegmentedMappedData.m */,
 			);
 			path = AVAnimator;
 			sourceTree = "<group>";
@@ -1134,6 +1143,7 @@
 				CD0ACF29136F927300A203DF /* AV7zApng2MvidResourceLoader.m in Sources */,
 				CDD9888F1371F4A60072C06B /* libapng.c in Sources */,
 				CD45EC6114955B6800FD0C6A /* maxvid_decode_arm.s in Sources */,
+				CD5F5C4714CCD809005A2809 /* SegmentedMappedData.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1195,6 +1205,8 @@
 				CDD988901371F4A60072C06B /* libapng.c in Sources */,
 				CD45EC6214955B6800FD0C6A /* maxvid_decode_arm.s in Sources */,
 				CD5BC94F14A3F2CA00185880 /* AVAnimatorMediaTests.m in Sources */,
+				CD5F5C4814CCD809005A2809 /* SegmentedMappedData.m in Sources */,
+				CD5F5C4B14CCDC97005A2809 /* SegmentedMappedDataTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
