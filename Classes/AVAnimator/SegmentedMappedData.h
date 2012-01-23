@@ -13,22 +13,39 @@
 
 #import <Foundation/Foundation.h>
 
+@class RefCountedFD;
+
 @interface SegmentedMappedData : NSData
 {
   NSString           *m_filePath;
   
   NSMutableArray     *m_mappedDataSegments;
-
+  
   void               *m_mappedData;
+  off_t               m_mappedOffset;
   size_t              m_mappedLen;
+  
+  RefCountedFD       *m_refCountedFD;
 }
 
 + (SegmentedMappedData*) segmentedMappedData:(NSString*)filename;
 
-// Create a series of mapped segments, each represented by
-// different NSData objects.
+// Create a series of mapped segment objects. Each segment
+// maps a specific range of the file into memory. Note that
+// the actual mapping is not created until the bytes pointer
+// is accessed for a specific segment.
 
 - (NSArray*) makeSegmentedMappedDataObjects:(NSArray*)segInfo;
+
+// This method will invoke mmap to actually map a segment into a memory buffer.
+// If the memory was successfully mapped, then TRUE is returned. Otherwise FALSE.
+
+- (BOOL) mapSegment;
+
+// This method will unmap a currently mapped segment, if
+// not currently mapped then a no-op.
+
+- (void) unmapSegment;
 
 // These standard accessors for NSData are defined
 
