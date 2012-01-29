@@ -58,7 +58,6 @@
 @property (nonatomic, assign) NSTimeInterval animatorMaxClockTime;
 @property (nonatomic, assign) NSTimeInterval animatorDecodeTimerInterval;
 
-@property (nonatomic, assign) BOOL isReadyToAnimate;
 @property (nonatomic, assign) BOOL startAnimatorWhenReady;
 
 @property (nonatomic, assign) BOOL decodedSecondFrame;

@@ -160,6 +160,12 @@ typedef enum AVAnimatorPlayerState {
 // has been delivered.
 @property (nonatomic, readonly) BOOL hasAudio;
 
+// TRUE once the media data has successfully loaded and the media is ready to animate.
+// Note that this property could be TRUE even if this media has not been attached
+// to a specfic renderer.
+
+@property (nonatomic, assign) BOOL isReadyToAnimate;
+
 // static ctor : create media object in autorelease pool
 + (AVAnimatorMedia*) aVAnimatorMedia;
 
