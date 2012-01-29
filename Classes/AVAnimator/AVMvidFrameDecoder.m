@@ -35,6 +35,10 @@
 {
   [self close];
 
+  if (self->m_mvFrames) {
+    free(self->m_mvFrames);
+  }
+  
   self.filePath = nil;
   self.mappedData = nil;
   self.currentFrameBuffer = nil;
@@ -101,7 +105,6 @@
   
   NSAssert(renderWidth > 0 && renderHeight > 0, @"renderWidth or renderHeight is zero");
 
-  NSAssert(m_mvFile, @"m_mvFile");
   uint32_t bitsPerPixel = [self _getHeader]->bpp;
   
 	CGFrameBuffer *cgFrameBuffer1 = [CGFrameBuffer cGFrameBufferWithBppDimensions:bitsPerPixel width:renderWidth height:renderHeight];
@@ -160,7 +163,7 @@
 // to cache the contents of the header and then map and unmap
 // the whole file as needed without worry of an invalid cache.
 
-- (BOOL) _openAndCopyHeader
+- (BOOL) _openAndCopyHeaders
 {
   MVFileHeader *hPtr = &self->m_mvHeader;
 
@@ -203,6 +206,28 @@
     }
   }
   
+  if (worked) {
+    // Read array of MVFrame objects into dynamically allocated array.
+    
+    NSUInteger numFrames = hPtr->numFrames;
+    NSAssert(numFrames > 1, @"numFrames");
+    int numBytes = sizeof(MVFrame) * numFrames;
+    self->m_mvFrames = malloc(numBytes);
+    
+    if (self->m_mvFrames == NULL) {
+      // Malloc failed
+      worked = FALSE;
+    }
+    
+    if (worked) {
+      int numRead = fread(self->m_mvFrames, numBytes, 1, fp);
+      if (numRead != 1) {
+        // Could not read frames from file
+        worked = FALSE;
+      }      
+    }    
+  }
+  
   fclose(fp);
   return worked;
 }
@@ -237,17 +262,13 @@
     
     self->m_resourceUsageLimit = FALSE;
     void *mappedPtr = (void*)[self.mappedData bytes];
-    self->m_mvFile = maxvid_file_map_open(mappedPtr);
+    maxvid_file_map_verify(mappedPtr);
   }
   
   return TRUE;
 }
 
 - (void) _unmapFile {
-  if (m_mvFile != NULL) {
-    maxvid_file_map_close(m_mvFile);
-    self->m_mvFile = NULL;
-  }  
   self.mappedData = nil;
 }
 
@@ -269,7 +290,7 @@
   // into memory at this point. It is possible that many files could be open but the file
   // need not be mapped into memory until it is actually used.  
   
-  BOOL worked = [self _openAndCopyHeader];
+  BOOL worked = [self _openAndCopyHeaders];
   if (!worked) {
     self.filePath = nil;
     return FALSE;
@@ -368,7 +389,7 @@
     
     for ( int i = frameIndex ; i < newFrameIndexSigned; i++) {
       int actualFrameIndex = i + 1;
-      MVFrame *frame = maxvid_file_frame(self->m_mvFile, actualFrameIndex);
+      MVFrame *frame = maxvid_file_frame(self->m_mvFrames, actualFrameIndex);
       
       if (maxvid_frame_isnopframe(frame)) {
         // This frame is a no-op, since it duplicates data from the previous frame.
@@ -384,7 +405,7 @@
       
 #ifdef EXTRA_CHECKS
       int actualFrameIndex = frameIndex + 1;
-      MVFrame *frame = maxvid_file_frame(self->m_mvFile, actualFrameIndex);
+      MVFrame *frame = maxvid_file_frame(self->m_mvFrames, actualFrameIndex);
       NSAssert(maxvid_frame_iskeyframe(frame) == 1, @"frame must be a keyframe");
 #endif // EXTRA_CHECKS      
     }
@@ -394,7 +415,7 @@
   
 	for ( ; frameIndex < newFrameIndexSigned; frameIndex++) {
     int actualFrameIndex = frameIndex + 1;
-    MVFrame *frame = maxvid_file_frame(self->m_mvFile, actualFrameIndex);
+    MVFrame *frame = maxvid_file_frame(self->m_mvFrames, actualFrameIndex);
 
 #ifdef EXTRA_CHECKS
     if (actualFrameIndex == 0) {

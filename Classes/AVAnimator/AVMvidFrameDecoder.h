@@ -14,7 +14,7 @@
 @interface AVMvidFrameDecoder : AVFrameDecoder {
   NSString *m_filePath;
   MVFileHeader m_mvHeader;
-  MVFile *m_mvFile;
+  MVFrame *m_mvFrames;
   BOOL m_isOpen;
   NSData *m_mappedData;
   

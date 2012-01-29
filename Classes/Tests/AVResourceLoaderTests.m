@@ -294,11 +294,9 @@
     
     char *mvidBytes = (char*) [wroteMvidData bytes];
     
-    MVFile *mvFilePtr = maxvid_file_map_open(mvidBytes);
+    MVFileHeader *mvFileHeaderPtr = (MVFileHeader*) mvidBytes;
     
-    assert(mvFilePtr->header.numFrames == 2);
-    
-    maxvid_file_map_close(mvFilePtr);
+    assert(mvFileHeaderPtr->numFrames == 2);
   }
   
   return;
