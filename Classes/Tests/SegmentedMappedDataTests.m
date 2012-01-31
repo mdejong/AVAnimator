@@ -11,6 +11,9 @@
 
 #import "SegmentedMappedData.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 @interface SegmentedMappedDataTests : NSObject
 
 @end
@@ -47,6 +50,8 @@
   NSAssert(parentData, @"parentData");
   NSAssert([parentData retainCount] == 1, @"retainCount");
 
+  NSAssert([parentData length] == AV_PAGESIZE, @"container length");
+  
   NSMutableArray *segInfo = [NSMutableArray array];
   
   NSRange range;
@@ -117,6 +122,8 @@
   SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
   NSAssert(parentData, @"parentData");
   NSAssert([parentData retainCount] == 1, @"retainCount");
+  
+  NSAssert([parentData length] == AV_PAGESIZE * 2, @"container length");
   
   NSMutableArray *segInfo = [NSMutableArray array];
   
@@ -201,6 +208,396 @@
   return;
 }
 
-// FIXME: test map when already mapped (no-op)
+// Map a file with 3 whole page segments. The first page is mapped in 1 segment
+// and the second two pages are mapped in a second segment.
+
++ (void) testMapFileWithThreePagesAndTwoSegments
+{
+  NSMutableData *mData = [NSMutableData data];
+  
+  int sumOfAllData = 0;
+  
+  for (int i=0; i < (AV_PAGESIZE / sizeof(int)) * 3; i++) {
+    NSData *val = [NSData dataWithBytes:&i length:sizeof(int)];
+    [mData appendData:val];
+    sumOfAllData += i;
+  }
+  NSAssert([mData length] == AV_PAGESIZE * 3, @"length");
+  
+  NSString *filePath = [AVFileUtil generateUniqueTmpPath]; 
+  
+  BOOL worked = [mData writeToFile:filePath options:NSDataWritingAtomic error:nil];
+  NSAssert(worked, @"worked");
+  NSAssert([AVFileUtil fileExists:filePath], @"fileExists");
+  
+  // The parent object contains the filename and the set of mappings
+  
+  SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
+  NSAssert(parentData, @"parentData");
+  NSAssert([parentData retainCount] == 1, @"retainCount");
+  
+  NSAssert([parentData length] == AV_PAGESIZE * 3, @"container length");
+  
+  NSMutableArray *segInfo = [NSMutableArray array];
+  
+  NSRange range;
+  NSValue *rangeValue;
+  
+  // Segment 1
+  
+  range.location = 0;
+  range.length = AV_PAGESIZE;
+  
+  rangeValue = [NSValue valueWithRange:range];
+  [segInfo addObject:rangeValue];
+  
+  // Segment 2
+  
+  range.location = AV_PAGESIZE;
+  range.length = AV_PAGESIZE * 2;
+  
+  rangeValue = [NSValue valueWithRange:range];
+  [segInfo addObject:rangeValue];
+  
+  // Make segment objects
+  
+  NSArray *segments = [parentData makeSegmentedMappedDataObjects:segInfo];
+  NSAssert(segments != nil, @"segments");
+  NSAssert([segments count] == 2, @"length");
+  
+  SegmentedMappedData *segmentData1 = [segments objectAtIndex:0];
+  NSAssert(segmentData1, @"segmentData1");
+  
+  // An additional ref is held by the parent mapped data object
+  NSAssert([segmentData1 retainCount] == 2, @"retainCount");  
+  NSAssert([segmentData1 length] == AV_PAGESIZE, @"mapped data length");
+  
+  SegmentedMappedData *segmentData2 = [segments objectAtIndex:1];
+  NSAssert(segmentData2, @"segmentData2");
+  
+  // An additional ref is held by the parent mapped data object
+  NSAssert([segmentData2 retainCount] == 2, @"retainCount");  
+  NSAssert([segmentData2 length] == AV_PAGESIZE*2, @"mapped data length");
+  
+  // Actually map the segment into memory, note that bytes will assert
+  // if the data had not been mapped previously. This mapping is deferred
+  // since a single file could have lots of mappings but the developer
+  // might want to only map one of two into memory at once.
+  
+  worked = [segmentData1 mapSegment];
+  NSAssert(worked, @"mapping into memory failed");
+  
+  worked = [segmentData2 mapSegment];
+  NSAssert(worked, @"mapping into memory failed");
+  
+  // Verify that the values in the mapped data match the generated data.
+  
+  int sumOfMappedData = 0;
+  
+  for (int i=0; i < [segmentData1 length] / sizeof(int); i++) {
+    int *iPtr = ((int*)[segmentData1 bytes]) + i;
+    int iVal = *iPtr;
+    sumOfMappedData += iVal;
+  }
+  
+  for (int i=0; i < [segmentData2 length] / sizeof(int); i++) {
+    int *iPtr = ((int*)[segmentData2 bytes]) + i;
+    int iVal = *iPtr;
+    sumOfMappedData += iVal;
+  }
+  
+  NSAssert(sumOfAllData == sumOfMappedData, @"sum mismatch");
+  
+  // Explicitly unmap each segment
+  
+  [segmentData1 unmapSegment];
+  [segmentData2 unmapSegment];
+  
+  // Invoke unmap again, shold no-op
+  
+  [segmentData1 unmapSegment];
+  [segmentData2 unmapSegment];
+  
+  return;
+}
+
+// Create a mapped file that is a single byte long, then map it.
+// This should create a mapping that is one page long and zero filled.
+
++ (void) testMapFileOneByteLong
+{  
+  int allBitsOn = 0xFF;
+  NSData *bytesData = [NSData dataWithBytes:&allBitsOn length:1];
+  NSAssert([bytesData length] == 1, @"length");
+  
+  NSString *filePath = [AVFileUtil generateUniqueTmpPath]; 
+  
+  BOOL worked = [bytesData writeToFile:filePath options:NSDataWritingAtomic error:nil];
+  NSAssert(worked, @"worked");
+  NSAssert([AVFileUtil fileExists:filePath], @"fileExists");
+  
+  // The parent object contains the filename and the set of mappings
+  
+  SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
+  NSAssert(parentData, @"parentData");
+  NSAssert([parentData retainCount] == 1, @"retainCount");
+  
+  NSAssert([parentData length] == 1, @"container length");
+  
+  NSMutableArray *segInfo = [NSMutableArray array];
+  
+  NSRange range;
+  range.location = 0;
+  range.length = 1;
+  
+  NSValue *rangeValue = [NSValue valueWithRange:range];
+  [segInfo addObject:rangeValue];
+  
+  NSArray *segments = [parentData makeSegmentedMappedDataObjects:segInfo];
+  NSAssert(segments != nil, @"segments");
+  NSAssert([segments count] == 1, @"length");
+  
+  SegmentedMappedData *segmentData = [segments objectAtIndex:0];
+  NSAssert(segmentData, @"segmentData");
+  
+  // An additional ref is held by the parent mapped data object
+  NSAssert([segmentData retainCount] == 2, @"retainCount");
+  
+  NSAssert([segmentData length] == 1, @"mapped data length");
+  
+  // Actually map the segment into memory, note that bytes will assert
+  // if the data had not been mapped previously. This mapping is deferred
+  // since a single file could have lots of mappings but the developer
+  // might want to only map one of two into memory at once.
+  
+  worked = [segmentData mapSegment];
+  NSAssert(worked, @"mapping into memory failed");
+  
+  // Map it again just to make sure this acts as a no-op
+  worked = [segmentData mapSegment];
+  NSAssert(worked, @"mapping into memory failed");
+  
+  // First byte should be 0xFF and the second should be 0x0
+
+  char *ptr = (char*) [segmentData bytes];
+  
+  uint8_t byte1 = *ptr;
+  uint8_t byte2 = *(ptr + 1);
+    
+  NSAssert(byte1 == 0xFF, @"byte1");
+  NSAssert(byte2 == 0x0, @"byte2");
+  
+  return;
+}
+
+// The test passes the name of a file that does not exist.
+
++ (void) testMapFileDoesNotExist
+{  
+  NSString *filePath = [AVFileUtil generateUniqueTmpPath]; 
+  
+  SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
+  NSAssert(parentData == nil, @"must be nil");
+  
+  // Create a zero length file
+  
+  BOOL worked = [[NSData data] writeToFile:filePath options:NSDataWritingAtomic error:nil];
+  NSAssert(worked, @"worked");
+  NSAssert([AVFileUtil fileExists:filePath], @"fileExists");
+  
+  parentData = [SegmentedMappedData segmentedMappedData:filePath];
+  NSAssert(parentData == nil, @"must be nil");
+
+  // Attempt to map a file that does not have read permissions
+
+  int result;
+
+  int allBitsOn = 0xFF;
+  NSData *bytesData = [NSData dataWithBytes:&allBitsOn length:1];
+  NSAssert([bytesData length] == 1, @"length");
+  
+  worked = [bytesData writeToFile:filePath options:NSDataWritingAtomic error:nil];
+  NSAssert(worked, @"worked");
+  NSAssert([AVFileUtil fileExists:filePath], @"fileExists");  
+  
+  result = chmod([filePath UTF8String], S_IWUSR);
+  NSAssert(result == 0, @"chmod");
+
+  parentData = [SegmentedMappedData segmentedMappedData:filePath];
+  NSAssert(parentData == nil, @"must be nil");
+  
+  result = chmod([filePath UTF8String], S_IRUSR | S_IWUSR);
+  NSAssert(result == 0, @"chmod");
+  
+  [[NSFileManager defaultManager] removeItemAtPath:filePath error:nil];
+  
+  return;
+}
+
+
+// This test case pushes the limts of the size of files that can be mapped into memory. It should be
+// possible to map a very large number of files into memory, but the virtual memory manager in
+// iOS could crash with very large mappings.
+
++ (void) writeLargeFile:(NSString*)filename numBytes:(int)numBytes
+{
+  if ([AVFileUtil fileExists:filename]) {
+    return;
+  }
+  
+  char *cStr = (char*) [filename UTF8String];
+  FILE *fd = fopen(cStr, "wb");
+  for (int i=0; i < numBytes; i++) {
+    fputc((int)'1', fd);
+  }
+  fclose(fd);
+}
+
++ (void) DISABLED_testMappingLargeFiles
+{
+  NSArray *filenames = [NSArray arrayWithObjects:
+                        @"large1", @"large2", @"large3", @"large4", @"large5",
+                        @"large6", @"large7", @"large8", @"large9", @"large10",
+                        nil];
+  NSMutableArray *tmpFilenames = [NSMutableArray array];
+
+  NSMutableArray *mappedFileDatas = [NSMutableArray array];
+
+  NSMutableArray *unmappedFileNames = [NSMutableArray array];
+  NSMutableArray *unmappedFileDatas = [NSMutableArray array];
+  
+  for (NSString *filename in filenames) {
+    NSString *path = [AVFileUtil getTmpDirPath:filename];
+    [tmpFilenames addObject:path];
+  }
+  
+  // Generate 100 meg data in each file
+  
+  for (NSString *path in tmpFilenames) {
+    // Page = 4K, Meg = 1000K, 100 Megs = 100000K
+    int numBytes = 1024 * 1000 * 100;
+    NSAssert((numBytes % 1024) == 0, @"numBytes not page sized");
+    
+    NSLog(@"Writing %@", [path lastPathComponent]);
+    [self writeLargeFile:path numBytes:numBytes];
+  }
+
+  // Map large 100M files into memory 
+  
+  for (NSString *path in tmpFilenames) {
+    NSLog(@"Mapping %@", [path lastPathComponent]);
+    
+    NSData *data = [NSData dataWithContentsOfMappedFile:path];
+    if (data == nil) {
+      NSLog(@"Failed to map %@", [path lastPathComponent]);
+      [unmappedFileNames addObject:path];
+      //[unmappedFileDatas addObject:data];
+      continue;
+    }
+    [mappedFileDatas addObject:data];
+    
+    // Wait a few seconds in event loop
+    
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:20];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
+  
+  // Now walk over all the bytes in the mapping, one mapping at a time.
+  // This should bring all the pages into memory by swapping.
+
+  for (NSData *data in mappedFileDatas) {
+    NSLog(@"Processing1");
+
+    char *ptr = (char*) [data bytes];
+    int len = [data length];
+    
+    int sum = 0;
+    
+    for (char *data = ptr; data < (ptr + len); data++) {
+      char c = *data;
+      sum += c;
+    }
+    
+    NSAssert(sum > 0, @"sum");
+    
+    // Wait a few seconds in event loop
+    
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
+
+  // Now walk over all the bytes in the mapping, one mapping at a time.
+  // This should bring all the pages into memory by swapping.
+  
+  for (NSData *data in mappedFileDatas) {
+    NSLog(@"Processing2");
+    
+    char *ptr = (char*) [data bytes];
+    int len = [data length];
+    
+    int sum = 0;
+    
+    for (char *data = ptr; data < (ptr + len); data++) {
+      char c = *data;
+      sum += c;
+    }
+    
+    NSAssert(sum > 0, @"sum");
+    
+    // Wait a few seconds in event loop
+    
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
+  
+  // Attempt to map failed memory again
+    
+  for (NSString *path in unmappedFileNames) {
+    NSLog(@"Mapping %@", [path lastPathComponent]);
+    
+    NSData *data = [NSData dataWithContentsOfMappedFile:path];
+    if (data == nil) {
+      NSLog(@"Failed to map %@", [path lastPathComponent]);
+      continue;
+    }
+    [unmappedFileDatas addObject:data];
+    
+    // Wait a few seconds in event loop
+    
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:20];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
+  
+  // Now walk over all the bytes in the mapping, one mapping at a time.
+  // This should bring all the pages into memory by swapping out pages.
+  
+  for (NSData *data in mappedFileDatas) {
+    NSLog(@"Processing3");
+    
+    char *ptr = (char*) [data bytes];
+    int len = [data length];
+    
+    int sum = 0;
+    
+    for (char *data = ptr; data < (ptr + len); data++) {
+      char c = *data;
+      sum += c;
+    }
+    
+    NSAssert(sum > 0, @"sum");
+    
+    // Wait a few seconds in event loop
+    
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
+  
+  // Wait for 5 minutes in event loop
+  
+  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:(60 * 5)];
+  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  
+  return;
+}
 
 @end

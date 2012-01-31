@@ -47,9 +47,14 @@
 
 - (void) unmapSegment;
 
-// These standard accessors for NSData are defined
+// Return the starting address of this specific segment mapping.
+// The container will assert if bytes is invoked on it.
 
-- (const void*) bytes;   
+- (const void*) bytes;
+
+// For a segment this returns the number of bytes in a segment.
+// For the container, this returns the length of the whole file in bytes.
+
 - (NSUInteger) length;
 
 @end

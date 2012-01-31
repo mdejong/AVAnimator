@@ -74,8 +74,41 @@
 
 + (SegmentedMappedData*) segmentedMappedData:(NSString*)filePath
 {
+  // Query the file length for the container, will be returned by length getter.
+  // If the file does not exist, then nil is returned.
+  NSDictionary *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:filePath error:nil];
+  if (attrs == nil) {
+    // File does not exist or can't be accessed
+    return nil;
+  }
+  unsigned long long fileSize = [attrs fileSize];
+  size_t fileSizeT = (size_t) fileSize;
+  NSAssert(fileSize == fileSizeT, @"assignment from unsigned long long to size_t lost bits");
+  
+  // The length of the file can't be zero bytes
+  
+  if (fileSizeT == 0) {
+    return nil;
+  }
+  
+  // Double check that we can actually open the file and read 1 byte of data from it.
+  
+  char aByte[1];
+  const char *cStr = [filePath UTF8String];
+  FILE* fp = fopen(cStr, "rb");
+  if (fp) {
+    int numRead = fread(&aByte[0], 1, 1, fp);
+    fclose(fp);
+    if (numRead != 1) {
+      return nil;
+    }
+  } else {
+    return nil;
+  }
+  
   SegmentedMappedData *obj = [[SegmentedMappedData alloc] init];
   obj.filePath = filePath;
+  obj->m_mappedLen = fileSizeT;  
   return [obj autorelease];
 }
 
@@ -108,6 +141,7 @@
     // has been deallocated.
     
     [self unmapSegment];
+    NSAssert(self->m_mappedData == NULL, @"m_mappedData");
   }
   
   [AutoPropertyRelease releaseProperties:self thisClass:SegmentedMappedData.class];
@@ -151,11 +185,35 @@
   
   void *mappedData = mmap(NULL, len, PROT_READ, MAP_FILE | MAP_SHARED, fd, offset);
   
-  if (mappedData == NULL) {
+  if (mappedData == MAP_FAILED) {
+    int errnoVal = errno;
+    
+    // Check for known fatal errors
+    
+    if (errnoVal == EACCES) {
+      NSAssert(FALSE, @"munmap result EACCES : file not opened for reading");
+    } else if (errnoVal == EBADF) {
+      NSAssert(FALSE, @"munmap result EBADF : bad file descriptor");
+    } else if (errnoVal == EINVAL) {
+      NSAssert(FALSE, @"munmap result EINVAL");
+    } else if (errnoVal == ENODEV) {
+      NSAssert(FALSE, @"munmap result ENODEV : page does not support mapping");
+    } else if (errnoVal == ENXIO) {
+      NSAssert(FALSE, @"munmap result ENXIO : invalid addresses");
+    } else if (errnoVal == EOVERFLOW) {
+      NSAssert(FALSE, @"munmap result EOVERFLOW : addresses exceed the maximum offset");
+    }
+    
+    // Note that ENOMEM is not checked here since it is actually likely to happen
+    // due to running out of memory that could be mapped.
+    
+    NSAssert(self->m_mappedData == NULL, @"m_mappedData");
+    
     return FALSE;
   }
   
   self->m_mappedData = mappedData;
+  NSAssert(self->m_mappedData != NULL, @"m_mappedData");
   return TRUE;
 }
 
@@ -165,13 +223,19 @@
 
   NSAssert(self.mappedDataSegments == nil, @"unmapSegment can't be invoked on container");
   
-  if (self->m_mappedData == nil) {
+  if (self->m_mappedData == NULL) {
     // Already unmapped, no-op
     return;
   }
 
   int result = munmap(self->m_mappedData, self->m_mappedLen);
-  NSAssert(result == 0, @"munmap result");
+  if (result != 0) {
+    int errnoVal = errno;
+    if (errnoVal == EINVAL) {
+      NSAssert(FALSE, @"munmap result EINVAL");      
+    }
+    NSAssert(result == 0, @"munmap result");
+  }
   
   self->m_mappedData = NULL;
   
