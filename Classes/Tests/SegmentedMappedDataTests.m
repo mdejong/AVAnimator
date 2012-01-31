@@ -72,6 +72,12 @@
   NSAssert([segmentData retainCount] == 2, @"retainCount");
   
   NSAssert([segmentData length] == AV_PAGESIZE, @"mapped data length");
+
+  NSAssert(segmentData.mappedOffset == 0, @"mappedOffset");
+  NSAssert(segmentData.mappedOSOffset == 0, @"mappedOSOffset");
+
+  NSAssert(segmentData.mappedLen == AV_PAGESIZE, @"mappedLen");
+  NSAssert(segmentData.mappedOSLen == AV_PAGESIZE, @"mappedOSLen");
   
   // Actually map the segment into memory, note that bytes will assert
   // if the data had not been mapped previously. This mapping is deferred
@@ -158,6 +164,12 @@
   // An additional ref is held by the parent mapped data object
   NSAssert([segmentData1 retainCount] == 2, @"retainCount");  
   NSAssert([segmentData1 length] == AV_PAGESIZE, @"mapped data length");
+  
+  NSAssert(segmentData1.mappedOffset == 0, @"mappedOffset");
+  NSAssert(segmentData1.mappedOSOffset == 0, @"mappedOSOffset");
+  
+  NSAssert(segmentData1.mappedLen == AV_PAGESIZE, @"mappedLen");
+  NSAssert(segmentData1.mappedOSLen == AV_PAGESIZE, @"mappedOSLen");
 
   SegmentedMappedData *segmentData2 = [segments objectAtIndex:1];
   NSAssert(segmentData2, @"segmentData2");
@@ -165,6 +177,12 @@
   // An additional ref is held by the parent mapped data object
   NSAssert([segmentData2 retainCount] == 2, @"retainCount");  
   NSAssert([segmentData2 length] == AV_PAGESIZE, @"mapped data length");
+  
+  NSAssert(segmentData2.mappedOffset == AV_PAGESIZE, @"mappedOffset");
+  NSAssert(segmentData2.mappedOSOffset == AV_PAGESIZE, @"mappedOSOffset");
+  
+  NSAssert(segmentData2.mappedLen == AV_PAGESIZE, @"mappedLen");
+  NSAssert(segmentData2.mappedOSLen == AV_PAGESIZE, @"mappedOSLen");
   
   // Actually map the segment into memory, note that bytes will assert
   // if the data had not been mapped previously. This mapping is deferred
@@ -272,12 +290,24 @@
   NSAssert([segmentData1 retainCount] == 2, @"retainCount");  
   NSAssert([segmentData1 length] == AV_PAGESIZE, @"mapped data length");
   
+  NSAssert(segmentData1.mappedOffset == 0, @"mappedOffset");
+  NSAssert(segmentData1.mappedOSOffset == 0, @"mappedOSOffset");
+  
+  NSAssert(segmentData1.mappedLen == AV_PAGESIZE, @"mappedLen");
+  NSAssert(segmentData1.mappedOSLen == AV_PAGESIZE, @"mappedOSLen");
+  
   SegmentedMappedData *segmentData2 = [segments objectAtIndex:1];
   NSAssert(segmentData2, @"segmentData2");
   
   // An additional ref is held by the parent mapped data object
   NSAssert([segmentData2 retainCount] == 2, @"retainCount");  
   NSAssert([segmentData2 length] == AV_PAGESIZE*2, @"mapped data length");
+  
+  NSAssert(segmentData2.mappedOffset == AV_PAGESIZE, @"mappedOffset");
+  NSAssert(segmentData2.mappedOSOffset == AV_PAGESIZE, @"mappedOSOffset");
+  
+  NSAssert(segmentData2.mappedLen == AV_PAGESIZE*2, @"mappedLen");
+  NSAssert(segmentData2.mappedOSLen == AV_PAGESIZE*2, @"mappedOSLen");
   
   // Actually map the segment into memory, note that bytes will assert
   // if the data had not been mapped previously. This mapping is deferred
@@ -323,6 +353,7 @@
 
 // Create a mapped file that is a single byte long, then map it.
 // This should create a mapping that is one page long and zero filled.
+// This test also checks for a no-op when mapping twice.
 
 + (void) testMapFileOneByteLong
 {  
@@ -365,6 +396,12 @@
   
   NSAssert([segmentData length] == 1, @"mapped data length");
   
+  NSAssert(segmentData.mappedOffset == 0, @"mappedOffset");
+  NSAssert(segmentData.mappedOSOffset == 0, @"mappedOSOffset");
+  
+  NSAssert(segmentData.mappedLen == 1, @"mappedLen");
+  NSAssert(segmentData.mappedOSLen == AV_PAGESIZE, @"mappedOSLen");
+  
   // Actually map the segment into memory, note that bytes will assert
   // if the data had not been mapped previously. This mapping is deferred
   // since a single file could have lots of mappings but the developer
@@ -386,6 +423,298 @@
     
   NSAssert(byte1 == 0xFF, @"byte1");
   NSAssert(byte2 == 0x0, @"byte2");
+  
+  [segmentData unmapSegment]; 
+  
+  return;
+}
+
+// Write a whole page, but map only the second half of the page. In actual
+// practice, this will map the whole page but return a pointer that starts
+// halfway into the page.
+
++ (void) testMapFileAsHalfPage
+{
+  NSMutableData *mData = [NSMutableData data];
+  
+  int sumOfAllData = 0;
+  
+  for (int i=0; i < AV_PAGESIZE / sizeof(int); i++) {
+    int ival = 1;
+    if (i < (AV_PAGESIZE / sizeof(int) / 2)) {
+      ival = 1;
+    } else {
+      ival = 3;
+      sumOfAllData += ival;
+    }
+    
+    NSData *val = [NSData dataWithBytes:&ival length:sizeof(int)];
+    [mData appendData:val];
+  }
+  NSAssert([mData length] == AV_PAGESIZE, @"length");
+  
+  NSString *filePath = [AVFileUtil generateUniqueTmpPath]; 
+  
+  BOOL worked = [mData writeToFile:filePath options:NSDataWritingAtomic error:nil];
+  NSAssert(worked, @"worked");
+  NSAssert([AVFileUtil fileExists:filePath], @"fileExists");
+  
+  // The parent object contains the filename and the set of mappings
+  
+  SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
+  NSAssert(parentData, @"parentData");
+  NSAssert([parentData retainCount] == 1, @"retainCount");
+  
+  NSAssert([parentData length] == AV_PAGESIZE, @"container length");
+  
+  NSMutableArray *segInfo = [NSMutableArray array];
+  
+  NSRange range;
+  range.location = (AV_PAGESIZE/2);
+  range.length = (AV_PAGESIZE/2);
+  
+  NSValue *rangeValue = [NSValue valueWithRange:range];
+  [segInfo addObject:rangeValue];
+  
+  NSArray *segments = [parentData makeSegmentedMappedDataObjects:segInfo];
+  NSAssert(segments != nil, @"segments");
+  NSAssert([segments count] == 1, @"length");
+  
+  SegmentedMappedData *segmentData = [segments objectAtIndex:0];
+  NSAssert(segmentData, @"segmentData");
+  
+  // An additional ref is held by the parent mapped data object
+  NSAssert([segmentData retainCount] == 2, @"retainCount");
+  
+  NSAssert([segmentData length] == (AV_PAGESIZE/2), @"mapped data length");
+  
+  NSAssert(segmentData.mappedOffset == (AV_PAGESIZE/2), @"mappedOffset");
+  NSAssert(segmentData.mappedOSOffset == 0, @"mappedOSOffset");
+  
+  NSAssert(segmentData.mappedLen == (AV_PAGESIZE/2), @"mappedLen");
+  NSAssert(segmentData.mappedOSLen == AV_PAGESIZE, @"mappedOSLen");
+  
+  // Actually map the segment into memory, note that bytes will assert
+  // if the data had not been mapped previously. This mapping is deferred
+  // since a single file could have lots of mappings but the developer
+  // might want to only map one of two into memory at once.
+  
+  worked = [segmentData mapSegment];
+  NSAssert(worked, @"mapping into memory failed");
+  
+  // Verify that the values in the mapped data match the generated data.
+  
+  int sumOfMappedData = 0;
+  
+  for (int i=0; i < [segmentData length] / sizeof(int); i++) {
+    int *iPtr = ((int*)[segmentData bytes]) + i;
+    int iVal = *iPtr;
+    sumOfMappedData += iVal;
+  }
+  
+  NSAssert(sumOfAllData == sumOfMappedData, @"sum mismatch");
+  
+  [segmentData unmapSegment];
+  
+  return;
+}
+
+// Test case that starts at offset 1 and length is a whole page.
+// This will map two OS pages.
+
++ (void) testMapFileAsTwoPagesPartial
+{
+  NSMutableData *mData = [NSMutableData data];
+  
+  int sumOfAllData = 0;
+  
+  // Page of 1, then page of 2
+  
+  for (int i=0; i < (AV_PAGESIZE * 2); i++) {
+    uint8_t ival;
+    if (i < AV_PAGESIZE) {
+      ival = 1;
+    } else {
+      ival = 2;
+    }
+    
+    NSData *val = [NSData dataWithBytes:&ival length:1];
+    [mData appendData:val];
+    sumOfAllData += ival;
+  }
+  NSAssert([mData length] == AV_PAGESIZE*2, @"length");
+  
+  NSString *filePath = [AVFileUtil generateUniqueTmpPath]; 
+  
+  BOOL worked = [mData writeToFile:filePath options:NSDataWritingAtomic error:nil];
+  NSAssert(worked, @"worked");
+  NSAssert([AVFileUtil fileExists:filePath], @"fileExists");
+  
+  // The parent object contains the filename and the set of mappings
+  
+  SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
+  NSAssert(parentData, @"parentData");
+  NSAssert([parentData retainCount] == 1, @"retainCount");
+  
+  NSAssert([parentData length] == AV_PAGESIZE*2, @"container length");
+  
+  NSMutableArray *segInfo = [NSMutableArray array];
+  
+  NSRange range;
+  range.location = 1;
+  range.length = AV_PAGESIZE;
+  
+  NSValue *rangeValue = [NSValue valueWithRange:range];
+  [segInfo addObject:rangeValue];
+  
+  NSArray *segments = [parentData makeSegmentedMappedDataObjects:segInfo];
+  NSAssert(segments != nil, @"segments");
+  NSAssert([segments count] == 1, @"length");
+  
+  SegmentedMappedData *segmentData = [segments objectAtIndex:0];
+  NSAssert(segmentData, @"segmentData");
+  
+  // An additional ref is held by the parent mapped data object
+  NSAssert([segmentData retainCount] == 2, @"retainCount");
+  
+  NSAssert([segmentData length] == AV_PAGESIZE, @"mapped data length");
+  
+  NSAssert(segmentData.mappedOffset == 1, @"mappedOffset");
+  NSAssert(segmentData.mappedOSOffset == 0, @"mappedOSOffset");
+  
+  NSAssert(segmentData.mappedLen == AV_PAGESIZE, @"mappedLen");
+  NSAssert(segmentData.mappedOSLen == AV_PAGESIZE*2, @"mappedOSLen");
+  
+  // Actually map the segment into memory, note that bytes will assert
+  // if the data had not been mapped previously. This mapping is deferred
+  // since a single file could have lots of mappings but the developer
+  // might want to only map one of two into memory at once.
+  
+  worked = [segmentData mapSegment];
+  NSAssert(worked, @"mapping into memory failed");
+  
+  // Verify that the values in the mapped data match the generated data.
+  
+  int sumOfMappedData = 0;
+  
+  for (int i=0; i < [segmentData length]; i++) {
+    char *ptr = ((char*)[segmentData bytes]) + i;
+    char cVal = *ptr;
+    sumOfMappedData += cVal;
+  }
+  
+  int expected = (1 * (AV_PAGESIZE - 1)) + 2;
+  
+  NSAssert(expected == sumOfMappedData, @"sum mismatch");
+  
+  [segmentData unmapSegment];
+  
+  return;
+}
+
+// Write two pages and then create a mapping that extends over both
+// pages. The create a second mapping that maps over the second page.
+// Map and then unmap both files to make sure the mapping do not conflict.
+
++ (void) testMapFileWithOverlappingPage
+{
+  NSMutableData *mData = [NSMutableData data];
+  
+  int sumOfAllData = 0;
+  
+  // Page of 1, then page of 2
+  
+  for (int i=0; i < (AV_PAGESIZE * 2); i++) {
+    uint8_t ival;
+    if (i < AV_PAGESIZE) {
+      ival = 1;
+    } else {
+      ival = 2;
+    }
+    
+    NSData *val = [NSData dataWithBytes:&ival length:1];
+    [mData appendData:val];
+    sumOfAllData += ival;
+  }
+  NSAssert([mData length] == AV_PAGESIZE*2, @"length");
+  
+  NSString *filePath = [AVFileUtil generateUniqueTmpPath]; 
+  
+  BOOL worked = [mData writeToFile:filePath options:NSDataWritingAtomic error:nil];
+  NSAssert(worked, @"worked");
+  NSAssert([AVFileUtil fileExists:filePath], @"fileExists");
+  
+  // The parent object contains the filename and the set of mappings
+  
+  SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
+  NSAssert(parentData, @"parentData");
+  NSAssert([parentData retainCount] == 1, @"retainCount");
+  
+  NSAssert([parentData length] == AV_PAGESIZE*2, @"container length");
+  
+  NSMutableArray *segInfo = [NSMutableArray array];
+  
+  NSRange range;
+  range.location = 0;
+  range.length = AV_PAGESIZE * 2;
+  
+  NSValue *rangeValue = [NSValue valueWithRange:range];
+  [segInfo addObject:rangeValue];
+
+  range.location = AV_PAGESIZE;
+  range.length = AV_PAGESIZE;
+  
+  rangeValue = [NSValue valueWithRange:range];
+  [segInfo addObject:rangeValue];
+  
+  NSArray *segments = [parentData makeSegmentedMappedDataObjects:segInfo];
+  NSAssert(segments != nil, @"segments");
+  NSAssert([segments count] == 2, @"length");
+  
+  SegmentedMappedData *segmentData1 = [segments objectAtIndex:0];
+  NSAssert(segmentData1, @"segmentData1");
+
+  SegmentedMappedData *segmentData2 = [segments objectAtIndex:1];
+  NSAssert(segmentData2, @"segmentData2");
+  
+  NSAssert(segmentData1.mappedOffset == 0, @"mappedOffset");
+  NSAssert(segmentData1.mappedOSOffset == 0, @"mappedOSOffset");
+  
+  NSAssert(segmentData1.mappedLen == AV_PAGESIZE*2, @"mappedLen");
+  NSAssert(segmentData1.mappedOSLen == AV_PAGESIZE*2, @"mappedOSLen");
+
+  NSAssert(segmentData2.mappedOffset == AV_PAGESIZE, @"mappedOffset");
+  NSAssert(segmentData2.mappedOSOffset == AV_PAGESIZE, @"mappedOSOffset");
+  
+  NSAssert(segmentData2.mappedLen == AV_PAGESIZE, @"mappedLen");
+  NSAssert(segmentData2.mappedOSLen == AV_PAGESIZE, @"mappedOSLen");
+  
+  // Actually map the segment into memory, note that bytes will assert
+  // if the data had not been mapped previously. This mapping is deferred
+  // since a single file could have lots of mappings but the developer
+  // might want to only map one of two into memory at once.
+  
+  worked = [segmentData1 mapSegment];
+  NSAssert(worked, @"mapping into memory failed");
+
+  worked = [segmentData2 mapSegment];
+  NSAssert(worked, @"mapping into memory failed");
+  
+  // Read value from first segment
+
+  char *ptr;
+  ptr = (char*)[segmentData1 bytes];
+  
+  int val1 = *ptr;
+  NSAssert(val1 == 1, @"val1");
+  
+  ptr = (char*)[segmentData2 bytes];
+
+  int val2 = *ptr;
+  NSAssert(val2 == 2, @"val2");
+  
+  [segmentData1 unmapSegment];
+  [segmentData2 unmapSegment];
   
   return;
 }

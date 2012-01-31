@@ -9,6 +9,8 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 
+#define SM_PAGESIZE 4096
+
 // This private class is used to implement a ref counted
 // file descriptor container. The held file descriptor
 // is closed once all the mapped objects have been released.
@@ -48,8 +50,6 @@
 
 @interface SegmentedMappedData ()
 
-@property (nonatomic, retain) NSMutableArray *mappedDataSegments;
-
 @property (nonatomic, copy)   NSString *filePath;
 
 @property (nonatomic, retain) RefCountedFD *refCountedFD;
@@ -71,6 +71,12 @@
 @synthesize mappedDataSegments = m_mappedDataSegments;
 @synthesize filePath = m_filePath;
 @synthesize refCountedFD = m_refCountedFD;
+
+@synthesize mappedOffset = m_mappedOffset;
+@synthesize mappedLen = m_mappedLen;
+
+@synthesize mappedOSOffset = m_mappedOSOffset;
+@synthesize mappedOSLen = m_mappedOSLen;
 
 + (SegmentedMappedData*) segmentedMappedData:(NSString*)filePath
 {
@@ -130,6 +136,23 @@
   
   NSAssert(refCountedFD, @"refCountedFD");
   obj.refCountedFD = refCountedFD;
+
+  off_t osOffset = offset % SM_PAGESIZE;
+  obj->m_mappedOSOffset = offset - osOffset;
+
+  // Calculate number of bytes in mapping in terms of whole pages
+  
+  size_t osLength = len + osOffset;
+  
+  size_t offsetToPageBound = SM_PAGESIZE - (osLength % SM_PAGESIZE);
+  if (offsetToPageBound == SM_PAGESIZE) {
+    offsetToPageBound = 0;
+  }
+  if (offsetToPageBound > 0) {
+    osLength += offsetToPageBound;
+  }
+  
+  obj->m_mappedOSLen = osLength;
   
   return [obj autorelease];
 }
@@ -161,7 +184,16 @@
   //}
   
   NSAssert(self->m_mappedData != NULL, @"data not mapped");
-  return self->m_mappedData;
+  
+  NSAssert(self->m_mappedOffset >= self->m_mappedOSOffset, @"os offset must be same or smaller than result offset");
+  NSUInteger offset = (self->m_mappedOffset - self->m_mappedOSOffset);
+  
+  if (offset > 0) {
+    char *ptr = (char*)self->m_mappedData;
+    return ptr + offset;
+  } else {
+    return self->m_mappedData;
+  }
 }
 
 // Note that it is perfectly fine to query the mapping length even if the file range
@@ -180,8 +212,11 @@
   }
   
   int fd = self.refCountedFD->m_fd;
-  off_t offset = self->m_mappedOffset;
-  size_t len = self->m_mappedLen;
+  off_t offset = self->m_mappedOSOffset;
+  size_t len = self->m_mappedOSLen;
+  
+  NSAssert((offset % SM_PAGESIZE) == 0, @"offset");
+  NSAssert((len % SM_PAGESIZE) == 0, @"len");
   
   void *mappedData = mmap(NULL, len, PROT_READ, MAP_FILE | MAP_SHARED, fd, offset);
   
@@ -228,7 +263,8 @@
     return;
   }
 
-  int result = munmap(self->m_mappedData, self->m_mappedLen);
+  size_t len = self->m_mappedOSLen;
+  int result = munmap(self->m_mappedData, len);
   if (result != 0) {
     int errnoVal = errno;
     if (errnoVal == EINVAL) {
@@ -242,7 +278,7 @@
   return;
 }
 
-- (NSArray*) makeSegmentedMappedDataObjects:(NSArray*)segInfo
+- (NSMutableArray*) makeSegmentedMappedDataObjects:(NSArray*)segInfo
 {
   self.mappedDataSegments = [NSMutableArray array];
   NSAssert(self.mappedDataSegments, @"mappedDataSegments");

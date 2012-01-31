@@ -9,7 +9,9 @@
 // it deallocated assuming there are no other active references.
 //
 // Unlike a plain mapped file, a SegmentedMappedData will put off creating
-// a specific mapping until the data for a specific segment is accessed.
+// a specific mapping until the data for a specific segment is needed.
+// The segment objets support and explicit mapSegment/unmapSegment API
+// that is used to map the segment into memory before use of the data.
 
 #import <Foundation/Foundation.h>
 
@@ -21,12 +23,39 @@
   
   NSMutableArray     *m_mappedDataSegments;
   
+  // This pointer is that starting point where the OS
+  // maps the start of a page into memory.
+  
   void               *m_mappedData;
+  
+  // A specific segment returns a pointer and
+  // length in terms of the byte offset where
+  // a specific segment was indicated. These
+  // are returned by the bytes and length methods.
+  
   off_t               m_mappedOffset;
   size_t              m_mappedLen;
   
+  // In addition, the actual page starting offset
+  // and the actual length of the mapping are
+  // stored. If the mapping offset does not
+  // begin on a page bound, then these values+  // Indicate the OS level values.
+    
+  off_t               m_mappedOSOffset;
+  size_t              m_mappedOSLen;
+  
   RefCountedFD       *m_refCountedFD;
 }
+
+// Do not modify this property!
+@property (nonatomic, retain) NSMutableArray *mappedDataSegments;
+
+@property (nonatomic, readonly) off_t mappedOffset;
+@property (nonatomic, readonly) size_t mappedLen;
+
+@property (nonatomic, readonly) off_t mappedOSOffset;
+@property (nonatomic, readonly) size_t mappedOSLen;
+
 
 + (SegmentedMappedData*) segmentedMappedData:(NSString*)filename;
 
@@ -35,7 +64,7 @@
 // the actual mapping is not created until the bytes pointer
 // is accessed for a specific segment.
 
-- (NSArray*) makeSegmentedMappedDataObjects:(NSArray*)segInfo;
+- (NSMutableArray*) makeSegmentedMappedDataObjects:(NSArray*)segInfo;
 
 // This method will invoke mmap to actually map a segment into a memory buffer.
 // If the memory was successfully mapped, then TRUE is returned. Otherwise FALSE.
