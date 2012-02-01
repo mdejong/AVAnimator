@@ -33,7 +33,7 @@
 #endif // USE_SEGMENTED_MMAP
   
   CGFrameBuffer *m_currentFrameBuffer;  
-	NSArray *m_cgFrameBuffers;
+  NSArray *m_cgFrameBuffers;
   
   int frameIndex;
   BOOL m_resourceUsageLimit;

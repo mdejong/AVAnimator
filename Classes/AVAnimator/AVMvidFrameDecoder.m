@@ -72,16 +72,16 @@
 
   self.cgFrameBuffers = nil;
   
-	[super dealloc];
+  [super dealloc];
 }
 
 - (id) init
 {
-	if ((self = [super init]) != nil) {
+  if ((self = [super init]) != nil) {
     self->frameIndex = -1;
     self->m_resourceUsageLimit = TRUE;
   }
-	return self;
+  return self;
 }
 
 + (AVMvidFrameDecoder*) aVMvidFrameDecoder
@@ -97,25 +97,25 @@
 
 - (void) _allocFrameBuffers
 {
-	// create buffers used for loading image data
+  // create buffers used for loading image data
   
   if (self.cgFrameBuffers != nil) {
     // Already allocated the frame buffers
     return;
   }
   
-	int renderWidth = [self width];
-	int renderHeight = [self height];
+  int renderWidth = [self width];
+  int renderHeight = [self height];
   
   NSAssert(renderWidth > 0 && renderHeight > 0, @"renderWidth or renderHeight is zero");
 
   uint32_t bitsPerPixel = [self _getHeader]->bpp;
   
-	CGFrameBuffer *cgFrameBuffer1 = [CGFrameBuffer cGFrameBufferWithBppDimensions:bitsPerPixel width:renderWidth height:renderHeight];
+  CGFrameBuffer *cgFrameBuffer1 = [CGFrameBuffer cGFrameBufferWithBppDimensions:bitsPerPixel width:renderWidth height:renderHeight];
   CGFrameBuffer *cgFrameBuffer2 = [CGFrameBuffer cGFrameBufferWithBppDimensions:bitsPerPixel width:renderWidth height:renderHeight];
   CGFrameBuffer *cgFrameBuffer3 = [CGFrameBuffer cGFrameBufferWithBppDimensions:bitsPerPixel width:renderWidth height:renderHeight];
   
-	self.cgFrameBuffers = [NSArray arrayWithObjects:cgFrameBuffer1, cgFrameBuffer2, cgFrameBuffer3, nil];
+  self.cgFrameBuffers = [NSArray arrayWithObjects:cgFrameBuffer1, cgFrameBuffer2, cgFrameBuffer3, nil];
   
   // Double check size assumptions
   
@@ -138,24 +138,25 @@
 
 - (CGFrameBuffer*) _getNextFramebuffer
 {
-	[self _allocFrameBuffers];
+  [self _allocFrameBuffers];
   
-	CGFrameBuffer *cgFrameBuffer = nil;
-	for (CGFrameBuffer *aBuffer in self.cgFrameBuffers) {
+  CGFrameBuffer *cgFrameBuffer = nil;
+  for (CGFrameBuffer *aBuffer in self.cgFrameBuffers) {
     if (aBuffer == self.currentFrameBuffer) {
       // When a framebuffer is the "current" one, it contains
       // the decoded output from a previous frame. Need to
       // ignore it and select the next available one.
+
       continue;
     }    
-		if (!aBuffer.isLockedByDataProvider) {
-			cgFrameBuffer = aBuffer;
-			break;
-		}
-	}
-	if (cgFrameBuffer == nil) {
-		NSAssert(FALSE, @"no cgFrameBuffer is available");
-	}
+    if (!aBuffer.isLockedByDataProvider) {
+      cgFrameBuffer = aBuffer;
+      break;
+    }
+  }
+  if (cgFrameBuffer == nil) {
+    NSAssert(FALSE, @"no cgFrameBuffer is available");
+  }
   return cgFrameBuffer;
 }
 
@@ -326,8 +327,8 @@
 
 - (BOOL) openForReading:(NSString*)moviePath
 {
-	if (self->m_isOpen) {
-		return FALSE;
+  if (self->m_isOpen) {
+    return FALSE;
   }
   
   if (![[moviePath pathExtension] isEqualToString:@"mvid"]) {
@@ -348,8 +349,8 @@
     return FALSE;
   }
 
-	self->m_isOpen = TRUE;
-	return TRUE;
+  self->m_isOpen = TRUE;
+  return TRUE;
 }
 
 // Close resource opened earlier
@@ -358,7 +359,7 @@
 {
   [self _unmapFile];
   
-	frameIndex = -1;
+  frameIndex = -1;
   self.currentFrameBuffer = nil;
   
   self->m_isOpen = FALSE;  
@@ -366,11 +367,11 @@
 
 - (void) rewind
 {
-	if (!self->m_isOpen) {
-		return;
+  if (!self->m_isOpen) {
+    return;
   }
   
-	frameIndex = -1;
+  frameIndex = -1;
   self.currentFrameBuffer = nil;
 }
 
@@ -391,31 +392,31 @@
   
   // Advance to same frame is a no-op
   
-	if ((frameIndex != -1) && (newFrameIndex == frameIndex)) {
+  if ((frameIndex != -1) && (newFrameIndex == frameIndex)) {
     return nil;
-	} else if ((frameIndex != -1) && (newFrameIndex < frameIndex)) {
+  } else if ((frameIndex != -1) && (newFrameIndex < frameIndex)) {
     // movie frame index can only go forward via advanceToFrame
-		NSString *msg = [NSString stringWithFormat:@"%@: %d -> %d",
+    NSString *msg = [NSString stringWithFormat:@"%@: %d -> %d",
                      @"can't advance to frame before current frameIndex",
                      frameIndex,
                      newFrameIndex];
-		NSAssert(FALSE, msg);
+    NSAssert(FALSE, msg);
   }
   
-	// Get the number of frames directly from the header
-	// instead of invoking method to query self.numFrames.
+  // Get the number of frames directly from the header
+  // instead of invoking method to query self.numFrames.
   
   int numFrames = [self numFrames];
   
-	if (newFrameIndex >= numFrames) {
-		NSString *msg = [NSString stringWithFormat:@"%@: %d",
+  if (newFrameIndex >= numFrames) {
+    NSString *msg = [NSString stringWithFormat:@"%@: %d",
                      @"can't advance past last frame",
                      newFrameIndex];
-		NSAssert(FALSE, msg);
-	}
+    NSAssert(FALSE, msg);
+  }
   
-	BOOL changeFrameData = FALSE;
-	const int newFrameIndexSigned = (int) newFrameIndex;
+  BOOL changeFrameData = FALSE;
+  const int newFrameIndexSigned = (int) newFrameIndex;
   
 #if defined(USE_SEGMENTED_MMAP)
 #else
@@ -468,7 +469,7 @@
   
   // loop from current frame to target frame, applying deltas as we go.
   
-	for ( ; frameIndex < newFrameIndexSigned; frameIndex++) {
+  for ( ; frameIndex < newFrameIndexSigned; frameIndex++) {
     NSAutoreleasePool *loop_pool = [[NSAutoreleasePool alloc] init];
     
     int actualFrameIndex = frameIndex + 1;
@@ -486,7 +487,7 @@
       //      fprintf(stdout, "Frame %d NOP\n", actualFrameIndex);
     } else {
       //      fprintf(stdout, "Frame %d [Size %d Offset %d Keyframe %d]\n", actualFrameIndex, frame->offset, movsample_length(frame), movsample_iskeyframe(frame));
-			changeFrameData = TRUE;
+      changeFrameData = TRUE;
       
       if (self.currentFrameBuffer != nextFrameBuffer) {
         // Copy the previous frame buffer unless there was not one, or current is a keyframe
@@ -586,7 +587,7 @@
     }
     
     [loop_pool drain];
-	}
+  }
   
   if (!changeFrameData) {
     return nil;
