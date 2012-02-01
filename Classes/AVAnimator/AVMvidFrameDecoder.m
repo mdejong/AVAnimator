@@ -489,10 +489,12 @@
       //      fprintf(stdout, "Frame %d [Size %d Offset %d Keyframe %d]\n", actualFrameIndex, frame->offset, movsample_length(frame), movsample_iskeyframe(frame));
       changeFrameData = TRUE;
       
+      BOOL isDeltaFrame = !maxvid_frame_iskeyframe(frame);
+      
       if (self.currentFrameBuffer != nextFrameBuffer) {
         // Copy the previous frame buffer unless there was not one, or current is a keyframe
         
-        if (self.currentFrameBuffer != nil && !maxvid_frame_iskeyframe(frame)) {
+        if (isDeltaFrame && (self.currentFrameBuffer != nil)) {
           [nextFrameBuffer copyPixels:self.currentFrameBuffer];
         }
         self.currentFrameBuffer = nextFrameBuffer;
@@ -501,7 +503,7 @@
         // explicitly copy the data from the zero copy buffer to the framebuffer so that we
         // have a writable memory region that a delta can be applied over.
         
-        if (self.currentFrameBuffer.zeroCopyPixels != NULL) {
+        if (isDeltaFrame && (self.currentFrameBuffer.zeroCopyPixels != NULL)) {
           [self.currentFrameBuffer zeroCopyToPixels];
         }
       }
@@ -584,7 +586,7 @@
         }        
 #endif // EXTRA_CHECKS
       }
-    }
+    } // end for loop over indexes
     
     [loop_pool drain];
   }
