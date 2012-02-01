@@ -295,7 +295,12 @@
   
   NSUInteger offset = range.location;
   NSUInteger len = range.length;
-  NSAssert(len > 0, @"len");
+
+  NSUInteger lastByteOffset = offset + len;
+  
+  if ((len == 0) || (lastByteOffset > self.mappedLen)) {
+    return nil;
+  }
   
   SegmentedMappedData *seg = [SegmentedMappedData segmentedMappedDataWithDeferredMapping:self.filePath
                                                                             refCountedFD:self.refCountedFD

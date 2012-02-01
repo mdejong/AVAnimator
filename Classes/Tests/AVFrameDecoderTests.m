@@ -418,6 +418,90 @@
   return;
 }
 
+// This test case simulates a memory mapping failure in the mvid frame decoder
+// during a frame decode operation. When a segmented mapping model is used
+// it becomes possible that decoding a specific frame could fail due to a
+// failed mapping pages into memory.
+
++ (void) testMvidDecoderSimulateMapFailureOnFrameDecode
+{
+	id appDelegate = [[UIApplication sharedApplication] delegate];
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");  
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+  
+  // The resource loader should be "ready" at this point because the decoded
+  // file should be available in the app resources.
+  
+  BOOL isReady = [resLoader isReady];
+  NSAssert(isReady, @"isReady");
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  
+	NSArray *resourcePathsArr = [resLoader getResources];  
+	NSAssert([resourcePathsArr count] == 1, @"expected 1 resource paths");
+	NSString *videoPath = [resourcePathsArr objectAtIndex:0];
+  
+  BOOL worked;
+    
+  worked = [frameDecoder openForReading:videoPath];
+	NSAssert(worked, @"frameDecoder openForReading failed");
+  
+  // By default, usage limit is TRUE
+  
+  NSAssert([frameDecoder isResourceUsageLimit] == TRUE, @"initial isResourceUsageLimit");
+  
+  worked = [frameDecoder allocateDecodeResources];
+  NSAssert(worked, @"allocateDecodeResources");
+  
+  NSAssert([frameDecoder isResourceUsageLimit] == FALSE, @"isResourceUsageLimit");
+  
+  // At this point the frame decoder has read the header, but it has not
+  // yet attempted to map the whole file into memory.
+  
+  UIImage *frame;
+  
+  frame = [frameDecoder advanceToFrame:0];
+  
+  // Verify that the file has been mapped into memory by
+  // checking to see if the mappedData ref is nil.
+
+  NSAssert(frameDecoder.mappedData != nil, @"mappedData");
+
+  // Now simulate a map failure by setting a special flag only avalable in test mode.
+  // Note that this applies only to the frame decode operation since the overall file
+  // mapping was created already without the simulate mapping failure flag set.
+  
+  frameDecoder.simulateMemoryMapFailure = TRUE;
+  
+  frame = [frameDecoder advanceToFrame:1];
+  
+  // Frame should be nil to indicate that decoder could not update to the new frame.
+  // This is treated as a repeated frame as far as the render logic is concerned.
+  
+  NSAssert(frame == nil, @"should return no change nil value");
+
+  NSAssert(frameDecoder.frameIndex == 0, @"decoder frame index should not have changed");
+  
+  // Disable the memory mapping failure and decode frame 1 normally
+
+  frameDecoder.simulateMemoryMapFailure = FALSE;
+  
+  frame = [frameDecoder advanceToFrame:1];
+
+  NSAssert(frame != nil, @"should return decoded second frame");
+  
+  NSAssert(frameDecoder.frameIndex == 1, @"decoder frame index should be 1");
+  
+  return;
+}
+
 // This test case will create a media object from a file that has a magic number
 // that does not match the expected .mvid magic number.
 
@@ -470,5 +554,12 @@
       
   return;
 }
+
+// FIXME:
+// In the case where multiple frames need to be decoded in one call, it could
+// be possible that the first would work and the second would fail. Just
+// need to determine if a partial good result is returned. Meaning that
+// the decodes that did work are returned as an image, but then the
+// frame index is still at the location where the next delta would be applied.
 
 @end

@@ -469,7 +469,9 @@
   
   // loop from current frame to target frame, applying deltas as we go.
   
-  for ( ; frameIndex < newFrameIndexSigned; frameIndex++) {
+  int inputMemoryMapped = TRUE;
+  
+  for ( ; inputMemoryMapped && (frameIndex < newFrameIndexSigned); frameIndex++) {
     NSAutoreleasePool *loop_pool = [[NSAutoreleasePool alloc] init];
     
     int actualFrameIndex = frameIndex + 1;
@@ -487,9 +489,8 @@
       //      fprintf(stdout, "Frame %d NOP\n", actualFrameIndex);
     } else {
       //      fprintf(stdout, "Frame %d [Size %d Offset %d Keyframe %d]\n", actualFrameIndex, frame->offset, movsample_length(frame), movsample_iskeyframe(frame));
-      changeFrameData = TRUE;
       
-      BOOL isDeltaFrame = !maxvid_frame_iskeyframe(frame);
+      int isDeltaFrame = !maxvid_frame_iskeyframe(frame);
       
       if (self.currentFrameBuffer != nextFrameBuffer) {
         // Copy the previous frame buffer unless there was not one, or current is a keyframe
@@ -511,28 +512,36 @@
 #if defined(USE_SEGMENTED_MMAP)
       // Create a mapped segment using the frame offset and length for this frame.
 
+      uint32_t *inputBuffer32 = NULL;
       uint32_t inputBuffer32NumBytes = maxvid_frame_length(frame);
       
       NSRange range;
       range.location = maxvid_frame_offset(frame);
       range.length = inputBuffer32NumBytes;
-      
+  
       SegmentedMappedData *mappedSeg = [self.mappedData subdataWithRange:range];
-      NSAssert(mappedSeg, @"mappedSeg");
       
-      // FIXME: Because segments defer mapping, need to deal with the possibility that
-      // mapping into memory could fail. Need to return no-op so that previous frame is unchanged.
-      // Should just exit this branch and leave data unchanged!
+      if (mappedSeg == nil) {
+        inputMemoryMapped = FALSE;
+      } else {
+        
+#if defined(REGRESSION_TESTS)
+        if (self.simulateMemoryMapFailure) {
+          inputMemoryMapped = FALSE;
+        } else
+#endif // REGRESSION_TESTS
+        
+        if ([mappedSeg mapSegment] == FALSE) {
+          inputMemoryMapped = FALSE;
+          
+          NSLog(@"mapSegment failed for %@", [mappedSeg description]);
+        } else {
+          //NSLog(@"__mapSegment obj %p : %@", mappedSeg, [mappedSeg description]);
+          
+          inputBuffer32 = (uint32_t*) [mappedSeg bytes];
+        }        
+      }
       
-      BOOL worked = [mappedSeg mapSegment];
-      NSAssert(worked, @"mapSegment failed");
-      
-      //NSLog(@"__mapSegment obj %p : %@", mappedSeg, [mappedSeg description]);
-      
-      char *mappedPtr = (char*) [mappedSeg bytes];
-      NSAssert(mappedPtr, @"mappedPtr");
-      
-      uint32_t *inputBuffer32 = (uint32_t*) mappedPtr;
       NSData *mappedDataObj = mappedSeg;
 #else
       uint32_t *inputBuffer32 = (uint32_t*) (mappedPtr + maxvid_frame_offset(frame));
@@ -540,29 +549,17 @@
       NSData *mappedDataObj = self.mappedData;
 #endif // USE_SEGMENTED_MMAP
       
-      if (maxvid_frame_iskeyframe(frame)) {
-#ifdef EXTRA_CHECKS
-        // FIXME: use zero copy of pointer into mapped file, impl OS page copy in util class
-        if (bpp == 16) {
-          NSAssert(inputBuffer32NumBytes == (frameBufferSize * sizeof(uint16_t)), @"framebuffer num bytes");
-        } else {
-          NSAssert(inputBuffer32NumBytes == (frameBufferSize * sizeof(uint32_t)), @"framebuffer num bytes");
-        }
-        NSAssert(((uint32_t)inputBuffer32 % MV_PAGESIZE) == 0, @"framebuffer num bytes");
-#endif // EXTRA_CHECKS
-    
-#if defined(EXTRA_CHECKS) || defined(ALWAYS_CHECK_ADLER)
-        // If mvid file has adler checksum for frame, verify that it matches
+      if (inputMemoryMapped == FALSE) {
+        // When input memory can't be mapped, it is likely the system is running low
+        // on real memory. This logic can't assert when memory gets low, so deal
+        // with this by indicating that there was no change or return the most
+        // recent frame that was successfully decoded.
         
-        if (frame->adler != 0) {
-          uint32_t frameAdler = maxvid_adler32(0, (unsigned char*)inputBuffer32, inputBuffer32NumBytes);
-          NSAssert(frame->adler == frameAdler, @"frameAdler");
-        }        
-#endif // EXTRA_CHECKS
-  
-        [nextFrameBuffer zeroCopyPixels:inputBuffer32 mappedData:mappedDataObj];
-      } else {
-        // Apply delta frame from the input buffer
+        frameIndex -= 1;
+      } else if (isDeltaFrame) {        
+        // Apply delta from input buffer over the existing framebuffer
+
+        changeFrameData = TRUE;
         
 #ifdef EXTRA_CHECKS
         NSAssert(((uint32_t)inputBuffer32 % sizeof(uint32_t)) == 0, @"inputBuffer32 alignment");
@@ -585,6 +582,31 @@
           NSAssert(frame->adler == frameAdler, @"frameAdler");
         }        
 #endif // EXTRA_CHECKS
+      } else {
+        // Input buffer contains a complete keyframe, use zero copy optimization
+        
+        changeFrameData = TRUE;
+        
+#ifdef EXTRA_CHECKS
+        // FIXME: use zero copy of pointer into mapped file, impl OS page copy in util class
+        if (bpp == 16) {
+          NSAssert(inputBuffer32NumBytes == (frameBufferSize * sizeof(uint16_t)), @"framebuffer num bytes");
+        } else {
+          NSAssert(inputBuffer32NumBytes == (frameBufferSize * sizeof(uint32_t)), @"framebuffer num bytes");
+        }
+        NSAssert(((uint32_t)inputBuffer32 % MV_PAGESIZE) == 0, @"framebuffer num bytes");
+#endif // EXTRA_CHECKS
+    
+#if defined(EXTRA_CHECKS) || defined(ALWAYS_CHECK_ADLER)
+        // If mvid file has adler checksum for frame, verify that it matches
+        
+        if (frame->adler != 0) {
+          uint32_t frameAdler = maxvid_adler32(0, (unsigned char*)inputBuffer32, inputBuffer32NumBytes);
+          NSAssert(frame->adler == frameAdler, @"frameAdler");
+        }        
+#endif // EXTRA_CHECKS
+  
+        [nextFrameBuffer zeroCopyPixels:inputBuffer32 mappedData:mappedDataObj];
       }
     } // end for loop over indexes
     

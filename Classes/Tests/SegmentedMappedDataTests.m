@@ -677,6 +677,75 @@
   return;
 }
 
+// This test case maps a file that is one page in length and then
+// checks the subdataWithRange API to ensure that the proper range
+// checks are made while mapping.
+
++ (void) testMapFileSubdataWithRange
+{
+  NSMutableData *mData = [NSMutableData data];
+  
+  int sumOfAllData = 0;
+  
+  for (int i=0; i < AV_PAGESIZE / sizeof(int); i++) {
+    NSData *val = [NSData dataWithBytes:&i length:sizeof(int)];
+    [mData appendData:val];
+    sumOfAllData += i;
+  }
+  NSAssert([mData length] == AV_PAGESIZE, @"length");
+  
+  NSString *filePath = [AVFileUtil generateUniqueTmpPath]; 
+  
+  BOOL worked = [mData writeToFile:filePath options:NSDataWritingAtomic error:nil];
+  NSAssert(worked, @"worked");
+  NSAssert([AVFileUtil fileExists:filePath], @"fileExists");
+  
+  // The parent object contains the filename and the set of mappings
+  
+  SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
+  NSAssert(parentData, @"parentData");
+  NSAssert([parentData retainCount] == 1, @"retainCount");
+  
+  NSAssert([parentData length] == AV_PAGESIZE, @"container length");
+  
+  NSRange range;
+  range.location = 0;
+  range.length = [mData length];
+
+  SegmentedMappedData *segmentData = nil;
+  
+  // Map the exact size of the page (location is zero), success
+  
+  segmentData = [parentData subdataWithRange:range];
+  NSAssert(segmentData != nil, @"segmentData");
+
+  // Passing length of zero will return nil to indicate an error
+
+  range.location = 0;
+  range.length = 0;
+
+  segmentData = [parentData subdataWithRange:range];
+  NSAssert(segmentData == nil, @"segmentData");
+  
+  // If offset is larger than largest page starting offset, then nil
+
+  range.location = AV_PAGESIZE;
+  range.length = 1;
+  
+  segmentData = [parentData subdataWithRange:range];
+  NSAssert(segmentData == nil, @"segmentData");
+  
+  // If offset + length is larger than end of file, return nil
+
+  range.location = AV_PAGESIZE - 1;
+  range.length = 2;
+  
+  segmentData = [parentData subdataWithRange:range];
+  NSAssert(segmentData == nil, @"segmentData");
+  
+  return;
+}
+
 
 // This test case pushes the limts of the size of files that can be mapped into memory. It should be
 // possible to map a very large number of files into memory, but the virtual memory manager in
