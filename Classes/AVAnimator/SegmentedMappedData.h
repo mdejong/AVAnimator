@@ -21,8 +21,6 @@
 {
   NSString           *m_filePath;
   
-  NSMutableArray     *m_mappedDataSegments;
-  
   // This pointer is that starting point where the OS
   // maps the start of a page into memory.
   
@@ -45,10 +43,9 @@
   size_t              m_mappedOSLen;
   
   RefCountedFD       *m_refCountedFD;
+  
+  BOOL isContainer;
 }
-
-// Do not modify this property!
-@property (nonatomic, retain) NSMutableArray *mappedDataSegments;
 
 @property (nonatomic, readonly) off_t mappedOffset;
 @property (nonatomic, readonly) size_t mappedLen;
@@ -59,12 +56,12 @@
 
 + (SegmentedMappedData*) segmentedMappedData:(NSString*)filename;
 
-// Create a series of mapped segment objects. Each segment
-// maps a specific range of the file into memory. Note that
-// the actual mapping is not created until the bytes pointer
-// is accessed for a specific segment.
+// This API will create a mapped segment subrange. A segment can be mapped
+// and unmapped as needed and will automatically be unmapped when the last
+// ref is dropped. Note that the actual mapping is not created until the
+// mapSegment API is invoked on a specific segment.
 
-- (NSMutableArray*) makeSegmentedMappedDataObjects:(NSArray*)segInfo;
+- (SegmentedMappedData*) subdataWithRange:(NSRange)range;
 
 // This method will invoke mmap to actually map a segment into a memory buffer.
 // If the memory was successfully mapped, then TRUE is returned. Otherwise FALSE.
@@ -78,6 +75,7 @@
 
 // Return the starting address of this specific segment mapping.
 // The container will assert if bytes is invoked on it.
+// A segment will assert if mapSegment has not been invoked.
 
 - (const void*) bytes;
 

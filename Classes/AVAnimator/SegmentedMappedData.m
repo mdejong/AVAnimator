@@ -68,7 +68,6 @@
 
 @implementation SegmentedMappedData
 
-@synthesize mappedDataSegments = m_mappedDataSegments;
 @synthesize filePath = m_filePath;
 @synthesize refCountedFD = m_refCountedFD;
 
@@ -98,23 +97,29 @@
   }
   
   // Double check that we can actually open the file and read 1 byte of data from it.
+  // Open the file once, then keep the open file descriptor around so that each call
+  // to mmap() need not also open the file descriptor.
   
   char aByte[1];
   const char *cStr = [filePath UTF8String];
-  FILE* fp = fopen(cStr, "rb");
-  if (fp) {
-    int numRead = fread(&aByte[0], 1, 1, fp);
-    fclose(fp);
+  int fd = open(cStr, O_RDONLY);
+  if (fd == -1) {
+    return nil;
+  } else {
+    ssize_t numRead = read(fd, &aByte[0], 1);
     if (numRead != 1) {
+      close(fd);
       return nil;
     }
-  } else {
-    return nil;
   }
+  
+  RefCountedFD *rcFD = [RefCountedFD refCountedFD:fd];
   
   SegmentedMappedData *obj = [[SegmentedMappedData alloc] init];
   obj.filePath = filePath;
-  obj->m_mappedLen = fileSizeT;  
+  obj.refCountedFD = rcFD;
+  obj->m_mappedLen = fileSizeT;
+  obj->isContainer = TRUE;
   return [obj autorelease];
 }
 
@@ -163,6 +168,8 @@
     // This branch will only be taken in a mapped segment object after the parent
     // has been deallocated.
     
+    //NSLog(@"unmapSegment obj %p on dealloc : %@", self, [self description]);
+    
     [self unmapSegment];
     NSAssert(self->m_mappedData == NULL, @"m_mappedData");
   }
@@ -206,6 +213,8 @@
 
 - (BOOL) mapSegment
 {
+  NSAssert(isContainer == FALSE, @"mapSegment can't be invoked on container");
+  
   if (self->m_mappedData != NULL) {
     // Already mapped
     return TRUE;
@@ -256,7 +265,7 @@
 {
   // Can't be invoked on container data object
 
-  NSAssert(self.mappedDataSegments == nil, @"unmapSegment can't be invoked on container");
+  NSAssert(isContainer == FALSE, @"unmapSegment can't be invoked on container");
   
   if (self->m_mappedData == NULL) {
     // Already unmapped, no-op
@@ -278,46 +287,22 @@
   return;
 }
 
-- (NSMutableArray*) makeSegmentedMappedDataObjects:(NSArray*)segInfo
+- (NSData *)subdataWithRange:(NSRange)range
 {
-  self.mappedDataSegments = [NSMutableArray array];
-  NSAssert(self.mappedDataSegments, @"mappedDataSegments");
-  self.refCountedFD = nil;
-
-  // Open the file once, then keep the open file descriptor around so that each call
-  // to mmap() need not also open the file descriptor.
+  NSAssert(isContainer == TRUE, @"subdataWithRange can only be invoked on container");
   
-  const char *cStr = [self.filePath UTF8String];
-  int fd = open(cStr, O_RDONLY);
-  if (fd == -1) {
-    return nil;
-  }
+  NSAssert(self.refCountedFD, @"refCountedFD");
   
-  RefCountedFD *rcFD = [RefCountedFD refCountedFD:fd];
-  self.refCountedFD = rcFD;
+  NSUInteger offset = range.location;
+  NSUInteger len = range.length;
+  NSAssert(len > 0, @"len");
   
-  for (NSValue *value in segInfo) {
-    NSRange range = [value rangeValue];
-    
-    NSUInteger offset = range.location;
-    NSUInteger len = range.length;
-
-    // Check for no-op case where null is added to the segments array
-    
-    if (offset == 0 && len == 0) {
-      [self.mappedDataSegments addObject:[NSNull null]];
-      continue;
-    }
-    NSAssert(len > 0, @"len");
-    
-    SegmentedMappedData *seg = [SegmentedMappedData segmentedMappedDataWithDeferredMapping:self.filePath
-                                                                              refCountedFD:rcFD
-                                                                                    offset:offset
-                                                                                       len:len];
-    [self.mappedDataSegments addObject:seg];
-  }
-
-  return self.mappedDataSegments;
+  SegmentedMappedData *seg = [SegmentedMappedData segmentedMappedDataWithDeferredMapping:self.filePath
+                                                                            refCountedFD:self.refCountedFD
+                                                                                  offset:offset
+                                                                                     len:len];
+  
+  return seg;
 }
 
 - (NSString*) description
@@ -329,6 +314,14 @@
                          (int)m_mappedOSOffset, (int)m_mappedOSLen,
                          m_mappedData];
   return formatted;
+}
+
+// Overload impl of copy so that a segmented mapped data is simply retained when
+// referenced by a copy property.
+
+- (id) copyWithZone:(NSZone*)zone
+{
+  return [self retain];
 }
 
 @end

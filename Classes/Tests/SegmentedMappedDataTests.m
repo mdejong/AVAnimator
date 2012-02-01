@@ -52,24 +52,14 @@
 
   NSAssert([parentData length] == AV_PAGESIZE, @"container length");
   
-  NSMutableArray *segInfo = [NSMutableArray array];
-  
   NSRange range;
   range.location = 0;
   range.length = [mData length];
   
-  NSValue *rangeValue = [NSValue valueWithRange:range];
-  [segInfo addObject:rangeValue];
+  SegmentedMappedData *segmentData = [parentData subdataWithRange:range];  
+  NSAssert(segmentData != nil, @"segmentData");
   
-  NSArray *segments = [parentData makeSegmentedMappedDataObjects:segInfo];
-  NSAssert(segments != nil, @"segments");
-  NSAssert([segments count] == 1, @"length");
-  
-  SegmentedMappedData *segmentData = [segments objectAtIndex:0];
-  NSAssert(segmentData, @"segmentData");
-  
-  // An additional ref is held by the parent mapped data object
-  NSAssert([segmentData retainCount] == 2, @"retainCount");
+  NSAssert([segmentData retainCount] == 1, @"retainCount");
   
   NSAssert([segmentData length] == AV_PAGESIZE, @"mapped data length");
 
@@ -131,38 +121,25 @@
   
   NSAssert([parentData length] == AV_PAGESIZE * 2, @"container length");
   
-  NSMutableArray *segInfo = [NSMutableArray array];
-  
   NSRange range;
-  NSValue *rangeValue;
   
   // Segment 1
   
   range.location = 0;
   range.length = AV_PAGESIZE;
   
-  rangeValue = [NSValue valueWithRange:range];
-  [segInfo addObject:rangeValue];
-
+  SegmentedMappedData *segmentData1 = [parentData subdataWithRange:range];
+  NSAssert(segmentData1 != nil, @"segmentData1");
+  
   // Segment 2
   
   range.location = AV_PAGESIZE;
   range.length = AV_PAGESIZE;
-  
-  rangeValue = [NSValue valueWithRange:range];
-  [segInfo addObject:rangeValue];
 
-  // Make segment objects
-  
-  NSArray *segments = [parentData makeSegmentedMappedDataObjects:segInfo];
-  NSAssert(segments != nil, @"segments");
-  NSAssert([segments count] == 2, @"length");
-  
-  SegmentedMappedData *segmentData1 = [segments objectAtIndex:0];
-  NSAssert(segmentData1, @"segmentData1");
-  
-  // An additional ref is held by the parent mapped data object
-  NSAssert([segmentData1 retainCount] == 2, @"retainCount");  
+  SegmentedMappedData *segmentData2 = [parentData subdataWithRange:range];
+  NSAssert(segmentData1 != nil, @"segmentData1");
+    
+  NSAssert([segmentData1 retainCount] == 1, @"retainCount");  
   NSAssert([segmentData1 length] == AV_PAGESIZE, @"mapped data length");
   
   NSAssert(segmentData1.mappedOffset == 0, @"mappedOffset");
@@ -170,12 +147,8 @@
   
   NSAssert(segmentData1.mappedLen == AV_PAGESIZE, @"mappedLen");
   NSAssert(segmentData1.mappedOSLen == AV_PAGESIZE, @"mappedOSLen");
-
-  SegmentedMappedData *segmentData2 = [segments objectAtIndex:1];
-  NSAssert(segmentData2, @"segmentData2");
   
-  // An additional ref is held by the parent mapped data object
-  NSAssert([segmentData2 retainCount] == 2, @"retainCount");  
+  NSAssert([segmentData2 retainCount] == 1, @"retainCount");  
   NSAssert([segmentData2 length] == AV_PAGESIZE, @"mapped data length");
   
   NSAssert(segmentData2.mappedOffset == AV_PAGESIZE, @"mappedOffset");
@@ -256,38 +229,25 @@
   
   NSAssert([parentData length] == AV_PAGESIZE * 3, @"container length");
   
-  NSMutableArray *segInfo = [NSMutableArray array];
-  
   NSRange range;
-  NSValue *rangeValue;
   
   // Segment 1
   
   range.location = 0;
   range.length = AV_PAGESIZE;
-  
-  rangeValue = [NSValue valueWithRange:range];
-  [segInfo addObject:rangeValue];
+
+  SegmentedMappedData *segmentData1 = [parentData subdataWithRange:range];
+  NSAssert(segmentData1 != nil, @"segmentData1");
   
   // Segment 2
   
   range.location = AV_PAGESIZE;
   range.length = AV_PAGESIZE * 2;
   
-  rangeValue = [NSValue valueWithRange:range];
-  [segInfo addObject:rangeValue];
-  
-  // Make segment objects
-  
-  NSArray *segments = [parentData makeSegmentedMappedDataObjects:segInfo];
-  NSAssert(segments != nil, @"segments");
-  NSAssert([segments count] == 2, @"length");
-  
-  SegmentedMappedData *segmentData1 = [segments objectAtIndex:0];
-  NSAssert(segmentData1, @"segmentData1");
-  
-  // An additional ref is held by the parent mapped data object
-  NSAssert([segmentData1 retainCount] == 2, @"retainCount");  
+  SegmentedMappedData *segmentData2 = [parentData subdataWithRange:range];
+  NSAssert(segmentData2 != nil, @"segmentData2");
+    
+  NSAssert([segmentData1 retainCount] == 1, @"retainCount");  
   NSAssert([segmentData1 length] == AV_PAGESIZE, @"mapped data length");
   
   NSAssert(segmentData1.mappedOffset == 0, @"mappedOffset");
@@ -295,12 +255,8 @@
   
   NSAssert(segmentData1.mappedLen == AV_PAGESIZE, @"mappedLen");
   NSAssert(segmentData1.mappedOSLen == AV_PAGESIZE, @"mappedOSLen");
-  
-  SegmentedMappedData *segmentData2 = [segments objectAtIndex:1];
-  NSAssert(segmentData2, @"segmentData2");
-  
-  // An additional ref is held by the parent mapped data object
-  NSAssert([segmentData2 retainCount] == 2, @"retainCount");  
+    
+  NSAssert([segmentData2 retainCount] == 1, @"retainCount");  
   NSAssert([segmentData2 length] == AV_PAGESIZE*2, @"mapped data length");
   
   NSAssert(segmentData2.mappedOffset == AV_PAGESIZE, @"mappedOffset");
@@ -375,24 +331,14 @@
   
   NSAssert([parentData length] == 1, @"container length");
   
-  NSMutableArray *segInfo = [NSMutableArray array];
-  
   NSRange range;
   range.location = 0;
   range.length = 1;
-  
-  NSValue *rangeValue = [NSValue valueWithRange:range];
-  [segInfo addObject:rangeValue];
-  
-  NSArray *segments = [parentData makeSegmentedMappedDataObjects:segInfo];
-  NSAssert(segments != nil, @"segments");
-  NSAssert([segments count] == 1, @"length");
-  
-  SegmentedMappedData *segmentData = [segments objectAtIndex:0];
-  NSAssert(segmentData, @"segmentData");
-  
-  // An additional ref is held by the parent mapped data object
-  NSAssert([segmentData retainCount] == 2, @"retainCount");
+
+  SegmentedMappedData *segmentData = [parentData subdataWithRange:range];
+  NSAssert(segmentData != nil, @"segmentData");
+    
+  NSAssert([segmentData retainCount] == 1, @"retainCount");
   
   NSAssert([segmentData length] == 1, @"mapped data length");
   
@@ -467,24 +413,14 @@
   
   NSAssert([parentData length] == AV_PAGESIZE, @"container length");
   
-  NSMutableArray *segInfo = [NSMutableArray array];
-  
   NSRange range;
   range.location = (AV_PAGESIZE/2);
   range.length = (AV_PAGESIZE/2);
+
+  SegmentedMappedData *segmentData = [parentData subdataWithRange:range];
+  NSAssert(segmentData != nil, @"segmentData");
   
-  NSValue *rangeValue = [NSValue valueWithRange:range];
-  [segInfo addObject:rangeValue];
-  
-  NSArray *segments = [parentData makeSegmentedMappedDataObjects:segInfo];
-  NSAssert(segments != nil, @"segments");
-  NSAssert([segments count] == 1, @"length");
-  
-  SegmentedMappedData *segmentData = [segments objectAtIndex:0];
-  NSAssert(segmentData, @"segmentData");
-  
-  // An additional ref is held by the parent mapped data object
-  NSAssert([segmentData retainCount] == 2, @"retainCount");
+  NSAssert([segmentData retainCount] == 1, @"retainCount");
   
   NSAssert([segmentData length] == (AV_PAGESIZE/2), @"mapped data length");
   
@@ -558,24 +494,14 @@
   
   NSAssert([parentData length] == AV_PAGESIZE*2, @"container length");
   
-  NSMutableArray *segInfo = [NSMutableArray array];
-  
   NSRange range;
   range.location = 1;
   range.length = AV_PAGESIZE;
   
-  NSValue *rangeValue = [NSValue valueWithRange:range];
-  [segInfo addObject:rangeValue];
+  SegmentedMappedData *segmentData = [parentData subdataWithRange:range];
+  NSAssert(segmentData != nil, @"segmentData");
   
-  NSArray *segments = [parentData makeSegmentedMappedDataObjects:segInfo];
-  NSAssert(segments != nil, @"segments");
-  NSAssert([segments count] == 1, @"length");
-  
-  SegmentedMappedData *segmentData = [segments objectAtIndex:0];
-  NSAssert(segmentData, @"segmentData");
-  
-  // An additional ref is held by the parent mapped data object
-  NSAssert([segmentData retainCount] == 2, @"retainCount");
+  NSAssert([segmentData retainCount] == 1, @"retainCount");
   
   NSAssert([segmentData length] == AV_PAGESIZE, @"mapped data length");
   
@@ -652,31 +578,19 @@
   
   NSAssert([parentData length] == AV_PAGESIZE*2, @"container length");
   
-  NSMutableArray *segInfo = [NSMutableArray array];
-  
   NSRange range;
   range.location = 0;
   range.length = AV_PAGESIZE * 2;
-  
-  NSValue *rangeValue = [NSValue valueWithRange:range];
-  [segInfo addObject:rangeValue];
+
+  SegmentedMappedData *segmentData1 = [parentData subdataWithRange:range];
+  NSAssert(segmentData1 != nil, @"segmentData1");
 
   range.location = AV_PAGESIZE;
   range.length = AV_PAGESIZE;
   
-  rangeValue = [NSValue valueWithRange:range];
-  [segInfo addObject:rangeValue];
-  
-  NSArray *segments = [parentData makeSegmentedMappedDataObjects:segInfo];
-  NSAssert(segments != nil, @"segments");
-  NSAssert([segments count] == 2, @"length");
-  
-  SegmentedMappedData *segmentData1 = [segments objectAtIndex:0];
-  NSAssert(segmentData1, @"segmentData1");
-
-  SegmentedMappedData *segmentData2 = [segments objectAtIndex:1];
-  NSAssert(segmentData2, @"segmentData2");
-  
+  SegmentedMappedData *segmentData2 = [parentData subdataWithRange:range];
+  NSAssert(segmentData2 != nil, @"segmentData2");
+    
   NSAssert(segmentData1.mappedOffset == 0, @"mappedOffset");
   NSAssert(segmentData1.mappedOSOffset == 0, @"mappedOSOffset");
   

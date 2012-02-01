@@ -261,79 +261,24 @@
         memoryMapFailed = TRUE;
       }
 
-      NSArray *segments = nil;
-      
       if (memoryMapFailed == FALSE) {
-        // If we were able to create the segment object, then it should
-        // be possible to create specific segments that contain specific
-        // video frames.
+        // Map just the first page just to make sure mapping is actually working
         
-        NSMutableArray *segInfo = [NSMutableArray array];
+        BOOL worked;
+        
         NSRange range;
-        NSValue *rangeValue;
-        
-        // The first segment always contains just the first page in
-        // memory. This is a useful way to check that memory mapping
-        // is working and we can validate the mapped data in the
-        // first page since the contents are known.
-        
-        // Segment 0 : initial page of memory
-        
         range.location = 0;
         range.length = MV_PAGESIZE;
         
-        rangeValue = [NSValue valueWithRange:range];
-        [segInfo addObject:rangeValue];
-        
-        // The remaining segments are allocated so that each frame
-        // of video corresponds to one segment. In the case of a
-        // fully decompressed movie, each frame is a whole number
-        // of memory pages. A no-op frame is represented with zero
-        // bytes, so there is no segment created for a no-op frame.
-        
-        const NSUInteger maxNumFrames = [self numFrames];
-        
-        for (NSUInteger framei = 0; framei < maxNumFrames; framei++) {
-          // Get the mapping of byte offset and length for this specific frame
-          
-          MVFrame *frame = maxvid_file_frame(self->m_mvFrames, framei);
-          
-          if (maxvid_frame_isnopframe(frame)) {
-            // Pass special values so that no mapping is created for this frame
-            range.location = 0;
-            range.length = 0;
-          } else if (maxvid_frame_iskeyframe(frame)) {
-            // Key frame, we know a keyframe always starts at a page bound
-            range.location = maxvid_frame_offset(frame);
-            range.length = maxvid_frame_length(frame);
-          } else {
-            // Delta frame
-            range.location = maxvid_frame_offset(frame);
-            range.length = maxvid_frame_length(frame);
-          }
-          
-          NSLog(@"range : %d %d", range.location, range.length);
-          rangeValue = [NSValue valueWithRange:range];
-          [segInfo addObject:rangeValue];
+        SegmentedMappedData *seg0 = [self.mappedData subdataWithRange:range];
+        if (seg0) {
+          worked = TRUE;
+        } else {
+          worked = FALSE;
+        }        
+        if (worked) {
+          worked = [seg0 mapSegment];
         }
-        
-        // Make segment objects
-        
-        segments = [self.mappedData makeSegmentedMappedDataObjects:segInfo];
-
-        if (segments) {
-          NSAssert([segments count] == (maxNumFrames + 1), @"num segments");
-        }
-      }
-      
-      if (segments == nil) {
-        memoryMapFailed = TRUE;        
-      } else {        
-        // Map the first page to make sure that the file is valid and mapping is working.
-        
-        SegmentedMappedData *seg0 = [segments objectAtIndex:0];
-        BOOL worked = [seg0 mapSegment];
-        
         if (worked == FALSE) {
           self.mappedData = nil;
           memoryMapFailed = TRUE;
@@ -345,7 +290,7 @@
           maxvid_file_map_verify(segPtr);
         }
         
-        [seg0 unmapSegment];        
+        [seg0 unmapSegment];
       }
     }
     
@@ -524,6 +469,8 @@
   // loop from current frame to target frame, applying deltas as we go.
   
 	for ( ; frameIndex < newFrameIndexSigned; frameIndex++) {
+    NSAutoreleasePool *loop_pool = [[NSAutoreleasePool alloc] init];
+    
     int actualFrameIndex = frameIndex + 1;
     MVFrame *frame = maxvid_file_frame(self->m_mvFrames, actualFrameIndex);
 
@@ -550,31 +497,34 @@
         self.currentFrameBuffer = nextFrameBuffer;
       } else {
         // In the case where the current cgframebuffer contains is a zero copy pointer, need to
-        // explicitly copy the data from the zero copy buffer to the framebuffer.
+        // explicitly copy the data from the zero copy buffer to the framebuffer so that we
+        // have a writable memory region that a delta can be applied over.
+        
         if (self.currentFrameBuffer.zeroCopyPixels != NULL) {
           [self.currentFrameBuffer zeroCopyToPixels];
         }
       }
-      
-      uint32_t status;
 
 #if defined(USE_SEGMENTED_MMAP)
-      // The mapped segments are off by one, since frame 0 is at segment offset 1.
-      // Note that the nop case where the frame segment offset would map to NSNull
-      // is not reached in this code path.
-     
-      int frameSegmentOffset = actualFrameIndex + 1;
+      // Create a mapped segment using the frame offset and length for this frame.
+
+      uint32_t inputBuffer32NumBytes = maxvid_frame_length(frame);
       
-      SegmentedMappedData *mappedSeg = [self.mappedData.mappedDataSegments objectAtIndex:frameSegmentOffset];
+      NSRange range;
+      range.location = maxvid_frame_offset(frame);
+      range.length = inputBuffer32NumBytes;
+      
+      SegmentedMappedData *mappedSeg = [self.mappedData subdataWithRange:range];
       NSAssert(mappedSeg, @"mappedSeg");
       
       // FIXME: Because segments defer mapping, need to deal with the possibility that
       // mapping into memory could fail. Need to return no-op so that previous frame is unchanged.
+      // Should just exit this branch and leave data unchanged!
       
       BOOL worked = [mappedSeg mapSegment];
       NSAssert(worked, @"mapSegment failed");
       
-      //NSLog(@"mapped segment : %@", [mappedSeg description]);
+      //NSLog(@"__mapSegment obj %p : %@", mappedSeg, [mappedSeg description]);
       
       char *mappedPtr = (char*) [mappedSeg bytes];
       NSAssert(mappedPtr, @"mappedPtr");
@@ -583,10 +533,9 @@
       NSData *mappedDataObj = mappedSeg;
 #else
       uint32_t *inputBuffer32 = (uint32_t*) (mappedPtr + maxvid_frame_offset(frame));
+      uint32_t inputBuffer32NumBytes = maxvid_frame_length(frame);
       NSData *mappedDataObj = self.mappedData;
 #endif // USE_SEGMENTED_MMAP
-      
-      uint32_t inputBuffer32NumBytes = maxvid_frame_length(frame);
       
       if (maxvid_frame_iskeyframe(frame)) {
 #ifdef EXTRA_CHECKS
@@ -610,12 +559,15 @@
   
         [nextFrameBuffer zeroCopyPixels:inputBuffer32 mappedData:mappedDataObj];
       } else {
+        // Apply delta frame from the input buffer
+        
 #ifdef EXTRA_CHECKS
         NSAssert(((uint32_t)inputBuffer32 % sizeof(uint32_t)) == 0, @"inputBuffer32 alignment");
         NSAssert((inputBuffer32NumBytes % sizeof(uint32_t)) == 0, @"inputBuffer32NumBytes");
         NSAssert(*inputBuffer32 == 0 || *inputBuffer32 != 0, @"access input buffer");
 #endif // EXTRA_CHECKS        
         uint32_t inputBuffer32NumWords = inputBuffer32NumBytes >> 2;
+        uint32_t status;
         if (bpp == 16) {
           status = maxvid_decode_c4_sample16(frameBuffer, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
         } else {
@@ -632,6 +584,8 @@
 #endif // EXTRA_CHECKS
       }
     }
+    
+    [loop_pool drain];
 	}
   
   if (!changeFrameData) {
