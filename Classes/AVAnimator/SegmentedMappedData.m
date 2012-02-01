@@ -302,6 +302,14 @@
     NSUInteger offset = range.location;
     NSUInteger len = range.length;
 
+    // Check for no-op case where null is added to the segments array
+    
+    if (offset == 0 && len == 0) {
+      [self.mappedDataSegments addObject:[NSNull null]];
+      continue;
+    }
+    NSAssert(len > 0, @"len");
+    
     SegmentedMappedData *seg = [SegmentedMappedData segmentedMappedDataWithDeferredMapping:self.filePath
                                                                               refCountedFD:rcFD
                                                                                     offset:offset
@@ -310,6 +318,17 @@
   }
 
   return self.mappedDataSegments;
+}
+
+- (NSString*) description
+{
+  NSString *name = self.filePath.lastPathComponent;
+  NSString *formatted = [NSString stringWithFormat:@"%@: (%d %d) [%d %d] at %p",
+                         name,
+                         (int)m_mappedOffset, (int)m_mappedLen,
+                         (int)m_mappedOSOffset, (int)m_mappedOSLen,
+                         m_mappedData];
+  return formatted;
 }
 
 @end
