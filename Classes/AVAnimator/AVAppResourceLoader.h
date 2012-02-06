@@ -20,7 +20,6 @@
 @interface AVAppResourceLoader : AVResourceLoader {
 	NSString *m_movieFilename;
 	NSString *m_audioFilename;
-  BOOL m_isReady;
 }
 
 // Both filename properties can be either a fully qualified file path

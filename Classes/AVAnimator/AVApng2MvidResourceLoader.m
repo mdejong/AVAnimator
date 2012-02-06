@@ -48,42 +48,64 @@
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   
-  NSAssert([arr count] == 4, @"arr count");
+  NSAssert([arr count] == 5, @"arr count");
   
-  // Pass RESOURCE_PATH PHONY_TMP_PATH TMP_PATH GEN_ADLER
+  // Pass 5 args : RESOURCE_PATH PHONY_TMP_PATH TMP_PATH GEN_ADLER SERIAL
   
   NSString *resPath = [arr objectAtIndex:0];
   NSString *phonyOutPath = [arr objectAtIndex:1];
   NSString *outPath = [arr objectAtIndex:2];
   NSString *genAdlerNum = [arr objectAtIndex:3];
+  NSNumber *serialLoadingNum = [arr objectAtIndex:4];
   
-#ifdef LOGGING
-  NSLog(@"start .apng -> .mvid conversion \"%@\"", [resPath lastPathComponent]);
-#endif // LOGGING
-  
-  uint32_t retcode;
-  
-  uint32_t genAdler = 0;
-#ifdef EXTRA_CHECKS
-  genAdler = 1;
-#endif // EXTRA_CHECKS
-  if ([genAdlerNum intValue]) {
-    genAdler = 1;
+  if ([serialLoadingNum boolValue]) {
+    [self grabSerialResourceLoaderLock];
   }
   
-  char *resPathCstr = (char*) [resPath UTF8String];
-  char *phonyOutPathCstr = (char*) [phonyOutPath UTF8String];
+  // Check to see if the output file already exists. If the resource exists at this
+  // point, then there is no reason to kick off another decode operation. For example,
+  // in the serial loading case, a previous load could have loaded the resource.
   
-  retcode = apng_convert_maxvid_file(resPathCstr, phonyOutPathCstr, genAdler);  
-  assert(retcode == 0);
-    
-  // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
+  BOOL fileExists = [AVFileUtil fileExists:outPath];
   
-  [AVFileUtil renameFile:phonyOutPath toPath:outPath];
-  
+  if (fileExists) {
 #ifdef LOGGING
-  NSLog(@"done converting .apng to .mvid \"%@\"", [outPath lastPathComponent]);
+    NSLog(@"no .apng -> .mvid conversion needed for %@", [resPath lastPathComponent]);
 #endif // LOGGING
+  } else {
+    
+#ifdef LOGGING
+    NSLog(@"start .apng -> .mvid conversion \"%@\"", [resPath lastPathComponent]);
+#endif // LOGGING
+    
+    uint32_t retcode;
+    
+    uint32_t genAdler = 0;
+#ifdef EXTRA_CHECKS
+    genAdler = 1;
+#endif // EXTRA_CHECKS
+    if ([genAdlerNum intValue]) {
+      genAdler = 1;
+    }
+    
+    char *resPathCstr = (char*) [resPath UTF8String];
+    char *phonyOutPathCstr = (char*) [phonyOutPath UTF8String];
+    
+    retcode = apng_convert_maxvid_file(resPathCstr, phonyOutPathCstr, genAdler);  
+    NSAssert(retcode == 0, @"apng_convert_maxvid_file");
+    
+    // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
+    
+    [AVFileUtil renameFile:phonyOutPath toPath:outPath];
+    
+#ifdef LOGGING
+    NSLog(@"done converting .apng to .mvid \"%@\"", [outPath lastPathComponent]);
+#endif // LOGGING    
+  }
+  
+  if ([serialLoadingNum boolValue]) {
+    [self releaseSerialResourceLoaderLock];
+  }
   
   [pool drain];
 }
@@ -99,8 +121,10 @@
   NSNumber *genAdlerNum = [NSNumber numberWithInt:genAdler];
   NSAssert(genAdlerNum != nil, @"genAdlerNum");
   
-  NSArray *arr = [NSArray arrayWithObjects:resPath, phonyOutPath, outPath, genAdlerNum, nil];
-  NSAssert([arr count] == 4, @"arr count");
+  NSNumber *serialLoadingNum = [NSNumber numberWithBool:self.serialLoading];
+  
+  NSArray *arr = [NSArray arrayWithObjects:resPath, phonyOutPath, outPath, genAdlerNum, serialLoadingNum, nil];
+  NSAssert([arr count] == 5, @"arr count");
   
   [NSThread detachNewThreadSelector:@selector(decodeThreadEntryPoint:) toTarget:self.class withObject:arr];  
 }

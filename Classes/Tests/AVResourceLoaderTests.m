@@ -1244,5 +1244,361 @@
   return;
 }
 
+// This test case makes use of a pair of AV7zAppResourceLoader that both
+// try to load the same resource. This represents a race condition because
+// both loaders start out at the same time and the resource file does
+// not exist at that time. The race condition will not actually cause
+// a failure at runtime because an atomic write is used when saving the
+// file, but it will result in non-optional runtime CPU and memory usage.
+// Address this race condition by setting the serialLoading flag such
+// that only one decode operation is done at a time. When executed
+// with serialLoading, the second loading operation will be a no-op
+// because it will test the isReady flag before kicking off a decode.
+
++ (void) testDecode7zCompareToResourceOneAtATime
+{
+  NSString *archiveFilename = @"2x2_black_blue_16BPP.mov.7z";
+  NSString *entryFilename = @"2x2_black_blue_16BPP.mov";
+  NSString *outPath = [AVFileUtil getTmpDirPath:entryFilename];
+  
+  AV7zAppResourceLoader *resLoader1 = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader1.archiveFilename = archiveFilename;
+  resLoader1.movieFilename = entryFilename;
+  resLoader1.outPath = outPath;
+  resLoader1.serialLoading = TRUE;
+
+  AV7zAppResourceLoader *resLoader2 = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader2.archiveFilename = archiveFilename;
+  resLoader2.movieFilename = entryFilename;
+  resLoader2.outPath = outPath;
+  resLoader2.serialLoading = TRUE;
+  
+  // If the decode mov path exists currently, delete it so that this test case always
+  // decodes the .mov from the .7z compressed Resource.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file with same name as tmp dir");
+  }
+  
+  // With the serial loading flag set, these two threads should execute one at a time
+  // and the result is that only 1 since decode operation is done. The second loader
+  // would attempt to load the same resource as the first loader, so that second
+  // loading job can be skipped.
+  
+  [resLoader1 load];
+  [resLoader2 load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader2
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+
+  // Wait a couple of seconds so that we are sure both secondary threads have actually
+  // stopped running. The isReady test returns TRUE as soon as the first serial loader
+  // has finished writing.
+  
+  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:2.0];
+  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  
+  NSAssert(resLoader1.isReady, @"isReady");
+  NSAssert(resLoader2.isReady, @"isReady");
+  
+  if (1) {
+    // Compare extracted file data to identical data attached as a project resource
+    
+    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSAssert(wroteMvidData, @"could not map .mov data");
+    
+    NSString *resPath = [AVFileUtil getResourcePath:entryFilename];
+    NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
+    NSAssert(resMvidData, @"could not map .mov data");
+    
+    uint32_t resByteLength = [resMvidData length];
+    uint32_t wroteByteLength = [wroteMvidData length];
+    
+    // Extracted 2x2_black_blue_16BPP.mov Size should be 839 bytes
+    
+    BOOL sameLength = (resByteLength == wroteByteLength);
+    NSAssert(sameLength, @"sameLength");
+    BOOL same = [resMvidData isEqualToData:wroteMvidData];
+    NSAssert(same, @"same");
+  }
+  
+  return;
+}
+
+// This test case makes use of a pair of AV7zQT2MvidResourceLoader that both
+// try to load the same resource. This represents a race condition because
+// both loaders start out at the same time and the resource file does
+// not exist at that time. The race condition will not actually cause
+// a failure at runtime because an atomic write is used when saving the
+// file, but it will result in non-optional runtime CPU and memory usage.
+// Address this race condition by setting the serialLoading flag such
+// that only one decode operation is done at a time. When executed
+// with serialLoading, the second loading operation will be a no-op
+// because it will test the isReady flag before kicking off a decode.
+
++ (void) testDecode7zMvidCompareToResourceOneAtATime
+{  
+  NSString *archiveFilename = @"2x2_black_blue_16BPP.mov.7z";
+  NSString *entryFilename = @"2x2_black_blue_16BPP.mov";
+  NSString *outFilename = @"2x2_black_blue_16BPP.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  AV7zQT2MvidResourceLoader *resLoader1 = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+  resLoader1.archiveFilename = archiveFilename;
+  resLoader1.movieFilename = entryFilename;
+  resLoader1.outPath = outPath;
+  // Make sure binary compare matches by forcing adler generation when debugging is off
+  resLoader1.alwaysGenerateAdler = TRUE;
+  
+  resLoader1.serialLoading = TRUE;
+
+  AV7zQT2MvidResourceLoader *resLoader2 = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+  resLoader2.archiveFilename = archiveFilename;
+  resLoader2.movieFilename = entryFilename;
+  resLoader2.outPath = outPath;
+  // Make sure binary compare matches by forcing adler generation when debugging is off
+  resLoader2.alwaysGenerateAdler = TRUE;
+  
+  resLoader2.serialLoading = TRUE;
+  
+  // If the decode mov path exists currently, delete it so that this test case always
+  // decodes the .mov from the .7z compressed Resource.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file with same name as tmp dir");
+  }  
+  
+  // With the serial loading flag set, these two threads should execute one at a time
+  // and the result is that only 1 since decode operation is done. The second loader
+  // would attempt to load the same resource as the first loader, so that second
+  // loading job can be skipped.
+  
+  [resLoader1 load];
+  [resLoader2 load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader2
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");  
+  
+  // Wait a couple of seconds so that we are sure both secondary threads have actually
+  // stopped running. The isReady test returns TRUE as soon as the first serial loader
+  // has finished writing.
+  
+  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:2.0];
+  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  
+  NSAssert(resLoader1.isReady, @"isReady");
+  NSAssert(resLoader2.isReady, @"isReady");
+  
+  if (1) {
+    // Compare generated mvid file data to identical data attached as a project resource
+    
+    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSAssert(wroteMvidData, @"could not map .mvid data");
+    
+    NSString *resPath = [AVFileUtil getResourcePath:outFilename];
+    NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
+    NSAssert(resMvidData, @"could not map .mvid data");
+    
+    uint32_t resByteLength = [resMvidData length];
+    uint32_t wroteByteLength = [wroteMvidData length];
+    
+    // Converted 2x2_black_blue_16BPP.mvid should be 12288 bytes
+    
+    BOOL sameLength = (resByteLength == wroteByteLength);
+    NSAssert(sameLength, @"sameLength");
+    BOOL same = [resMvidData isEqualToData:wroteMvidData];
+    NSAssert(same, @"same");
+    
+    // Verify that the emitted .mvid file has a valid magic number
+    
+    char *mvidBytes = (char*) [wroteMvidData bytes];
+    
+    MVFileHeader *mvFileHeaderPtr = (MVFileHeader*) mvidBytes;
+    
+    assert(mvFileHeaderPtr->numFrames == 2);
+  }
+  
+  return;
+}
+
+// This test case makes use of a pair of AVApng2MvidResourceLoader that both
+// try to load the same resource. This represents a race condition because
+// both loaders start out at the same time and the resource file does
+// not exist at that time. The race condition will not actually cause
+// a failure at runtime because an atomic write is used when saving the
+// file, but it will result in non-optional runtime CPU and memory usage.
+// Address this race condition by setting the serialLoading flag such
+// that only one decode operation is done at a time. When executed
+// with serialLoading, the second loading operation will be a no-op
+// because it will test the isReady flag before kicking off a decode.
+
++ (void) testDecodeAPNG2MvidCompareToResourceOneAtATime
+{
+  NSString *resFilename = @"2x2_black_blue_24BPP.apng";
+  NSString *outFilename = @"2x2_black_blue_24BPP.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  AVApng2MvidResourceLoader *resLoader1 = [AVApng2MvidResourceLoader aVApng2MvidResourceLoader];
+  resLoader1.movieFilename = resFilename;
+  resLoader1.outPath = outPath;
+  // Make sure binary compare matches by forcing adler generation when debugging is off
+  resLoader1.alwaysGenerateAdler = TRUE;
+  
+  resLoader1.serialLoading = TRUE;
+  
+  AVApng2MvidResourceLoader *resLoader2 = [AVApng2MvidResourceLoader aVApng2MvidResourceLoader];
+  resLoader2.movieFilename = resFilename;
+  resLoader2.outPath = outPath;
+  // Make sure binary compare matches by forcing adler generation when debugging is off
+  resLoader2.alwaysGenerateAdler = TRUE;
+  
+  resLoader2.serialLoading = TRUE;
+  
+  // If the decode mov path exists currently, delete it so that this test case always
+  // writes a new file.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file with same name as tmp dir");
+  }  
+  
+  // With the serial loading flag set, these two threads should execute one at a time
+  // and the result is that only 1 since decode operation is done. The second loader
+  // would attempt to load the same resource as the first loader, so that second
+  // loading job can be skipped.
+  
+  [resLoader1 load];
+  [resLoader2 load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader2
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");  
+  
+  // Wait a couple of seconds so that we are sure both secondary threads have actually
+  // stopped running. The isReady test returns TRUE as soon as the first serial loader
+  // has finished writing.
+  
+  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:2.0];
+  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  
+  NSAssert(resLoader1.isReady, @"isReady");
+  NSAssert(resLoader2.isReady, @"isReady");
+  
+  if (1) {
+    // Compare generated mvid file data to identical data attached as a project resource
+    
+    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSAssert(wroteMvidData, @"could not map .mvid data");
+    
+    NSAssert([wroteMvidData length] == 12288, @"length mismatch");
+    
+    // Verify that the emitted .mvid file has a valid magic number
+    
+    char *mvidBytes = (char*) [wroteMvidData bytes];
+    
+    MVFileHeader *mvFileHeaderPtr = (MVFileHeader*) mvidBytes;
+    
+    assert(mvFileHeaderPtr->numFrames == 2);
+  }
+  
+  return;
+}
+
+// This test case makes use of a pair of AV7zApng2MvidResourceLoader that both
+// try to load the same resource. This represents a race condition because
+// both loaders start out at the same time and the resource file does
+// not exist at that time. The race condition will not actually cause
+// a failure at runtime because an atomic write is used when saving the
+// file, but it will result in non-optional runtime CPU and memory usage.
+// Address this race condition by setting the serialLoading flag such
+// that only one decode operation is done at a time. When executed
+// with serialLoading, the second loading operation will be a no-op
+// because it will test the isReady flag before kicking off a decode.
+
++ (void) testDecode7zAPNG2MvidCompareToResourceOneAtATime
+{
+  NSString *archiveFilename = @"2x2_black_blue_24BPP_opt_nc.apng.7z";
+  NSString *entryFilename = @"2x2_black_blue_24BPP_opt_nc.apng";
+  NSString *outFilename = @"2x2_black_blue_24BPP_opt_nc.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  AV7zApng2MvidResourceLoader *resLoader1 = [AV7zApng2MvidResourceLoader aV7zApng2MvidResourceLoader];
+  resLoader1.archiveFilename = archiveFilename;
+  resLoader1.movieFilename = entryFilename;
+  resLoader1.outPath = outPath;
+
+  // Make sure binary compare matches by forcing adler generation when debugging is off
+  resLoader1.alwaysGenerateAdler = TRUE;
+  
+  resLoader1.serialLoading = TRUE;
+  
+  AV7zApng2MvidResourceLoader *resLoader2 = [AV7zApng2MvidResourceLoader aV7zApng2MvidResourceLoader];
+  resLoader2.archiveFilename = archiveFilename;
+  resLoader2.movieFilename = entryFilename;
+  resLoader2.outPath = outPath;
+  
+  // Make sure binary compare matches by forcing adler generation when debugging is off
+  resLoader2.alwaysGenerateAdler = TRUE;
+  
+  resLoader2.serialLoading = TRUE;
+  
+  // If the decode mov path exists currently, delete it so that this test case always
+  // writes a new file.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file with same name as tmp dir");
+  }  
+  
+  // With the serial loading flag set, these two threads should execute one at a time
+  // and the result is that only 1 since decode operation is done. The second loader
+  // would attempt to load the same resource as the first loader, so that second
+  // loading job can be skipped.
+  
+  [resLoader1 load];
+  [resLoader2 load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader2
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");  
+  
+  // Wait a couple of seconds so that we are sure both secondary threads have actually
+  // stopped running. The isReady test returns TRUE as soon as the first serial loader
+  // has finished writing.
+  
+  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:2.0];
+  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  
+  NSAssert(resLoader1.isReady, @"isReady");
+  NSAssert(resLoader2.isReady, @"isReady");
+  
+  if (1) {
+    // Compare generated mvid file data to identical data attached as a project resource
+    
+    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSAssert(wroteMvidData, @"could not map .mvid data");
+    
+    NSAssert([wroteMvidData length] == 12288, @"length mismatch");
+    
+    // Verify that the emitted .mvid file has a valid magic number
+    
+    char *mvidBytes = (char*) [wroteMvidData bytes];
+    
+    MVFileHeader *mvFileHeaderPtr = (MVFileHeader*) mvidBytes;
+    
+    assert(mvFileHeaderPtr->numFrames == 2);
+  }
+  
+  return;
+}
+
 @end
 

@@ -31,14 +31,14 @@
 // This method is invoked in the secondary thread to decode the contents of the archive entry
 // and write it to an output file (typically in the tmp dir).
 
-//#define LOGGING
+#define LOGGING
 
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   
-  NSAssert([arr count] == 6, @"arr count");
+  NSAssert([arr count] == 7, @"arr count");
   
-  // Pass ARCHIVE_PATH ARCHIVE_ENTRY_NAME PHONY_TMP_PATH1 PHONY_TMP_PATH2 TMP_PATH GEN_ADLER
+  // Pass 7 args : ARCHIVE_PATH ARCHIVE_ENTRY_NAME PHONY_TMP_PATH1 PHONY_TMP_PATH2 TMP_PATH GEN_ADLER SERIAL
   
   NSString *archivePath = [arr objectAtIndex:0];
   NSString *archiveEntry = [arr objectAtIndex:1];
@@ -46,56 +46,77 @@
   NSString *phonyOutPath2 = [arr objectAtIndex:3];
   NSString *outPath = [arr objectAtIndex:4];
   NSString *genAdlerNum = [arr objectAtIndex:5];
+  NSNumber *serialLoadingNum = [arr objectAtIndex:6];
   
-#ifdef LOGGING
-  NSLog(@"start 7zip extraction %@", archiveEntry);
-#endif // LOGGING
-  
-  BOOL worked;
-  worked = [LZMAExtractor extractArchiveEntry:archivePath archiveEntry:archiveEntry outPath:phonyOutPath];
-  assert(worked);
-  
-  // The archive .mov file is extracted to a phony tmp path like "/tmp/15354345345", convert the
-  // animation codec data to a maxvid file (another tmp path).
-
-  NSData *mappedData = [NSData dataWithContentsOfMappedFile:phonyOutPath];
-  NSAssert(mappedData, @"could not map .mov data");
-  
-  char *movPathCstr = (char*) [phonyOutPath UTF8String];
-  char *movData = (char*) [mappedData bytes];
-  uint32_t movNumBytes = [mappedData length];
-  char *phonyOutPath2Cstr = (char*) [phonyOutPath2 UTF8String];
-  
-  assert(strcmp(movPathCstr, phonyOutPath2Cstr) != 0);
-  
-#ifdef LOGGING
-  NSLog(@"done 7zip extraction %@, start encode", archiveEntry);
-#endif // LOGGING
-  
-  uint32_t retcode;
-  
-  uint32_t genAdler = 0;
-#ifdef EXTRA_CHECKS
-  genAdler = 1;
-#endif // EXTRA_CHECKS
-  if ([genAdlerNum intValue]) {
-    genAdler = 1;
+  if ([serialLoadingNum boolValue]) {
+    [self grabSerialResourceLoaderLock];
   }
   
-  retcode = movdata_convert_maxvid_file(movPathCstr, movData, movNumBytes, phonyOutPath2Cstr, genAdler);
-  assert(retcode == 0);
+  // Check to see if the output file already exists. If the resource exists at this
+  // point, then there is no reason to kick off another decode operation. For example,
+  // in the serial loading case, a previous load could have loaded the resource.
   
-  // Remove tmp file that contains the .mov data, ignore if the file does not exist
+  BOOL fileExists = [AVFileUtil fileExists:outPath];
   
-  [[NSFileManager defaultManager] removeItemAtPath:phonyOutPath error:nil];
-  
-  // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
-  
-  [AVFileUtil renameFile:phonyOutPath2 toPath:outPath];
-  
+  if (fileExists) {
 #ifdef LOGGING
-  NSLog(@"done encode %@", [outPath lastPathComponent]);
+    NSLog(@"no 7zip extraction needed for %@", archiveEntry);
 #endif // LOGGING
+  } else {
+#ifdef LOGGING
+    NSLog(@"start 7zip extraction %@", archiveEntry);
+#endif // LOGGING
+    
+    BOOL worked;
+    worked = [LZMAExtractor extractArchiveEntry:archivePath archiveEntry:archiveEntry outPath:phonyOutPath];
+    NSAssert(worked, @"extractArchiveEntry");
+    
+    // The archive .mov file is extracted to a phony tmp path like "/tmp/15354345345", convert the
+    // animation codec data to a maxvid file (another tmp path).
+    
+    NSData *mappedData = [NSData dataWithContentsOfMappedFile:phonyOutPath];
+    NSAssert(mappedData, @"could not map .mov data");
+    
+    char *movPathCstr = (char*) [phonyOutPath UTF8String];
+    char *movData = (char*) [mappedData bytes];
+    uint32_t movNumBytes = [mappedData length];
+    char *phonyOutPath2Cstr = (char*) [phonyOutPath2 UTF8String];
+    
+    assert(strcmp(movPathCstr, phonyOutPath2Cstr) != 0);
+    
+#ifdef LOGGING
+    NSLog(@"done 7zip extraction %@, start encode", archiveEntry);
+#endif // LOGGING
+    
+    uint32_t retcode;
+    
+    uint32_t genAdler = 0;
+#ifdef EXTRA_CHECKS
+    genAdler = 1;
+#endif // EXTRA_CHECKS
+    if ([genAdlerNum intValue]) {
+      genAdler = 1;
+    }
+    
+    retcode = movdata_convert_maxvid_file(movPathCstr, movData, movNumBytes, phonyOutPath2Cstr, genAdler);
+    NSAssert(retcode == 0, @"movdata_convert_maxvid_file");
+    
+    // Remove tmp file that contains the .mov data, ignore if the file does not exist
+    
+    [[NSFileManager defaultManager] removeItemAtPath:phonyOutPath error:nil];
+    
+    // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
+    
+    [AVFileUtil renameFile:phonyOutPath2 toPath:outPath];
+    
+#ifdef LOGGING
+    NSLog(@"wrote %@", [outPath lastPathComponent]);
+#endif // LOGGING
+  }
+  
+  if ([serialLoadingNum boolValue]) {
+    [self releaseSerialResourceLoaderLock];
+  }
   
   [pool drain];
 }
@@ -116,8 +137,17 @@
   NSNumber *genAdlerNum = [NSNumber numberWithInt:genAdler];
   NSAssert(genAdlerNum != nil, @"genAdlerNum");
   
-  NSArray *arr = [NSArray arrayWithObjects:archivePath, archiveEntry, phonyOutPath, phonyOutPath2, outPath, genAdlerNum, nil];
-  NSAssert([arr count] == 6, @"arr count");
+  NSNumber *serialLoadingNum = [NSNumber numberWithBool:self.serialLoading];
+  
+  NSArray *arr = [NSArray arrayWithObjects:archivePath,
+                  archiveEntry,
+                  phonyOutPath,
+                  phonyOutPath2,
+                  outPath,
+                  genAdlerNum,
+                  serialLoadingNum,
+                  nil];
+  NSAssert([arr count] == 7, @"arr count");
   
   [NSThread detachNewThreadSelector:@selector(decodeThreadEntryPoint:) toTarget:self.class withObject:arr];  
 }

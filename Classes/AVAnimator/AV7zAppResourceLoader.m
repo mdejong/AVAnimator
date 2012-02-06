@@ -12,7 +12,7 @@
 
 #import "LZMAExtractor.h"
 
-//#define LOGGING
+#define LOGGING
 
 @implementation AV7zAppResourceLoader
 
@@ -37,30 +37,55 @@
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   
-  NSAssert([arr count] == 4, @"arr count");
+  NSAssert([arr count] == 5, @"arr count");
   
-  // Pass ARCHIVE_PATH ARCHIVE_ENTRY_NAME TMP_PATH
+  // Pass 5 arguments : ARCHIVE_PATH ARCHIVE_ENTRY_NAME PHONY_PATH TMP_PATH SERIAL
   
   NSString *archivePath = [arr objectAtIndex:0];
   NSString *archiveEntry = [arr objectAtIndex:1];
   NSString *phonyOutPath = [arr objectAtIndex:2];
   NSString *outPath = [arr objectAtIndex:3];
+  NSNumber *serialLoadingNum = [arr objectAtIndex:4];
+  
+  if ([serialLoadingNum boolValue]) {
+    [self grabSerialResourceLoaderLock];
+  }
 
+  // Check to see if the output file already exists. If the resource exists at this
+  // point, then there is no reason to kick off another decode operation. For example,
+  // in the serial loading case, a previous load could have loaded the resource.
+
+  BOOL fileExists = [AVFileUtil fileExists:outPath];
+  
+  if (fileExists) {
 #ifdef LOGGING
-  NSLog(@"start 7zip extraction %@", archiveEntry);
-#endif // LOGGING  
-  
-  BOOL worked;
-  worked = [LZMAExtractor extractArchiveEntry:archivePath archiveEntry:archiveEntry outPath:phonyOutPath];
-  assert(worked);
-  
+    NSLog(@"no 7zip extraction needed for %@", archiveEntry);
+#endif // LOGGING
+  } else {
 #ifdef LOGGING
-  NSLog(@"done 7zip extraction %@", archiveEntry);
+    NSLog(@"start 7zip extraction %@", archiveEntry);
 #endif // LOGGING  
+    
+    BOOL worked;
+    worked = [LZMAExtractor extractArchiveEntry:archivePath archiveEntry:archiveEntry outPath:phonyOutPath];
+    NSAssert(worked, @"extractArchiveEntry failed");
+    
+#ifdef LOGGING
+    NSLog(@"done 7zip extraction %@", archiveEntry);
+#endif // LOGGING
+    
+    // Move phony tmp filename to the expected filename once writes are complete
+    
+    [AVFileUtil renameFile:phonyOutPath toPath:outPath];
+    
+#ifdef LOGGING
+    NSLog(@"wrote %@", outPath);
+#endif // LOGGING
+  }
   
-  // Move phony tmp filename to the expected filename once writes are complete
-  
-  [AVFileUtil renameFile:phonyOutPath toPath:outPath];
+  if ([serialLoadingNum boolValue]) {
+    [self releaseSerialResourceLoaderLock];
+  }
   
   [pool drain];
 }
@@ -70,8 +95,10 @@
             phonyOutPath:(NSString*)phonyOutPath
                  outPath:(NSString*)outPath
 {
-  NSArray *arr = [NSArray arrayWithObjects:archivePath, archiveEntry, phonyOutPath, outPath, nil];
-  NSAssert([arr count] == 4, @"arr count");
+  NSNumber *serialLoadingNum = [NSNumber numberWithBool:self.serialLoading];
+  
+  NSArray *arr = [NSArray arrayWithObjects:archivePath, archiveEntry, phonyOutPath, outPath, serialLoadingNum, nil];
+  NSAssert([arr count] == 5, @"arr count");
   
   [NSThread detachNewThreadSelector:@selector(decodeThreadEntryPoint:) toTarget:self.class withObject:arr];  
 }

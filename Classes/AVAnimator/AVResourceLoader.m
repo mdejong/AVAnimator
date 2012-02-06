@@ -8,7 +8,49 @@
 
 #import "AVResourceLoader.h"
 
+static NSLock *serialResourceLoaderLock = nil;
+
 @implementation AVResourceLoader
+
+@synthesize isReady = m_isReady;
+@synthesize serialLoading = m_serialLoading;
+
+// This static method is invoked when this class or a subclass is loaded.
+// The goal here is to only invoke the lock init logic one time so that
+// only a single lock ever exists.
+
++ (void) initialize
+{
+  if (self == [AVResourceLoader class]) {
+    if (serialResourceLoaderLock == nil) {
+      NSLock *obj = [[NSLock alloc] init];
+      NSAssert(obj, @"NSLock could not be allocated");
+      serialResourceLoaderLock = obj;
+      [serialResourceLoaderLock retain];
+      [serialResourceLoaderLock setName:@"serialResourceLoaderLock"];
+      [obj release];
+    }
+  }
+}
+
++ (void) freeSerialResourceLoaderLock
+{
+  NSLock *obj = serialResourceLoaderLock;
+  serialResourceLoaderLock = nil;
+  [obj release];
+}
+
++ (void) grabSerialResourceLoaderLock
+{
+  NSAssert(serialResourceLoaderLock, @"serialResourceLoaderLock");
+  [serialResourceLoaderLock lock];
+}
+
++ (void) releaseSerialResourceLoaderLock
+{
+  NSAssert(serialResourceLoaderLock, @"serialResourceLoaderLock");
+  [serialResourceLoaderLock unlock];
+}
 
 - (BOOL) isReady
 {

@@ -86,6 +86,7 @@
   return isAudioReady;
 }
 
+// Getter for isReady property defined in superclass
 
 - (BOOL) isReady
 {
@@ -96,7 +97,7 @@
   isAudioReady = [self isAudioReady];
     
   if (isMovieReady && isAudioReady) {
-    m_isReady = TRUE;
+    self.isReady = TRUE;
     return TRUE;
   } else {
     return FALSE;
@@ -105,7 +106,7 @@
 
 - (NSArray*) getResources
 {
-	if (!m_isReady) {
+	if (!self.isReady) {
 		NSAssert(FALSE, @"resources not ready");
   }
   NSMutableArray *mArr = [NSMutableArray array];
