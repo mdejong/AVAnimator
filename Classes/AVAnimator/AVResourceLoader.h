@@ -8,12 +8,11 @@
 
 #import <Foundation/Foundation.h>
 
-// A resource loader is created by the the AVAnimatorView class
-// to support loading of a resource from a URL or memory. The
-// AVAnimatorView class creates a view widget and then
-// prepares to load the resources for a specific instance of
-// a AVResourceLoader. The resource might exist already, or it
-// may need to be generated which could take some time.
+// Create a resource loader and attach it to the media
+// object to implement a specific type of resource loading.
+// The type of resource might be a URL or a file, but the
+// exact method used to load the resource is defined by
+// a specific implementation.
 
 @interface AVResourceLoader : NSObject {
 @private
