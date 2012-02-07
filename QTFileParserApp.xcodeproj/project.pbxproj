@@ -140,6 +140,7 @@
 		CD5006DC12E23B95007038D0 /* Sweep15FPS_ANI.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD5006D812E23B95007038D0 /* Sweep15FPS_ANI.mov */; };
 		CD5006DD12E23B95007038D0 /* Sweep15FPS.m4a in Resources */ = {isa = PBXBuildFile; fileRef = CD5006D912E23B95007038D0 /* Sweep15FPS.m4a */; };
 		CD535613136A2C0800FF72D4 /* AVFrameDecoderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD535612136A2C0800FF72D4 /* AVFrameDecoderTests.m */; };
+		CD561CA314DF9E41001E4F43 /* 32x32_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD561CA214DF9E41001E4F43 /* 32x32_black_blue_h264.mov */; };
 		CD5AEE3112D8F32F00A50135 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE3012D8F32F00A50135 /* AVFoundation.framework */; };
 		CD5AEE3512D8F33700A50135 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE3412D8F33700A50135 /* AudioToolbox.framework */; };
 		CD5AEE3912D8F34300A50135 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE3812D8F34300A50135 /* QuartzCore.framework */; };
@@ -216,6 +217,10 @@
 		CDA1DC0612E61F37004C570F /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = CDA1DC0512E61F37004C570F /* Icon.png */; };
 		CDA1DC0712E61F37004C570F /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = CDA1DC0512E61F37004C570F /* Icon.png */; };
 		CDA2BADB12F0AA4000F299B4 /* Silence3S.wav in Resources */ = {isa = PBXBuildFile; fileRef = CDA2BADA12F0AA4000F299B4 /* Silence3S.wav */; };
+		CDAAB16114DFAA9800F43810 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDAAB16014DFAA9800F43810 /* CoreMedia.framework */; };
+		CDAAB16214DFAABF00F43810 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDAAB16014DFAA9800F43810 /* CoreMedia.framework */; };
+		CDAAB16414DFAAF100F43810 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDAAB16314DFAAF100F43810 /* CoreVideo.framework */; };
+		CDAAB16514DFAAFB00F43810 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDAAB16314DFAAF100F43810 /* CoreVideo.framework */; };
 		CDBA6B2512DC50A8001B44EB /* nexttrack.png in Resources */ = {isa = PBXBuildFile; fileRef = CDBA6B2412DC50A8001B44EB /* nexttrack.png */; };
 		CDBA6B2612DC50A9001B44EB /* nexttrack.png in Resources */ = {isa = PBXBuildFile; fileRef = CDBA6B2412DC50A8001B44EB /* nexttrack.png */; };
 		CDBDC10E12E0EA7500EF5BD4 /* LCD.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */; };
@@ -346,6 +351,7 @@
 		CD5006D812E23B95007038D0 /* Sweep15FPS_ANI.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Sweep15FPS_ANI.mov; sourceTree = "<group>"; };
 		CD5006D912E23B95007038D0 /* Sweep15FPS.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = Sweep15FPS.m4a; sourceTree = "<group>"; };
 		CD535612136A2C0800FF72D4 /* AVFrameDecoderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVFrameDecoderTests.m; sourceTree = "<group>"; };
+		CD561CA214DF9E41001E4F43 /* 32x32_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 32x32_black_blue_h264.mov; sourceTree = "<group>"; };
 		CD5AECF412D8F28200A50135 /* RegressionTests.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RegressionTests.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD5AECF612D8F28200A50135 /* RegressionTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "RegressionTests-Info.plist"; sourceTree = "<group>"; };
 		CD5AEE3012D8F32F00A50135 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
@@ -424,6 +430,8 @@
 		CD9BF0981364EC2700FF5190 /* GradientColorWheel_2FPS_32BPP_Keyframes.mov.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = GradientColorWheel_2FPS_32BPP_Keyframes.mov.7z; sourceTree = "<group>"; };
 		CDA1DC0512E61F37004C570F /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
 		CDA2BADA12F0AA4000F299B4 /* Silence3S.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = Silence3S.wav; sourceTree = "<group>"; };
+		CDAAB16014DFAA9800F43810 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+		CDAAB16314DFAAF100F43810 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		CDBA6B2412DC50A8001B44EB /* nexttrack.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = nexttrack.png; sourceTree = "<group>"; };
 		CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = LCD.jpg; sourceTree = "<group>"; };
 		CDC38D5912F1F06C00D55CE8 /* AVAnimatorLayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorLayer.h; sourceTree = "<group>"; };
@@ -499,6 +507,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CDAAB16414DFAAF100F43810 /* CoreVideo.framework in Frameworks */,
+				CDAAB16114DFAA9800F43810 /* CoreMedia.framework in Frameworks */,
 				CD5AEE3112D8F32F00A50135 /* AVFoundation.framework in Frameworks */,
 				CD5AEE3512D8F33700A50135 /* AudioToolbox.framework in Frameworks */,
 				CD5AEE3912D8F34300A50135 /* QuartzCore.framework in Frameworks */,
@@ -522,6 +532,8 @@
 				CD3F4E5612D8F4400067FDDF /* Foundation.framework in Frameworks */,
 				CD3F4E5712D8F4400067FDDF /* CoreGraphics.framework in Frameworks */,
 				CDE66096136F884800F4E8E6 /* libz.dylib in Frameworks */,
+				CDAAB16214DFAABF00F43810 /* CoreMedia.framework in Frameworks */,
+				CDAAB16514DFAAFB00F43810 /* CoreVideo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -614,6 +626,8 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				CDAAB16314DFAAF100F43810 /* CoreVideo.framework */,
+				CDAAB16014DFAA9800F43810 /* CoreMedia.framework */,
 				CDE66095136F884800F4E8E6 /* libz.dylib */,
 				CD5AEE3012D8F32F00A50135 /* AVFoundation.framework */,
 				CD5AEE3412D8F33700A50135 /* AudioToolbox.framework */,
@@ -670,6 +684,7 @@
 				CD9A3641139043A1003F70BC /* 480x320_black_blue_16BPP.mov.7z */,
 				CD9A367013904865003F70BC /* 480x320_black_blue_1LD_16BPP.mov.7z */,
 				CDF1919B13BD893D0008672A /* 1x1.gif */,
+				CD561CA214DF9E41001E4F43 /* 32x32_black_blue_h264.mov */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -1086,6 +1101,7 @@
 				CD9A3642139043A1003F70BC /* 480x320_black_blue_16BPP.mov.7z in Resources */,
 				CD9A367113904865003F70BC /* 480x320_black_blue_1LD_16BPP.mov.7z in Resources */,
 				CDF1919C13BD893D0008672A /* 1x1.gif in Resources */,
+				CD561CA314DF9E41001E4F43 /* 32x32_black_blue_h264.mov in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
