@@ -1621,6 +1621,7 @@
   AVAssetReaderConvertMaxvid *obj = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
   obj.assetURL = fileURL;
   obj.mvidPath = tmpPath;
+  obj.genAdler = TRUE;
   
   BOOL worked = [obj decodeAssetURL];
   NSAssert(worked, @"decodeAssetURL");
@@ -1638,6 +1639,41 @@
     MVFileHeader *mvFileHeaderPtr = (MVFileHeader*) mvidBytes;
     
     assert(mvFileHeaderPtr->numFrames == 2);
+  }
+  
+  if (TRUE) {
+    // Create MVID frame decoder and iterate over the frames in the mvid file.
+    // This will validate the emitted data via the adler checksum logic
+    // in the decoding process.
+
+    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+    
+    BOOL worked = [frameDecoder openForReading:tmpPath];
+    NSAssert(worked, @"worked");
+    
+    NSAssert([frameDecoder numFrames] == 2, @"numFrames");
+    
+    worked = [frameDecoder allocateDecodeResources];
+    NSAssert(worked, @"worked");
+
+    UIImage *img;
+    
+    CGSize expectedSize = CGSizeMake(32, 32);
+    CGSize imgSize;
+    
+    img = [frameDecoder advanceToFrame:0];
+
+    imgSize = img.size;
+    NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+    
+    NSAssert(img, @"frame 0");
+    
+    img = [frameDecoder advanceToFrame:1];
+
+    NSAssert(img, @"frame 1");
+
+    imgSize = img.size;
+    NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
   }
   
   return;

@@ -30,10 +30,12 @@
   AVAssetReaderOutput *m_aVAssetReaderOutput;
   float frameDuration;
   int   totalNumFrames;
+  BOOL  m_genAdler;
 }
 
 @property (nonatomic, retain) NSURL         *assetURL;
 @property (nonatomic, copy)   NSString      *mvidPath;
+@property (nonatomic, assign) BOOL          genAdler;
 
 + (AVAssetReaderConvertMaxvid*) aVAssetReaderConvertMaxvid;
 

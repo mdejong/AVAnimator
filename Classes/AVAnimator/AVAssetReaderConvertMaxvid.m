@@ -17,8 +17,9 @@
 # define EXTRA_CHECKS
 #endif // DEBUG
 
-//#define ALWAYS_CHECK_ADLER
-
+#ifdef EXTRA_CHECKS
+#define ALWAYS_GENERATE_ADLER
+#endif // EXTRA_CHECKS
 
 #if defined(HAS_AVASSET_READER_CONVERT_MAXVID)
 
@@ -48,6 +49,7 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
 @synthesize mvidPath = m_mvidPath;
 @synthesize aVAssetReader = m_aVAssetReader;
 @synthesize aVAssetReaderOutput = m_aVAssetReaderOutput;
+@synthesize genAdler = m_genAdler;
 
 - (void) dealloc
 {  
@@ -158,6 +160,10 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
 {
   BOOL worked;
   BOOL retstatus = FALSE;
+  
+#ifdef ALWAYS_GENERATE_ADLER
+  self.genAdler = TRUE;
+#endif // ALWAYS_GENERATE_ADLER
   
   MVFileHeader *mvHeader = NULL;
   MVFrame *mvFramesArray = NULL;
@@ -279,6 +285,10 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
       void *baseAddress = CVPixelBufferGetBaseAddress(imageBuffer);
       size_t bufferSize = CVPixelBufferGetDataSize(imageBuffer);
       
+      // Buffer size should be (width * height * sizeof(uint32_t))
+      
+      NSAssert(bufferSize == (movieWidth * movieHeight * sizeof(uint32_t)), @"framebuffer size");
+      
       // Skip to next page bound
       
       offset = maxvid_file_padding_before_keyframe(maxvidOutFile, offset);
@@ -286,8 +296,6 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
       maxvid_frame_setoffset(mvFrame, (uint32_t)offset);
       
       maxvid_frame_setkeyframe(mvFrame);
-      
-      // FIXME: generate adler if optional flag or debug mode
       
       // write entire buffer of raw 32bit pixels to the file.
       // bitmap info is native (kCGImageAlphaNoneSkipFirst|kCGBitmapByteOrder32Little)
@@ -297,7 +305,7 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
         writeFailed = TRUE;
       } else {
         // Finish emitting frame data
-      
+        
         uint32_t offsetBefore = (uint32_t)offset;
         offset = ftell(maxvidOutFile);
         uint32_t length = ((uint32_t)offset) - offsetBefore;
@@ -306,6 +314,13 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
         assert((length % 4) == 0); // must be in terms of whole words
         
         maxvid_frame_setlength(mvFrame, length);
+        
+        // Generate adler32 for pixel data and save into frame data
+        
+        if (self.genAdler) {
+          mvFrame->adler = maxvid_adler32(0, (unsigned char*)baseAddress, bufferSize);
+          assert(mvFrame->adler != 0);
+        }
         
         // zero pad to next page bound
         
