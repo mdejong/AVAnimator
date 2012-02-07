@@ -197,6 +197,7 @@ fread_half_word(FILE *fp, uint16_t *halfwordPtr) {
 #define UNSUPPORTED_FILE 1
 #define READ_ERROR 2
 #define WRITE_ERROR 3
+#define MALLOC_ERROR 4
 
 // This util method scans through the APNG chunks and determines the shortest frame duration.
 // The mvid format is strictly frame oriented, so a delay of multiple frames is represented
@@ -729,6 +730,9 @@ goto retcode; \
   }
   
   mvHeader = malloc(sizeof(MVFileHeader));
+  if (!mvHeader) {
+    RETCODE(MALLOC_ERROR);
+  }
   memset(mvHeader, 0, sizeof(MVFileHeader));
   
   // FIXME: Don't know how many maxvid frames there will be until the animation frames
@@ -737,6 +741,9 @@ goto retcode; \
   
   const uint32_t framesArrayNumBytes = sizeof(MVFrame) * numOutputFrames;
   mvFramesArray = malloc(framesArrayNumBytes);
+  if (!mvFramesArray) {
+    RETCODE(MALLOC_ERROR);
+  }
   memset(mvFramesArray, 0, framesArrayNumBytes);  
   
   // Write header and frame info array in initial zeroed state. These data fields
@@ -753,7 +760,7 @@ goto retcode; \
   numWritten = fwrite(mvFramesArray, framesArrayNumBytes, 1, maxvidOutFile);
   if (numWritten != 1) {
     RETCODE(WRITE_ERROR);
-  }  
+  }
 
   // Init user data passed to libapng_main()
   
