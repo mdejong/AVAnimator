@@ -29,6 +29,7 @@
   AVAssetReader *m_aVAssetReader;
   AVAssetReaderOutput *m_aVAssetReaderOutput;
   float frameDuration;
+  int   totalNumFrames;
 }
 
 @property (nonatomic, retain) NSURL         *assetURL;

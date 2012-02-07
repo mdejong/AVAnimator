@@ -121,13 +121,22 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
   
   // playback framerate
   
-  //CMTimeScale naturalTimeScale = videoTrack.naturalTimeScale;
+  CMTimeRange timeRange = videoTrack.timeRange;
+  
+  float duration = (float)CMTimeGetSeconds(timeRange.duration);
   
   float nominalFrameRate = videoTrack.nominalFrameRate;
-  
-  NSLog(@"frame rate %0.2f FPS", nominalFrameRate);
-  
+    
   self->frameDuration = 1.0 / nominalFrameRate;
+
+  float numFramesFloat = duration / self->frameDuration;
+  int numFrames = round( numFramesFloat );
+  
+  NSLog(@"frame rate = %0.2f FPS", nominalFrameRate);
+  NSLog(@"duration = %0.2f S", duration);
+  NSLog(@"numFrames = %0.4f -> %d", numFramesFloat, numFrames);
+  
+  self->totalNumFrames = numFrames;
   
   AVAssetReaderTrackOutput *aVAssetReaderOutput = [[[AVAssetReaderTrackOutput alloc]
                                                     initWithTrack:videoTrack outputSettings:videoSettings] autorelease];
@@ -183,12 +192,10 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
     goto retcode;
   }
   
-  // Figure out how many frames the track contains, need to know how many before
-  // we can write the zero headers.
+  // We need to have figured out how many frames there are in the video before
+  // decoding frames begins.
   
-  // use timeline to calculate num frames in track ?
-  
-  int numOutputFrames = 2;
+  int numOutputFrames = self->totalNumFrames;
   
   // Write zeroed frames header
   
