@@ -1612,11 +1612,33 @@
 + (void) testDecodeH264WithTrackReader
 {
   NSString *resourceName = @"32x32_black_blue_h264.mov";
-  NSString *resPath = [AVFileUtil getResourcePath:resourceName];  
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
   NSURL *fileURL = [NSURL fileURLWithPath:resPath];
   
-  BOOL worked = [AVAssetReaderConvertMaxvid decodeAssetURL:fileURL];
+  NSString *tmpFilename = @"32x32_black_blue_h264.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  AVAssetReaderConvertMaxvid *obj = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
+  obj.assetURL = fileURL;
+  obj.mvidPath = tmpPath;
+  
+  BOOL worked = [obj decodeAssetURL];
   NSAssert(worked, @"decodeAssetURL");
+  
+  if (TRUE) {
+    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:tmpPath];
+    NSAssert(wroteMvidData, @"could not map .mvid data");
+    
+    NSAssert([wroteMvidData length] == 20480, @"length mismatch");
+    
+    // Verify that the emitted .mvid file has a valid magic number
+    
+    char *mvidBytes = (char*) [wroteMvidData bytes];
+    
+    MVFileHeader *mvFileHeaderPtr = (MVFileHeader*) mvidBytes;
+    
+    assert(mvFileHeaderPtr->numFrames == 2);
+  }
   
   return;
 }

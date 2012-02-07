@@ -19,18 +19,27 @@
 #import "AVFrameDecoder.h"
 #import "maxvid_file.h"
 
+@class AVAssetReader;
+@class AVAssetReaderOutput;
+
 @interface AVAssetReaderConvertMaxvid : NSObject {
-  NSString *m_filePath;  
+@private
+  NSURL *m_assetURL;
+  NSString *m_mvidPath;
+  AVAssetReader *m_aVAssetReader;
+  AVAssetReaderOutput *m_aVAssetReaderOutput;
+  float frameDuration;
 }
 
-@property (nonatomic, copy) NSString *filePath;
+@property (nonatomic, retain) NSURL         *assetURL;
+@property (nonatomic, copy)   NSString      *mvidPath;
 
 + (AVAssetReaderConvertMaxvid*) aVAssetReaderConvertMaxvid;
 
 // Return TRUE if successful, FALSE otherwise.
 // Decoding is done in a secondary thread.
 
-+ (BOOL) decodeAssetURL:(NSURL*)url;
+- (BOOL) decodeAssetURL;
 
 @end
 

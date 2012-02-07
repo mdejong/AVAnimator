@@ -181,6 +181,8 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   return maxvid_file_padding_before_keyframe(outFile, offset);
 }
 
+// adler32 calculation method
+
 uint32_t maxvid_adler32(
                         uint32_t adler,
                         unsigned char const *buf,

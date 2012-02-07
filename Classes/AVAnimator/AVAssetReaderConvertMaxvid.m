@@ -32,13 +32,29 @@
 
 UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
 
+// Private API
+
+@interface AVAssetReaderConvertMaxvid ()
+
+@property (nonatomic, retain) AVAssetReader *aVAssetReader;
+@property (nonatomic, retain) AVAssetReaderOutput *aVAssetReaderOutput;
+
+@end
+
+
 @implementation AVAssetReaderConvertMaxvid
 
-@synthesize filePath = m_filePath;
+@synthesize assetURL = m_assetURL;
+@synthesize mvidPath = m_mvidPath;
+@synthesize aVAssetReader = m_aVAssetReader;
+@synthesize aVAssetReaderOutput = m_aVAssetReaderOutput;
 
 - (void) dealloc
 {  
-  self.filePath = nil;
+  self.assetURL = nil;
+  self.mvidPath = nil;
+  self.aVAssetReader = nil;
+  self.aVAssetReaderOutput = nil;
   [super dealloc];
 }
 
@@ -47,15 +63,18 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
   return [[[AVAssetReaderConvertMaxvid alloc] init] autorelease];
 }
 
+// This utility method will setup the asset so that it is opened and ready
+// to decode frames of video data.
 
-// Read video data from a single track (only one video track is supported anyway)
-
-+ (BOOL) decodeAssetURL:(NSURL*)url
+- (BOOL) setupAsset
 {
+  NSAssert(self.assetURL, @"assetURL");
+  NSAssert(self.mvidPath, @"mvidPath");
+  
   NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES]
                                                       forKey:AVURLAssetPreferPreciseDurationAndTimingKey];
   
-  AVURLAsset *avUrlAsset = [[[AVURLAsset alloc] initWithURL:url options:options] autorelease];
+  AVURLAsset *avUrlAsset = [[[AVURLAsset alloc] initWithURL:self.assetURL options:options] autorelease];
   NSAssert(avUrlAsset, @"AVURLAsset");
   
   // FIXME: return false error code if something goes wrong
@@ -71,20 +90,20 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
   }
   
   NSError *assetError = nil;
-  AVAssetReader *aVAssetReader = [AVAssetReader assetReaderWithAsset:avUrlAsset error:&assetError];
+  self.aVAssetReader = [AVAssetReader assetReaderWithAsset:avUrlAsset error:&assetError];
   
-  NSAssert(aVAssetReader, @"aVAssetReader");
+  NSAssert(self.aVAssetReader, @"aVAssetReader");
   
   if (assetError) {
     NSAssert(FALSE, @"AVAssetReader");
   }
-
+  
   // This video setting indicates that native 32 bit endian pixels with a leading
   // ignored alpha channel will be emitted by the decoding process.
   
   NSDictionary *videoSettings;
   videoSettings = [NSDictionary dictionaryWithObject:
-                     [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey];
+                   [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey];
   
   NSArray *videoTracks = [avUrlAsset tracksWithMediaType:AVMediaTypeVideo];
   
@@ -108,6 +127,8 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
   
   NSLog(@"frame rate %0.2f FPS", nominalFrameRate);
   
+  self->frameDuration = 1.0 / nominalFrameRate;
+  
   AVAssetReaderTrackOutput *aVAssetReaderOutput = [[[AVAssetReaderTrackOutput alloc]
                                                     initWithTrack:videoTrack outputSettings:videoSettings] autorelease];
   
@@ -115,9 +136,79 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
   
   // Read video data from the inidicated tracks of video data
   
-  [aVAssetReader addOutput:aVAssetReaderOutput];
+  [self.aVAssetReader addOutput:aVAssetReaderOutput];
   
-  BOOL worked = [aVAssetReader startReading];
+  self.aVAssetReaderOutput = aVAssetReaderOutput;
+  
+  return TRUE;
+}
+
+// Read video data from a single track (only one video track is supported anyway)
+
+- (BOOL) decodeAssetURL
+{
+  BOOL worked;
+  BOOL retstatus = FALSE;
+  
+  MVFileHeader *mvHeader = NULL;
+  MVFrame *mvFramesArray = NULL;
+  FILE *maxvidOutFile = NULL;
+  AVAssetReader *aVAssetReader = nil;
+  
+  worked = [self setupAsset];
+  if (worked == FALSE) {
+    goto retcode;
+  }
+    
+  CMSampleBufferRef sampleBuffer = NULL;
+  
+  int frame = 0;
+  int numWritten = 0;
+  
+  maxvidOutFile = fopen([self.mvidPath UTF8String], "wb");
+  if (maxvidOutFile == NULL) {
+    goto retcode;
+  }
+
+  mvHeader = malloc(sizeof(MVFileHeader));
+  if (mvHeader == NULL) {
+    goto retcode;
+  }
+  memset(mvHeader, 0, sizeof(MVFileHeader));
+  
+  // Write zeroed file header
+  
+  numWritten = fwrite(mvHeader, sizeof(MVFileHeader), 1, maxvidOutFile);
+  if (numWritten != 1) {
+    goto retcode;
+  }
+  
+  // Figure out how many frames the track contains, need to know how many before
+  // we can write the zero headers.
+  
+  // use timeline to calculate num frames in track ?
+  
+  int numOutputFrames = 2;
+  
+  // Write zeroed frames header
+  
+  const uint32_t framesArrayNumBytes = sizeof(MVFrame) * numOutputFrames;
+  mvFramesArray = malloc(framesArrayNumBytes);
+  if (mvFramesArray == NULL) {
+    goto retcode;
+  }
+  memset(mvFramesArray, 0, framesArrayNumBytes);
+  
+  numWritten = fwrite(mvFramesArray, framesArrayNumBytes, 1, maxvidOutFile);
+  if (numWritten != 1) {
+    goto retcode;
+  }
+
+  // Start reading from asset
+  
+  aVAssetReader = self.aVAssetReader;
+  
+  worked = [self.aVAssetReader startReading];
   
   if (!worked) {
     AVAssetReaderStatus status = aVAssetReader.status;
@@ -127,31 +218,95 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
     NSLog(@"error = %@", [error description]);
   }
   
-  CMSampleBufferRef sampleBuffer;
+  //size_t movieBytesPerRow = 0;
+  size_t movieWidth = 0;
+  size_t movieHeight = 0;  
   
-  int frame = 0;
+  long offset = ftell(maxvidOutFile);
   
-  while ([aVAssetReader status] == AVAssetReaderStatusReading)
+  BOOL writeFailed = FALSE;
+  
+  while ((writeFailed == FALSE) && ([aVAssetReader status] == AVAssetReaderStatusReading))
   {
     NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
     
     NSLog(@"READING frame %d", frame);
     
-    sampleBuffer = [aVAssetReaderOutput copyNextSampleBuffer];
-    
-    NSLog(@"WRITTING...");
+    sampleBuffer = [self.aVAssetReaderOutput copyNextSampleBuffer];
     
     if (sampleBuffer) {
-      UIImage *image = imageFromSampleBuffer(sampleBuffer);
+      NSLog(@"WRITTING frame %d", frame);
       
-      NSString *tmpDir = NSTemporaryDirectory();
-      NSString *filename = [NSString stringWithFormat:@"img%d.png", frame];
-      NSString *path = [tmpDir stringByAppendingPathComponent:filename];
+      MVFrame *mvFrame = &mvFramesArray[frame];
       
-      NSData *data = [NSData dataWithData:UIImagePNGRepresentation(image)];
-      [data writeToFile:path atomically:YES];
+      CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+      CVPixelBufferLockBaseAddress(imageBuffer,0);
       
-      NSLog(@"wrote %@", path);
+      // Get the number of bytes per row for the pixel buffer.
+      
+      //size_t bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer);
+      //NSAssert(bytesPerRow > 0, @"bytesPerRow");
+      
+      //if (movieBytesPerRow == 0) {
+      //  movieBytesPerRow = bytesPerRow;
+      //} else {
+      //  NSAssert(movieBytesPerRow == bytesPerRow, @"bytesPerRow");
+      //}
+      
+      // Get the pixel buffer width and height.
+      
+      size_t width = CVPixelBufferGetWidth(imageBuffer);
+      size_t height = CVPixelBufferGetHeight(imageBuffer);
+
+      NSAssert(width > 0, @"width");
+      NSAssert(height > 0, @"height");
+      
+      if (movieWidth == 0) {
+        movieWidth = width;
+        movieHeight = height;
+      } else {
+        NSAssert(movieWidth == width, @"movieWidth");
+        NSAssert(movieHeight == height, @"movieHeight");
+      }
+      
+      void *baseAddress = CVPixelBufferGetBaseAddress(imageBuffer);
+      size_t bufferSize = CVPixelBufferGetDataSize(imageBuffer);
+      
+      // Skip to next page bound
+      
+      offset = maxvid_file_padding_before_keyframe(maxvidOutFile, offset);
+      
+      maxvid_frame_setoffset(mvFrame, (uint32_t)offset);
+      
+      maxvid_frame_setkeyframe(mvFrame);
+      
+      // FIXME: generate adler if optional flag or debug mode
+      
+      // write entire buffer of raw 32bit pixels to the file.
+      // bitmap info is native (kCGImageAlphaNoneSkipFirst|kCGBitmapByteOrder32Little)
+      
+      numWritten = fwrite(baseAddress, bufferSize, 1, maxvidOutFile);
+      if (numWritten != 1) {
+        writeFailed = TRUE;
+      } else {
+        // Finish emitting frame data
+      
+        uint32_t offsetBefore = (uint32_t)offset;
+        offset = ftell(maxvidOutFile);
+        uint32_t length = ((uint32_t)offset) - offsetBefore;
+        
+        NSAssert((length % 2) == 0, @"offset length must be even");
+        assert((length % 4) == 0); // must be in terms of whole words
+        
+        maxvid_frame_setlength(mvFrame, length);
+        
+        // zero pad to next page bound
+        
+        offset = maxvid_file_padding_after_keyframe(maxvidOutFile, offset);
+        assert(offset > 0); // silence compiler/analyzer warning        
+      }
+      
+      CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
       
       CFRelease(sampleBuffer);
     } else if ([aVAssetReader status] == AVAssetReaderStatusReading) {
@@ -166,114 +321,69 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
     
     [inner_pool drain];
   }
+
+  mvHeader->magic = 0; // magic still not valid
+  mvHeader->width = movieWidth;
+  mvHeader->height = movieHeight;
+  mvHeader->bpp = 24; // no alpha for H.264 video
+
+  mvHeader->frameDuration = self->frameDuration;
+  assert(mvHeader->frameDuration > 0.0);
+  
+  mvHeader->numFrames = numOutputFrames;
+  
+  (void)fseek(maxvidOutFile, 0L, SEEK_SET);
+  
+  numWritten = fwrite(mvHeader, sizeof(MVFileHeader), 1, maxvidOutFile);
+  if (numWritten != 1) {
+    goto retcode;
+  }
+  
+  numWritten = fwrite(mvFramesArray, framesArrayNumBytes, 1, maxvidOutFile);
+  if (numWritten != 1) {
+    goto retcode;
+  }  
+  
+  // Once all valid data and headers have been written, it is now safe to write the
+  // file header magic number. This ensures that any threads reading the first word
+  // of the file looking for a valid magic number will only ever get consistent
+  // data in a read when a valid magic number is read.
+  
+  (void)fseek(maxvidOutFile, 0L, SEEK_SET);
+  
+  uint32_t magic = MV_FILE_MAGIC;
+  numWritten = fwrite(&magic, sizeof(uint32_t), 1, maxvidOutFile);
+  if (numWritten != 1) {
+    goto retcode;
+  }
+  
+  retstatus = TRUE;
+  
+retcode:
   
   [aVAssetReader cancelReading];
   
-  return TRUE;
+  if (mvHeader) {
+    free(mvHeader);
+  }
+  
+  if (mvFramesArray) {
+    free(mvFramesArray);
+  }
+  
+  if (maxvidOutFile) {
+    fclose(maxvidOutFile);
+  }
+  
+  if (retstatus) {
+    NSLog(@"wrote %@", self.mvidPath);
+  } else {
+    NSLog(@"failed to write %@", self.mvidPath);    
+  }
+  
+  return retstatus;
 }
 
 @end
-
-
-// C code
-
-
-UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer) {  
-  
-  CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-  
-  // Lock the base address of the pixel buffer.
-  
-  CVPixelBufferLockBaseAddress(imageBuffer,0);
-  
-  
-  // Get the number of bytes per row for the pixel buffer.
-  
-  size_t bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer);
-  
-  // Get the pixel buffer width and height.
-  
-  size_t width = CVPixelBufferGetWidth(imageBuffer);
-  
-  size_t height = CVPixelBufferGetHeight(imageBuffer);
-  
-  
-  
-  // Create a device-dependent RGB color space.
-  
-  static CGColorSpaceRef colorSpace = NULL;
-  
-  if (colorSpace == NULL) {
-    
-    colorSpace = CGColorSpaceCreateDeviceRGB();
-    
-    if (colorSpace == NULL) {
-      
-      // Handle the error appropriately.
-      
-      return nil;
-      
-    }
-    
-  }
-  
-  
-  
-  // Get the base address of the pixel buffer.
-  
-  void *baseAddress = CVPixelBufferGetBaseAddress(imageBuffer);
-  
-  // Get the data size for contiguous planes of the pixel buffer.
-  
-  size_t bufferSize = CVPixelBufferGetDataSize(imageBuffer);
-  
-  
-  
-  // Create a Quartz direct-access data provider that uses data we supply.
-  
-  CGDataProviderRef dataProvider =
-  
-  CGDataProviderCreateWithData(NULL, baseAddress, bufferSize, NULL);
-  
-  // Create a bitmap image from data supplied by the data provider.
-  
-  OSType pixelFormat = CVPixelBufferGetPixelFormatType (imageBuffer);
-  
-  assert(pixelFormat != 0);
-  // prints ARGB with kCVPixelFormatType_32BGRA
-  // Most optimal formal : kCGBitmapByteOrder32Host | kCGImageAlphaNoneSkipFirst (A BGR ) ??
-  
-  // XRGB = kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipFirst (intel is little endian)
-  // ARM is a little-endian, 32-bit RISC architecture widely used by mobile devices.
-  
-  // Looks like 32BGRA is little with skip first!
-  // FIXME: Determine the pixel layout for optimized PNG data read from a file, make
-  // sure the layout used for data written to MVID is the same as this format.
-  
-  printf("PixelBuffer FormatType: %4.4s\n\n", (char*)&pixelFormat);
-  
-  
-  CGImageRef cgImage =
-  
-  CGImageCreate(width, height, 8, 32, bytesPerRow,
-                
-                colorSpace, kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little,
-                
-                dataProvider, NULL, true, kCGRenderingIntentDefault);
-  
-  CGDataProviderRelease(dataProvider);
-  
-  
-  
-  // Create and return an image object to represent the Quartz image.
-  
-  UIImage *image = [UIImage imageWithCGImage:cgImage];
-  
-  CGImageRelease(cgImage);
-  
-  CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
-  
-  return image;  
-}
 
 #endif // HAS_AVASSET_READER_CONVERT_MAXVID
