@@ -1,10 +1,9 @@
 //
 //  AVMvidFrameDecoder.h
-//  QTFileParserApp
 //
-//  Created by Moses DeJong on 4/23/11.
-//  Copyright 2011 __MyCompanyName__. All rights reserved.
+//  Created by Moses DeJong on 1/4/11.
 //
+//  License terms defined in License.txt.
 
 #import <Foundation/Foundation.h>
 
