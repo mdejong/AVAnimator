@@ -231,7 +231,7 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
     NSLog(@"error = %@", [error description]);
   }
   
-  //size_t movieBytesPerRow = 0;
+  size_t movieBytesPerRow = 0;
   size_t movieWidth = 0;
   size_t movieHeight = 0;  
   
@@ -257,14 +257,14 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
       
       // Get the number of bytes per row for the pixel buffer.
       
-      //size_t bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer);
-      //NSAssert(bytesPerRow > 0, @"bytesPerRow");
+      size_t bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer);
+      NSAssert(bytesPerRow > 0, @"bytesPerRow");
       
-      //if (movieBytesPerRow == 0) {
-      //  movieBytesPerRow = bytesPerRow;
-      //} else {
-      //  NSAssert(movieBytesPerRow == bytesPerRow, @"bytesPerRow");
-      //}
+      if (movieBytesPerRow == 0) {
+        movieBytesPerRow = bytesPerRow;
+      } else {
+        NSAssert(movieBytesPerRow == bytesPerRow, @"bytesPerRow");
+      }
       
       // Get the pixel buffer width and height.
       
@@ -283,11 +283,17 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
       }
       
       void *baseAddress = CVPixelBufferGetBaseAddress(imageBuffer);
-      size_t bufferSize = CVPixelBufferGetDataSize(imageBuffer);
       
-      // Buffer size should be (width * height * sizeof(uint32_t))
+      // Note that CVPixelBufferGetDataSize() can return a buffer
+      // larger than (width * height * sizeof(uint32_t), so
+      // ignore the extra padding pixels at the end.
       
-      NSAssert(bufferSize == (movieWidth * movieHeight * sizeof(uint32_t)), @"framebuffer size");
+      //size_t bufferSize = CVPixelBufferGetDataSize(imageBuffer);
+
+      int bufferSize = movieHeight * movieBytesPerRow;
+      int expectedBufferSize = (movieWidth * movieHeight * sizeof(uint32_t));
+      
+      NSAssert(bufferSize == expectedBufferSize, @"framebuffer size");
       
       // Skip to next page bound
       

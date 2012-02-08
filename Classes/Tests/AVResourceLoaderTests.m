@@ -1626,22 +1626,10 @@
   BOOL worked = [obj decodeAssetURL];
   NSAssert(worked, @"decodeAssetURL");
   
-  if (TRUE) {
-    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:tmpPath];
-    NSAssert(wroteMvidData, @"could not map .mvid data");
-    
-    NSAssert([wroteMvidData length] == 20480, @"length mismatch");
-    
-    // Verify that the emitted .mvid file has a valid magic number
-    
-    char *mvidBytes = (char*) [wroteMvidData bytes];
-    
-    MVFileHeader *mvFileHeaderPtr = (MVFileHeader*) mvidBytes;
-    
-    assert(mvFileHeaderPtr->numFrames == 2);
-  }
+  BOOL decodeFrames = TRUE;
+  BOOL emitFrames = TRUE;
   
-  if (TRUE) {
+  if (decodeFrames) {
     // Create MVID frame decoder and iterate over the frames in the mvid file.
     // This will validate the emitted data via the adler checksum logic
     // in the decoding process.
@@ -1657,23 +1645,37 @@
     NSAssert(worked, @"worked");
 
     UIImage *img;
+    NSData *data;
+    NSString *path;
     
     CGSize expectedSize = CGSizeMake(32, 32);
     CGSize imgSize;
     
     img = [frameDecoder advanceToFrame:0];
+    NSAssert(img, @"frame 0");
 
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
     
-    NSAssert(img, @"frame 0");
+    if (emitFrames) {
+    path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame0.png"];
+    data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+    [data writeToFile:path atomically:YES];
+    NSLog(@"wrote %@", path);
+    }
     
     img = [frameDecoder advanceToFrame:1];
-
     NSAssert(img, @"frame 1");
 
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+    
+    if (emitFrames) {
+    path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame1.png"];
+    data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+    [data writeToFile:path atomically:YES];
+    NSLog(@"wrote %@", path);
+    }
   }
   
   return;
