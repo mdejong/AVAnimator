@@ -33,14 +33,14 @@
 
 #import "CGFrameBuffer.h"
 
-UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
-
 // Private API
 
 @interface AVAssetReaderConvertMaxvid ()
 
 @property (nonatomic, retain) AVAssetReader *aVAssetReader;
 @property (nonatomic, retain) AVAssetReaderOutput *aVAssetReaderOutput;
+
+- (CGFrameBuffer*) renderIntoFramebuffer:(CMSampleBufferRef)sampleBuffer;
 
 @end
 
@@ -233,7 +233,6 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
     NSLog(@"error = %@", [error description]);
   }
   
-  size_t movieBytesPerRow = 0;
   size_t movieWidth = 0;
   size_t movieHeight = 0;  
   
@@ -254,24 +253,12 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
       
       MVFrame *mvFrame = &mvFramesArray[frame];
       
-      CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-      CVPixelBufferLockBaseAddress(imageBuffer,0);
+      CGFrameBuffer *framebuffer = [self renderIntoFramebuffer:sampleBuffer];
+            
+      // Get and verify buffer width and height.
       
-      // Get the number of bytes per row for the pixel buffer.
-      
-      size_t bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer);
-      NSAssert(bytesPerRow > 0, @"bytesPerRow");
-      
-      if (movieBytesPerRow == 0) {
-        movieBytesPerRow = bytesPerRow;
-      } else {
-        NSAssert(movieBytesPerRow == bytesPerRow, @"bytesPerRow");
-      }
-      
-      // Get the pixel buffer width and height.
-      
-      size_t width = CVPixelBufferGetWidth(imageBuffer);
-      size_t height = CVPixelBufferGetHeight(imageBuffer);
+      size_t width = framebuffer.width;
+      size_t height = framebuffer.height;
 
       NSAssert(width > 0, @"width");
       NSAssert(height > 0, @"height");
@@ -284,40 +271,11 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
         NSAssert(movieHeight == height, @"movieHeight");
       }
       
-      void *baseAddress = CVPixelBufferGetBaseAddress(imageBuffer);
+      // Calculate how many bytes make up the image via (bytesPerRow * height). The
+      // numBytes value may be padded out to fit to an OS page bound.
       
-      // Note that CVPixelBufferGetDataSize() can return a buffer
-      // larger than (width * height * sizeof(uint32_t), so
-      // ignore the extra padding pixels at the end.
-      
-      if (TRUE) {
-        size_t extraColumnsOnLeft;
-        size_t extraColumnsOnRight;
-        size_t extraRowsOnTop;
-        size_t extraRowsOnBottom;
-        
-        CVPixelBufferGetExtendedPixels(imageBuffer,
-                                       &extraColumnsOnLeft,
-                                       &extraColumnsOnRight,
-                                       &extraRowsOnTop,
-                                       &extraRowsOnBottom);
-        
-        assert(extraColumnsOnLeft == 0);
-        assert(extraColumnsOnRight == 0);
-        assert(extraRowsOnTop == 0);
-        assert(extraRowsOnBottom == 0);
-      }
-      
-      size_t bufferDataSize = CVPixelBufferGetDataSize(imageBuffer);
-
-      int useBytesPerRow = movieBytesPerRow;
-      //if (useBytesPerRow > (movieWidth * sizeof(uint32_t))) {
-      //  useBytesPerRow = movieWidth * sizeof(uint32_t);
-      //}
-      
-      int bufferSize = movieHeight * useBytesPerRow;
+      int bufferSize = movieWidth * movieHeight * framebuffer.bytesPerPixel;
       int expectedBufferSize = (movieWidth * movieHeight * sizeof(uint32_t));
-      
       NSAssert(bufferSize == expectedBufferSize, @"framebuffer size");
       
       // Skip to next page bound
@@ -331,7 +289,7 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
       // write entire buffer of raw 32bit pixels to the file.
       // bitmap info is native (kCGImageAlphaNoneSkipFirst|kCGBitmapByteOrder32Little)
       
-      numWritten = fwrite(baseAddress, bufferSize, 1, maxvidOutFile);
+      numWritten = fwrite(framebuffer.pixels, bufferSize, 1, maxvidOutFile);
       if (numWritten != 1) {
         writeFailed = TRUE;
       } else {
@@ -349,7 +307,7 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
         // Generate adler32 for pixel data and save into frame data
         
         if (self.genAdler) {
-          mvFrame->adler = maxvid_adler32(0, (unsigned char*)baseAddress, bufferSize);
+          mvFrame->adler = maxvid_adler32(0, (unsigned char*)framebuffer.pixels, bufferSize);
           assert(mvFrame->adler != 0);
         }
         
@@ -358,8 +316,6 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
         offset = maxvid_file_padding_after_keyframe(maxvidOutFile, offset);
         assert(offset > 0); // silence compiler/analyzer warning        
       }
-      
-      CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
       
       CFRelease(sampleBuffer);
     } else if ([aVAssetReader status] == AVAssetReaderStatusReading) {
@@ -437,9 +393,11 @@ retcode:
   return retstatus;
 }
 
-// Render sample buffer into flat CGFrameBuffer
+// Render sample buffer into flat CGFrameBuffer. We can't read the samples
+// directly out of the CVImageBufferRef because the rows of the image
+// have some funky padding going on, likely "planar" data from YUV colorspace.
 
-/*
+// FIXME: pass in same framebuffer over and over to avoid realloc!
 
 - (CGFrameBuffer*) renderIntoFramebuffer:(CMSampleBufferRef)sampleBuffer
 {
@@ -466,7 +424,7 @@ retcode:
   CGDataProviderCreateWithData(NULL, baseAddress, bufferSize, NULL);
   
   CGImageRef cgImageRef = CGImageCreate(width, height, 8, 32, bytesPerRow,
-                colorSpace, kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little,
+                colorSpace, kCGBitmapByteOrder32Host | kCGImageAlphaNoneSkipFirst,
                 dataProvider, NULL, true, kCGRenderingIntentDefault);
   
 	CGColorSpaceRelease(colorSpace);
@@ -484,8 +442,6 @@ retcode:
   
   return frameBuffer;
 }
- 
- */
 
 @end
 
