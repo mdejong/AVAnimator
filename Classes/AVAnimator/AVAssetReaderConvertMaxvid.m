@@ -31,6 +31,8 @@
 
 #import <CoreMedia/CMSampleBuffer.h>
 
+#import "CGFrameBuffer.h"
+
 UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
 
 // Private API
@@ -288,9 +290,32 @@ UIImage *imageFromSampleBuffer(CMSampleBufferRef sampleBuffer);
       // larger than (width * height * sizeof(uint32_t), so
       // ignore the extra padding pixels at the end.
       
-      //size_t bufferSize = CVPixelBufferGetDataSize(imageBuffer);
+      if (TRUE) {
+        size_t extraColumnsOnLeft;
+        size_t extraColumnsOnRight;
+        size_t extraRowsOnTop;
+        size_t extraRowsOnBottom;
+        
+        CVPixelBufferGetExtendedPixels(imageBuffer,
+                                       &extraColumnsOnLeft,
+                                       &extraColumnsOnRight,
+                                       &extraRowsOnTop,
+                                       &extraRowsOnBottom);
+        
+        assert(extraColumnsOnLeft == 0);
+        assert(extraColumnsOnRight == 0);
+        assert(extraRowsOnTop == 0);
+        assert(extraRowsOnBottom == 0);
+      }
+      
+      size_t bufferDataSize = CVPixelBufferGetDataSize(imageBuffer);
 
-      int bufferSize = movieHeight * movieBytesPerRow;
+      int useBytesPerRow = movieBytesPerRow;
+      //if (useBytesPerRow > (movieWidth * sizeof(uint32_t))) {
+      //  useBytesPerRow = movieWidth * sizeof(uint32_t);
+      //}
+      
+      int bufferSize = movieHeight * useBytesPerRow;
       int expectedBufferSize = (movieWidth * movieHeight * sizeof(uint32_t));
       
       NSAssert(bufferSize == expectedBufferSize, @"framebuffer size");
@@ -411,6 +436,56 @@ retcode:
   
   return retstatus;
 }
+
+// Render sample buffer into flat CGFrameBuffer
+
+/*
+
+- (CGFrameBuffer*) renderIntoFramebuffer:(CMSampleBufferRef)sampleBuffer
+{
+  CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+  
+  CVPixelBufferLockBaseAddress(imageBuffer,0);
+  
+  size_t bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer);
+  
+  size_t width = CVPixelBufferGetWidth(imageBuffer);
+  
+  size_t height = CVPixelBufferGetHeight(imageBuffer);
+  
+  CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+  
+  void *baseAddress = CVPixelBufferGetBaseAddress(imageBuffer);
+  
+  size_t bufferSize = CVPixelBufferGetDataSize(imageBuffer);
+  
+  // Create a Quartz direct-access data provider that uses data we supply.
+  
+  CGDataProviderRef dataProvider =
+  
+  CGDataProviderCreateWithData(NULL, baseAddress, bufferSize, NULL);
+  
+  CGImageRef cgImageRef = CGImageCreate(width, height, 8, 32, bytesPerRow,
+                colorSpace, kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little,
+                dataProvider, NULL, true, kCGRenderingIntentDefault);
+  
+	CGColorSpaceRelease(colorSpace);
+  CGDataProviderRelease(dataProvider);
+  
+  // Create flat bitmap to render the image into
+  
+  CGFrameBuffer *frameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+  
+  [frameBuffer renderCGImage:cgImageRef];
+                                
+  CGImageRelease(cgImageRef);
+                                
+  CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
+  
+  return frameBuffer;
+}
+ 
+ */
 
 @end
 
