@@ -40,7 +40,7 @@
 @property (nonatomic, retain) AVAssetReader *aVAssetReader;
 @property (nonatomic, retain) AVAssetReaderOutput *aVAssetReaderOutput;
 
-- (CGFrameBuffer*) renderIntoFramebuffer:(CMSampleBufferRef)sampleBuffer;
+- (BOOL) renderIntoFramebuffer:(CMSampleBufferRef)sampleBuffer frameBuffer:(CGFrameBuffer**)frameBufferPtr;
 
 @end
 
@@ -240,6 +240,12 @@
   
   BOOL writeFailed = FALSE;
   
+  // This framebuffer object will be the destination of a render operation
+  // for a given frame. Multiple frames must always be the same size,
+  // so a common render buffer will be allocated.
+  
+  CGFrameBuffer *frameBuffer = nil;
+  
   while ((writeFailed == FALSE) && ([aVAssetReader status] == AVAssetReaderStatusReading))
   {
     NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
@@ -253,12 +259,16 @@
       
       MVFrame *mvFrame = &mvFramesArray[frame];
       
-      CGFrameBuffer *framebuffer = [self renderIntoFramebuffer:sampleBuffer];
+      BOOL worked = [self renderIntoFramebuffer:sampleBuffer frameBuffer:&frameBuffer];
+      NSAssert(worked, @"worked");
+      
+      // Note that the frameBuffer object is explicitly retained so that it can
+      // be used in each loop iteration.
             
       // Get and verify buffer width and height.
       
-      size_t width = framebuffer.width;
-      size_t height = framebuffer.height;
+      size_t width = frameBuffer.width;
+      size_t height = frameBuffer.height;
 
       NSAssert(width > 0, @"width");
       NSAssert(height > 0, @"height");
@@ -274,7 +284,7 @@
       // Calculate how many bytes make up the image via (bytesPerRow * height). The
       // numBytes value may be padded out to fit to an OS page bound.
       
-      int bufferSize = movieWidth * movieHeight * framebuffer.bytesPerPixel;
+      int bufferSize = movieWidth * movieHeight * frameBuffer.bytesPerPixel;
       int expectedBufferSize = (movieWidth * movieHeight * sizeof(uint32_t));
       NSAssert(bufferSize == expectedBufferSize, @"framebuffer size");
       
@@ -289,7 +299,7 @@
       // write entire buffer of raw 32bit pixels to the file.
       // bitmap info is native (kCGImageAlphaNoneSkipFirst|kCGBitmapByteOrder32Little)
       
-      numWritten = fwrite(framebuffer.pixels, bufferSize, 1, maxvidOutFile);
+      numWritten = fwrite(frameBuffer.pixels, bufferSize, 1, maxvidOutFile);
       if (numWritten != 1) {
         writeFailed = TRUE;
       } else {
@@ -307,7 +317,7 @@
         // Generate adler32 for pixel data and save into frame data
         
         if (self.genAdler) {
-          mvFrame->adler = maxvid_adler32(0, (unsigned char*)framebuffer.pixels, bufferSize);
+          mvFrame->adler = maxvid_adler32(0, (unsigned char*)frameBuffer.pixels, bufferSize);
           assert(mvFrame->adler != 0);
         }
         
@@ -330,6 +340,10 @@
     
     [inner_pool drain];
   }
+
+  // Explicitly release the retained frameBuffer
+  
+  [frameBuffer release];
 
   mvHeader->magic = 0; // magic still not valid
   mvHeader->width = movieWidth;
@@ -396,11 +410,14 @@ retcode:
 // Render sample buffer into flat CGFrameBuffer. We can't read the samples
 // directly out of the CVImageBufferRef because the rows of the image
 // have some funky padding going on, likely "planar" data from YUV colorspace.
+// The caller of this method should provide a location where a single
+// frameBuffer can be stored so that multiple calls to this render function
+// will make use of the same buffer.
 
-// FIXME: pass in same framebuffer over and over to avoid realloc!
-
-- (CGFrameBuffer*) renderIntoFramebuffer:(CMSampleBufferRef)sampleBuffer
+- (BOOL) renderIntoFramebuffer:(CMSampleBufferRef)sampleBuffer frameBuffer:(CGFrameBuffer**)frameBufferPtr
 {
+  CGFrameBuffer *frameBuffer = *frameBufferPtr;
+  
   CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
   
   CVPixelBufferLockBaseAddress(imageBuffer,0);
@@ -429,10 +446,15 @@ retcode:
   
 	CGColorSpaceRelease(colorSpace);
   CGDataProviderRelease(dataProvider);
+
+  // Render CoreGraphics image into a flat bitmap framebuffer. Note that this object is
+  // not autoreleased, instead the caller must explicitly release the ref.
   
-  // Create flat bitmap to render the image into
-  
-  CGFrameBuffer *frameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+  if (frameBuffer == NULL) {    
+    *frameBufferPtr = [[CGFrameBuffer alloc] initWithBppDimensions:24 width:width height:height];
+    frameBuffer = *frameBufferPtr;
+    NSAssert(frameBuffer, @"frameBuffer");
+  }
   
   [frameBuffer renderCGImage:cgImageRef];
                                 
@@ -440,7 +462,7 @@ retcode:
                                 
   CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
   
-  return frameBuffer;
+  return TRUE;
 }
 
 @end
