@@ -162,6 +162,10 @@
   return [obj autorelease];
 }
 
+// The dealloc method is invoked to release each segment of mapped memory in a larger
+// file. This dealloc method avoids using AutoPropertyRelease since it is less optimal
+// than directly releasing the retained objects.
+
 - (void) dealloc
 {
   if (self->m_mappedData) {
@@ -171,10 +175,11 @@
     //NSLog(@"unmapSegment obj %p on dealloc : %@", self, [self description]);
     
     [self unmapSegment];
-    NSAssert(self->m_mappedData == NULL, @"m_mappedData");
   }
   
-  [AutoPropertyRelease releaseProperties:self thisClass:SegmentedMappedData.class];
+  [m_filePath release];
+  [m_refCountedFD release];
+  
   [super dealloc];
 }
 
@@ -291,14 +296,13 @@
 {
   NSAssert(isContainer == TRUE, @"subdataWithRange can only be invoked on container");
   
-  NSAssert(self.refCountedFD, @"refCountedFD");
+  NSAssert(m_refCountedFD, @"refCountedFD");
   
   NSUInteger offset = range.location;
   NSUInteger len = range.length;
-
   NSUInteger lastByteOffset = offset + len;
   
-  if ((len == 0) || (lastByteOffset > self.mappedLen)) {
+  if ((len == 0) || (lastByteOffset > m_mappedLen)) {
     return nil;
   }
   
