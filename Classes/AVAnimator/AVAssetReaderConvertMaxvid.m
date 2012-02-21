@@ -12,6 +12,8 @@
 
 #import "maxvid_file.h"
 
+//#define LOGGING
+
 #ifndef __OPTIMIZE__
 // Automatically define EXTRA_CHECKS when not optimizing (in debug mode)
 # define EXTRA_CHECKS
@@ -115,9 +117,10 @@
   
   AVAssetTrack *videoTrack = [videoTracks objectAtIndex:0];
   
+#ifdef LOGGING
   NSArray *availableMetadataFormats = videoTrack.availableMetadataFormats;
-  
   NSLog(@"availableMetadataFormats %@", availableMetadataFormats);
+#endif // LOGGING
   
   // track must be self contained
   
@@ -136,9 +139,11 @@
   float numFramesFloat = duration / self->frameDuration;
   int numFrames = round( numFramesFloat );
   
+#ifdef LOGGING
   NSLog(@"frame rate = %0.2f FPS", nominalFrameRate);
   NSLog(@"duration = %0.2f S", duration);
   NSLog(@"numFrames = %0.4f -> %d", numFramesFloat, numFrames);
+#endif // LOGGING
   
   self->totalNumFrames = numFrames;
   
@@ -246,21 +251,79 @@
   
   CGFrameBuffer *frameBuffer = nil;
   
+  float prevFrameDisplayTime = 0.0;
+  
   while ((writeFailed == FALSE) && ([aVAssetReader status] == AVAssetReaderStatusReading))
   {
     NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
     
+#ifdef LOGGING
     NSLog(@"READING frame %d", frame);
+#endif // LOGGING
     
     sampleBuffer = [self.aVAssetReaderOutput copyNextSampleBuffer];
     
     if (sampleBuffer) {
-      NSLog(@"WRITTING frame %d", frame);
-      
-      MVFrame *mvFrame = &mvFramesArray[frame];
+      MVFrame *mvFrame = nil;
       
       BOOL worked = [self renderIntoFramebuffer:sampleBuffer frameBuffer:&frameBuffer];
       NSAssert(worked, @"worked");
+      
+      // If the delay between the previous frame and the current frame is more
+      // than would be needed for one frame, then emit nop frames.
+
+      // If a sample would be displayed for one frame, then the next one should
+      // be displayed right away. But, in the case where a sample duration is
+      // longer than one frame, emit repeated frames as no-op frames.
+      
+      CMTime presentationTimeStamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
+      
+      float frameDisplayTime = (float) CMTimeGetSeconds(presentationTimeStamp);
+      
+#ifdef LOGGING
+      NSLog(@"frame presentation time = %0.4f", frameDisplayTime);
+      NSLog(@"prev frame presentation time = %0.4f", prevFrameDisplayTime);
+#endif // LOGGING
+      
+      float delta = frameDisplayTime - prevFrameDisplayTime;
+      
+      prevFrameDisplayTime = frameDisplayTime;
+      
+      int numFramesDelay = round(delta / self->frameDuration);
+        
+      if (numFramesDelay > 1) {
+        for (int count = numFramesDelay; count > 1; count--) {
+          
+#ifdef LOGGING
+          NSLog(@"WRITTING nop frame %d", frame);
+#endif // LOGGING
+          
+          NSAssert(frame < numOutputFrames, @"numOutputFrames");
+          
+          MVFrame *mvFrame = &mvFramesArray[frame];
+          MVFrame *prevMvFrame = &mvFramesArray[frame-1];
+          
+          maxvid_frame_setoffset(mvFrame, maxvid_frame_offset(prevMvFrame));
+          maxvid_frame_setlength(mvFrame, maxvid_frame_length(prevMvFrame));
+          maxvid_frame_setnopframe(mvFrame);
+          
+          if (maxvid_frame_iskeyframe(prevMvFrame)) {
+            maxvid_frame_setkeyframe(mvFrame);
+          }
+          
+          frame++;
+        }
+      }
+      
+#ifdef LOGGING
+      NSLog(@"WRITTING frame %d", frame);
+#endif // LOGGING
+      
+      NSAssert(frame < numOutputFrames, @"numOutputFrames");
+      
+      mvFrame = &mvFramesArray[frame];
+      
+      // Calculate how many (if any)
       
       // Note that the frameBuffer object is explicitly retained so that it can
       // be used in each loop iteration.
@@ -319,6 +382,10 @@
         if (self.genAdler) {
           mvFrame->adler = maxvid_adler32(0, (unsigned char*)frameBuffer.pixels, bufferSize);
           assert(mvFrame->adler != 0);
+          
+#ifdef LOGGING
+          NSLog(@"WROTE adler %d", mvFrame->adler);
+#endif // LOGGING
         }
         
         // zero pad to next page bound
@@ -326,7 +393,7 @@
         offset = maxvid_file_padding_after_keyframe(maxvidOutFile, offset);
         assert(offset > 0); // silence compiler/analyzer warning        
       }
-      
+            
       CFRelease(sampleBuffer);
     } else if ([aVAssetReader status] == AVAssetReaderStatusReading) {
       AVAssetReaderStatus status = aVAssetReader.status;
@@ -399,9 +466,13 @@ retcode:
   }
   
   if (retstatus) {
+#ifdef LOGGING
     NSLog(@"wrote %@", self.mvidPath);
+#endif // LOGGING
   } else {
-    NSLog(@"failed to write %@", self.mvidPath);    
+#ifdef LOGGING
+    NSLog(@"failed to write %@", self.mvidPath);
+#endif // LOGGING
   }
   
   return retstatus;
