@@ -29,6 +29,8 @@
 
 #import "AVAssetReaderConvertMaxvid.h"
 
+#import "AVAsset2MvidResourceLoader.h"
+
 @interface AVResourceLoaderTests : NSObject {}
 @end
 
@@ -1618,6 +1620,11 @@
   NSString *tmpFilename = @"32x32_black_blue_h264.mvid";
   NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
   
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
   AVAssetReaderConvertMaxvid *obj = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
   obj.assetURL = fileURL;
   obj.mvidPath = tmpPath;
@@ -1689,6 +1696,11 @@
   
   NSString *tmpFilename = @"superwalk.mvid";
   NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
   
   AVAssetReaderConvertMaxvid *obj = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
   obj.assetURL = fileURL;
@@ -1775,6 +1787,11 @@
   NSString *tmpFilename = @"stutterwalk.mvid";
   NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
   
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
   AVAssetReaderConvertMaxvid *obj = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
   obj.assetURL = fileURL;
   obj.mvidPath = tmpPath;
@@ -1797,6 +1814,101 @@
     NSAssert(worked, @"worked");
     
     NSAssert([frameDecoder numFrames] == 9, @"numFrames");
+    
+    worked = [frameDecoder allocateDecodeResources];
+    NSAssert(worked, @"worked");
+    
+    UIImage *img;
+    NSData *data;
+    NSString *path;
+    
+    CGSize expectedSize = CGSizeMake(86, 114);
+    CGSize imgSize;
+    
+    img = [frameDecoder advanceToFrame:0];
+    NSAssert(img, @"frame 0");
+    
+    imgSize = img.size;
+    NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+    
+    if (emitFrames) {
+      path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame0.png"];
+      data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+      [data writeToFile:path atomically:YES];
+      NSLog(@"wrote %@", path);
+    }
+    
+    img = [frameDecoder advanceToFrame:1];
+    NSAssert(img, @"frame 1");
+    
+    imgSize = img.size;
+    NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+    
+    if (emitFrames) {
+      path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame1.png"];
+      data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+      [data writeToFile:path atomically:YES];
+      NSLog(@"wrote %@", path);
+    }
+    
+    img = [frameDecoder advanceToFrame:2];
+    NSAssert(img, @"frame 2");
+    
+    imgSize = img.size;
+    NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+    
+    if (emitFrames) {
+      path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame2.png"];
+      data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+      [data writeToFile:path atomically:YES];
+      NSLog(@"wrote %@", path);
+    }
+  }
+  
+  return;
+}
+
+// Use AVAsset2MvidResourceLoader to decoder H.264 is secondary thread 
+
++ (void) testDecodeSuperwalkH264WithFrameDecoder
+{
+  NSString *resourceName = @"superwalk_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+  
+  NSString *tmpFilename = @"superwalk.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  AVAsset2MvidResourceLoader *loader = [AVAsset2MvidResourceLoader aVAsset2MvidResourceLoader];
+  loader.movieFilename = [fileURL path];
+  loader.outPath = tmpPath;
+
+  [loader load];
+
+  BOOL worked = [RegressionTests waitUntilTrue:loader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  BOOL decodeFrames = TRUE;
+  BOOL emitFrames = TRUE;
+  
+  if (decodeFrames) {
+    // Create MVID frame decoder and iterate over the frames in the mvid file.
+    // This will validate the emitted data via the adler checksum logic
+    // in the decoding process.
+    
+    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+    
+    BOOL worked = [frameDecoder openForReading:tmpPath];
+    NSAssert(worked, @"worked");
+    
+    NSAssert([frameDecoder numFrames] == 6, @"numFrames");
     
     worked = [frameDecoder allocateDecodeResources];
     NSAssert(worked, @"worked");

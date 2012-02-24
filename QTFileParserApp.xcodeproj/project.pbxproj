@@ -159,6 +159,8 @@
 		CD6EF5A812F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; };
 		CD6EF5A912F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; };
 		CD7098B312F4A6BA00582B9B /* AVAnimatorLayerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD7098B212F4A6BA00582B9B /* AVAnimatorLayerTests.m */; };
+		CD70DF7B14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD70DF7A14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m */; };
+		CD70DF7C14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD70DF7A14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m */; };
 		CD75C0A013676F5D000DD6C4 /* Sweep15FPS_ANI.mov.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD75C09F13676F5D000DD6C4 /* Sweep15FPS_ANI.mov.7z */; };
 		CD7A02F012D261A900366AC6 /* AVAnimatorView.m in Sources */ = {isa = PBXBuildFile; fileRef = CD7A02EF12D261A900366AC6 /* AVAnimatorView.m */; };
 		CD7D2BF312D510CB0096EDF3 /* CountingLandscape01.png in Resources */ = {isa = PBXBuildFile; fileRef = CD7D2BEE12D510CB0096EDF3 /* CountingLandscape01.png */; };
@@ -380,6 +382,8 @@
 		CD6EF5A612F0F7920045659F /* movdata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = movdata.c; sourceTree = "<group>"; };
 		CD6EF5A712F0F7920045659F /* movdata.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = movdata.h; sourceTree = "<group>"; };
 		CD7098B212F4A6BA00582B9B /* AVAnimatorLayerTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorLayerTests.m; sourceTree = "<group>"; };
+		CD70DF7914F77F3F0029A381 /* AVAsset2MvidResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAsset2MvidResourceLoader.h; sourceTree = "<group>"; };
+		CD70DF7A14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAsset2MvidResourceLoader.m; sourceTree = "<group>"; };
 		CD75C09F13676F5D000DD6C4 /* Sweep15FPS_ANI.mov.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = Sweep15FPS_ANI.mov.7z; sourceTree = "<group>"; };
 		CD7A02EE12D261A900366AC6 /* AVAnimatorView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorView.h; sourceTree = "<group>"; };
 		CD7A02EF12D261A900366AC6 /* AVAnimatorView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorView.m; sourceTree = "<group>"; };
@@ -800,6 +804,8 @@
 				CDE65F06136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m */,
 				CD0ACF27136F927300A203DF /* AV7zApng2MvidResourceLoader.h */,
 				CD0ACF28136F927300A203DF /* AV7zApng2MvidResourceLoader.m */,
+				CD70DF7914F77F3F0029A381 /* AVAsset2MvidResourceLoader.h */,
+				CD70DF7A14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m */,
 				CD6198BD12CCFC640003AEAA /* AVFrameDecoder.h */,
 				CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */,
 				CDECCE7012D30FE80067D2EE /* AVImageFrameDecoder.h */,
@@ -1182,6 +1188,7 @@
 				CD5F5C4714CCD809005A2809 /* SegmentedMappedData.m in Sources */,
 				CD83278F14E0FB7F0064A633 /* AVAssetReaderConvertMaxvid.m in Sources */,
 				CDBB005414F349B900AC6F5B /* AVMvidFileWriter.m in Sources */,
+				CD70DF7B14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1247,6 +1254,7 @@
 				CD5F5C4B14CCDC97005A2809 /* SegmentedMappedDataTests.m in Sources */,
 				CD83279014E0FB7F0064A633 /* AVAssetReaderConvertMaxvid.m in Sources */,
 				CDBB005514F349B900AC6F5B /* AVMvidFileWriter.m in Sources */,
+				CD70DF7C14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
