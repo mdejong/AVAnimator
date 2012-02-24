@@ -16,26 +16,19 @@
 
 #define HAS_AVASSET_READER_CONVERT_MAXVID
 
-#import "AVFrameDecoder.h"
-#import "maxvid_file.h"
+#import "AVMvidFileWriter.h"
 
 @class AVAssetReader;
 @class AVAssetReaderOutput;
 
-@interface AVAssetReaderConvertMaxvid : NSObject {
+@interface AVAssetReaderConvertMaxvid : AVMvidFileWriter {
 @private
   NSURL *m_assetURL;
-  NSString *m_mvidPath;
   AVAssetReader *m_aVAssetReader;
   AVAssetReaderOutput *m_aVAssetReaderOutput;
-  float frameDuration;
-  int   totalNumFrames;
-  BOOL  m_genAdler;
 }
 
 @property (nonatomic, retain) NSURL         *assetURL;
-@property (nonatomic, copy)   NSString      *mvidPath;
-@property (nonatomic, assign) BOOL          genAdler;
 
 + (AVAssetReaderConvertMaxvid*) aVAssetReaderConvertMaxvid;
 

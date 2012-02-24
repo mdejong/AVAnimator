@@ -12,17 +12,6 @@
 
 #import "maxvid_file.h"
 
-//#define LOGGING
-
-#ifndef __OPTIMIZE__
-// Automatically define EXTRA_CHECKS when not optimizing (in debug mode)
-# define EXTRA_CHECKS
-#endif // DEBUG
-
-#ifdef EXTRA_CHECKS
-#define ALWAYS_GENERATE_ADLER
-#endif // EXTRA_CHECKS
-
 #if defined(HAS_AVASSET_READER_CONVERT_MAXVID)
 
 #import <AVFoundation/AVFoundation.h>
@@ -34,6 +23,8 @@
 #import <CoreMedia/CMSampleBuffer.h>
 
 #import "CGFrameBuffer.h"
+
+#define LOGGING
 
 // Private API
 
@@ -50,15 +41,12 @@
 @implementation AVAssetReaderConvertMaxvid
 
 @synthesize assetURL = m_assetURL;
-@synthesize mvidPath = m_mvidPath;
 @synthesize aVAssetReader = m_aVAssetReader;
 @synthesize aVAssetReaderOutput = m_aVAssetReaderOutput;
-@synthesize genAdler = m_genAdler;
 
 - (void) dealloc
 {  
   self.assetURL = nil;
-  self.mvidPath = nil;
   self.aVAssetReader = nil;
   self.aVAssetReaderOutput = nil;
   [super dealloc];
@@ -134,9 +122,9 @@
   
   float nominalFrameRate = videoTrack.nominalFrameRate;
     
-  self->frameDuration = 1.0 / nominalFrameRate;
+  self.frameDuration = 1.0 / nominalFrameRate;
 
-  float numFramesFloat = duration / self->frameDuration;
+  float numFramesFloat = duration / self.frameDuration;
   int numFrames = round( numFramesFloat );
   
 #ifdef LOGGING
@@ -145,7 +133,7 @@
   NSLog(@"numFrames = %0.4f -> %d", numFramesFloat, numFrames);
 #endif // LOGGING
   
-  self->totalNumFrames = numFrames;
+  self.totalNumFrames = numFrames;
   
   AVAssetReaderTrackOutput *aVAssetReaderOutput = [[[AVAssetReaderTrackOutput alloc]
                                                     initWithTrack:videoTrack outputSettings:videoSettings] autorelease];
@@ -167,14 +155,7 @@
 {
   BOOL worked;
   BOOL retstatus = FALSE;
-  
-#ifdef ALWAYS_GENERATE_ADLER
-  self.genAdler = TRUE;
-#endif // ALWAYS_GENERATE_ADLER
-  
-  MVFileHeader *mvHeader = NULL;
-  MVFrame *mvFramesArray = NULL;
-  FILE *maxvidOutFile = NULL;
+    
   AVAssetReader *aVAssetReader = nil;
   
   worked = [self setupAsset];
@@ -184,46 +165,14 @@
     
   CMSampleBufferRef sampleBuffer = NULL;
   
-  int frame = 0;
-  int numWritten = 0;
+  self.bpp = 24;
   
-  maxvidOutFile = fopen([self.mvidPath UTF8String], "wb");
-  if (maxvidOutFile == NULL) {
-    goto retcode;
-  }
-
-  mvHeader = malloc(sizeof(MVFileHeader));
-  if (mvHeader == NULL) {
-    goto retcode;
-  }
-  memset(mvHeader, 0, sizeof(MVFileHeader));
+  worked = [self openMvid];
   
-  // Write zeroed file header
-  
-  numWritten = fwrite(mvHeader, sizeof(MVFileHeader), 1, maxvidOutFile);
-  if (numWritten != 1) {
+  if (worked == FALSE) {
     goto retcode;
   }
   
-  // We need to have figured out how many frames there are in the video before
-  // decoding frames begins.
-  
-  int numOutputFrames = self->totalNumFrames;
-  
-  // Write zeroed frames header
-  
-  const uint32_t framesArrayNumBytes = sizeof(MVFrame) * numOutputFrames;
-  mvFramesArray = malloc(framesArrayNumBytes);
-  if (mvFramesArray == NULL) {
-    goto retcode;
-  }
-  memset(mvFramesArray, 0, framesArrayNumBytes);
-  
-  numWritten = fwrite(mvFramesArray, framesArrayNumBytes, 1, maxvidOutFile);
-  if (numWritten != 1) {
-    goto retcode;
-  }
-
   // Start reading from asset
   
   aVAssetReader = self.aVAssetReader;
@@ -241,7 +190,7 @@
   size_t movieWidth = 0;
   size_t movieHeight = 0;  
   
-  long offset = ftell(maxvidOutFile);
+  [self saveOffset];
   
   BOOL writeFailed = FALSE;
   
@@ -258,14 +207,12 @@
     NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
     
 #ifdef LOGGING
-    NSLog(@"READING frame %d", frame);
+    NSLog(@"READING frame %d", self.frameNum);
 #endif // LOGGING
     
     sampleBuffer = [self.aVAssetReaderOutput copyNextSampleBuffer];
     
     if (sampleBuffer) {
-      MVFrame *mvFrame = nil;
-      
       BOOL worked = [self renderIntoFramebuffer:sampleBuffer frameBuffer:&frameBuffer];
       NSAssert(worked, @"worked");
       
@@ -289,41 +236,11 @@
       
       prevFrameDisplayTime = frameDisplayTime;
       
-      int numFramesDelay = round(delta / self->frameDuration);
-        
-      if (numFramesDelay > 1) {
-        for (int count = numFramesDelay; count > 1; count--) {
-          
+      [self writeTrailingNopFrames:delta];
+            
 #ifdef LOGGING
-          NSLog(@"WRITTING nop frame %d", frame);
+      NSLog(@"WRITTING frame %d", self.frameNum);
 #endif // LOGGING
-          
-          NSAssert(frame < numOutputFrames, @"numOutputFrames");
-          
-          MVFrame *mvFrame = &mvFramesArray[frame];
-          MVFrame *prevMvFrame = &mvFramesArray[frame-1];
-          
-          maxvid_frame_setoffset(mvFrame, maxvid_frame_offset(prevMvFrame));
-          maxvid_frame_setlength(mvFrame, maxvid_frame_length(prevMvFrame));
-          maxvid_frame_setnopframe(mvFrame);
-          
-          if (maxvid_frame_iskeyframe(prevMvFrame)) {
-            maxvid_frame_setkeyframe(mvFrame);
-          }
-          
-          frame++;
-        }
-      }
-      
-#ifdef LOGGING
-      NSLog(@"WRITTING frame %d", frame);
-#endif // LOGGING
-      
-      NSAssert(frame < numOutputFrames, @"numOutputFrames");
-      
-      mvFrame = &mvFramesArray[frame];
-      
-      // Calculate how many (if any)
       
       // Note that the frameBuffer object is explicitly retained so that it can
       // be used in each loop iteration.
@@ -339,6 +256,8 @@
       if (movieWidth == 0) {
         movieWidth = width;
         movieHeight = height;
+        
+        self.movieSize = CGSizeMake(movieWidth, movieHeight);
       } else {
         NSAssert(movieWidth == width, @"movieWidth");
         NSAssert(movieHeight == height, @"movieHeight");
@@ -351,47 +270,13 @@
       int expectedBufferSize = (movieWidth * movieHeight * sizeof(uint32_t));
       NSAssert(bufferSize == expectedBufferSize, @"framebuffer size");
       
-      // Skip to next page bound
-      
-      offset = maxvid_file_padding_before_keyframe(maxvidOutFile, offset);
-      
-      maxvid_frame_setoffset(mvFrame, (uint32_t)offset);
-      
-      maxvid_frame_setkeyframe(mvFrame);
-      
       // write entire buffer of raw 32bit pixels to the file.
       // bitmap info is native (kCGImageAlphaNoneSkipFirst|kCGBitmapByteOrder32Little)
       
-      numWritten = fwrite(frameBuffer.pixels, bufferSize, 1, maxvidOutFile);
-      if (numWritten != 1) {
+      worked = [self writeKeyframe:frameBuffer.pixels bufferSize:bufferSize];
+      
+      if (worked == FALSE) {
         writeFailed = TRUE;
-      } else {
-        // Finish emitting frame data
-        
-        uint32_t offsetBefore = (uint32_t)offset;
-        offset = ftell(maxvidOutFile);
-        uint32_t length = ((uint32_t)offset) - offsetBefore;
-        
-        NSAssert((length % 2) == 0, @"offset length must be even");
-        assert((length % 4) == 0); // must be in terms of whole words
-        
-        maxvid_frame_setlength(mvFrame, length);
-        
-        // Generate adler32 for pixel data and save into frame data
-        
-        if (self.genAdler) {
-          mvFrame->adler = maxvid_adler32(0, (unsigned char*)frameBuffer.pixels, bufferSize);
-          assert(mvFrame->adler != 0);
-          
-#ifdef LOGGING
-          NSLog(@"WROTE adler %d", mvFrame->adler);
-#endif // LOGGING
-        }
-        
-        // zero pad to next page bound
-        
-        offset = maxvid_file_padding_after_keyframe(maxvidOutFile, offset);
-        assert(offset > 0); // silence compiler/analyzer warning        
       }
             
       CFRelease(sampleBuffer);
@@ -403,8 +288,6 @@
       NSLog(@"error = %@", [error description]);
     }
     
-    frame++;
-    
     [inner_pool drain];
   }
 
@@ -412,38 +295,11 @@
   
   [frameBuffer release];
 
-  mvHeader->magic = 0; // magic still not valid
-  mvHeader->width = movieWidth;
-  mvHeader->height = movieHeight;
-  mvHeader->bpp = 24; // no alpha for H.264 video
-
-  mvHeader->frameDuration = self->frameDuration;
-  assert(mvHeader->frameDuration > 0.0);
+  worked = [self rewriteHeader];
   
-  mvHeader->numFrames = numOutputFrames;
+  [self close];
   
-  (void)fseek(maxvidOutFile, 0L, SEEK_SET);
-  
-  numWritten = fwrite(mvHeader, sizeof(MVFileHeader), 1, maxvidOutFile);
-  if (numWritten != 1) {
-    goto retcode;
-  }
-  
-  numWritten = fwrite(mvFramesArray, framesArrayNumBytes, 1, maxvidOutFile);
-  if (numWritten != 1) {
-    goto retcode;
-  }  
-  
-  // Once all valid data and headers have been written, it is now safe to write the
-  // file header magic number. This ensures that any threads reading the first word
-  // of the file looking for a valid magic number will only ever get consistent
-  // data in a read when a valid magic number is read.
-  
-  (void)fseek(maxvidOutFile, 0L, SEEK_SET);
-  
-  uint32_t magic = MV_FILE_MAGIC;
-  numWritten = fwrite(&magic, sizeof(uint32_t), 1, maxvidOutFile);
-  if (numWritten != 1) {
+  if (worked == FALSE) {
     goto retcode;
   }
   
@@ -452,19 +308,7 @@
 retcode:
   
   [aVAssetReader cancelReading];
-  
-  if (mvHeader) {
-    free(mvHeader);
-  }
-  
-  if (mvFramesArray) {
-    free(mvFramesArray);
-  }
-  
-  if (maxvidOutFile) {
-    fclose(maxvidOutFile);
-  }
-  
+    
   if (retstatus) {
 #ifdef LOGGING
     NSLog(@"wrote %@", self.mvidPath);
