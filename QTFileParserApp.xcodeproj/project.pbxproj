@@ -41,6 +41,7 @@
 		CD288D4112D93865005F0EEA /* 2x2_black_blue_16BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD288D3E12D93865005F0EEA /* 2x2_black_blue_16BPP.mov */; };
 		CD288D4212D93865005F0EEA /* 2x2_black_blue_24BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD288D3F12D93865005F0EEA /* 2x2_black_blue_24BPP.mov */; };
 		CD288D4312D93865005F0EEA /* 2x2_black_blue_32BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD288D4012D93865005F0EEA /* 2x2_black_blue_32BPP.mov */; };
+		CD2C6A5D14F81CD500C3CDB7 /* superwalk_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD84F51B14E268B20004C529 /* superwalk_h264.mov */; };
 		CD2F6D4812F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
 		CD2F6D4912F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
 		CD34638D12D79EA30072CC68 /* License.txt in Resources */ = {isa = PBXBuildFile; fileRef = CD34638C12D79EA30072CC68 /* License.txt */; };
@@ -399,7 +400,7 @@
 		CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MovieControlsAdaptor.m; sourceTree = "<group>"; };
 		CD83D5F512CA549000A88ABA /* MovieControlsAdaptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MovieControlsAdaptor.h; sourceTree = "<group>"; };
 		CD83F0A114ED7CA200D0D257 /* stutterwalk_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = stutterwalk_h264.mov; sourceTree = "<group>"; };
-		CD84F51B14E268B20004C529 /* superwalk_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = superwalk_h264.mov; sourceTree = "<group>"; };
+		CD84F51B14E268B20004C529 /* superwalk_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; name = superwalk_h264.mov; path = Classes/Tests/superwalk_h264.mov; sourceTree = "<group>"; };
 		CD922D0D136206290024AFBB /* AVResourceLoaderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVResourceLoaderTests.m; sourceTree = "<group>"; };
 		CD922D24136206DE0024AFBB /* 2x2_black_blue_16BPP.mov.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = 2x2_black_blue_16BPP.mov.7z; sourceTree = "<group>"; };
 		CD922D70136209280024AFBB /* AV7zAppResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AV7zAppResourceLoader.h; sourceTree = "<group>"; };
@@ -630,6 +631,7 @@
 				CD3EC9881363768300266267 /* Bounce_16BPP_15FPS.mov.7z */,
 				CD3EC9891363768300266267 /* Bounce_24BPP_15FPS.mov.7z */,
 				CD3EC98A1363768300266267 /* Bounce_32BPP_15FPS.mov.7z */,
+				CD84F51B14E268B20004C529 /* superwalk_h264.mov */,
 				CD15C54E12BCADA800A26588 /* smiley.png */,
 				2899E5210DE3E06400AC0155 /* QTFileParserAppViewController.xib */,
 				28AD733E0D9D9553002E5188 /* MainWindow.xib */,
@@ -701,7 +703,6 @@
 				CD9A367013904865003F70BC /* 480x320_black_blue_1LD_16BPP.mov.7z */,
 				CDF1919B13BD893D0008672A /* 1x1.gif */,
 				CD561CA214DF9E41001E4F43 /* 32x32_black_blue_h264.mov */,
-				CD84F51B14E268B20004C529 /* superwalk_h264.mov */,
 				CD83F0A114ED7CA200D0D257 /* stutterwalk_h264.mov */,
 			);
 			path = Tests;
@@ -1035,6 +1036,7 @@
 				CD4AABD513675FEF0010148E /* Matrix_480_320_10FPS_16BPP.mov.7z in Resources */,
 				CD75C0A013676F5D000DD6C4 /* Sweep15FPS_ANI.mov.7z in Resources */,
 				CD3830A9136FA269007B9EBC /* AlphaGhost_opt_nc.apng.7z in Resources */,
+				CD2C6A5D14F81CD500C3CDB7 /* superwalk_h264.mov in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -19,7 +19,7 @@
 - (void) viewDidLoad {
 	[super viewDidLoad];
   NSAssert(self.scrollView, @"scrollView is nil");
-  self.scrollView.contentSize = CGSizeMake(320, 1000);
+  self.scrollView.contentSize = CGSizeMake(320, 1100);
   // Explicitly set the size of the scroll view so that
   // it can be larger in interface builder.
   //self.scrollView.bounds = CGRectMake(0, 0, 320, 431);
@@ -201,6 +201,14 @@
 	NSAssert(delegate, @"delegate is nil");
   QTFileParserAppAppDelegate *appDelegate = (QTFileParserAppAppDelegate*)delegate;
   [appDelegate loadIndexedExample:18 fps:[self getFPS]];
+}
+
+- (IBAction) runExampleNineteen:(id) sender
+{
+  id delegate = [[UIApplication sharedApplication] delegate];
+	NSAssert(delegate, @"delegate is nil");
+  QTFileParserAppAppDelegate *appDelegate = (QTFileParserAppAppDelegate*)delegate;
+  [appDelegate loadIndexedExample:19 fps:[self getFPS]];
 }
 
 @end
