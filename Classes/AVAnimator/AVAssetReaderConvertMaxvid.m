@@ -167,7 +167,7 @@
   
   self.bpp = 24;
   
-  worked = [self openMvid];
+  worked = [self open];
   
   if (worked == FALSE) {
     goto retcode;
@@ -189,8 +189,6 @@
   
   size_t movieWidth = 0;
   size_t movieHeight = 0;  
-  
-  [self saveOffset];
   
   BOOL writeFailed = FALSE;
   

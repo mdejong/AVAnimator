@@ -8,7 +8,7 @@
 
 #import "AVApng2MvidResourceLoader.h"
 
-#import "apng_convert_maxvid.h"
+#import "ApngConvertMaxvid.h"
 
 #import "AVFileUtil.h"
 
@@ -91,8 +91,10 @@
     char *resPathCstr = (char*) [resPath UTF8String];
     char *phonyOutPathCstr = (char*) [phonyOutPath UTF8String];
     
-    retcode = apng_convert_maxvid_file(resPathCstr, phonyOutPathCstr, genAdler);  
-    NSAssert(retcode == 0, @"apng_convert_maxvid_file");
+    retcode = apng_convert_maxvid_file(resPathCstr, phonyOutPathCstr, genAdler);
+    if (retcode != 0) {
+      NSAssert(retcode == 0, @"apng_convert_maxvid_file");
+    }
     
     // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
     

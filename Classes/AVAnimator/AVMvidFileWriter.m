@@ -18,6 +18,14 @@
 #define ALWAYS_GENERATE_ADLER
 #endif // EXTRA_CHECKS
 
+@interface AVMvidFileWriter ()
+
+- (void) saveOffset;
+
+@end
+
+// AVMvidFileWriter
+
 @implementation AVMvidFileWriter
 
 @synthesize mvidPath = m_mvidPath;
@@ -56,8 +64,17 @@
   [super dealloc];
 }
 
-- (BOOL) openMvid
++ (AVMvidFileWriter*) aVMvidFileWriter
 {
+  return [[[AVMvidFileWriter alloc] init] autorelease];
+}
+
+- (BOOL) open
+{
+  NSAssert(isOpen == FALSE, @"isOpen");
+  NSAssert(self.totalNumFrames > 0, @"totalNumFrames > 0");
+  NSAssert(self.frameDuration != 0, @"frameDuration != 0");
+  
 #ifdef ALWAYS_GENERATE_ADLER
   const int genAdler = 1;
 #else  // ALWAYS_GENERATE_ADLER
@@ -107,34 +124,51 @@
     return FALSE;
   }
   
+  // Store the offset immediately after writing the header
+  
+  [self saveOffset];
+  
+  isOpen = TRUE;
   return TRUE;
 }
 
+// Write a single nop frame after a keyframe or a delta frame.
+// A nop frame has the exact same offset, length, and flags settings
+// as the previous frame, with the additional nop flag also set.
+
+- (void) writeNopFrame
+{
+  NSAssert(frameNum != 0, @"nop frame can't be first frame");
+  NSAssert(frameNum < self.totalNumFrames, @"totalNumFrames");
+  
+#ifdef LOGGING
+  NSLog(@"WRITTING nop frame %d", frameNum);
+#endif // LOGGING
+  
+  MVFrame *mvFrame = &mvFramesArray[frameNum];
+  MVFrame *prevMvFrame = &mvFramesArray[frameNum-1];
+  
+  maxvid_frame_setoffset(mvFrame, maxvid_frame_offset(prevMvFrame));
+  maxvid_frame_setlength(mvFrame, maxvid_frame_length(prevMvFrame));
+  
+  if (maxvid_frame_iskeyframe(prevMvFrame)) {
+    maxvid_frame_setkeyframe(mvFrame);
+  }
+  
+  maxvid_frame_setnopframe(mvFrame);
+  
+  // Note that an adler is not generated for a no-op frame
+  
+  frameNum++;
+}
+
 - (void) writeTrailingNopFrames:(float)currentFrameDuration
-{  
+{
   int numFramesDelay = round(currentFrameDuration / self.frameDuration);
   
   if (numFramesDelay > 1) {
     for (int count = numFramesDelay; count > 1; count--) {
-      
-#ifdef LOGGING
-      NSLog(@"WRITTING nop frame %d", frameNum);
-#endif // LOGGING
-      
-      NSAssert(frameNum < self.totalNumFrames, @"totalNumFrames");
-      
-      MVFrame *mvFrame = &mvFramesArray[frameNum];
-      MVFrame *prevMvFrame = &mvFramesArray[frameNum-1];
-      
-      maxvid_frame_setoffset(mvFrame, maxvid_frame_offset(prevMvFrame));
-      maxvid_frame_setlength(mvFrame, maxvid_frame_length(prevMvFrame));
-      maxvid_frame_setnopframe(mvFrame);
-      
-      if (maxvid_frame_iskeyframe(prevMvFrame)) {
-        maxvid_frame_setkeyframe(mvFrame);
-      }
-      
-      frameNum++;
+      [self writeNopFrame];      
     }
   }
 }
@@ -185,6 +219,10 @@
     
     MVFrame *mvFrame = &mvFramesArray[frameNum];
     
+    // Double check that written data is in terms of whole words
+
+    NSAssert((length % 4) == 0, @"byte length is not in terms of whole words");
+    
     maxvid_frame_setlength(mvFrame, length);
     
     // Generate adler32 for pixel data and save into frame data
@@ -211,6 +249,10 @@
 
 - (BOOL) rewriteHeader
 {
+  NSAssert(self.movieSize.width > 0, @"width");
+  NSAssert(self.movieSize.height > 0, @"height");
+  NSAssert(self.bpp != 0, @"cpp");
+  
   mvHeader->magic = 0; // magic still not valid
   mvHeader->width = self.movieSize.width;
   mvHeader->height = self.movieSize.height;

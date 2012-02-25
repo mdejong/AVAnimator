@@ -4,7 +4,7 @@
 //
 // This module defines logic that convert from an APNG to a memory mapped maxvid file.
 
-#include "apng_convert_maxvid.h"
+#import "ApngConvertMaxvid.h"
 
 #include "movdata.h"
 
@@ -14,15 +14,11 @@
 
 #include "libapng.h"
 
+#import "AVMvidFileWriter.h"
+
 typedef struct {
-  FILE *maxvidOutFile;
-  MVFrame *mvFramesArray;
-  float frameDuration;
-  uint32_t outFrame;
-  uint32_t width;
-  uint32_t height;
+  AVMvidFileWriter *avMvidFileWriter;
   uint32_t bpp;
-  uint32_t genAdler;
   uint32_t *cgFrameBuffer;
 } LibapngUserData;
 
@@ -472,9 +468,8 @@ process_apng_frame(
                    void *userData)
 {
   LibapngUserData *userDataPtr = (LibapngUserData*)userData;
-  FILE *maxvidOutFile = userDataPtr->maxvidOutFile;
-  MVFrame *mvFramesArray = userDataPtr->mvFramesArray;
-  uint32_t genAdler = userDataPtr->genAdler;
+  
+  AVMvidFileWriter *aVMvidFileWriter = userDataPtr->avMvidFileWriter;
   
   const uint32_t framebufferNumBytes = width * height * sizeof(uint32_t);
 
@@ -489,8 +484,13 @@ process_apng_frame(
 
   if (framei == 0) {
     // Save width/height from initial frame
-    userDataPtr->width = width;
-    userDataPtr->height = height;
+    
+    CGSize size = CGSizeMake(width, height);
+    aVMvidFileWriter.movieSize = size;
+  } else {
+    CGSize size = aVMvidFileWriter.movieSize;
+    CGSize currentSize = CGSizeMake(width, height);
+    assert(CGSizeEqualToSize(size, currentSize));
   }
   
   // The bpp value can only be 24 or 32 (alpha), but there is a possibility of a weird edge case when dealing with palette mode images.
@@ -498,6 +498,8 @@ process_apng_frame(
   // are reported as 32 BPP with an alpha channel because palette entries with a transparency value were used. Deal with this edge
   // case by recording the largest BPP value reported for all frames. The result of this edge case is that we don't know if there
   // is an alpha channel until all the pixels in all the frames have been processed.
+  
+  assert(bpp == 24 || bpp == 32);
   
   if (bpp > userDataPtr->bpp) {
     userDataPtr->bpp = bpp;
@@ -508,38 +510,18 @@ process_apng_frame(
   // Query the delay between the previous frame and this one. If this value is longer than 1 frame
   // then no-op frames appear in between the two APNG frames.
   
-  float delay = libapng_frame_delay(delay_num, delay_den);  
-  int numFramesDelay = round(delay / userDataPtr->frameDuration);
-  if (numFramesDelay < 1) {
-    assert(numFramesDelay >= 1);
-  }
+  float frameDisplayTime = libapng_frame_delay(delay_num, delay_den);
   
 #ifdef DEBUG_PRINT_FRAME_DURATION
-  fprintf(stdout, "APNG frame index %d corresponds to MVID frame index %d\n", framei, userDataPtr->outFrame);
+  fprintf(stdout, "APNG frame index %d corresponds to MVID frame index %d\n", framei, aVMvidFileWriter.frameNum);
 #endif
-  
-  // Get the frame that this APNG frame corresponds to
-  
-  MVFrame *mvFrame = &mvFramesArray[userDataPtr->outFrame++];
   
   // In the case where this frame is exactly the same as the previous frame, then delta_x, delta_y, delta_width, delta_height are all zero
   
   if (delta_x == 0 && delta_y == 0 && delta_width == 0 && delta_height == 0) {
     // The no-op delta case
-    assert(userDataPtr->outFrame > 0);
-    
-    MVFrame *prevMvFrame = mvFrame - 1;
-    
-    maxvid_frame_setoffset(mvFrame, maxvid_frame_offset(prevMvFrame));
-    maxvid_frame_setlength(mvFrame, maxvid_frame_length(prevMvFrame));
-    maxvid_frame_setnopframe(mvFrame);
-    
-    if (maxvid_frame_iskeyframe(prevMvFrame)) {
-      maxvid_frame_setkeyframe(mvFrame);
-    }
-    
-    // Note that an adler is not generated for a no-op frame
-    
+
+    [aVMvidFileWriter writeNopFrame];
   } else {
     
     // Each pixel in the framebuffer must be prepared before it can be passed to the CoreGraphics framebuffer.
@@ -561,108 +543,31 @@ process_apng_frame(
       // 24 BPP : no need to premultiply since alpha is always 0xFF
       do {
         *outPtr++ = argb_to_abgr(*inPtr++);
-      } while (--count != 0);    
+      } while (--count != 0);
     }    
     
     // Each frame is emitted as a keyframe
     
-    uint32_t isKeyFrame = 1;
+    BOOL worked = [aVMvidFileWriter writeKeyframe:(char*)userDataPtr->cgFrameBuffer bufferSize:framebufferNumBytes];
     
-    long offset = ftell(maxvidOutFile);
-    
-    if (isKeyFrame) {
-      offset = maxvid_file_padding_before_keyframe(maxvidOutFile, offset);
-    }    
-    
-    maxvid_frame_setoffset(mvFrame, (uint32_t)offset);
-    
-    if (isKeyFrame) {
-      maxvid_frame_setkeyframe(mvFrame);
-    }    
-    
-    if (isKeyFrame) {
-      // A keyframe is a special case where a zero-copy optimization can be used.
-            
-      uint32_t numWritten = fwrite(userDataPtr->cgFrameBuffer, framebufferNumBytes, 1, maxvidOutFile);
-      if (numWritten != 1) {
-        return WRITE_ERROR;
-      }
-      
-      if (genAdler) {
-        mvFrame->adler = maxvid_adler32(0, (unsigned char*)userDataPtr->cgFrameBuffer, framebufferNumBytes);
-        assert(mvFrame->adler != 0);
-      }
-    } else {
-      // Delta frames not generated currently
-      assert(0);
-    }
-    
-    // After data is written to the file, query the file position again to determine how many
-    // words were written.
-    
-    uint32_t offsetBefore = (uint32_t)offset;
-    offset = ftell(maxvidOutFile);
-    uint32_t length = ((uint32_t)offset) - offsetBefore;
-    
-    // Typically, the framebuffer is an even number of pixels.
-    // There is an odd case though, when emitting 16 bit pixels
-    // is is possible that the total number of pixels written
-    // is odd, so in this case the framebuffer is not a whole
-    // number of words.
-    
-    if (isKeyFrame && (bpp == 16)) {
-      assert((length % 2) == 0);
-      if ((length % 4) != 0) {
-        // Write a zero half-word to the file so that additional padding is in terms of whole words.
-        uint16_t zeroHalfword = 0;
-        size_t size = fwrite(&zeroHalfword, sizeof(zeroHalfword), 1, maxvidOutFile);
-        assert(size == 1);
-        offset = ftell(maxvidOutFile);
-      }
-    } else {
-      assert((length % 4) == 0);
-    }
-    
-    maxvid_frame_setlength(mvFrame, length);
-    
-    // In the case of a keyframe, zero pad up to the next page bound. Note that the "length"
-    // of the frame data does not include the zero padding.
-    
-    if (isKeyFrame) {
-      offset = maxvid_file_padding_after_keyframe(maxvidOutFile, offset);
-      assert(offset > 0); // silence compiler/analyzer warning
-    }      
-  }
-  
-  // When the delay after the frame is longer than 1 frame, emit no-op frames
-  
-  if (numFramesDelay > 1) {
-    assert(userDataPtr->outFrame > 0);
-    
-    for (int count = numFramesDelay; count > 1; count--) {
-      MVFrame *mvFrame = &mvFramesArray[userDataPtr->outFrame];
-      MVFrame *prevMvFrame = &mvFramesArray[userDataPtr->outFrame-1];
-      
-      maxvid_frame_setoffset(mvFrame, maxvid_frame_offset(prevMvFrame));
-      maxvid_frame_setlength(mvFrame, maxvid_frame_length(prevMvFrame));
-      maxvid_frame_setnopframe(mvFrame);
-      
-      if (maxvid_frame_iskeyframe(prevMvFrame)) {
-        maxvid_frame_setkeyframe(mvFrame);
-      }
-      
-      userDataPtr->outFrame++;
+    if (worked == FALSE) {
+      return WRITE_ERROR;
     }
   }
+  
+  // When the delay after the frame is longer than 1 frame, emit trailing nop frames
   
 #ifdef DEBUG_PRINT_FRAME_DURATION
+  int numFramesDelay = round(frameDisplayTime / aVMvidFileWriter.frameDuration);
   fprintf(stdout, "frame delay after APNG frame %d is %d\n", framei, numFramesDelay);
 #endif
   
+  [aVMvidFileWriter writeTrailingNopFrames:frameDisplayTime];
+    
   return 0;
 }
 
-// Exported API entry point, this method will convert a .apng file to a .mvid file in the tmp dir
+// Exported C API entry point, this method will convert a .apng file to a .mvid file in the tmp dir
 
 uint32_t
 apng_convert_maxvid_file(
@@ -670,174 +575,11 @@ apng_convert_maxvid_file(
                char *outMaxvidPath,
                uint32_t genAdler)
 {
-  // File and pointers that need to be cleaned up
+  NSString *inAPNGPathStr = [NSString stringWithFormat:@"%s", inAPNGPath];
+  NSString *outMaxvidPathStr = [NSString stringWithFormat:@"%s", outMaxvidPath];
+  BOOL genAdlerBool = (genAdler != 0);
   
-  uint32_t retcode = 0;
-  
-  FILE *inAPNGFile = NULL;
-  FILE *maxvidOutFile = NULL;
-  
-  MVFileHeader *mvHeader = NULL;
-  MVFrame *mvFramesArray = NULL;
-  
-  LibapngUserData userData;
-  memset(&userData, 0, sizeof(LibapngUserData));
-  assert(userData.cgFrameBuffer == NULL);  
-  
-#undef RETCODE
-#define RETCODE(status) \
-if (status != 0) { \
-retcode = status; \
-goto retcode; \
-}
-  
-  // These don't need to be cleaned up at function exit
-  
-  uint32_t numApngFrames;
-  uint32_t numOutputFrames;
-  uint32_t status;
-  float frameDuration;
-    
-  init_alphaTables();
-  
-  // FIXME: test to check that filename ends with ".apng" wither here or in caller
-  
-  inAPNGFile = libapng_open(inAPNGPath);
-	if (inAPNGFile == NULL) {
-    RETCODE(UNSUPPORTED_FILE);
-  }
-	
-  // Read header in PNG file and determine the framerate
-  
-  status = apng_decode_frame_duration(inAPNGFile, &frameDuration, &numOutputFrames, &numApngFrames);
-  if (status != 0) {
-    RETCODE(READ_ERROR);
-  }
-  
-  // If fewer than animation frames, then it will not be possible to animate.
-  // This could happen when there is only a single frame in a PNG file, for example.
-  // It might also happen in a 2 frame .apng where the first frame is marked as hidden.
-  
-  if (numApngFrames < 2) {
-    RETCODE(UNSUPPORTED_FILE);
-  }
-  
-  // open output .mvid file as binary
-
-	maxvidOutFile = fopen(outMaxvidPath, "wb");
-	if (!maxvidOutFile) {
-    RETCODE(WRITE_ERROR);
-  }
-  
-  mvHeader = malloc(sizeof(MVFileHeader));
-  if (!mvHeader) {
-    RETCODE(MALLOC_ERROR);
-  }
-  memset(mvHeader, 0, sizeof(MVFileHeader));
-  
-  // FIXME: Don't know how many maxvid frames there will be until the animation frames
-  // are iterated over. But, this assumes that we know the duration first. Need to figure
-  // out how many mv frames there are in the util function.
-  
-  const uint32_t framesArrayNumBytes = sizeof(MVFrame) * numOutputFrames;
-  mvFramesArray = malloc(framesArrayNumBytes);
-  if (!mvFramesArray) {
-    RETCODE(MALLOC_ERROR);
-  }
-  memset(mvFramesArray, 0, framesArrayNumBytes);  
-  
-  // Write header and frame info array in initial zeroed state. These data fields
-  // don't become valid until the file has been completely written and then
-  // the headers are rewritten.
-  
-  uint32_t numWritten;
-  
-  numWritten = fwrite(mvHeader, sizeof(MVFileHeader), 1, maxvidOutFile);
-  if (numWritten != 1) {
-    RETCODE(WRITE_ERROR);
-  }
-  
-  numWritten = fwrite(mvFramesArray, framesArrayNumBytes, 1, maxvidOutFile);
-  if (numWritten != 1) {
-    RETCODE(WRITE_ERROR);
-  }
-
-  // Init user data passed to libapng_main()
-  
-  userData.maxvidOutFile = maxvidOutFile;
-  userData.mvFramesArray = mvFramesArray;
-  userData.frameDuration = frameDuration;
-  userData.genAdler = genAdler;
-  
-  // Invoke library interface to parse frames from .apng file and render to .mvid
-  
-  status = libapng_main(inAPNGFile, process_apng_frame, &userData);
-  if (status != 0) {
-    RETCODE(status);
-  }
-  
-  // Rewrite the maxvid headers, once all frames have been emitted
-  
-  // Write .mvid headers again, now that info is up to date
-  
-  assert(userData.width);
-  assert(userData.height);
-  assert(userData.bpp);
-  
-  mvHeader->magic = 0; // magic still not valid
-  mvHeader->width = userData.width;
-  mvHeader->height = userData.height;
-  mvHeader->bpp = userData.bpp;
-  
-  mvHeader->frameDuration = frameDuration;
-  assert(mvHeader->frameDuration > 0.0);
-  
-  mvHeader->numFrames = numOutputFrames;
-  
-  (void)fseek(maxvidOutFile, 0L, SEEK_SET);
-  
-  numWritten = fwrite(mvHeader, sizeof(MVFileHeader), 1, maxvidOutFile);
-  if (numWritten != 1) {
-    RETCODE(WRITE_ERROR);
-  }
-  
-  numWritten = fwrite(mvFramesArray, framesArrayNumBytes, 1, maxvidOutFile);
-  if (numWritten != 1) {
-    RETCODE(WRITE_ERROR);
-  }  
-  
-  // Once all valid data and headers have been written, it is now safe to write the
-  // file header magic number. This ensures that any threads reading the first word
-  // of the file looking for a valid magic number will only ever get consistent
-  // data in a read when a valid magic number is read.
-  
-  (void)fseek(maxvidOutFile, 0L, SEEK_SET);
-  
-  uint32_t magic = MV_FILE_MAGIC;
-  status = fwrite_word(maxvidOutFile, magic);
-  if (status) {
-    RETCODE(WRITE_ERROR);
-  }  
-  
-retcode:
-  libapng_close(inAPNGFile);
-  
-  if (userData.cgFrameBuffer) {
-    free(userData.cgFrameBuffer);
-  }  
-  
-  if (maxvidOutFile) {
-    fclose(maxvidOutFile);
-  }
-  
-  if (mvHeader) {
-    free(mvHeader);
-  }
-  if (mvFramesArray) {
-    free(mvFramesArray);
-  }  
-  
-	return retcode;
+  return [ApngConvertMaxvid convertToMaxvid:inAPNGPathStr outMaxvidPath:outMaxvidPathStr genAdler:genAdlerBool];
 }
 
 // This method tests a local file to determine if it is an APNG with multiple frames. It is possible that
@@ -892,3 +634,114 @@ retcode:
   return retcode;
 }
 
+// ApngConvertMaxvid
+
+@implementation ApngConvertMaxvid
+
++ (uint32_t) convertToMaxvid:(NSString*)inAPNGPath
+               outMaxvidPath:(NSString*)outMaxvidPath
+                    genAdler:(BOOL)genAdler
+{
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  
+  uint32_t retcode = 0;
+  
+  FILE *inAPNGFile = NULL;
+  
+  AVMvidFileWriter *aVMvidFileWriter = nil;
+  
+  LibapngUserData userData;
+  memset(&userData, 0, sizeof(LibapngUserData));
+  assert(userData.cgFrameBuffer == NULL);  
+  
+#undef RETCODE
+#define RETCODE(status) \
+if (status != 0) { \
+retcode = status; \
+goto retcode; \
+}
+  
+  // These don't need to be cleaned up at function exit
+  
+  uint32_t numApngFrames;
+  uint32_t numOutputFrames;
+  uint32_t status;
+  float frameDuration;
+  
+  init_alphaTables();
+  
+  // FIXME: test to check that filename ends with ".apng" wither here or in caller
+  
+  char *inAPNGPathCstr = (char*) [inAPNGPath UTF8String];
+  
+  inAPNGFile = libapng_open(inAPNGPathCstr);
+	if (inAPNGFile == NULL) {
+    RETCODE(UNSUPPORTED_FILE);
+  }
+	
+  // Read header in PNG file and determine the framerate
+  
+  status = apng_decode_frame_duration(inAPNGFile, &frameDuration, &numOutputFrames, &numApngFrames);
+  if (status != 0) {
+    RETCODE(READ_ERROR);
+  }
+  
+  // If fewer than animation frames, then it will not be possible to animate.
+  // This could happen when there is only a single frame in a PNG file, for example.
+  // It might also happen in a 2 frame .apng where the first frame is marked as hidden.
+  
+  if (numApngFrames < 2) {
+    RETCODE(UNSUPPORTED_FILE);
+  }
+  
+  // Create .mvid file writer utility object
+  
+  aVMvidFileWriter = [AVMvidFileWriter aVMvidFileWriter];
+  
+  aVMvidFileWriter.mvidPath = outMaxvidPath;
+  aVMvidFileWriter.frameDuration = frameDuration;
+  aVMvidFileWriter.totalNumFrames = numOutputFrames;
+  aVMvidFileWriter.genAdler = genAdler;
+  
+  BOOL worked = [aVMvidFileWriter open];
+  
+	if (worked == FALSE) {
+    RETCODE(WRITE_ERROR);
+  }
+  
+  // Init user data passed to libapng_main()
+  
+  userData.avMvidFileWriter = aVMvidFileWriter;
+  
+  // Invoke library interface to parse frames from .apng file and render to .mvid
+  
+  status = libapng_main(inAPNGFile, process_apng_frame, &userData);
+  if (status != 0) {
+    RETCODE(status);
+  }
+  
+  // Write .mvid header again, now that info is up to date
+  
+  aVMvidFileWriter.bpp = userData.bpp;
+  
+  worked = [aVMvidFileWriter rewriteHeader];
+  
+	if (worked == FALSE) {
+    RETCODE(WRITE_ERROR);
+  }
+  
+retcode:
+  libapng_close(inAPNGFile);
+  
+  if (userData.cgFrameBuffer) {
+    free(userData.cgFrameBuffer);
+  }
+  
+  [aVMvidFileWriter close];
+  
+  [pool drain];
+  
+	return retcode;
+}
+
+@end

@@ -33,7 +33,8 @@
 
   long offset;
   CGSize m_movieSize;
-  
+
+  BOOL  isOpen;
   BOOL  m_genAdler;
 }
 
@@ -45,13 +46,19 @@
 @property (nonatomic, assign) uint32_t      bpp;
 @property (nonatomic, assign) CGSize        movieSize;
 
-- (BOOL) openMvid;
++ (AVMvidFileWriter*) aVMvidFileWriter;
+
+- (BOOL) open;
 
 - (void) close;
 
-- (void) writeTrailingNopFrames:(float)frameDuration;
+// Write a single nop frame after a keyframe or a delta frame
 
-- (void) saveOffset;
+- (void) writeNopFrame;
+
+// Write 0 to N trailing nop frames, pass in total frame display time
+
+- (void) writeTrailingNopFrames:(float)frameDuration;
 
 - (void) skipToNextPageBound;
 

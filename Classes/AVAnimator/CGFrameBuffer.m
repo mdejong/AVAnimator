@@ -544,6 +544,12 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   self.zeroCopyMappedData = nil;
 }
 
+- (NSString*) description
+{
+  return [NSString stringWithFormat:@"CGFrameBuffer %p, pixels %p, %d x %d, %d BPP", self, self.pixels,
+          self.width, self.height, self.bitsPerPixel];
+}
+
 @end
 
 // C callback invoked by core graphics when done with a buffer, this is tricky

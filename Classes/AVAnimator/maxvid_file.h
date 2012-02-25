@@ -165,11 +165,11 @@ uint32_t maxvid_file_padding_before_keyframe(FILE *outFile, uint32_t offset) {
     wordsToBound--;
   }
   
-  offset = ftell(outFile);
+  uint32_t offsetAfter = ftell(outFile);
 
-  assert(UINTMOD(offset, boundSize) == 0);
+  assert(UINTMOD(offsetAfter, boundSize) == 0);
   
-  return offset;
+  return offsetAfter;
 }
 
 // Emit zero length words up to the next page bound after the keyframe data.

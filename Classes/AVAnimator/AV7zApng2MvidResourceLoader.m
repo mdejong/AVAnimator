@@ -6,7 +6,7 @@
 
 #import "AV7zApng2MvidResourceLoader.h"
 
-#import "apng_convert_maxvid.h"
+#import "ApngConvertMaxvid.h"
 
 #import "AVFileUtil.h"
 

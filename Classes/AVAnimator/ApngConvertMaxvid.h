@@ -26,3 +26,15 @@ apng_convert_maxvid_file(
 
 uint32_t
 apng_verify_png_is_animated(char *inAPNGPath);
+
+// class ApngConvertMaxvid
+
+#import <Foundation/Foundation.h>
+
+@interface ApngConvertMaxvid : NSObject
+
++ (uint32_t) convertToMaxvid:(NSString*)inAPNGPath
+               outMaxvidPath:(NSString*)outMaxvidPath
+                    genAdler:(BOOL)genAdler;
+
+@end
