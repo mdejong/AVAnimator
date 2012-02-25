@@ -34,14 +34,15 @@
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   
-  NSAssert([arr count] == 4, @"arr count");
+  NSAssert([arr count] == 5, @"arr count");
   
-  // Pass 4 arguments : ASSET_PATH PHONY_PATH TMP_PATH SERIAL
+  // Pass 5 arguments : ASSET_PATH PHONY_PATH TMP_PATH SERIAL ADLER
   
   NSString *assetPath = [arr objectAtIndex:0];
   NSString *phonyOutPath = [arr objectAtIndex:1];
   NSString *outPath = [arr objectAtIndex:2];
   NSNumber *serialLoadingNum = [arr objectAtIndex:3];
+  NSNumber *alwaysGenerateAdler = [arr objectAtIndex:4];
   
   if ([serialLoadingNum boolValue]) {
     [self grabSerialResourceLoaderLock];
@@ -67,8 +68,10 @@
     AVAssetReaderConvertMaxvid *obj = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
     obj.assetURL = [NSURL fileURLWithPath:assetPath];
     obj.mvidPath = phonyOutPath;
-    // FIXME: adler flag
-    //obj.genAdler = self.alwaysGenerateAdler;
+    
+    if ([alwaysGenerateAdler intValue]) {
+      obj.genAdler = TRUE;
+    }
     
     worked = [obj decodeAssetURL];
     NSAssert(worked, @"decodeAssetURL");
@@ -99,8 +102,12 @@
 {
   NSNumber *serialLoadingNum = [NSNumber numberWithBool:self.serialLoading];
   
-  NSArray *arr = [NSArray arrayWithObjects:assetPath, phonyOutPath, outPath, serialLoadingNum, nil];
-  NSAssert([arr count] == 4, @"arr count");
+  uint32_t genAdler = self.alwaysGenerateAdler;
+  NSNumber *genAdlerNum = [NSNumber numberWithInt:genAdler];
+  NSAssert(genAdlerNum != nil, @"genAdlerNum");
+  
+  NSArray *arr = [NSArray arrayWithObjects:assetPath, phonyOutPath, outPath, serialLoadingNum, genAdlerNum, nil];
+  NSAssert([arr count] == 5, @"arr count");
   
   [NSThread detachNewThreadSelector:@selector(decodeThreadEntryPoint:) toTarget:self.class withObject:arr];  
 }
