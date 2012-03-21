@@ -263,8 +263,8 @@
   if ([AVFileUtil fileExists:outPath]) {
     BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
     NSAssert(worked, @"could not remove existing file with same name as tmp dir");
-  }  
-  
+  }
+   
   [resLoader load];
   
   BOOL worked = [RegressionTests waitUntilTrue:resLoader
@@ -367,6 +367,35 @@
                                       selector:@selector(isReadyToAnimate)
                                    maxWaitTime:10.0];
   NSAssert(worked, @"worked");
+  
+  if (TRUE) {
+    // Compare generated mvid file data to identical data attached as a project resource
+    
+    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSAssert(wroteMvidData, @"could not map .mvid data");
+    
+    NSString *resPath = [AVFileUtil getResourcePath:outFilename];
+    NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
+    NSAssert(resMvidData, @"could not map .mvid data");
+    
+    uint32_t resByteLength = [resMvidData length];
+    uint32_t wroteByteLength = [wroteMvidData length];
+    
+    // Converted 2x2_black_blue_16BPP.mvid should be 12288 bytes
+    
+    BOOL sameLength = (resByteLength == wroteByteLength);
+    NSAssert(sameLength, @"sameLength");
+    BOOL same = [resMvidData isEqualToData:wroteMvidData];
+    NSAssert(same, @"same");
+    
+    // Verify that the emitted .mvid file has a valid magic number
+    
+    char *mvidBytes = (char*) [wroteMvidData bytes];
+    
+    MVFileHeader *mvFileHeaderPtr = (MVFileHeader*) mvidBytes;
+    
+    assert(mvFileHeaderPtr->numFrames == 2);
+  }
   
   NSAssert(media.state == READY, @"isReadyToAnimate");
   
