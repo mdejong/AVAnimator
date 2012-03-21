@@ -19,7 +19,7 @@
 #include <limits.h>
 #include <unistd.h>
 
-#include "movdata_convert_maxvid.h"
+#include "MovdataConvertMaxvid.h"
 
 #include "movdata.h"
 

@@ -10,7 +10,7 @@
 
 #import "LZMAExtractor.h"
 
-#import "movdata_convert_maxvid.h"
+#import "MovdataConvertMaxvid.h"
 
 #import "AVFileUtil.h"
 
