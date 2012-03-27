@@ -1633,17 +1633,13 @@
   return;
 }
 
-// Convert .mov to .mvid and compare to known good binary image.
-// 
+// Convert 16BPP 3x3 mov that contains 3 frames from .mov to .mvid.
 
-// Test to make sure generated "Bounce_32BPP_15FPS.mvid" matches expected
-// binary file already attached to the project file.
-
-+ (void) testDecodeBounce32BPPMov2MvidCompareToResource
++ (void) testDecode3x316BPPMov2MvidCompareToResource
 {
-  NSString *archiveFilename = @"Bounce_32BPP_15FPS.mov.7z";
-  NSString *entryFilename = @"Bounce_32BPP_15FPS.mov";
-  NSString *outFilename = @"Bounce_32BPP_15FPS.mvid";  
+  NSString *archiveFilename = @"3x3_bwd_ANI_16BPP.mov.7z";
+  NSString *entryFilename = @"3x3_bwd_ANI_16BPP.mov";
+  NSString *outFilename = @"3x3_bwd_ANI_16BPP.mvid";  
   NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
   
   AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
@@ -1697,7 +1693,73 @@
     
     MVFileHeader *mvFileHeaderPtr = (MVFileHeader*) mvidBytes;
     
-    assert(mvFileHeaderPtr->numFrames == 30);
+    assert(mvFileHeaderPtr->numFrames == 3);
+  }
+  
+  return;
+}
+
+// Convert 24BPP 3x3 mov that contains 3 frames from .mov to .mvid.
+
++ (void) testDecode3x324BPPMov2MvidCompareToResource
+{
+  NSString *archiveFilename = @"3x3_bwd_ANI_24BPP.mov.7z";
+  NSString *entryFilename = @"3x3_bwd_ANI_24BPP.mov";
+  NSString *outFilename = @"3x3_bwd_ANI_24BPP.mvid";  
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  
+  // Make sure binary compare matches by forcing adler generation when debugging is off
+  resLoader.alwaysGenerateAdler = TRUE;
+  
+  // If the decode mov path exists currently, delete it so that this test case always
+  // decodes the .mov from the .7z compressed Resource.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file with same name as tmp dir");
+  }
+  
+  [resLoader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");  
+  
+  NSLog(@"Wrote : %@", outPath);
+  
+  if (1) {
+    // Compare generated mvid file data to identical data attached as a project resource
+    
+    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSAssert(wroteMvidData, @"could not map .mvid data");
+    
+    NSString *resPath = [AVFileUtil getResourcePath:outFilename];
+    NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
+    NSAssert(resMvidData, @"could not map .mvid data");
+    
+    uint32_t resByteLength = [resMvidData length];
+    uint32_t wroteByteLength = [wroteMvidData length];
+    
+    // Converted 2x2_black_blue_16BPP.mvid should be 12288 bytes
+    
+    BOOL sameLength = (resByteLength == wroteByteLength);
+    NSAssert(sameLength, @"sameLength");
+    BOOL same = [resMvidData isEqualToData:wroteMvidData];
+    NSAssert(same, @"same");
+    
+    // Verify that the emitted .mvid file has a valid magic number
+    
+    char *mvidBytes = (char*) [wroteMvidData bytes];
+    
+    MVFileHeader *mvFileHeaderPtr = (MVFileHeader*) mvidBytes;
+    
+    assert(mvFileHeaderPtr->numFrames == 3);
   }
   
   return;
