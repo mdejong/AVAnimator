@@ -77,12 +77,10 @@
     NSData *mappedData = [NSData dataWithContentsOfMappedFile:phonyOutPath];
     NSAssert(mappedData, @"could not map .mov data");
     
-    char *movPathCstr = (char*) [phonyOutPath UTF8String];
     char *movData = (char*) [mappedData bytes];
     uint32_t movNumBytes = [mappedData length];
-    char *phonyOutPath2Cstr = (char*) [phonyOutPath2 UTF8String];
     
-    assert(strcmp(movPathCstr, phonyOutPath2Cstr) != 0);
+    NSAssert([phonyOutPath isEqualToString:phonyOutPath2] == FALSE, @"cannot be same file");
     
 #ifdef LOGGING
     NSLog(@"done 7zip extraction %@, start encode", archiveEntry);
@@ -98,7 +96,7 @@
       genAdler = 1;
     }
     
-    retcode = movdata_convert_maxvid_file(movPathCstr, movData, movNumBytes, phonyOutPath2Cstr, genAdler);
+    retcode = movdata_convert_maxvid_file(phonyOutPath, movData, movNumBytes, phonyOutPath2, genAdler);
     NSAssert(retcode == 0, @"movdata_convert_maxvid_file");
     
     // Remove tmp file that contains the .mov data, ignore if the file does not exist

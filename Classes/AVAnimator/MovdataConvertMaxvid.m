@@ -12,6 +12,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <fcntl.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <math.h>
@@ -19,13 +21,15 @@
 #include <limits.h>
 #include <unistd.h>
 
-#include "MovdataConvertMaxvid.h"
+#import "MovdataConvertMaxvid.h"
 
-#include "movdata.h"
+#import "AVMvidFileWriter.h"
 
-#include "maxvid_decode.h"
-#include "maxvid_encode.h"
-#include "maxvid_file.h"
+#import "movdata.h"
+
+#import "maxvid_decode.h"
+#import "maxvid_encode.h"
+#import "maxvid_file.h"
 
 static
 void init_alphaTables();
@@ -1518,23 +1522,38 @@ movdata_convert_maxvid_decode_rle_sample32(
   return convert_maxvid_rle_sample32(sampleBuffer, sampleBufferSize, isKeyframe, maxvidCodes, numCodesWords, width, height);
 }
 
+// Query open file size, then rewind to start
+
+static
+int fpsize(FILE *fp, uint32_t *filesize) {
+  int retcode;
+  retcode = fseek(fp, 0, SEEK_END);
+  assert(retcode == 0);
+  uint32_t size = ftell(fp);
+  *filesize = size;
+  fseek(fp, 0, SEEK_SET);
+  return 0;
+}
+
 // Convert a movdata frame to maxvid c4 codes and write to a file.
 
+static
 uint32_t
-movdata_convert_maxvid(
+movdata_convert_and_write_maxvid_frame(
                        const void * restrict movSampleBuffer,
                        const uint32_t movSampleBufferNumBytes,
                        const uint32_t isKeyframe,
                        uint32_t **maxvidCodeBufferPtr, // in/out
                        uint32_t *maxvidCodeBufferNumBytesPtr, // in/out
-                       FILE *maxvidOutFile,
+                       AVMvidFileWriter *aVMvidFileWriter,
                        const uint32_t width,
                        const uint32_t height,
-                       const uint32_t bpp)
+                       const uint32_t bpp,
+                       const uint32_t adler) // non-zero if adler generation is enabled
 {
   assert(movSampleBuffer != NULL);
   assert(movSampleBufferNumBytes > 0);
-  assert(maxvidOutFile != NULL);
+  assert(aVMvidFileWriter != nil);
   assert(width > 0);
   assert(height > 0);
     
@@ -1596,17 +1615,58 @@ movdata_convert_maxvid(
   
   // Convert the generic maxvid codes to the optimized c4 encoding and append to the output file
   
-  uint32_t status;
-  if (bpp == 16) {
-    status = maxvid_encode_c4_sample16(maxvidCodeBuffer, numMaxvidCodeWords, width * height, NULL, maxvidOutFile, 0);
-  } else if (bpp == 24 || bpp == 32) {
-    status = maxvid_encode_c4_sample32(maxvidCodeBuffer, numMaxvidCodeWords, width * height, NULL, maxvidOutFile, 0);
+  FILE *tmpfp = tmpfile();
+  if (tmpfp == NULL) {
+    assert(0);
   }
-  if (status != 0) {
-    return status;
+  
+  if (bpp == 16) {
+    retcode = maxvid_encode_c4_sample16(maxvidCodeBuffer, numMaxvidCodeWords, width * height, NULL, tmpfp, 0);
+  } else if (bpp == 24 || bpp == 32) {
+    retcode = maxvid_encode_c4_sample32(maxvidCodeBuffer, numMaxvidCodeWords, width * height, NULL, tmpfp, 0);
+  }
+  
+  // Read tmp file contents into buffer.
+  
+  if (retcode == 0) {
+    // Read file contents into a buffer, then write that buffer into .mvid file
+    
+    uint32_t filesize;
+    
+    fpsize(tmpfp, &filesize);
+    
+    assert(filesize > 0);
+    
+    char *buffer = malloc(filesize);
+    
+    if (buffer == NULL) {
+      // Malloc failed
+      
+      retcode = MV_ERROR_CODE_WRITE_FAILED;
+    } else {
+      size_t result = fread(buffer, filesize, 1, tmpfp);
+      
+      if (result != 1) {
+        retcode = MV_ERROR_CODE_READ_FAILED;
+      } else {        
+        // Write codes to mvid file
+        
+        BOOL worked = [aVMvidFileWriter writeDeltaframe:buffer bufferSize:filesize adler:adler];
+        
+        if (worked == FALSE) {
+          retcode = MV_ERROR_CODE_WRITE_FAILED;
+        }
+      }
+      
+      free(buffer);
+    }
   }
 
-  return 0;
+  if (tmpfp != NULL) {
+    fclose(tmpfp);
+  }
+  
+  return retcode;
 }
 
 static inline
@@ -1620,12 +1680,14 @@ fwrite_word(FILE *fp, uint32_t word) {
 }
 
 static uint32_t
-process_frames(char * movPath, MovData *movData, char *mappedMovData,
+process_frames(MovData *movData, char *mappedMovData,
                uint32_t width, uint32_t height,
                uint32_t bpp,
-               FILE *maxvidOutFile, uint32_t genAdler)
+               AVMvidFileWriter *aVMvidFileWriter,
+               uint32_t genAdler)
 {
   uint32_t retcode = 0;
+  BOOL worked;
 
   assert(width > 0);
   assert(height > 0);
@@ -1637,33 +1699,35 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
   uint32_t *maxvidCodeBuffer = NULL;
   uint32_t maxvidCodeBufferNumBytes = 0;
   
-  assert(movData->numFrames > 0);
+  // totalNumFrames is the total count of frame in animation
   
-  MVFileHeader *header = malloc(sizeof(MVFileHeader));
-  memset(header, 0, sizeof(MVFileHeader));    
+  aVMvidFileWriter.totalNumFrames = movData->numFrames;
+  assert(aVMvidFileWriter.totalNumFrames > 1);
   
-  const uint32_t framesArrayNumBytes = sizeof(MVFrame) * movData->numFrames;
-  MVFrame *framesArray = malloc(framesArrayNumBytes);
-  memset(framesArray, 0, framesArrayNumBytes);
+  // frameDuration is the length in seconds of 1 frame
   
-  // Write header and frame info array in initial zeroed state. These data fields
-  // don't become valid until the file has been completely written and then
-  // the headers are rewritten.
+  aVMvidFileWriter.frameDuration = 1.0 / movData->fps;
+  assert(aVMvidFileWriter.frameDuration > 0.0);
   
-  uint32_t numWritten;
+  // bpp is 16, 24, or 32 BPP depending on pixel format
   
-  numWritten = fwrite(header, sizeof(MVFileHeader), 1, maxvidOutFile);
-  if (numWritten != 1) {
+  aVMvidFileWriter.bpp = bpp;
+  
+  // width x height
+  
+  aVMvidFileWriter.movieSize = CGSizeMake(width, height);
+  
+  // Open output file and write initial header data
+  
+  worked = [aVMvidFileWriter open];
+  
+  if (worked == FALSE) {
     retcode = MV_ERROR_CODE_WRITE_FAILED;
     goto RETCODE;
   }
   
-  numWritten = fwrite(framesArray, framesArrayNumBytes, 1, maxvidOutFile);
-  if (numWritten != 1) {
-    retcode = MV_ERROR_CODE_WRITE_FAILED;
-    goto RETCODE;
-  }  
-  
+  // Write 
+    
   // There is always going to be at least 1 keyframe in a file, so allocate now
   // instead of in the loop
   
@@ -1686,22 +1750,15 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
     assert(0);
   }
   
-  // Loop over each frame and write contents to file
+  // Loop over each frame and write contents of mov frames to mvid file
   
   for (int i = 0 ; i <  movData->numFrames; i++) {
     MovSample *frame = frames[i];
-    MVFrame *mvFrame = &framesArray[i];
-    
-    long offset = ftell(maxvidOutFile);
 
     // keyframe property is set for normal frame and no-op frame
     
     uint32_t isKeyFrame = movsample_iskeyframe(frame);
-    
-    if (isKeyFrame) {
-      maxvid_frame_setkeyframe(mvFrame); 
-    }
-    
+        
     //fprintf(stdout, "Frame %d [%d %d] : iskeyframe %d\n", i, frame->offset, movsample_length(frame), movsample_iskeyframe(frame));
     
     if ((i > 0) && (frame == frames[i-1])) {
@@ -1714,27 +1771,15 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
       // frames can appear in a row, so deal with this by duplicating the offset and length of the previous frame
       // when the no-op case is detected.
       
-      MVFrame *prevMvFrame = &framesArray[i-1];
-      
-      maxvid_frame_setoffset(mvFrame, maxvid_frame_offset(prevMvFrame));
-      maxvid_frame_setlength(mvFrame, maxvid_frame_length(prevMvFrame));
-      maxvid_frame_setnopframe(mvFrame);      
+      [aVMvidFileWriter writeNopFrame];
     } else {
-      // If the current frame is a keyframe, then make sure it is offset to a page bound
+      // The current frame is not a nop frame, it can be a keyframe or a delta frame
       
       // Get pointer to the start of the delta data in the mapped file
       
       char *mappedPtr = mappedMovData + frame->offset;
       uint32_t mappedNumBytes = movsample_length(frame);
-      
-      // A keyframe may need to emit zeros up to the start of the next page.
-      
-      if (isKeyFrame) {
-        offset = maxvid_file_padding_before_keyframe(maxvidOutFile, offset);
-      }
-      
-      maxvid_frame_setoffset(mvFrame, (uint32_t)offset);
-            
+                  
       if (isKeyFrame) {
         // A keyframe is a special case where a zero-copy optimization can be used.
         // Extract the movdata into a framebuffer and write the contents
@@ -1749,33 +1794,17 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
           retcode = status;
           goto RETCODE;
         }
+                        
+        worked = [aVMvidFileWriter writeKeyframe:frameBuffer bufferSize:frameBufferNumBytes];
         
-        uint32_t numWritten = fwrite(frameBuffer, frameBufferNumBytes, 1, maxvidOutFile);
-        if (numWritten != 1) {
+        if (worked == FALSE) {
           retcode = MV_ERROR_CODE_WRITE_FAILED;
           goto RETCODE;
-        }
-        
-        if (genAdler) {
-          mvFrame->adler = maxvid_adler32(0, frameBuffer, frameBufferNumBytes);
-          assert(mvFrame->adler != 0);
         }
       } else {
         // Convert frame of animation data to maxvid c4 encoding
         
-        uint32_t status =    
-        movdata_convert_maxvid(mappedPtr, mappedNumBytes,
-                               isKeyFrame,
-                               &maxvidCodeBuffer,
-                               &maxvidCodeBufferNumBytes,
-                               maxvidOutFile,
-                               width,
-                               height,
-                               bpp);
-        if (status) {
-          retcode = status;
-          goto RETCODE;
-        }
+        uint32_t adler = 0;
         
         if (genAdler) {
           // Apply the delta to the framebuffer and generate a new adler32 checksum
@@ -1787,101 +1816,42 @@ process_frames(char * movPath, MovData *movData, char *mappedMovData,
             goto RETCODE;
           }
           
-          mvFrame->adler = maxvid_adler32(0, frameBuffer, frameBufferNumBytes);
-          assert(mvFrame->adler != 0);
-        }        
-      }
-      
-      // After data is written to the file, query the file position again to determine how many
-      // words were written.
-      
-      uint32_t offsetBefore = (uint32_t)offset;
-      offset = ftell(maxvidOutFile);
-      uint32_t length = ((uint32_t)offset) - offsetBefore;
-      
-      // Typically, the framebuffer is an even number of pixels.
-      // There is an odd case though, when emitting 16 bit pixels
-      // is is possible that the total number of pixels written
-      // is odd, so in this case the framebuffer is not a whole
-      // number of words.
-      
-      if (isKeyFrame && (bitDepth == 16)) {
-        assert((length % 2) == 0);
-        if ((length % 4) != 0) {
-          // Write a zero half-word to the file so that additional padding is in terms of whole words.
-          uint16_t zeroHalfword = 0;
-          size_t size = fwrite(&zeroHalfword, sizeof(zeroHalfword), 1, maxvidOutFile);
-          assert(size == 1);
-          offset = ftell(maxvidOutFile);
+          adler = maxvid_adler32(0, frameBuffer, frameBufferNumBytes);
+          assert(adler != 0);
         }
-      } else {
-        assert((length % 4) == 0);
-      }
-      
-      maxvid_frame_setlength(mvFrame, length);
-      
-      // In the case of a keyframe, zero pad up to the next page bound. Note that the "length"
-      // of the frame data does not include the zero padding.
-      
-      if (isKeyFrame) {
-        offset = maxvid_file_padding_after_keyframe(maxvidOutFile, offset);
+        
+        uint32_t status =    
+        movdata_convert_and_write_maxvid_frame(mappedPtr, mappedNumBytes,
+                               isKeyFrame,
+                               &maxvidCodeBuffer,
+                               &maxvidCodeBufferNumBytes,
+                               aVMvidFileWriter,
+                               width,
+                               height,
+                               bpp,
+                               adler);
+        if (status) {
+          retcode = status;
+          goto RETCODE;
+        }
       }      
     }
   }
 
-  //fflush(maxvidOutFile);
-  (void)fseek(maxvidOutFile, 0L, SEEK_SET);
+  // Rewrite the header data now that all mvid data has been written
   
-  // Finish filling in the header and rewrite the header and the frames info at the begining of the file
+  worked = [aVMvidFileWriter rewriteHeader];
   
-  header->magic = 0; // magic still not valid
-  header->width = width;
-  header->height = height;
-  header->bpp = bpp;
-  
-  // frameDuration is the length in seconds of 1 frame
-  header->frameDuration = 1.0 / movData->fps;
-  assert(header->frameDuration > 0.0);
-  
-  header->numFrames = movData->numFrames;
-  
-  numWritten = fwrite(header, sizeof(MVFileHeader), 1, maxvidOutFile);
-  if (numWritten != 1) {
+  if (worked == FALSE) {
     retcode = MV_ERROR_CODE_WRITE_FAILED;
     goto RETCODE;
   }
-  
-  numWritten = fwrite(framesArray, framesArrayNumBytes, 1, maxvidOutFile);
-  if (numWritten != 1) {
-    retcode = MV_ERROR_CODE_WRITE_FAILED;
-    goto RETCODE;
-  }
-  
-  // Once all valid data and headers have been written, it is now safe to write the
-  // file header magic number. This ensures that any threads reading the first word
-  // of the file looking for a valid magic number will only ever get consistent
-  // data in a read when a valid magic number is read.
-  
-  (void)fseek(maxvidOutFile, 0L, SEEK_SET);
-  
-  uint32_t magic = MV_FILE_MAGIC;
-  uint32_t status = fwrite_word(maxvidOutFile, magic);
-  if (status) {
-    retcode = status;
-    goto RETCODE;
-  }
-    
+     
   // Cleanup
 
 RETCODE:
   if (maxvidCodeBuffer) {
     free(maxvidCodeBuffer);
-  }
-  if (header) {
-    free(header);
-  }
-  if (framesArray) {
-    free(framesArray);
   }
   if (frameBuffer) {
     free(frameBuffer);
@@ -1937,21 +1907,24 @@ movdata_convert_open_file(
 
 uint32_t
 movdata_convert_maxvid_file(
-                            char *inMovPath,
+                            NSString *inMovPath,
                             char *inMovData,
                             uint32_t inMovDataNumBytes,
-                            char *outMaxvidPath,
+                            NSString *outMaxvidPath,
                             uint32_t genAdler)
 {
-  FILE *maxvidOutFile = fopen(outMaxvidPath, "w");
-  if (maxvidOutFile == NULL) {
-    return MV_ERROR_CODE_INVALID_FILENAME;
-  }
+  uint32_t retcode = 0;
+  
+  AVMvidFileWriter *aVMvidFileWriter = nil;
+  aVMvidFileWriter = [AVMvidFileWriter aVMvidFileWriter];
+  
+  aVMvidFileWriter.mvidPath = outMaxvidPath;
+  aVMvidFileWriter.genAdler = genAdler;
   
   // Open input .mov and read frame data
   
   MovData movData;
-  movdata_convert_open_file(inMovPath, inMovDataNumBytes, &movData);
+  movdata_convert_open_file((char*)[inMovPath UTF8String], inMovDataNumBytes, &movData);
   
   uint32_t width = movData.width;
   uint32_t height = movData.height;
@@ -1959,14 +1932,9 @@ movdata_convert_maxvid_file(
   
   // Process each frame in the mov file, convert to maxvid frames
   
-  uint32_t result = process_frames(inMovPath, &movData, inMovData, width, height, bpp, maxvidOutFile, genAdler);
-  if (result) {
-    return MV_ERROR_CODE_INVALID_INPUT;
-  }
+  retcode = process_frames(&movData, inMovData, width, height, bpp, aVMvidFileWriter, genAdler);
   
   movdata_free(&movData);
   
-  fclose(maxvidOutFile);
-  
-  return 0;
+  return retcode;
 }

@@ -1662,7 +1662,7 @@
   
   BOOL worked = [RegressionTests waitUntilTrue:resLoader
                                       selector:@selector(isReady)
-                                   maxWaitTime:10.0];
+                                   maxWaitTime:1000.0];
   NSAssert(worked, @"worked");  
   
   NSLog(@"Wrote : %@", outPath);
@@ -1680,7 +1680,7 @@
     uint32_t resByteLength = [resMvidData length];
     uint32_t wroteByteLength = [wroteMvidData length];
     
-    // Converted 2x2_black_blue_16BPP.mvid should be 12288 bytes
+    // Converted .mvid should be 1710996 bytes
     
     BOOL sameLength = (resByteLength == wroteByteLength);
     NSAssert(sameLength, @"sameLength");

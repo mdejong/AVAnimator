@@ -62,7 +62,15 @@
 
 - (void) skipToNextPageBound;
 
+// Write a self contained key frame
+
 - (BOOL) writeKeyframe:(char*)ptr bufferSize:(int)bufferSize;
+
+// Write a delta frame that depends on the previous frame. The adler needs to be
+// generated in the caller since both previous and current frames would need to be
+// decoded in order to generate the adler.
+
+- (BOOL) writeDeltaframe:(char*)ptr bufferSize:(int)bufferSize adler:(uint32_t)adler;
 
 - (BOOL) rewriteHeader;
 

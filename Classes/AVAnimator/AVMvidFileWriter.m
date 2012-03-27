@@ -7,7 +7,7 @@
 
 #import "AVMvidFileWriter.h"
 
-#define LOGGING
+//#define LOGGING
 
 #ifndef __OPTIMIZE__
 // Automatically define EXTRA_CHECKS when not optimizing (in debug mode)
@@ -21,6 +21,8 @@
 @interface AVMvidFileWriter ()
 
 - (void) saveOffset;
+
+- (uint32_t) validateFileOffset:(BOOL)isKeyFrame;
 
 @end
 
@@ -138,12 +140,12 @@
 
 - (void) writeNopFrame
 {
+#ifdef LOGGING
+  NSLog(@"writeNopFrame %d", frameNum);
+#endif // LOGGING
+  
   NSAssert(frameNum != 0, @"nop frame can't be first frame");
   NSAssert(frameNum < self.totalNumFrames, @"totalNumFrames");
-  
-#ifdef LOGGING
-  NSLog(@"WRITTING nop frame %d", frameNum);
-#endif // LOGGING
   
   MVFrame *mvFrame = &mvFramesArray[frameNum];
   MVFrame *prevMvFrame = &mvFramesArray[frameNum-1];
@@ -199,6 +201,10 @@
 
 - (BOOL) writeKeyframe:(char*)ptr bufferSize:(int)bufferSize
 {
+#ifdef LOGGING
+  NSLog(@"writeKeyframe %d : bufferSize %d", frameNum, bufferSize);
+#endif // LOGGING
+  
   [self skipToNextPageBound];
   
   int numWritten = fwrite(ptr, bufferSize, 1, maxvidOutFile);
@@ -208,20 +214,11 @@
   } else {
     // Finish emitting frame data
     
-    uint32_t offsetBefore = (uint32_t)offset;
-    offset = ftell(maxvidOutFile);
-    uint32_t length = ((uint32_t)offset) - offsetBefore;
-    
-    NSAssert((length % 2) == 0, @"offset length must be even");
-    assert((length % 4) == 0); // must be in terms of whole words
-    
+    uint32_t length = [self validateFileOffset:TRUE];
+        
     NSAssert(frameNum < self.totalNumFrames, @"totalNumFrames");
     
     MVFrame *mvFrame = &mvFramesArray[frameNum];
-    
-    // Double check that written data is in terms of whole words
-
-    NSAssert((length % 4) == 0, @"byte length is not in terms of whole words");
     
     maxvid_frame_setlength(mvFrame, length);
     
@@ -230,10 +227,6 @@
     if (self.genAdler) {
       mvFrame->adler = maxvid_adler32(0, (unsigned char*)ptr, bufferSize);
       assert(mvFrame->adler != 0);
-      
-#ifdef LOGGING
-      NSLog(@"WROTE adler %d", mvFrame->adler);
-#endif // LOGGING
     }
     
     // zero pad to next page bound
@@ -241,7 +234,11 @@
     offset = maxvid_file_padding_after_keyframe(maxvidOutFile, offset);
     assert(offset > 0); // silence compiler/analyzer warning
     
-    frameNum += 1;
+#ifdef LOGGING
+    NSLog(@"frame[%d] : offset %u : length %u : adler %u", frameNum, mvFrame->offset, maxvid_frame_length(mvFrame),  mvFrame->adler);
+#endif // LOGGING
+    
+    frameNum++;
     
     return TRUE;
   }
@@ -289,6 +286,82 @@
   }
   
   return TRUE;
+}
+
+// write delta frame, non-zero adler must be passed if adler is enabled
+
+- (BOOL) writeDeltaframe:(char*)ptr bufferSize:(int)bufferSize adler:(uint32_t)adler
+{
+#ifdef LOGGING
+  NSLog(@"writeDeltaframe %d : bufferSize %d", frameNum, bufferSize);
+#endif // LOGGING
+
+  [self saveOffset];
+  
+  int numWritten = fwrite(ptr, bufferSize, 1, maxvidOutFile);
+  
+  if (numWritten != 1) {
+    return FALSE;
+  } else {
+    // Finish writing the frame data
+
+    NSAssert(frameNum < self.totalNumFrames, @"totalNumFrames");
+    
+    MVFrame *mvFrame = &mvFramesArray[frameNum];
+    
+    // Note that offset must be saved before validateFileOffset is invoked
+    
+    maxvid_frame_setoffset(mvFrame, (uint32_t)offset);
+    
+    uint32_t length = [self validateFileOffset:FALSE];
+    
+    maxvid_frame_setlength(mvFrame, length);
+    
+    mvFrame->adler = adler;
+    
+#ifdef LOGGING
+    NSLog(@"frame[%d] : offset %u : length %u : adler %u", frameNum, mvFrame->offset, maxvid_frame_length(mvFrame),  mvFrame->adler);
+#endif // LOGGING
+    
+    frameNum++;
+    
+    return TRUE;
+  }
+}
+
+- (uint32_t) validateFileOffset:(BOOL)isKeyFrame
+{
+  uint32_t offsetBefore = (uint32_t)self->offset;
+  offset = ftell(maxvidOutFile);
+  uint32_t length = ((uint32_t)offset) - offsetBefore;
+  NSAssert(length > 0, @"length must be larger than");
+    
+  // Typically, the framebuffer is an even number of pixels.
+  // There is an odd case though, when emitting 16 bit pixels
+  // is is possible that the total number of pixels written
+  // is odd, so in this case the framebuffer is not a whole
+  // number of words.
+  
+  if (isKeyFrame) {
+    NSAssert((length % 2) == 0, @"offset length must be even");
+  }
+  
+  if (isKeyFrame && (self.bpp == 16)) {
+    if ((length % 4) != 0) {
+      // Write a zero half-word to the file so that additional padding is in terms of whole words.
+      uint16_t zeroHalfword = 0;
+      size_t size = fwrite(&zeroHalfword, sizeof(zeroHalfword), 1, maxvidOutFile);
+      assert(size == 1);
+      offset = ftell(maxvidOutFile);
+      // Note that length is not recalculated. If a delta frame appears after this
+      // one, it must begin on a word bound. The frame length ignores the halfword padding.
+      //length = ((uint32_t)offset) - offsetBefore;
+    }
+  } else {
+    NSAssert((length % 4) == 0, @"byte length is not in terms of whole words");    
+  }
+
+  return length;
 }
 
 @end

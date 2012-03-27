@@ -6,6 +6,7 @@
 // with verification that the MOV contains only a single Animation video track.
 // This file should be #included into an implementation main file
 // so that inline functions are seen as being in the same module.
+// This module writes a .mvid formatted file optimized for iOS hardware.
 
 #include <stdio.h>
 #include <stdint.h>
@@ -18,6 +19,8 @@
 #include <assert.h>
 #include <limits.h>
 #include <unistd.h>
+
+#import <Foundation/Foundation.h>
 
 //#define DUMP_WHILE_PARSING
 //#define DUMP_WHILE_DECODING
@@ -54,29 +57,15 @@ movdata_convert_maxvid_decode_rle_sample32(
                                            uint32_t width,
                                            uint32_t height);
 
-// Convert a specific frame of .mov data to a maxvid c4 encoded frame.
-
-uint32_t
-movdata_convert_maxvid_frame(
-                       const void * restrict movSampleBuffer,
-                       const uint32_t movSampleBufferNumBytes,
-                       const uint32_t isKeyframe,
-                       uint32_t **maxvidCodeBufferPtr,
-                       uint32_t *maxvidCodeBufferNumBytesPtr,
-                       FILE *maxvidOutFile,
-                       const uint32_t width,
-                       const uint32_t height,
-                       const uint32_t bpp);
-
 // Convert each frame of .mov data into a c4 encoded maxvid frame
 // and save as a maxvid file. Returns zero on success, non-zero otherwise.
 
 uint32_t
 movdata_convert_maxvid_file(
-                            char *inMovPath,
+                            NSString *inMovPath,
                             char *inMovData,
                             uint32_t inMovDataNumBytes,
-                            char *outMaxvidPath,
+                            NSString *outMaxvidPath,
                             uint32_t genAdler);
 
 // Util to open and process headers of a .mov file
