@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Source</key>
+	<string>AVOfflineCompositionTwoFrameBlueBackgroundTest.plist</string>
+	<key>CompDurationSeconds</key>
+	<integer>1</integer>
+	<key>CompFramesPerSecond</key>
+	<integer>2</integer>
+	<key>CompBackgroundColor</key>
+	<string>#0000FF</string>
+	<key>CompWidth</key>
+	<integer>2</integer>
+	<key>CompHeight</key>
+	<integer>2</integer>
+</dict>
+</plist>

@@ -230,6 +230,10 @@
 		CDAAB16214DFAABF00F43810 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDAAB16014DFAA9800F43810 /* CoreMedia.framework */; };
 		CDAAB16414DFAAF100F43810 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDAAB16314DFAAF100F43810 /* CoreVideo.framework */; };
 		CDAAB16514DFAAFB00F43810 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDAAB16314DFAAF100F43810 /* CoreVideo.framework */; };
+		CDAD8C1B1527965B0089206E /* AVOfflineComposition.m in Sources */ = {isa = PBXBuildFile; fileRef = CDAD8C1A1527965B0089206E /* AVOfflineComposition.m */; };
+		CDAD8C1C1527965B0089206E /* AVOfflineComposition.m in Sources */ = {isa = PBXBuildFile; fileRef = CDAD8C1A1527965B0089206E /* AVOfflineComposition.m */; };
+		CDAD8C29152799850089206E /* AVOfflineCompositionTwoFrameBlueBackgroundTest.plist in Resources */ = {isa = PBXBuildFile; fileRef = CDAD8C28152799850089206E /* AVOfflineCompositionTwoFrameBlueBackgroundTest.plist */; };
+		CDAD8C2B15279C130089206E /* AVOfflineCompositionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CDAD8C2A15279C130089206E /* AVOfflineCompositionTests.m */; };
 		CDBA6B2512DC50A8001B44EB /* nexttrack.png in Resources */ = {isa = PBXBuildFile; fileRef = CDBA6B2412DC50A8001B44EB /* nexttrack.png */; };
 		CDBA6B2612DC50A9001B44EB /* nexttrack.png in Resources */ = {isa = PBXBuildFile; fileRef = CDBA6B2412DC50A8001B44EB /* nexttrack.png */; };
 		CDBAAE66151A5AD4004AF10E /* MovdataConvertMaxvid.m in Sources */ = {isa = PBXBuildFile; fileRef = CDBAAE65151A5AD4004AF10E /* MovdataConvertMaxvid.m */; };
@@ -453,6 +457,10 @@
 		CDA2BADA12F0AA4000F299B4 /* Silence3S.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = Silence3S.wav; sourceTree = "<group>"; };
 		CDAAB16014DFAA9800F43810 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		CDAAB16314DFAAF100F43810 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		CDAD8C191527965B0089206E /* AVOfflineComposition.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVOfflineComposition.h; sourceTree = "<group>"; };
+		CDAD8C1A1527965B0089206E /* AVOfflineComposition.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVOfflineComposition.m; sourceTree = "<group>"; };
+		CDAD8C28152799850089206E /* AVOfflineCompositionTwoFrameBlueBackgroundTest.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = AVOfflineCompositionTwoFrameBlueBackgroundTest.plist; sourceTree = "<group>"; };
+		CDAD8C2A15279C130089206E /* AVOfflineCompositionTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVOfflineCompositionTests.m; sourceTree = "<group>"; };
 		CDBA6B2412DC50A8001B44EB /* nexttrack.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = nexttrack.png; sourceTree = "<group>"; };
 		CDBAAE64151A5AD4004AF10E /* MovdataConvertMaxvid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MovdataConvertMaxvid.h; sourceTree = "<group>"; };
 		CDBAAE65151A5AD4004AF10E /* MovdataConvertMaxvid.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MovdataConvertMaxvid.m; sourceTree = "<group>"; };
@@ -694,6 +702,7 @@
 				CD922D0D136206290024AFBB /* AVResourceLoaderTests.m */,
 				CD535612136A2C0800FF72D4 /* AVFrameDecoderTests.m */,
 				CD5BC94E14A3F2CA00185880 /* AVAnimatorMediaTests.m */,
+				CDAD8C2A15279C130089206E /* AVOfflineCompositionTests.m */,
 				CD288D3E12D93865005F0EEA /* 2x2_black_blue_16BPP.mov */,
 				CD8265DE1364D5EE00640B94 /* 2x2_black_blue_16BPP.mvid */,
 				CD922D24136206DE0024AFBB /* 2x2_black_blue_16BPP.mov.7z */,
@@ -716,6 +725,7 @@
 				CDF1919B13BD893D0008672A /* 1x1.gif */,
 				CD561CA214DF9E41001E4F43 /* 32x32_black_blue_h264.mov */,
 				CD83F0A114ED7CA200D0D257 /* stutterwalk_h264.mov */,
+				CDAD8C28152799850089206E /* AVOfflineCompositionTwoFrameBlueBackgroundTest.plist */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -850,6 +860,8 @@
 				CD0BD14313635EDD00D8287A /* AVFileUtil.m */,
 				CD5F5C4514CCD809005A2809 /* SegmentedMappedData.h */,
 				CD5F5C4614CCD809005A2809 /* SegmentedMappedData.m */,
+				CDAD8C191527965B0089206E /* AVOfflineComposition.h */,
+				CDAD8C1A1527965B0089206E /* AVOfflineComposition.m */,
 			);
 			path = AVAnimator;
 			sourceTree = "<group>";
@@ -1146,6 +1158,7 @@
 				CD5545D31521953200C580EB /* 3x3_bwd_ANI_24BPP.mov.7z in Resources */,
 				CD5545D51521981900C580EB /* 3x3_bwd_ANI_16BPP.mvid in Resources */,
 				CD5545D7152199E100C580EB /* 3x3_bwd_ANI_24BPP.mvid in Resources */,
+				CDAD8C29152799850089206E /* AVOfflineCompositionTwoFrameBlueBackgroundTest.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1207,6 +1220,7 @@
 				CD70DF7B14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m in Sources */,
 				CDFF8A8614F97B2A00F3E816 /* ApngConvertMaxvid.m in Sources */,
 				CDBAAE66151A5AD4004AF10E /* MovdataConvertMaxvid.m in Sources */,
+				CDAD8C1B1527965B0089206E /* AVOfflineComposition.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1273,6 +1287,8 @@
 				CD70DF7C14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m in Sources */,
 				CDFF8A8714F97B2A00F3E816 /* ApngConvertMaxvid.m in Sources */,
 				CDBAAE67151A5AD4004AF10E /* MovdataConvertMaxvid.m in Sources */,
+				CDAD8C1C1527965B0089206E /* AVOfflineComposition.m in Sources */,
+				CDAD8C2B15279C130089206E /* AVOfflineCompositionTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
