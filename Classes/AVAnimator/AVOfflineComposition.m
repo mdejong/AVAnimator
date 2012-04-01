@@ -8,7 +8,13 @@
 
 #import "AutoPropertyRelease.h"
 
+#import "CGFrameBuffer.h"
+
+#import "AVMvidFileWriter.h"
+
 #import <QuartzCore/QuartzCore.h>
+
+#define LOGGING
 
 // Notification name constants
 
@@ -32,15 +38,21 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
 
 - (NSString*) backgroundColorStr;
 
+- (BOOL) composeFrames;
+
 @property (nonatomic, copy) NSString *errorString;
 
 @property (nonatomic, copy) NSString *source;
+
+@property (nonatomic, copy) NSString *destination;
 
 @property (nonatomic, copy) NSArray *compClips;
 
 @property (nonatomic, assign) float compDuration;
 
 @property (nonatomic, assign) float compFPS;
+
+@property (nonatomic, assign) NSUInteger numFrames;
 
 @property (nonatomic, assign) CGSize compSize;
 
@@ -54,9 +66,13 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
 
 @synthesize source = m_source;
 
+@synthesize destination = m_destination;
+
 @synthesize compClips = m_compClips;
 
 @synthesize compDuration = m_compDuration;
+
+@synthesize numFrames = m_numFrames;
 
 @synthesize compFPS = m_compFPS;
 
@@ -95,7 +111,12 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
     return;
   }
   
-  if (TRUE) {
+  worked = [self composeFrames];
+
+  if (!worked) {
+    [self notifyCompositionFailed];
+    return;
+  } else {
     // Deliver success notification
     [self notifyCompositionCompleted];
   }
@@ -204,6 +225,24 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
   
   self.source = [compDict objectForKey:@"Source"];
   
+  // Destination is the output file name
+
+  NSString *destination = [compDict objectForKey:@"Destination"];
+  
+  if (destination == nil) {
+    self.errorString = @"Destination not found";
+    return FALSE;
+  }
+
+  if ([destination length] == 0) {
+    self.errorString = @"Destination invalid";
+    return FALSE;
+  }
+  
+  NSString *tmpDir = NSTemporaryDirectory();
+  NSString *tmpPath = [tmpDir stringByAppendingString:destination];
+  self.destination = tmpPath;
+  
   // CompDurationSeconds indicates the total composition duration in floating point seconds
   
   NSNumber *compDurationSecondsNum = [compDict objectForKey:@"CompDurationSeconds"];
@@ -249,6 +288,12 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
   compFramesPerSecond = [compFramesPerSecondNum floatValue];
 
   self.compFPS = compFramesPerSecond;
+  
+  // Calculate total number of frames based on total duration and frame duration
+  
+  float frameDuration = 1.0 / compFramesPerSecond;
+  int numFrames = (int) round(self.compDuration / frameDuration);
+  self.numFrames = numFrames;
   
   // Parse CompWidth and CompHeight to define size of movie
   
@@ -300,6 +345,92 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
 {
   [[NSNotificationCenter defaultCenter] postNotificationName:AVOfflineCompositionFailedNotification
                                                       object:self];	
+}
+
+// Main compose frames operation, iterate over each frame, render specific views, then
+// write each frame out to the .mvid movie file.
+
+- (BOOL) composeFrames
+{
+  BOOL retcode = TRUE;
+  BOOL worked;
+  
+  const NSUInteger maxFrame = self.numFrames;
+
+  NSUInteger width = self.compSize.width;
+  NSUInteger height = self.compSize.height;
+  
+  const uint32_t framebufferNumBytes = width * height * sizeof(uint32_t);
+  
+  // Allocate buffer that will contain the rendered frame for each time step
+  
+  CGFrameBuffer *cgFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24
+                                                                         width:width
+                                                                        height:height];
+  
+  if (cgFrameBuffer == nil) {
+    return FALSE;
+  }
+  
+  // Wrap the pixels in a bitmap context ref
+  
+  CGContextRef bitmapContext = [cgFrameBuffer createBitmapContext];
+
+  if (bitmapContext == NULL) {
+    return FALSE;
+  }
+  
+  // Create output .mvid file writer
+  
+  AVMvidFileWriter *fileWriter = [AVMvidFileWriter aVMvidFileWriter];
+  NSAssert(fileWriter, @"fileWriter");
+  
+  fileWriter.mvidPath = self.destination;
+  fileWriter.bpp = 24;
+  fileWriter.movieSize = self.compSize;
+
+  fileWriter.frameDuration = 1.0 / self.compFPS;
+  fileWriter.totalNumFrames = maxFrame;
+
+  //fileWriter.genAdler = TRUE;
+  
+  worked = [fileWriter open];
+  if (worked == FALSE) {
+    retcode = FALSE;
+  }
+  
+  for (NSUInteger frame = 0; retcode && (frame < maxFrame); frame++) {
+    // Clear the entire frame to the background color with a simple fill
+    
+    CGContextSetFillColorWithColor(bitmapContext, self->m_backgroundColor);
+    CGContextFillRect(bitmapContext, CGRectMake(0, 0, width, height));
+    
+    // FIXME: iterate over contained images and render each one based on time settings
+    
+    // Write frame buffer out to .mvid container
+    
+    worked = [fileWriter writeKeyframe:(char*)cgFrameBuffer.pixels bufferSize:framebufferNumBytes];
+    
+    if (worked == FALSE) {
+      retcode = FALSE;
+      break;
+    }
+  }
+  
+  CGContextRelease(bitmapContext);
+  
+  worked = [fileWriter rewriteHeader];
+  if (worked == FALSE) {
+    retcode = FALSE;
+  }
+  
+  [fileWriter close];
+  
+#ifdef LOGGING
+  NSLog(@"Wrote comp file %@", fileWriter.mvidPath);
+#endif // LOGGING
+  
+  return retcode;
 }
 
 @end

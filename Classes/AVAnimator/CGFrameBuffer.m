@@ -298,6 +298,48 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 	return TRUE;
 }
 
+- (CGContextRef) createBitmapContext
+{
+  [self doneZeroCopyPixels];
+	
+  size_t bitsPerComponent;
+  size_t numComponents;
+  size_t bitsPerPixel;
+  size_t bytesPerRow;
+  
+  if (self.bitsPerPixel == 16) {
+    bitsPerComponent = 5;
+    //    numComponents = 3;
+    bitsPerPixel = 16;
+    bytesPerRow = self.width * (bitsPerPixel / 8);    
+  } else if (self.bitsPerPixel == 24 || self.bitsPerPixel == 32) {
+    bitsPerComponent = 8;
+    numComponents = 4;
+    bitsPerPixel = bitsPerComponent * numComponents;
+    bytesPerRow = self.width * (bitsPerPixel / 8);
+  } else {
+    NSAssert(FALSE, @"unmatched bitsPerPixel");
+  }
+  
+	CGBitmapInfo bitmapInfo = [self getBitmapInfo];
+	
+	CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+  
+	NSAssert(self.pixels != NULL, @"pixels must not be NULL");
+	NSAssert(self.isLockedByDataProvider == FALSE, @"renderCGImage: pixel buffer locked by data provider");
+  
+	CGContextRef bitmapContext =
+    CGBitmapContextCreate(self.pixels, self.width, self.height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo);
+	
+	CGColorSpaceRelease(colorSpace);
+	
+	if (bitmapContext == NULL) {
+		return NULL;
+	}
+	
+	return bitmapContext;
+}
+
 - (CGImageRef) createCGImageRef
 {
 	// Load pixel data as a core graphics image object.

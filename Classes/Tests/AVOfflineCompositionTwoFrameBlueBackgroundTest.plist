@@ -4,6 +4,8 @@
 <dict>
 	<key>Source</key>
 	<string>AVOfflineCompositionTwoFrameBlueBackgroundTest.plist</string>
+	<key>Destination</key>
+	<string>AVOfflineCompositionTwoFrameBlueBackgroundTest.mvid</string>
 	<key>CompDurationSeconds</key>
 	<integer>1</integer>
 	<key>CompFramesPerSecond</key>

@@ -49,15 +49,21 @@
 
 - (NSString*) backgroundColorStr;
 
+- (BOOL) composeFrames;
+
 @property (nonatomic, copy) NSString *errorString;
 
 @property (nonatomic, copy) NSString *source;
+
+@property (nonatomic, copy) NSString *destination;
 
 @property (nonatomic, copy) NSArray *compClips;
 
 @property (nonatomic, assign) float compDuration;
 
 @property (nonatomic, assign) float compFPS;
+
+@property (nonatomic, assign) NSUInteger numFrames;
 
 @property (nonatomic, assign) CGSize compSize;
 
@@ -164,23 +170,61 @@
   // Verify that the correct properties were parsed from the plist
 
   NSAssert([comp.source isEqualToString:@"AVOfflineCompositionTwoFrameBlueBackgroundTest.plist"], @"source");
+
+  NSString *tmpDir = NSTemporaryDirectory();
+  NSString *tmpPath = [tmpDir stringByAppendingString:@"AVOfflineCompositionTwoFrameBlueBackgroundTest.mvid"];
+  
+  NSAssert([comp.destination isEqualToString:tmpPath], @"source");
   
   NSAssert(comp.compDuration == 1.0f, @"compDuration");
 
   NSAssert(comp.compFPS == 2.0f, @"compFPS");
+
+  NSAssert(comp.numFrames == 2, @"numFrames");
   
   NSAssert(comp.compClips == nil, @"compClips");
   
   // BG color
   
   NSString *bgColor = [comp backgroundColorStr];
-    
+  
   NSAssert([bgColor isEqualToString:@"#0000FFFF"], @"background color");
 
   // width x height
   
   NSAssert(CGSizeEqualToSize(comp.compSize, CGSizeMake(2,2)), @"size");
   
+  // Open .mvid file and verify header info
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  
+  worked = [frameDecoder openForReading:comp.destination];
+	NSAssert(worked, @"frameDecoder openForReading failed");
+  
+  NSAssert(frameDecoder.frameDuration == 0.5, @"frameDuration");
+  NSAssert(frameDecoder.numFrames == 2, @"numFrames");
+    
+  // Dump each Frame 
+  
+  if (TRUE) {
+    
+    worked = [frameDecoder allocateDecodeResources];
+    NSAssert(worked, @"allocateDecodeResources");
+    
+    for (NSUInteger frame = 0; frame < frameDecoder.numFrames; frame++) {
+      UIImage *img = [frameDecoder advanceToFrame:frame];
+      
+      // Write image as PNG
+      
+      NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"Frame%d.png", (frame + 1)];
+      
+      NSData *data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+      [data writeToFile:tmpPNGPath atomically:YES];
+      NSLog(@"wrote %@", tmpPNGPath);
+    }
+    
+  }
+    
   return;
 }
 
