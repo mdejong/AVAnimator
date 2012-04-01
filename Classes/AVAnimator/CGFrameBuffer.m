@@ -131,7 +131,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 		return nil;
   }
 
-  if (self = [super init]) {
+  if ((self = [super init])) {
     self->m_bitsPerPixel = bitsPerPixel;
     self->m_bytesPerPixel = bytesPerPixel;
     self->m_pixels = buffer;

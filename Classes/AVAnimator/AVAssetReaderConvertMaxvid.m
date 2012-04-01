@@ -211,7 +211,7 @@
     sampleBuffer = [self.aVAssetReaderOutput copyNextSampleBuffer];
     
     if (sampleBuffer) {
-      BOOL worked = [self renderIntoFramebuffer:sampleBuffer frameBuffer:&frameBuffer];
+      worked = [self renderIntoFramebuffer:sampleBuffer frameBuffer:&frameBuffer];
       NSAssert(worked, @"worked");
       
       // If the delay between the previous frame and the current frame is more

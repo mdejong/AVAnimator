@@ -194,7 +194,7 @@
 
 - (id) init
 {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     self.state = ALLOCATED;
     self.currentFrame = -1;
   }

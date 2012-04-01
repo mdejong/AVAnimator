@@ -99,7 +99,7 @@
                               action:@selector(pressRewind:)
                     forControlEvents:UIControlEventTouchUpInside];
 	[self.fastForwardButton removeTarget:self
-                           action:@selector(pressfastForward:)
+                           action:@selector(pressFastForward:)
                  forControlEvents:UIControlEventTouchUpInside];    
   [AutoPropertyRelease releaseProperties:self thisClass:MovieControlsViewController.class];
   [super dealloc];

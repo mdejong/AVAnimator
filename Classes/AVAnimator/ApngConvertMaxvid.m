@@ -6,8 +6,6 @@
 
 #import "ApngConvertMaxvid.h"
 
-#include "movdata.h"
-
 #include "maxvid_decode.h"
 #include "maxvid_encode.h"
 #include "maxvid_file.h"

@@ -55,7 +55,7 @@
 
 - (id) init
 {
-  if (self = [super init]) {
+  if ((self = [super init])) {
     // No specific defaults are needed
   }
   return self;

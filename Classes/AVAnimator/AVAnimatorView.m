@@ -65,7 +65,7 @@
 
 - (id) initWithFrame:(CGRect)frame
 {
-  if (self = [super initWithFrame:frame]) {
+  if ((self = [super initWithFrame:frame])) {
     // Defaults for opacity related properties. We expect the view to be
     // fully opaque since the image renders all the pixels in the view.
     // Unless in 32bpp mode, in that case pixels can be partially transparent.

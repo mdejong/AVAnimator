@@ -102,13 +102,13 @@
   // the same as the UIImageView animation logic.
   
   if (cacheDecodedImages) {
-    NSMutableArray *mArr = [NSMutableArray arrayWithCapacity:[urls count]];
+    NSMutableArray *cachedArr = [NSMutableArray arrayWithCapacity:[urls count]];
     for ( NSData *data in obj.dataObjs ) {
       UIImage *img = [UIImage imageWithData:data];
       NSAssert(img, @"img is nil");
-      [mArr addObject:img];
+      [cachedArr addObject:img];
     }
-    obj.cachedImageObjs = [NSArray arrayWithArray:mArr];    
+    obj.cachedImageObjs = [NSArray arrayWithArray:cachedArr];    
   }
   
   return obj;
