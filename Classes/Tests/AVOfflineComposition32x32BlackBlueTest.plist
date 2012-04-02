@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Source</key>
+	<string>AVOfflineComposition32x32BlackBlueTest.plist</string>
+	<key>Destination</key>
+	<string>AVOfflineComposition32x32BlackBlueTest.mvid</string>
+	<key>CompDurationSeconds</key>
+	<real>0.13</real>
+	<key>CompFramesPerSecond</key>
+	<integer>15</integer>
+	<key>CompWidth</key>
+	<integer>32</integer>
+	<key>CompHeight</key>
+	<integer>32</integer>
+	<key>CompClips</key>
+	<array>
+		<dict>
+			<key>ClipSource</key>
+			<string>32x32_black_blue_h264.mov</string>
+			<key>ClipType</key>
+			<string>h264</string>
+			<key>ClipX</key>
+			<integer>0</integer>
+			<key>ClipY</key>
+			<integer>0</integer>
+			<key>ClipWidth</key>
+			<integer>32</integer>
+			<key>ClipHeight</key>
+			<integer>32</integer>
+			<key>ClipStartSeconds</key>
+			<integer>0</integer>
+			<key>ClipEndSeconds</key>
+			<real>0.13</real>
+		</dict>
+	</array>
+</dict>
+</plist>

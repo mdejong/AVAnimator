@@ -16,6 +16,8 @@
 
 #import <QuartzCore/QuartzCore.h>
 
+#import "AVAssetReaderConvertMaxvid.h"
+
 #define LOGGING
 
 // Notification name constants
@@ -36,7 +38,6 @@ typedef enum
 {
   NSString   *m_clipSource;
   AVMvidFrameDecoder *m_mvidFrameDecoder;
-  // FIXME: add h264 frame decoder
 @public
   AVOfflineCompositionClipType clipType;
   NSInteger clipX;
@@ -381,6 +382,8 @@ typedef enum
 
 - (BOOL) parseClipProperties:(NSDictionary*)compDict
 {
+  BOOL worked;
+  
   NSArray *compClips = [compDict objectForKey:@"CompClips"];
   
   NSMutableArray *mArr = [NSMutableArray array];
@@ -499,19 +502,63 @@ typedef enum
     compClip->clipStartSeconds = clipStartSeconds;
     compClip->clipEndSeconds = clipEndSeconds;    
 
+    NSString *mvidPath= nil;
+    
+    // FIXME: add support for compressed .mvid res attached to project file
+    
     if (clipType == AVOfflineCompositionClipTypeMvid) {
-      AVMvidFrameDecoder *mvidFrameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+      mvidPath = compClip.clipSource;
+    } else if (clipType == AVOfflineCompositionClipTypeH264) {
+      // H264 video is supported via decode to .mvid first, then read frames
+      // Break path into components, extract the last one, then replace
+      // existing extension with .mvid and create a path in the tmp
+      // dir that corresponds to the .mvid to be written.
+
+      NSString *tmpDir = NSTemporaryDirectory();
       
-      BOOL worked = [mvidFrameDecoder openForReading:compClip.clipSource];
-      if (worked == FALSE) {
-        self.errorString = [NSString stringWithFormat:@"open of ClipSource file failed: %@", compClip.clipSource];
-        return FALSE;
+      NSString *movPath = compClip.clipSource;
+      NSString *movLastPathComponent = [movPath lastPathComponent];
+      
+      NSString *movPrefix = [movLastPathComponent stringByDeletingPathExtension];
+      //NSString *movExtension = [movLastPathComponent pathExtension];
+
+      NSString *mvidFilename = [NSString stringWithFormat:@"%@.mvid", movPrefix];
+      mvidPath = [tmpDir stringByAppendingString:mvidFilename];
+      
+      if ([[NSFileManager defaultManager] fileExistsAtPath:mvidPath] == FALSE) {
+        // tmp/XYZ.mvid does not exist, decode from H264 now
+        
+#ifdef HAS_AVASSET_READER_CONVERT_MAXVID
+        AVAssetReaderConvertMaxvid *converter = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
+        converter.assetURL = [NSURL fileURLWithPath:movPath];
+        converter.mvidPath = mvidPath;
+        
+        //converter.genAdler = TRUE;
+        
+        worked = [converter decodeAssetURL];
+        
+        // FIXME: Write to tmp file, then rename to final output file to avoid invalid file due to crash
+#else
+        worked = FALSE;
+#endif // HAS_AVASSET_READER_CONVERT_MAXVID
+        
+        if (worked == FALSE) {
+          return FALSE;
+        }
       }
-      
-      compClip.mvidFrameDecoder = mvidFrameDecoder;
     }
     
-    // FIXME: add h264 support
+    // Decode frames from input .mvid
+    
+    AVMvidFrameDecoder *mvidFrameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+    
+    worked = [mvidFrameDecoder openForReading:mvidPath];
+    if (worked == FALSE) {
+      self.errorString = [NSString stringWithFormat:@"open of ClipSource file failed: %@", compClip.clipSource];
+      return FALSE;
+    }
+    
+    compClip.mvidFrameDecoder = mvidFrameDecoder;
     
     [mArr addObject:compClip];
     
@@ -673,7 +720,8 @@ typedef enum
       
       CGImageRef cgImageRef = NULL;
       
-      if (compClip->clipType == AVOfflineCompositionClipTypeMvid) {
+      if (compClip->clipType == AVOfflineCompositionClipTypeMvid ||
+          compClip->clipType == AVOfflineCompositionClipTypeH264) {
         AVMvidFrameDecoder *mvidFrameDecoder = compClip.mvidFrameDecoder;
         
         worked = [mvidFrameDecoder allocateDecodeResources];
@@ -688,9 +736,6 @@ typedef enum
         UIImage *image = [mvidFrameDecoder advanceToFrame:clipFrame];
         
         cgImageRef = image.CGImage;
-      } else if (compClip->clipType == AVOfflineCompositionClipTypeH264) {
-        // FIXME: H.264 support
-        assert(0);
       } else {
         assert(0);
       }
