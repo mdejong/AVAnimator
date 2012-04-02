@@ -219,6 +219,7 @@
 		CD922DCF13620A310024AFBB /* Ppmd8Dec.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DA613620A310024AFBB /* Ppmd8Dec.c */; };
 		CD922DD013620A310024AFBB /* 7zAlloc.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DAB13620A310024AFBB /* 7zAlloc.c */; };
 		CD922DD113620A310024AFBB /* 7zMain.c in Sources */ = {isa = PBXBuildFile; fileRef = CD922DAD13620A310024AFBB /* 7zMain.c */; };
+		CD92B09A1528FD8B008FCC0E /* AVOfflineCompositionTwoFrameBlackBlueMovieTest.plist in Resources */ = {isa = PBXBuildFile; fileRef = CD92B0991528FD8B008FCC0E /* AVOfflineCompositionTwoFrameBlackBlueMovieTest.plist */; };
 		CD9A3642139043A1003F70BC /* 480x320_black_blue_16BPP.mov.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD9A3641139043A1003F70BC /* 480x320_black_blue_16BPP.mov.7z */; };
 		CD9A367113904865003F70BC /* 480x320_black_blue_1LD_16BPP.mov.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD9A367013904865003F70BC /* 480x320_black_blue_1LD_16BPP.mov.7z */; };
 		CD9BF0991364EC2700FF5190 /* GradientColorWheel_2FPS_32BPP_Keyframes.mov.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD9BF0981364EC2700FF5190 /* GradientColorWheel_2FPS_32BPP_Keyframes.mov.7z */; };
@@ -450,6 +451,7 @@
 		CD922DAB13620A310024AFBB /* 7zAlloc.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = 7zAlloc.c; sourceTree = "<group>"; };
 		CD922DAC13620A310024AFBB /* 7zAlloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = 7zAlloc.h; sourceTree = "<group>"; };
 		CD922DAD13620A310024AFBB /* 7zMain.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = 7zMain.c; sourceTree = "<group>"; };
+		CD92B0991528FD8B008FCC0E /* AVOfflineCompositionTwoFrameBlackBlueMovieTest.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = AVOfflineCompositionTwoFrameBlackBlueMovieTest.plist; sourceTree = "<group>"; };
 		CD9A3641139043A1003F70BC /* 480x320_black_blue_16BPP.mov.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = 480x320_black_blue_16BPP.mov.7z; sourceTree = "<group>"; };
 		CD9A367013904865003F70BC /* 480x320_black_blue_1LD_16BPP.mov.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = 480x320_black_blue_1LD_16BPP.mov.7z; sourceTree = "<group>"; };
 		CD9BF0981364EC2700FF5190 /* GradientColorWheel_2FPS_32BPP_Keyframes.mov.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = GradientColorWheel_2FPS_32BPP_Keyframes.mov.7z; sourceTree = "<group>"; };
@@ -726,6 +728,7 @@
 				CD561CA214DF9E41001E4F43 /* 32x32_black_blue_h264.mov */,
 				CD83F0A114ED7CA200D0D257 /* stutterwalk_h264.mov */,
 				CDAD8C28152799850089206E /* AVOfflineCompositionTwoFrameBlueBackgroundTest.plist */,
+				CD92B0991528FD8B008FCC0E /* AVOfflineCompositionTwoFrameBlackBlueMovieTest.plist */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -1159,6 +1162,7 @@
 				CD5545D51521981900C580EB /* 3x3_bwd_ANI_16BPP.mvid in Resources */,
 				CD5545D7152199E100C580EB /* 3x3_bwd_ANI_24BPP.mvid in Resources */,
 				CDAD8C29152799850089206E /* AVOfflineCompositionTwoFrameBlueBackgroundTest.plist in Resources */,
+				CD92B09A1528FD8B008FCC0E /* AVOfflineCompositionTwoFrameBlackBlueMovieTest.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

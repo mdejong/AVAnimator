@@ -28,6 +28,7 @@ extern NSString * const AVOfflineCompositionFailedNotification;
   NSArray    *m_compClips;
   float      m_compDuration;
   float      m_compFPS;
+  float      m_compFrameDuration;
   NSUInteger m_numFrames;
   CGColorRef m_backgroundColor;
   CGSize     m_compSize;

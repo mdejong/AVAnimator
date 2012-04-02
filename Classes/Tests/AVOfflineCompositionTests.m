@@ -169,7 +169,7 @@
 
   // Verify that the correct properties were parsed from the plist
 
-  NSAssert([comp.source isEqualToString:@"AVOfflineCompositionTwoFrameBlueBackgroundTest.plist"], @"source");
+  NSAssert([comp.source isEqualToString:resFilename], @"source");
 
   NSString *tmpDir = NSTemporaryDirectory();
   NSString *tmpPath = [tmpDir stringByAppendingString:@"AVOfflineCompositionTwoFrameBlueBackgroundTest.mvid"];
@@ -181,8 +181,6 @@
   NSAssert(comp.compFPS == 2.0f, @"compFPS");
 
   NSAssert(comp.numFrames == 2, @"numFrames");
-  
-  NSAssert(comp.compClips == nil, @"compClips");
   
   // BG color
   
@@ -225,6 +223,93 @@
     
   }
     
+  return;
+}
+
+// This test cases creates a composition that is 2 frames long. The composition contains
+// 2 frames from the indicated clip. Each frame in the clip completely covers all pixels
+// in the comp buffer. The result is that the comp movie is an exact copy of the original
+// clip.
+
++ (void) testCompose2FrameBlueBlackCopy
+{
+  NSString *resFilename;
+  
+  resFilename = @"AVOfflineCompositionTwoFrameBlackBlueMovieTest.plist";
+  
+  NSDictionary *plistDict = (NSDictionary*) [AVOfflineComposition readPlist:resFilename];
+  
+  AVOfflineComposition *comp = [AVOfflineComposition aVOfflineComposition];
+  
+  AVOfflineCompositionNotificationUtil *notificationUtil = [AVOfflineCompositionNotificationUtil aVOfflineCompositionNotificationUtil];
+  
+  [notificationUtil setupNotification:comp];
+  
+  [comp compose:plistDict];
+  
+  // Wait until comp operation either works or fails
+  
+  BOOL worked = [RegressionTests waitUntilTrue:notificationUtil
+                                      selector:@selector(wasSuccessNotificationDelivered)
+                                   maxWaitTime:MAX_WAIT_TIME];
+  NSAssert(worked, @"worked");
+  
+  // Verify that the correct properties were parsed from the plist
+  
+  NSAssert([comp.source isEqualToString:resFilename], @"source");
+  
+  NSString *tmpDir = NSTemporaryDirectory();
+  NSString *tmpPath = [tmpDir stringByAppendingString:@"AVOfflineCompositionTwoFrameBlackBlueMovieTest.mvid"];
+  
+  NSAssert([comp.destination isEqualToString:tmpPath], @"source");
+  
+  NSAssert(comp.compDuration == 2.0f, @"compDuration");
+  
+  NSAssert(comp.compFPS == 1.0f, @"compFPS");
+  
+  NSAssert(comp.numFrames == 2, @"numFrames");
+  
+  // BG color is black (the default)
+  
+  NSString *bgColor = [comp backgroundColorStr];
+  
+  NSAssert([bgColor isEqualToString:@"#000000FF"], @"background color");
+  
+  // width x height
+  
+  NSAssert(CGSizeEqualToSize(comp.compSize, CGSizeMake(2,2)), @"size");
+  
+  // Open .mvid file and verify header info
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  
+  worked = [frameDecoder openForReading:comp.destination];
+	NSAssert(worked, @"frameDecoder openForReading failed");
+  
+  NSAssert(frameDecoder.frameDuration == 1.0, @"frameDuration");
+  NSAssert(frameDecoder.numFrames == 2, @"numFrames");
+  
+  // Dump each Frame 
+  
+  if (TRUE) {
+    
+    worked = [frameDecoder allocateDecodeResources];
+    NSAssert(worked, @"allocateDecodeResources");
+    
+    for (NSUInteger frame = 0; frame < frameDecoder.numFrames; frame++) {
+      UIImage *img = [frameDecoder advanceToFrame:frame];
+      
+      // Write image as PNG
+      
+      NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"Frame%d.png", (frame + 1)];
+      
+      NSData *data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+      [data writeToFile:tmpPNGPath atomically:YES];
+      NSLog(@"wrote %@", tmpPNGPath);
+    }
+    
+  }
+  
   return;
 }
 

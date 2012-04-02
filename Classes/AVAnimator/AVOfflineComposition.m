@@ -12,6 +12,8 @@
 
 #import "AVMvidFileWriter.h"
 
+#import "AVMvidFrameDecoder.h"
+
 #import <QuartzCore/QuartzCore.h>
 
 #define LOGGING
@@ -21,6 +23,37 @@
 NSString * const AVOfflineCompositionCompletedNotification = @"AVOfflineCompositionCompletedNotification";
 
 NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineCompositionFailedNotification";
+
+typedef enum
+{
+  AVOfflineCompositionClipTypeMvid = 0,
+  AVOfflineCompositionClipTypeH264  
+} AVOfflineCompositionClipType;
+
+// Util object, one is created for each clip to be rendered in the composition
+
+@interface AVOfflineCompositionClip : NSObject
+{
+  NSString   *m_clipSource;
+  AVMvidFrameDecoder *m_mvidFrameDecoder;
+  // FIXME: add h264 frame decoder
+@public
+  AVOfflineCompositionClipType clipType;
+  NSInteger clipX;
+  NSInteger clipY;
+  NSInteger clipWidth;
+  NSInteger clipHeight;
+  float     clipStartSeconds;
+  float     clipEndSeconds;
+}
+
+@property (nonatomic, copy) NSString *clipSource;
+
+@property (nonatomic, retain) AVMvidFrameDecoder *mvidFrameDecoder;
+
++ (AVOfflineCompositionClip*) aVOfflineCompositionClip;
+
+@end
 
 // Private API
 
@@ -32,6 +65,8 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
 
 - (BOOL) parseToplevelProperties:(NSDictionary*)compDict;
 
+- (BOOL) parseClipProperties:(NSDictionary*)compDict;
+
 - (void) notifyCompositionCompleted;
 
 - (void) notifyCompositionFailed;
@@ -39,6 +74,11 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
 - (NSString*) backgroundColorStr;
 
 - (BOOL) composeFrames;
+
+- (BOOL) composeClips:(NSUInteger)frame
+        bitmapContext:(CGContextRef)bitmapContext;
+
+- (void) closeClips;
 
 @property (nonatomic, copy) NSString *errorString;
 
@@ -51,6 +91,8 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
 @property (nonatomic, assign) float compDuration;
 
 @property (nonatomic, assign) float compFPS;
+
+@property (nonatomic, assign) float compFrameDuration;
 
 @property (nonatomic, assign) NSUInteger numFrames;
 
@@ -75,6 +117,8 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
 @synthesize numFrames = m_numFrames;
 
 @synthesize compFPS = m_compFPS;
+
+@synthesize compFrameDuration = m_compFrameDuration;
 
 @synthesize compSize = m_compSize;
 
@@ -276,8 +320,6 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
     return FALSE;
   }
   
-  // FIXME: parse background color into color componenets (CG Color, not UIColor for thread safety)
-  
   // CompFramesPerSecond is a floating point number that indicates how many frames per second
   // the resulting composition will be. This field is required.
   // Common Values: 1, 2, 15, 24, 29.97, 30, 48, 60
@@ -292,6 +334,7 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
   // Calculate total number of frames based on total duration and frame duration
   
   float frameDuration = 1.0 / compFramesPerSecond;
+  self.compFrameDuration = frameDuration;
   int numFrames = (int) round(self.compDuration / frameDuration);
   self.numFrames = numFrames;
   
@@ -327,10 +370,155 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
   self.compSize = CGSizeMake(compWidth, compHeight);
 
   // Parse CompClips, this array of dicttionary property is optional
-  
-  NSArray *compClips = [compDict objectForKey:@"CompClips"];
 
-  self.compClips = compClips;
+  [self parseClipProperties:compDict];
+  
+  return TRUE;
+}
+
+// Parse clip data from PLIST and setup objects that will read clip data
+// from files.
+
+- (BOOL) parseClipProperties:(NSDictionary*)compDict
+{
+  NSArray *compClips = [compDict objectForKey:@"CompClips"];
+  
+  NSMutableArray *mArr = [NSMutableArray array];
+  
+  int clipOffset = 0;
+  for (NSDictionary *clipDict in compClips) {
+    // Each element of the CompClips array is parsed and added to the
+    // self.compClips as an instance of AVOfflineCompositionClip.
+    
+    AVOfflineCompositionClip *compClip = [AVOfflineCompositionClip aVOfflineCompositionClip];
+    
+    // ClipSource is a mvid or H264 movie that frames are loaded from
+    
+    NSString *clipSource = [clipDict objectForKey:@"ClipSource"];
+    
+    if (clipSource == nil) {
+      self.errorString = @"ClipSource not found";
+      return FALSE;
+    }
+    
+    // ClipSource could indicate a resource file (the assumed default).
+    
+    NSString *resPath = [[NSBundle mainBundle] pathForResource:clipSource ofType:@""];
+    
+    if (resPath != nil) {
+      // ClipSource is the name of a resource file
+      clipSource = resPath;
+    } else {
+      // If ClipSource is not a resource file, check for a file with that name in the tmp dir
+      NSString *tmpDir = NSTemporaryDirectory();
+      NSString *tmpPath = [tmpDir stringByAppendingPathComponent:clipSource];
+      if ([[NSFileManager defaultManager] fileExistsAtPath:tmpPath]) {
+        clipSource = tmpPath;
+      }
+    }
+    
+    // ClipType is a string to indicate the type of movie clip
+    
+    NSString *clipTypeStr = [clipDict objectForKey:@"ClipType"];
+    
+    if (clipTypeStr == nil) {
+      return FALSE;
+    }
+    
+    AVOfflineCompositionClipType clipType;
+
+    if ([clipTypeStr isEqualToString:@"mvid"]) {
+      clipType = AVOfflineCompositionClipTypeMvid;
+    } else if ([clipTypeStr isEqualToString:@"h264"]) {
+      clipType = AVOfflineCompositionClipTypeH264;
+    } else {
+      self.errorString = @"ClipType unsupported";
+      return FALSE;
+    }
+    
+    // ClipX, ClipY : signed int
+    
+    NSNumber *clipXNum = [clipDict objectForKey:@"ClipX"];
+    NSNumber *clipYNum = [clipDict objectForKey:@"ClipY"];
+    
+    if (clipXNum == nil) {
+      self.errorString = @"ClipX not found";
+      return FALSE;
+    }
+    if (clipYNum == nil) {
+      self.errorString = @"ClipY not found";
+      return FALSE;
+    }
+    
+    NSInteger clipX = [clipXNum intValue];
+    NSInteger clipY = [clipYNum intValue];
+    
+    // ClipWidth, ClipHeight unsigned int
+    
+    NSNumber *clipWidthNum = [clipDict objectForKey:@"ClipWidth"];
+    NSNumber *clipHeightNum = [clipDict objectForKey:@"ClipHeight"];
+    
+    if (clipWidthNum == nil) {
+      self.errorString = @"ClipWidth not found";
+      return FALSE;
+    }
+    if (clipHeightNum == nil) {
+      self.errorString = @"ClipHeight not found";
+      return FALSE;
+    }
+    
+    NSInteger clipWidth = [clipWidthNum intValue];
+    NSInteger clipHeight = [clipHeightNum intValue];
+    
+    if (clipWidth <= 0) {
+      self.errorString = @"ClipWidth invalid";
+      return FALSE;
+    }
+    
+    if (clipHeight <= 0) {
+      self.errorString = @"ClipHeight invalid";
+      return FALSE;
+    }
+    
+    // ClipStartSeconds, ClipEndSeconds : float time values
+    
+    NSNumber *clipStartSecondsNum = [clipDict objectForKey:@"ClipStartSeconds"];
+    NSNumber *clipEndSecondsNum = [clipDict objectForKey:@"ClipEndSeconds"];
+    
+    float clipStartSeconds = [clipStartSecondsNum floatValue];
+    float clipEndSeconds = [clipEndSecondsNum floatValue];
+    
+    // Fill in fields of AVOfflineCompositionClip
+    
+    compClip.clipSource = clipSource;
+    compClip->clipType = clipType;
+    compClip->clipX = clipX;
+    compClip->clipY = clipY;
+    compClip->clipWidth = clipWidth;
+    compClip->clipHeight = clipHeight;
+    compClip->clipStartSeconds = clipStartSeconds;
+    compClip->clipEndSeconds = clipEndSeconds;    
+
+    if (clipType == AVOfflineCompositionClipTypeMvid) {
+      AVMvidFrameDecoder *mvidFrameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+      
+      BOOL worked = [mvidFrameDecoder openForReading:compClip.clipSource];
+      if (worked == FALSE) {
+        self.errorString = [NSString stringWithFormat:@"open of ClipSource file failed: %@", compClip.clipSource];
+        return FALSE;
+      }
+      
+      compClip.mvidFrameDecoder = mvidFrameDecoder;
+    }
+    
+    // FIXME: add h264 support
+    
+    [mArr addObject:compClip];
+    
+    clipOffset++;
+  }
+  
+  self.compClips = [NSArray arrayWithArray:mArr];
   
   return TRUE;
 }
@@ -389,7 +577,7 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
   fileWriter.bpp = 24;
   fileWriter.movieSize = self.compSize;
 
-  fileWriter.frameDuration = 1.0 / self.compFPS;
+  fileWriter.frameDuration = self.compFrameDuration;
   fileWriter.totalNumFrames = maxFrame;
 
   //fileWriter.genAdler = TRUE;
@@ -407,6 +595,12 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
     
     // FIXME: iterate over contained images and render each one based on time settings
     
+    worked = [self composeClips:frame bitmapContext:bitmapContext];
+    if (worked == FALSE) {
+      retcode = FALSE;
+      break;
+    }
+    
     // Write frame buffer out to .mvid container
     
     worked = [fileWriter writeKeyframe:(char*)cgFrameBuffer.pixels bufferSize:framebufferNumBytes];
@@ -416,6 +610,8 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
       break;
     }
   }
+  
+  [self closeClips];
   
   CGContextRelease(bitmapContext);
   
@@ -431,6 +627,117 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
 #endif // LOGGING
   
   return retcode;
+}
+
+// FIXME: initial round of looping over the clip info will parse a set of values
+// into a struct that holds the parsed values and a ref to the opened clip
+// data in the file.
+
+// Iterate over each clip for a specific time and render clips that are visible.
+
+- (BOOL) composeClips:(NSUInteger)frame
+        bitmapContext:(CGContextRef)bitmapContext
+{
+  BOOL worked;
+  float frameTime = frame * self.compFrameDuration;
+  
+  if (self.compClips == nil) {
+    // No clips
+    return TRUE;
+  }
+  
+  int clipOffset = 0;
+  for (AVOfflineCompositionClip *compClip in self.compClips) {
+    // ClipSource is a mvid or H264 movie that frames are loaded from
+
+    float clipStartSeconds = compClip->clipStartSeconds;
+    float clipEndSeconds = compClip->clipEndSeconds;
+    
+    // Render a specific clip if it the frame time is in [START, END] time bounds    
+    
+    if (frameTime >= clipStartSeconds && frameTime <= clipEndSeconds) {
+      // Render specific frame from this clip
+      
+#ifdef LOGGING
+      NSLog(@"Found clip active for comp time %0.2f, clip %d [%0.2f, %0.2f]", frameTime, clipOffset, clipStartSeconds, clipEndSeconds);
+#endif // LOGGING
+      
+      float clipTime = frameTime - clipStartSeconds;
+      
+      // FIXME: clip framerate must be used to calculate the frame offset of a specific
+      // frame. But, this value needs to be scaled to the display time, because a longer
+      // display time will modify the effective framerate. For example, if a clip is
+      // played twice as long, its framerate will be reduced by half.
+      
+      NSUInteger clipFrame = (NSUInteger) round(clipTime / self.compFrameDuration);
+      
+      CGImageRef cgImageRef = NULL;
+      
+      if (compClip->clipType == AVOfflineCompositionClipTypeMvid) {
+        AVMvidFrameDecoder *mvidFrameDecoder = compClip.mvidFrameDecoder;
+        
+        worked = [mvidFrameDecoder allocateDecodeResources];
+        
+        if (worked == FALSE) {
+          return FALSE;
+        }
+        
+        // FIXME: would be better if this API returned a CGImageRef but a UIImage
+        // is not actually used for anything so it should be thread safe.
+        
+        UIImage *image = [mvidFrameDecoder advanceToFrame:clipFrame];
+        
+        cgImageRef = image.CGImage;
+      } else if (compClip->clipType == AVOfflineCompositionClipTypeH264) {
+        // FIXME: H.264 support
+        assert(0);
+      } else {
+        assert(0);
+      }
+        
+      // Render frame by painting frame image into a specific rectangle in the framebuffer
+      
+      CGRect bounds = CGRectMake(compClip->clipX, compClip->clipY, compClip->clipWidth, compClip->clipHeight );
+      
+      CGContextDrawImage(bitmapContext, bounds, cgImageRef);
+    }
+    
+    clipOffset++;
+  }
+  
+  return TRUE;
+}
+
+// Close resources associated with each open clip
+
+- (void) closeClips
+{
+  // Clips are automatically cleaned up when last ref is dropped
+  
+  self.compClips = nil;
+}
+
+@end // AVOfflineComposition
+
+
+// Util object, one is created for each clip to be rendered in the composition
+
+@implementation AVOfflineCompositionClip
+
+@synthesize clipSource = m_clipSource;
+
+@synthesize mvidFrameDecoder = m_mvidFrameDecoder;
+
++ (AVOfflineCompositionClip*) aVOfflineCompositionClip
+{
+  AVOfflineCompositionClip *obj = [[AVOfflineCompositionClip alloc] init];
+  return [obj autorelease];
+}
+
+- (void) dealloc
+{
+  [AutoPropertyRelease releaseProperties:self thisClass:AVOfflineCompositionClip.class];
+  [super dealloc];
 }
 
 @end
