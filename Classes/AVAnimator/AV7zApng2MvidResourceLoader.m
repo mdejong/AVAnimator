@@ -144,7 +144,7 @@
                   nil];
   NSAssert([arr count] == 7, @"arr count");
   
-  [NSThread detachNewThreadSelector:@selector(decodeThreadEntryPoint:) toTarget:self.class withObject:arr];  
+  [NSThread detachNewThreadSelector:@selector(decodeThreadEntryPoint:) toTarget:self.class withObject:arr];
 }
 
 @end

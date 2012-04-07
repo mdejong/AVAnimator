@@ -150,27 +150,37 @@ typedef enum
 
 - (void) compose:(NSDictionary*)compDict
 {
+  NSAssert(compDict, @"compDict must not be nil");
+  [NSThread detachNewThreadSelector:@selector(composeInSecondaryThread:) toTarget:self withObject:compDict];
+}
+
+// Execute a compose operation in a background thread. This is a thread entry point, so
+// create a pool and release it on exit.
+
+- (void) composeInSecondaryThread:(NSDictionary*)compDict
+{
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  
   BOOL worked;
   
   NSAssert(compDict, @"compDict must not be nil");
 
+  NSAssert([NSThread isMainThread] == FALSE, @"isMainThread");
+  
   worked = [self parseToplevelProperties:compDict];
   
-  if (!worked) {
-    [self notifyCompositionFailed];
-    return;
+  if (worked) {
+    worked = [self composeFrames];
   }
-  
-  worked = [self composeFrames];
 
-  if (!worked) {
-    [self notifyCompositionFailed];
-    return;
-  } else {
+  if (worked) {
     // Deliver success notification
     [self notifyCompositionCompleted];
+  } else {
+    [self notifyCompositionFailed];
   }
   
+  [pool drain];
   return;
 }
 
@@ -610,16 +620,40 @@ typedef enum
   return TRUE;
 }
 
+// This method will send a notification to indicate that a composition has completed successfully.
+// This method must be invoked in the secondary thread
+
 - (void) notifyCompositionCompleted
 {
+  [self performSelectorOnMainThread:@selector(notifyCompositionCompletedInMainThread) withObject:nil waitUntilDone:TRUE];
+}
+
+// This method will send a notification to indicate that a composition has completed successfully.
+// This method must be invoked in the main thread.
+
+- (void) notifyCompositionCompletedInMainThread
+{
+  NSAssert([NSThread isMainThread] == TRUE, @"isMainThread");
+  
   [[NSNotificationCenter defaultCenter] postNotificationName:AVOfflineCompositionCompletedNotification
                                                       object:self];	
 }
 
+// This method will send a notification to indicate that a composition has failed.
+
 - (void) notifyCompositionFailed
 {
-  [[NSNotificationCenter defaultCenter] postNotificationName:AVOfflineCompositionFailedNotification
-                                                      object:self];	
+  [self performSelectorOnMainThread:@selector(notifyCompositionFailedInMainThread) withObject:nil waitUntilDone:TRUE];
+}
+
+// This method will send a notification to indicate that a composition has failed.
+// This method must be invoked in the main thread.
+
+- (void) notifyCompositionFailedInMainThread
+{
+  NSAssert([NSThread isMainThread] == TRUE, @"isMainThread");
+  
+  [[NSNotificationCenter defaultCenter] postNotificationName:AVOfflineCompositionFailedNotification object:self];	
 }
 
 // Main compose frames operation, iterate over each frame, render specific views, then
@@ -714,10 +748,6 @@ typedef enum
   return retcode;
 }
 
-// FIXME: initial round of looping over the clip info will parse a set of values
-// into a struct that holds the parsed values and a ref to the opened clip
-// data in the file.
-
 // Iterate over each clip for a specific time and render clips that are visible.
 
 - (BOOL) composeClips:(NSUInteger)frame
@@ -787,8 +817,9 @@ typedef enum
           return FALSE;
         }
         
-        // FIXME: would be better if this API returned a CGImageRef but a UIImage
-        // is not actually used for anything so it should be thread safe.
+        // While this advanceToFrame returns a UIImage, we are not actually using
+        // and UI layer rendering functions, so it should be thread safe to just
+        // hold on to a UIImage and the CGImageRef it contains.
         
         UIImage *image = [mvidFrameDecoder advanceToFrame:clipFrame];
         
@@ -810,7 +841,7 @@ typedef enum
         
       // Render frame by painting frame image into a specific rectangle in the framebuffer
       
-      CGRect bounds = CGRectMake(compClip->clipX, compClip->clipY, compClip->clipWidth, compClip->clipHeight );
+      CGRect bounds = CGRectMake(compClip->clipX, compClip->clipY, compClip->clipWidth, compClip->clipHeight);
       
       CGContextDrawImage(bitmapContext, bounds, cgImageRef);
     }
