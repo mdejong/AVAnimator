@@ -374,7 +374,9 @@ typedef enum
 
   // Parse CompClips, this array of dicttionary property is optional
 
-  [self parseClipProperties:compDict];
+  if ([self parseClipProperties:compDict] == FALSE) {
+    return FALSE;
+  }
   
   return TRUE;
 }
@@ -493,6 +495,23 @@ typedef enum
     float clipStartSeconds = [clipStartSecondsNum floatValue];
     float clipEndSeconds = [clipEndSecondsNum floatValue];
     
+    if (clipEndSeconds <= clipStartSeconds) {
+      self.errorString = @"ClipEndSeconds must be larger than ClipStartSeconds";
+      return FALSE;
+    }
+    
+    // ClipScaleFramePerSecond is an optional boolean field that indicates
+    // that the FPS (frame duration) of the clip should be scaled so that
+    // the total clip duration matches the indicated clip start and end
+    // time on the global timeline.
+    
+    NSNumber *clipScaleFramePerSecondNum = [clipDict objectForKey:@"ClipScaleFramePerSecond"];
+    BOOL clipScaleFramePerSecond = FALSE;
+
+    if (clipScaleFramePerSecondNum != nil) {
+      clipScaleFramePerSecond = [clipScaleFramePerSecondNum boolValue];
+    }
+    
     // Fill in fields of AVOfflineCompositionClip
     
     compClip.clipSource = clipSource;
@@ -567,6 +586,16 @@ typedef enum
     
     compClip->clipFrameDuration = mvidFrameDecoder.frameDuration;
     compClip->clipNumFrames = mvidFrameDecoder.numFrames;
+    
+    if (clipScaleFramePerSecond) {
+      // Calculate a new clipFrameDuration based on duration that this clip will
+      // be rendered for on the global timeline.
+
+      float totalClipTime = (compClip->clipEndSeconds - compClip->clipStartSeconds);
+      float clipFrameDuration = totalClipTime / compClip->clipNumFrames;
+      
+      compClip->clipFrameDuration = clipFrameDuration;
+    }
     
     [mArr addObject:compClip];
     
@@ -648,8 +677,6 @@ typedef enum
     CGContextSetFillColorWithColor(bitmapContext, self->m_backgroundColor);
     CGContextFillRect(bitmapContext, CGRectMake(0, 0, width, height));
     
-    // FIXME: iterate over contained images and render each one based on time settings
-    
     worked = [self composeClips:frame bitmapContext:bitmapContext];
     if (worked == FALSE) {
       retcode = FALSE;
@@ -703,6 +730,8 @@ typedef enum
   
   int clipOffset = 0;
   for (AVOfflineCompositionClip *compClip in self.compClips) {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    
     // ClipSource is a mvid or H264 movie that frames are loaded from
 
     float clipStartSeconds = compClip->clipStartSeconds;
@@ -722,7 +751,10 @@ typedef enum
       
       float clipTime = frameTime - clipStartSeconds;
       
-      NSUInteger clipFrame = (NSUInteger) round(clipTime / compClip->clipFrameDuration);
+      // chop to integer : for example a clip duration of 2.0 and a time offset of 1.0
+      // would chop to frame 0.
+      
+      NSUInteger clipFrame = (NSUInteger) (clipTime / compClip->clipFrameDuration);
       
 #ifdef LOGGING
       NSLog(@"clip time %0.2f maps to clip frame %d (duration %0.2f)", clipTime, clipFrame, compClip->clipFrameDuration);
@@ -757,6 +789,10 @@ typedef enum
         
         UIImage *image = [mvidFrameDecoder advanceToFrame:clipFrame];
         
+        // FIXME: if frame repeats, then nil is returned. But that means
+        // the each clip would need to hold on to the previous frame
+        // until we know the next one is not a dup or repeat.
+        
         cgImageRef = image.CGImage;
       } else {
         assert(0);
@@ -770,6 +806,8 @@ typedef enum
     }
     
     clipOffset++;
+    
+    [pool drain];
   }
   
   return TRUE;

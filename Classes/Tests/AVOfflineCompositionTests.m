@@ -141,6 +141,40 @@
 
 @implementation AVOfflineCompositionTests
 
+// This utility method will dump each frame as a PNG
+
++ (void) dumpEachFrameUtil:(AVMvidFrameDecoder*)frameDecoder
+{
+  BOOL worked;
+  
+  // Dump each Frame 
+  
+  if (TRUE) {
+    
+    worked = [frameDecoder allocateDecodeResources];
+    NSAssert(worked, @"allocateDecodeResources");
+    
+    for (NSUInteger frame = 0; frame < frameDecoder.numFrames; frame++) {
+      NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+      NSLog(@"render frame %d", frame);
+      UIImage *img = [frameDecoder advanceToFrame:frame];
+      
+      // Write image as PNG
+      
+      NSString *tmpDir = NSTemporaryDirectory();
+      
+      NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"Frame%d.png", (frame + 1)];
+      
+      NSData *data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+      [data writeToFile:tmpPNGPath atomically:YES];
+      NSLog(@"wrote %@", tmpPNGPath);
+      [pool drain];
+    }
+    
+  }
+
+}
+
 // This test cases creates a composition that is 2 frames long, the total duration is 1.0 seconds
 // and the movie will consist of just a blue background at 2x2 pixels.
 
@@ -201,26 +235,11 @@
   
   NSAssert(frameDecoder.frameDuration == 0.5, @"frameDuration");
   NSAssert(frameDecoder.numFrames == 2, @"numFrames");
-    
+  
   // Dump each Frame 
   
   if (TRUE) {
-    
-    worked = [frameDecoder allocateDecodeResources];
-    NSAssert(worked, @"allocateDecodeResources");
-    
-    for (NSUInteger frame = 0; frame < frameDecoder.numFrames; frame++) {
-      UIImage *img = [frameDecoder advanceToFrame:frame];
-      
-      // Write image as PNG
-      
-      NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"Frame%d.png", (frame + 1)];
-      
-      NSData *data = [NSData dataWithData:UIImagePNGRepresentation(img)];
-      [data writeToFile:tmpPNGPath atomically:YES];
-      NSLog(@"wrote %@", tmpPNGPath);
-    }
-    
+    [self dumpEachFrameUtil:frameDecoder];
   }
     
   return;
@@ -292,22 +311,83 @@
   // Dump each Frame 
   
   if (TRUE) {
-    
-    worked = [frameDecoder allocateDecodeResources];
-    NSAssert(worked, @"allocateDecodeResources");
-    
-    for (NSUInteger frame = 0; frame < frameDecoder.numFrames; frame++) {
-      UIImage *img = [frameDecoder advanceToFrame:frame];
-      
-      // Write image as PNG
-      
-      NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"Frame%d.png", (frame + 1)];
-      
-      NSData *data = [NSData dataWithData:UIImagePNGRepresentation(img)];
-      [data writeToFile:tmpPNGPath atomically:YES];
-      NSLog(@"wrote %@", tmpPNGPath);
-    }
-    
+    [self dumpEachFrameUtil:frameDecoder];
+  }
+  
+  return;
+}
+
+// This test cases creates a composition that is 4 frames long at 1 FPS.
+// The movie contained in the clip is normally 1 FPS for 2 frames, but the
+// plist set the special ClipScaleFramePerSecond flag so that the effective
+// frame rate of the clip is adjusted to 2 FPS. The clip is in effect "strected"
+// so that it displays for 4 seconds instead of 2. This logic is different than
+// the default behavior of simply showing the final frame after the normal
+// clip end time has elapsed in terms of the frmerate defined in the clip mvid.
+
++ (void) testCompose2FrameBlueBlackCopyScaleFramerate
+{
+  NSString *resFilename;
+  
+  resFilename = @"AVOfflineCompositionTwoFrameBlackBlueScaleMovieTest.plist";
+  
+  NSDictionary *plistDict = (NSDictionary*) [AVOfflineComposition readPlist:resFilename];
+  NSAssert(plistDict, @"plistDict");
+  
+  AVOfflineComposition *comp = [AVOfflineComposition aVOfflineComposition];
+  
+  AVOfflineCompositionNotificationUtil *notificationUtil = [AVOfflineCompositionNotificationUtil aVOfflineCompositionNotificationUtil];
+  
+  [notificationUtil setupNotification:comp];
+  
+  [comp compose:plistDict];
+  
+  // Wait until comp operation either works or fails
+  
+  BOOL worked = [RegressionTests waitUntilTrue:notificationUtil
+                                      selector:@selector(wasSuccessNotificationDelivered)
+                                   maxWaitTime:MAX_WAIT_TIME];
+  NSAssert(worked, @"worked");
+  
+  // Verify that the correct properties were parsed from the plist
+  
+  NSAssert([comp.source isEqualToString:resFilename], @"source");
+  
+  NSString *tmpDir = NSTemporaryDirectory();
+  NSString *tmpPath = [tmpDir stringByAppendingString:@"AVOfflineCompositionTwoFrameBlackBlueScaleMovieTest.mvid"];
+  
+  NSAssert([comp.destination isEqualToString:tmpPath], @"source");
+  
+  NSAssert(comp.compDuration == 4.0f, @"compDuration");
+  
+  NSAssert(comp.compFPS == 1.0f, @"compFPS");
+  
+  NSAssert(comp.numFrames == 4, @"numFrames");
+  
+  // BG color is black (the default)
+  
+  NSString *bgColor = [comp backgroundColorStr];
+  
+  NSAssert([bgColor isEqualToString:@"#000000FF"], @"background color");
+  
+  // width x height
+  
+  NSAssert(CGSizeEqualToSize(comp.compSize, CGSizeMake(2,2)), @"size");
+  
+  // Open .mvid file and verify header info
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  
+  worked = [frameDecoder openForReading:comp.destination];
+	NSAssert(worked, @"frameDecoder openForReading failed");
+  
+  NSAssert(frameDecoder.frameDuration == 1.0, @"frameDuration");
+  NSAssert(frameDecoder.numFrames == 4, @"numFrames");
+  
+  // Dump each Frame 
+  
+  if (TRUE) {
+    [self dumpEachFrameUtil:frameDecoder];
   }
   
   return;
@@ -378,22 +458,7 @@
   // Dump each Frame 
   
   if (TRUE) {
-    
-    worked = [frameDecoder allocateDecodeResources];
-    NSAssert(worked, @"allocateDecodeResources");
-    
-    for (NSUInteger frame = 0; frame < frameDecoder.numFrames; frame++) {
-      UIImage *img = [frameDecoder advanceToFrame:frame];
-      
-      // Write image as PNG
-      
-      NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"Frame%d.png", (frame + 1)];
-      
-      NSData *data = [NSData dataWithData:UIImagePNGRepresentation(img)];
-      [data writeToFile:tmpPNGPath atomically:YES];
-      NSLog(@"wrote %@", tmpPNGPath);
-    }
-    
+    [self dumpEachFrameUtil:frameDecoder];
   }
   
   return;

@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
 	<key>ABOUT</key>
-	<string>2 frames. First is black. Second is blue.</string>
+	<string>2 frames. First is black. Second is blue. Clip framerate is scaled to 2x normal duration. Total of 4 comp frames.</string>
 	<key>Source</key>
-	<string>AVOfflineCompositionTwoFrameBlackBlueMovieTest.plist</string>
+	<string>AVOfflineCompositionTwoFrameBlackBlueScaleMovieTest.plist</string>
 	<key>Destination</key>
-	<string>AVOfflineCompositionTwoFrameBlackBlueMovieTest.mvid</string>
+	<string>AVOfflineCompositionTwoFrameBlackBlueScaleMovieTest.mvid</string>
 	<key>CompDurationSeconds</key>
-	<integer>2</integer>
+	<integer>4</integer>
 	<key>CompFramesPerSecond</key>
 	<integer>1</integer>
 	<key>CompWidth</key>
@@ -34,7 +34,9 @@
 			<key>ClipStartSeconds</key>
 			<real>0</real>
 			<key>ClipEndSeconds</key>
-			<real>2</real>
+			<integer>4</integer>
+			<key>ClipScaleFramePerSecond</key>
+			<true/>
 		</dict>
 	</array>
 </dict>
