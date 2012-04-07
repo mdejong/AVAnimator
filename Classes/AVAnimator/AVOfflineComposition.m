@@ -38,6 +38,7 @@ typedef enum
 {
   NSString   *m_clipSource;
   AVMvidFrameDecoder *m_mvidFrameDecoder;
+  UIImage *m_lastFrameImage;
 @public
   AVOfflineCompositionClipType clipType;
   NSInteger clipX;
@@ -53,6 +54,8 @@ typedef enum
 @property (nonatomic, copy) NSString *clipSource;
 
 @property (nonatomic, retain) AVMvidFrameDecoder *mvidFrameDecoder;
+
+@property (nonatomic, retain) UIImage *lastFrameImage;
 
 + (AVOfflineCompositionClip*) aVOfflineCompositionClip;
 
@@ -789,10 +792,17 @@ typedef enum
         
         UIImage *image = [mvidFrameDecoder advanceToFrame:clipFrame];
         
-        // FIXME: if frame repeats, then nil is returned. But that means
-        // the each clip would need to hold on to the previous frame
-        // until we know the next one is not a dup or repeat.
+        // In the case where a frame is a no-op or is the same as the previous
+        // frame, nill is returned. Deal with this case by saving the image
+        // object into the lastFrameImage property.
         
+        if (image) {
+          compClip.lastFrameImage = image;
+        } else {
+          image = compClip.lastFrameImage;
+        }
+        
+        NSAssert(image, @"image");
         cgImageRef = image.CGImage;
       } else {
         assert(0);
@@ -833,6 +843,8 @@ typedef enum
 
 @synthesize mvidFrameDecoder = m_mvidFrameDecoder;
 
+@synthesize lastFrameImage = m_lastFrameImage;
+
 + (AVOfflineCompositionClip*) aVOfflineCompositionClip
 {
   AVOfflineCompositionClip *obj = [[AVOfflineCompositionClip alloc] init];
@@ -841,6 +853,8 @@ typedef enum
 
 - (void) dealloc
 {
+  // Make sure all UIImage refs to memory are dropped before mapped memory is dropped
+  self.lastFrameImage = nil;
   [AutoPropertyRelease releaseProperties:self thisClass:AVOfflineCompositionClip.class];
   [super dealloc];
 }
