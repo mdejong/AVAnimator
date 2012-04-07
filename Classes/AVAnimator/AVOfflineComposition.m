@@ -46,6 +46,8 @@ typedef enum
   NSInteger clipHeight;
   float     clipStartSeconds;
   float     clipEndSeconds;
+  float     clipFrameDuration;
+  NSInteger clipNumFrames;
 }
 
 @property (nonatomic, copy) NSString *clipSource;
@@ -560,6 +562,12 @@ typedef enum
     
     compClip.mvidFrameDecoder = mvidFrameDecoder;
     
+    // Grab the clip's frame duration out of the mvid header. This frame duration may
+    // not match the frame rate of the whole comp.
+    
+    compClip->clipFrameDuration = mvidFrameDecoder.frameDuration;
+    compClip->clipNumFrames = mvidFrameDecoder.numFrames;
+    
     [mArr addObject:compClip];
     
     clipOffset++;
@@ -709,14 +717,28 @@ typedef enum
       NSLog(@"Found clip active for comp time %0.2f, clip %d [%0.2f, %0.2f]", frameTime, clipOffset, clipStartSeconds, clipEndSeconds);
 #endif // LOGGING
       
+      // clipTime is relative to the start of the clip. Calculate which frame
+      // a specific time would map to based on the clip time and the clip frame duration.
+      
       float clipTime = frameTime - clipStartSeconds;
       
-      // FIXME: clip framerate must be used to calculate the frame offset of a specific
-      // frame. But, this value needs to be scaled to the display time, because a longer
-      // display time will modify the effective framerate. For example, if a clip is
-      // played twice as long, its framerate will be reduced by half.
+      NSUInteger clipFrame = (NSUInteger) round(clipTime / compClip->clipFrameDuration);
       
-      NSUInteger clipFrame = (NSUInteger) round(clipTime / self.compFrameDuration);
+#ifdef LOGGING
+      NSLog(@"clip time %0.2f maps to clip frame %d (duration %0.2f)", clipTime, clipFrame, compClip->clipFrameDuration);
+#endif // LOGGING
+      
+      if (clipFrame >= compClip->clipNumFrames) {
+        // If the calculate frame is larger than the last frame in the clip, continue
+        // to display the last frame. This can happen when a clip is shorter than
+        // the display lenght, so the final frame continues to display.
+        
+        clipFrame = (compClip->clipNumFrames - 1);
+        
+#ifdef LOGGING
+        NSLog(@"clip frame bound to the final frame %d", clipFrame);
+#endif // LOGGING
+      }
       
       CGImageRef cgImageRef = NULL;
       
