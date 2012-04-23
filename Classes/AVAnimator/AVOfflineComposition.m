@@ -18,6 +18,8 @@
 
 #import "AVAssetReaderConvertMaxvid.h"
 
+#import "AVFileUtil.h"
+
 #define LOGGING
 
 // Notification name constants
@@ -689,12 +691,14 @@ typedef enum
     return FALSE;
   }
   
-  // Create output .mvid file writer
+  // Create phony output file, this file will be renamed to XYZ.mvid when done writing
+  
+  NSString *phonyOutPath = [AVFileUtil generateUniqueTmpPath];
   
   AVMvidFileWriter *fileWriter = [AVMvidFileWriter aVMvidFileWriter];
   NSAssert(fileWriter, @"fileWriter");
   
-  fileWriter.mvidPath = self.destination;
+  fileWriter.mvidPath = phonyOutPath;
   fileWriter.bpp = 24;
   fileWriter.movieSize = self.compSize;
 
@@ -734,15 +738,21 @@ typedef enum
   
   CGContextRelease(bitmapContext);
   
-  worked = [fileWriter rewriteHeader];
-  if (worked == FALSE) {
-    retcode = FALSE;
+  if (worked) {
+    worked = [fileWriter rewriteHeader];
+    if (worked == FALSE) {
+      retcode = FALSE;
+    }
   }
   
   [fileWriter close];
   
+  // Rename tmp file to actual output filename
+  
+  [AVFileUtil renameFile:phonyOutPath toPath:self.destination];
+  
 #ifdef LOGGING
-  NSLog(@"Wrote comp file %@", fileWriter.mvidPath);
+  NSLog(@"Wrote comp file %@", self.destination);
 #endif // LOGGING
   
   return retcode;
