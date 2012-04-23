@@ -126,12 +126,23 @@
 
   float numFramesFloat = duration / self.frameDuration;
   int numFrames = round( numFramesFloat );
+  float durationForNumFrames = numFrames * self.frameDuration;
+  float durationRemainder = duration - durationForNumFrames;
+  float durationTenPercent = self.frameDuration * 0.10;
   
 #ifdef LOGGING
   NSLog(@"frame rate = %0.2f FPS", nominalFrameRate);
+  NSLog(@"frame duration = %0.4f FPS", self.frameDuration);
   NSLog(@"duration = %0.2f S", duration);
   NSLog(@"numFrames = %0.4f -> %d", numFramesFloat, numFrames);
+  NSLog(@"durationRemainder = %0.4f", durationRemainder);
+  NSLog(@"durationTenPercent = %0.4f", durationTenPercent);
 #endif // LOGGING
+  
+  if (durationRemainder >= durationTenPercent) {
+    NSLog(@"durationRemainder is larger than durationTenPercent");
+    numFrames += 1;
+  }
   
   self.totalNumFrames = numFrames;
   
