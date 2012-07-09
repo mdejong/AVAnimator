@@ -31,6 +31,8 @@
 
 #import "AVAsset2MvidResourceLoader.h"
 
+#import "AVAssetWriterConvertFromMaxvid.h"
+
 @interface AVResourceLoaderTests : NSObject {}
 @end
 
@@ -1768,7 +1770,7 @@
 // This test case deals with decoding H.264 video as an MVID
 // Available in iOS 4.1 and later.
 
-#if defined(HAS_AVASSET_READER_CONVERT_MAXVID)
+#if defined(HAS_AVASSET_CONVERT_MAXVID)
 
 // Read video data from a single track (only one video track is supported anyway)
 
@@ -2126,6 +2128,54 @@
 
 // stutterwalk_h264.mov
 
-#endif // HAS_AVASSET_READER_CONVERT_MAXVID
+
+// Encode and existing .mvid video file as a .m4v video file compressed with H264 codec.
+
++ (void) testEncodeH264WithTrackWriter
+{
+  // Verify that "superwalk.mvid" already exists in the tmp dir. This test depends on
+  // the output of an earlier test.
+  
+  NSString *tmpFilename = nil;
+  NSString *tmpInputPath = nil;
+  NSString *tmpOutputPath = nil;
+
+  tmpFilename = @"superwalk.mvid";
+  tmpInputPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  tmpFilename = @"superwalk.mov";
+  
+  // Make sure output file does not exists before running test
+
+  NSString *tmpDir = NSTemporaryDirectory();
+  tmpOutputPath = [tmpDir stringByAppendingPathComponent:tmpFilename];
+  BOOL fileExists = [AVFileUtil fileExists:tmpOutputPath];
+  
+  if (fileExists) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpOutputPath error:nil];
+    NSAssert(worked, @"could not remove tmp file");    
+  }
+
+  // Define input .mvid file as the video data source
+  
+  AVAssetWriterConvertFromMaxvid *obj = [AVAssetWriterConvertFromMaxvid aVAssetWriterConvertFromMaxvid];
+
+  NSAssert([obj retainCount] == 1, @"retainCount");
+  
+  obj.inputPath = tmpInputPath;
+  obj.outputPath = tmpOutputPath;
+  
+  [obj encodeOutputFile];
+
+  // FIXME: success must wait until other thread is done once threading is enabled.
+  
+  NSAssert(obj.state == AVAssetWriterConvertFromMaxvidStateSuccess, @"success");
+  
+  NSLog(@"wrote %@", obj.outputPath);
+  
+  return;
+}
+
+#endif // HAS_AVASSET_CONVERT_MAXVID
 
 @end

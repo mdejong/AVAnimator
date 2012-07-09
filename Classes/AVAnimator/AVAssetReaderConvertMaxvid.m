@@ -12,7 +12,7 @@
 
 #import "maxvid_file.h"
 
-#if defined(HAS_AVASSET_READER_CONVERT_MAXVID)
+#if defined(HAS_AVASSET_CONVERT_MAXVID)
 
 #import <AVFoundation/AVFoundation.h>
 
@@ -391,4 +391,4 @@ retcode:
 
 @end
 
-#endif // HAS_AVASSET_READER_CONVERT_MAXVID
+#endif // HAS_AVASSET_CONVERT_MAXVID

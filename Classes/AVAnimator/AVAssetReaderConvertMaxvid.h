@@ -10,11 +10,9 @@
 //  an alpha channel, lossy H264 video encoding could save quite a lot
 //  of space as compared to lossless video.
 
-#import <Foundation/Foundation.h>
+#include "AVAssetConvertCommon.h"
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 41000 // iOS 4.1 or newer
-
-#define HAS_AVASSET_READER_CONVERT_MAXVID
+#if defined(HAS_AVASSET_CONVERT_MAXVID)
 
 #import "AVMvidFileWriter.h"
 
@@ -39,4 +37,4 @@
 
 @end
 
-#endif // iOS 4.1 or newer
+#endif // HAS_AVASSET_CONVERT_MAXVID : iOS 4.1 or newer

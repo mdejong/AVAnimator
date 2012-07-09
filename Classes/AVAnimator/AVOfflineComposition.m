@@ -564,7 +564,7 @@ typedef enum
       if ([[NSFileManager defaultManager] fileExistsAtPath:mvidPath] == FALSE) {
         // tmp/XYZ.mvid does not exist, decode from H264 now
         
-#ifdef HAS_AVASSET_READER_CONVERT_MAXVID
+#if defined(HAS_AVASSET_CONVERT_MAXVID)
         AVAssetReaderConvertMaxvid *converter = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
         converter.assetURL = [NSURL fileURLWithPath:movPath];
         converter.mvidPath = mvidPath;
@@ -576,7 +576,7 @@ typedef enum
         // FIXME: Write to tmp file, then rename to final output file to avoid invalid file due to crash
 #else
         worked = FALSE;
-#endif // HAS_AVASSET_READER_CONVERT_MAXVID
+#endif // HAS_AVASSET_CONVERT_MAXVID
         
         if (worked == FALSE) {
           return FALSE;
