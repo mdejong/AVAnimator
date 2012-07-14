@@ -2140,10 +2140,15 @@
   NSString *tmpInputPath = nil;
   NSString *tmpOutputPath = nil;
 
-  tmpFilename = @"superwalk.mvid";
-  tmpInputPath = [AVFileUtil getTmpDirPath:tmpFilename];
-  
-  tmpFilename = @"superwalk.mov";
+  if (TRUE) {
+    tmpFilename = @"AlphaGhost_ANI.mvid";
+    tmpInputPath = [AVFileUtil getResourcePath:tmpFilename];
+    tmpFilename = @"AlphaGhost_encoded_H264.mov";
+  } else {
+    tmpFilename = @"superwalk.mvid";
+    tmpInputPath = [AVFileUtil getTmpDirPath:tmpFilename];
+    tmpFilename = @"superwalk_H264.mov";
+  }
   
   // Make sure output file does not exists before running test
 
@@ -2175,6 +2180,9 @@
   
   return;
 }
+
+// FIXME: need determine if encoding some other video at like 200x200 works. Still not clear
+// if these API calls are really correct. Might just be a problem with the specific video sizes.
 
 #endif // HAS_AVASSET_CONVERT_MAXVID
 

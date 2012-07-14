@@ -130,6 +130,7 @@
 		CD3F4F1312D8FA0A0067FDDF /* AVAnimatorViewTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD3F4F1212D8FA0A0067FDDF /* AVAnimatorViewTests.m */; };
 		CD45EC6114955B6800FD0C6A /* maxvid_decode_arm.s in Sources */ = {isa = PBXBuildFile; fileRef = CD45EC6014955B6800FD0C6A /* maxvid_decode_arm.s */; };
 		CD45EC6214955B6800FD0C6A /* maxvid_decode_arm.s in Sources */ = {isa = PBXBuildFile; fileRef = CD45EC6014955B6800FD0C6A /* maxvid_decode_arm.s */; };
+		CD46E33915B00B8700E0047A /* AlphaGhost_ANI.mvid in Resources */ = {isa = PBXBuildFile; fileRef = CD46E33815B00B8700E0047A /* AlphaGhost_ANI.mvid */; };
 		CD4AAB3613675B270010148E /* GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD4AAB3513675B270010148E /* GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z */; };
 		CD4AABD513675FEF0010148E /* Matrix_480_320_10FPS_16BPP.mov.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD4AABD413675FEF0010148E /* Matrix_480_320_10FPS_16BPP.mov.7z */; };
 		CD4DA91112E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD4DA91012E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov */; };
@@ -365,6 +366,7 @@
 		CD3F4F1212D8FA0A0067FDDF /* AVAnimatorViewTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorViewTests.m; sourceTree = "<group>"; };
 		CD3F4F7E12D8FF620067FDDF /* AVAnimatorViewPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorViewPrivate.h; sourceTree = "<group>"; };
 		CD45EC6014955B6800FD0C6A /* maxvid_decode_arm.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; path = maxvid_decode_arm.s; sourceTree = "<group>"; };
+		CD46E33815B00B8700E0047A /* AlphaGhost_ANI.mvid */ = {isa = PBXFileReference; lastKnownFileType = file; path = AlphaGhost_ANI.mvid; sourceTree = "<group>"; };
 		CD4AAB3513675B270010148E /* GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z; sourceTree = "<group>"; };
 		CD4AABD413675FEF0010148E /* Matrix_480_320_10FPS_16BPP.mov.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = Matrix_480_320_10FPS_16BPP.mov.7z; sourceTree = "<group>"; };
 		CD4DA91012E1405B0058A334 /* JigsawPuzzle_205_99_10FPS_16BPP.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = JigsawPuzzle_205_99_10FPS_16BPP.mov; sourceTree = "<group>"; };
@@ -740,6 +742,7 @@
 				CD92B0991528FD8B008FCC0E /* AVOfflineCompositionTwoFrameBlackBlueMovieTest.plist */,
 				CDF54BE21530D53E0050C393 /* AVOfflineCompositionTwoFrameBlackBlueScaleMovieTest.plist */,
 				CDF15B96152A176A00D8AD2F /* AVOfflineComposition32x32BlackBlueTest.plist */,
+				CD46E33815B00B8700E0047A /* AlphaGhost_ANI.mvid */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -1179,6 +1182,7 @@
 				CD92B09A1528FD8B008FCC0E /* AVOfflineCompositionTwoFrameBlackBlueMovieTest.plist in Resources */,
 				CDF15B97152A176A00D8AD2F /* AVOfflineComposition32x32BlackBlueTest.plist in Resources */,
 				CDF54BE31530D53E0050C393 /* AVOfflineCompositionTwoFrameBlackBlueScaleMovieTest.plist in Resources */,
+				CD46E33915B00B8700E0047A /* AlphaGhost_ANI.mvid in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

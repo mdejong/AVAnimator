@@ -22,7 +22,8 @@
 
 //#import <CoreMedia/CMSampleBuffer.h>
 
-//#import "CGFrameBuffer.h"
+// FIXME: remove CGFrameBuffer include later
+#import "CGFrameBuffer.h"
 
 #import "AutoPropertyRelease.h"
 
@@ -136,7 +137,7 @@
   // of images to the videoWriterInput easier.
   
   NSMutableDictionary *adaptorAttributes = [NSMutableDictionary dictionaryWithObjectsAndKeys:
-                                            [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB], kCVPixelBufferPixelFormatTypeKey,
+                                            [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA], kCVPixelBufferPixelFormatTypeKey,
                                             widthNum,  kCVPixelBufferWidthKey,
                                             heightNum, kCVPixelBufferHeightKey,
                                             nil];
@@ -177,8 +178,19 @@
       self.lastFrameImage = frameImage;
     }
     
-    CVReturn poolResult = CVPixelBufferPoolCreatePixelBuffer(NULL, adaptor.pixelBufferPool, &buffer);
-    NSAssert(poolResult == kCVReturnSuccess, @"CVPixelBufferPoolCreatePixelBuffer");
+    if (TRUE) {
+      CVReturn poolResult = CVPixelBufferPoolCreatePixelBuffer(NULL, adaptor.pixelBufferPool, &buffer);
+      NSAssert(poolResult == kCVReturnSuccess, @"CVPixelBufferPoolCreatePixelBuffer");
+    } else {
+      // Don't use a pool
+      NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
+                               [NSNumber numberWithBool:YES], kCVPixelBufferCGImageCompatibilityKey, 
+                               [NSNumber numberWithBool:YES], kCVPixelBufferCGBitmapContextCompatibilityKey, nil];
+      CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, movieSize.width, movieSize.height, kCVPixelFormatType_32BGRA, (CFDictionaryRef) options, &buffer);
+      // CVReturn status = CVPixelBufferPoolCreatePixelBuffer(NULL, adaptor.pixelBufferPool, &pxbuffer);
+      
+      NSParameterAssert(status == kCVReturnSuccess && buffer != NULL); 
+    }
     
     [self fillPixelBufferFromImage:frameImage buffer:buffer size:movieSize];
     
@@ -203,6 +215,8 @@
       NSAssert(FALSE, @"appendPixelBuffer failed");
     }
     
+    CVPixelBufferRelease(buffer);
+    
     [innerPool drain];
   }
   
@@ -219,6 +233,8 @@
   return;
 }
 
+#define EMIT_FRAMES 0
+
 - (void) fillPixelBufferFromImage:(UIImage*)image
                            buffer:(CVPixelBufferRef)buffer
                              size:(CGSize)size
@@ -227,12 +243,8 @@
   void *pxdata = CVPixelBufferGetBaseAddress(buffer);
   NSParameterAssert(pxdata != NULL);
   
-  //CGColorSpaceRef rgbColorSpace = CGColorSpaceCreateDeviceRGB();
-  
-  // FIXME : is this wrong bitmap info ?
-  // kCGImageAlphaNoneSkipFirst
-  //CGContextRef context = CGBitmapContextCreate(pxdata, size.width, size.height, 8, 4*size.width, rgbColorSpace, kCGImageAlphaPremultipliedFirst);
-  //NSAssert(context, @"context");
+  // zero out all pixel buffer memory before rendering an image (reused buffers)
+  memset(pxdata, 0, size.width * size.height * sizeof(uint32_t));
   
   size_t bitsPerComponent;
   size_t numComponents;
@@ -262,11 +274,81 @@
   
   CGContextDrawImage(bitmapContext, CGRectMake(0, 0, size.width, size.height), image.CGImage);
   
+  if (EMIT_FRAMES) {
+    static int frameCount = 0;
+    UIImage *useImage /*= image*/;
+        
+    if (FALSE) {
+      CGFrameBuffer *cgFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24
+                                                                             width:size.width
+                                                                            height:size.height];
+      
+      memcpy(cgFrameBuffer.pixels, pxdata, size.width * size.height * sizeof(uint32_t));
+      
+      CGImageRef imgRef = [cgFrameBuffer createCGImageRef];
+      NSAssert(imgRef, @"CGImageRef returned by createCGImageRef is NULL");
+    
+      UIImage *uiImage = [UIImage imageWithCGImage:imgRef];
+      CGImageRelease(imgRef);
+      
+      useImage = uiImage;
+    }
+
+    
+    NSString *filename = [NSString stringWithFormat:@"frame%d.png", frameCount++];
+    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:filename];
+    NSData *data = [NSData dataWithData:UIImagePNGRepresentation(useImage)];
+    [data writeToFile:path atomically:YES];
+    NSLog(@"wrote %@", path);
+  }
+  
   CGColorSpaceRelease(colorSpace);
   CGContextRelease(bitmapContext);
   
   CVPixelBufferUnlockBaseAddress(buffer, 0);
-
+  
+  if (FALSE) {
+    // Get CIImage from UIImage ?
+    
+    CGImageRef cgImage = image.CGImage;
+    CIImage *ciImage = [CIImage imageWithCGImage:cgImage];    
+    NSAssert(ciImage, @"ciImage");
+    
+    
+  }
+  
+  if (FALSE) {
+    static int frameCount = 0;
+    
+    UIImage *useImage;
+    
+    // Convert pixel buffer to CIImage
+    
+    // FIXME: generating CIImage from imageWithCVPixelBuffer does not seem to work.
+    
+    // FIXME: colorSpace leaks
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    NSDictionary *options = [NSDictionary dictionaryWithObject:(__bridge id)colorSpace forKey:kCIImageColorSpace];
+    CIImage *ciImage = [CIImage imageWithCVPixelBuffer:buffer options:options];
+    NSAssert(ciImage, @"imageWithCVPixelBuffer");
+    
+    CIContext *temporaryContext = [CIContext contextWithOptions:nil];
+    CGImageRef cgImage = [temporaryContext
+                           createCGImage:ciImage
+                           fromRect:CGRectMake(0,
+                                               0, 
+                                               CVPixelBufferGetWidth(buffer),
+                                               CVPixelBufferGetHeight(buffer))];
+    
+    useImage = [UIImage imageWithCGImage:cgImage];
+    
+    NSString *filename = [NSString stringWithFormat:@"frame%d.png", frameCount++];
+    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:filename];
+    NSData *data = [NSData dataWithData:UIImagePNGRepresentation(useImage)];
+    [data writeToFile:path atomically:YES];
+    NSLog(@"wrote %@", path);
+  }
+  
   return;
 }
 
