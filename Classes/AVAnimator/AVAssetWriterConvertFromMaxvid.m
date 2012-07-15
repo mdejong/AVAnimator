@@ -120,6 +120,12 @@
   NSNumber *widthNum = [NSNumber numberWithUnsignedInt:movieSize.width];
   NSNumber *heightNum = [NSNumber numberWithUnsignedInt:movieSize.height];
   
+  //NSString *animationCodec = [NSString stringWithCString:@"%s", kCMVideoCodecType_Animation];
+  //NSString *animationCodec = @"rle ";
+  
+  // AVVideoCodecH264
+  // AVVideoCodecJPEG
+  
   NSDictionary *videoSettings = [NSDictionary dictionaryWithObjectsAndKeys:
                                  AVVideoCodecH264, AVVideoCodecKey,
                                  widthNum, AVVideoWidthKey,
@@ -181,6 +187,9 @@
     if (TRUE) {
       CVReturn poolResult = CVPixelBufferPoolCreatePixelBuffer(NULL, adaptor.pixelBufferPool, &buffer);
       NSAssert(poolResult == kCVReturnSuccess, @"CVPixelBufferPoolCreatePixelBuffer");
+      
+      // kCVReturnInvalidArgument = -6661
+      // kCVReturnAllocationFailed = -6662
     } else {
       // Don't use a pool
       NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
@@ -247,9 +256,29 @@
   NSAssert(size.height == CVPixelBufferGetHeight(buffer), @"CVPixelBufferGetHeight");
   
   // zero out all pixel buffer memory before rendering an image (buffers are reused in pool)
-  size_t bytesPerPBRow = CVPixelBufferGetBytesPerRow(buffer);
-  size_t totalNumPBBytes = bytesPerPBRow * CVPixelBufferGetHeight(buffer);
-  memset(pxdata, 0, totalNumPBBytes);
+  if (FALSE) {
+    size_t bytesPerPBRow = CVPixelBufferGetBytesPerRow(buffer);
+    size_t totalNumPBBytes = bytesPerPBRow * CVPixelBufferGetHeight(buffer);
+    memset(pxdata, 0, totalNumPBBytes);
+  }
+
+  if (TRUE) {
+    size_t bufferSize = CVPixelBufferGetDataSize(buffer);
+    memset(pxdata, 0, bufferSize);
+  }
+  
+  if (TRUE) {
+    size_t bufferSize = CVPixelBufferGetDataSize(buffer);
+    
+    size_t bytesPerRow = CVPixelBufferGetBytesPerRow(buffer);
+    
+    size_t left, right, top, bottom;
+    CVPixelBufferGetExtendedPixels(buffer, &left, &right, &top, &bottom);
+    NSLog(@"extended pixels : left %d right %d top %d bottom %d", (int)left, (int)right, (int)top, (int)bottom);
+    
+    NSLog(@"buffer size = %d (bpr %d), row bytes (%d) * height (%d) = %d", (int)bufferSize, (int)(bufferSize/size.height), (int)bytesPerRow, (int)size.height, (int)(bytesPerRow * size.height));
+
+  }
   
   size_t bitsPerComponent;
   size_t numComponents;
@@ -307,7 +336,6 @@
     NSLog(@"wrote %@", path);
   }
   
-  CGColorSpaceRelease(colorSpace);
   CGContextRelease(bitmapContext);
   
   CVPixelBufferFillExtendedPixels(buffer);

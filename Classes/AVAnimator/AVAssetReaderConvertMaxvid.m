@@ -358,11 +358,18 @@ retcode:
   
   size_t bufferSize = CVPixelBufferGetDataSize(imageBuffer);
   
+  if (TRUE) {
+    size_t left, right, top, bottom;
+    CVPixelBufferGetExtendedPixels(imageBuffer, &left, &right, &top, &bottom);
+    NSLog(@"extended pixels : left %d right %d top %d bottom %d", (int)left, (int)right, (int)top, (int)bottom);
+
+    NSLog(@"buffer size = %d (bpr %d), row bytes (%d) * height (%d) = %d", (int)bufferSize, (int)(bufferSize/height), (int)bytesPerRow, (int)height, (int)(bytesPerRow * height));
+  }
+  
   // Create a Quartz direct-access data provider that uses data we supply.
   
   CGDataProviderRef dataProvider =
-  
-  CGDataProviderCreateWithData(NULL, baseAddress, bufferSize, NULL);
+    CGDataProviderCreateWithData(NULL, baseAddress, bufferSize, NULL);
   
   CGImageRef cgImageRef = CGImageCreate(width, height, 8, 32, bytesPerRow,
                 colorSpace, kCGBitmapByteOrder32Host | kCGImageAlphaNoneSkipFirst,
