@@ -242,9 +242,14 @@
   CVPixelBufferLockBaseAddress(buffer, 0);
   void *pxdata = CVPixelBufferGetBaseAddress(buffer);
   NSParameterAssert(pxdata != NULL);
+
+  NSAssert(size.width == CVPixelBufferGetWidth(buffer), @"CVPixelBufferGetWidth");
+  NSAssert(size.height == CVPixelBufferGetHeight(buffer), @"CVPixelBufferGetHeight");
   
-  // zero out all pixel buffer memory before rendering an image (reused buffers)
-  memset(pxdata, 0, size.width * size.height * sizeof(uint32_t));
+  // zero out all pixel buffer memory before rendering an image (buffers are reused in pool)
+  size_t bytesPerPBRow = CVPixelBufferGetBytesPerRow(buffer);
+  size_t totalNumPBBytes = bytesPerPBRow * CVPixelBufferGetHeight(buffer);
+  memset(pxdata, 0, totalNumPBBytes);
   
   size_t bitsPerComponent;
   size_t numComponents;
@@ -305,50 +310,10 @@
   CGColorSpaceRelease(colorSpace);
   CGContextRelease(bitmapContext);
   
+  CVPixelBufferFillExtendedPixels(buffer);
+  
   CVPixelBufferUnlockBaseAddress(buffer, 0);
-  
-  if (FALSE) {
-    // Get CIImage from UIImage ?
     
-    CGImageRef cgImage = image.CGImage;
-    CIImage *ciImage = [CIImage imageWithCGImage:cgImage];    
-    NSAssert(ciImage, @"ciImage");
-    
-    
-  }
-  
-  if (FALSE) {
-    static int frameCount = 0;
-    
-    UIImage *useImage;
-    
-    // Convert pixel buffer to CIImage
-    
-    // FIXME: generating CIImage from imageWithCVPixelBuffer does not seem to work.
-    
-    // FIXME: colorSpace leaks
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    NSDictionary *options = [NSDictionary dictionaryWithObject:(__bridge id)colorSpace forKey:kCIImageColorSpace];
-    CIImage *ciImage = [CIImage imageWithCVPixelBuffer:buffer options:options];
-    NSAssert(ciImage, @"imageWithCVPixelBuffer");
-    
-    CIContext *temporaryContext = [CIContext contextWithOptions:nil];
-    CGImageRef cgImage = [temporaryContext
-                           createCGImage:ciImage
-                           fromRect:CGRectMake(0,
-                                               0, 
-                                               CVPixelBufferGetWidth(buffer),
-                                               CVPixelBufferGetHeight(buffer))];
-    
-    useImage = [UIImage imageWithCGImage:cgImage];
-    
-    NSString *filename = [NSString stringWithFormat:@"frame%d.png", frameCount++];
-    NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:filename];
-    NSData *data = [NSData dataWithData:UIImagePNGRepresentation(useImage)];
-    [data writeToFile:path atomically:YES];
-    NSLog(@"wrote %@", path);
-  }
-  
   return;
 }
 
