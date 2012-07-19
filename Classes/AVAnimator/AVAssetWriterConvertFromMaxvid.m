@@ -147,11 +147,23 @@
                                             widthNum,  kCVPixelBufferWidthKey,
                                             heightNum, kCVPixelBufferHeightKey,
                                             nil];
+/*  
+  if (movieSize.width < 128) {
+    int extraOnRight = 128 - movieSize.width;
+    [adaptorAttributes setObject:[NSNumber numberWithInt:extraOnRight] forKey:(NSString*)kCVPixelBufferExtendedPixelsRightKey];
+  }
+  if (movieSize.height < 128) {
+    int extraOnBottom = 128 - movieSize.height;
+    [adaptorAttributes setObject:[NSNumber numberWithInt:extraOnBottom] forKey:(NSString*)kCVPixelBufferExtendedPixelsBottomKey];
+  }
+*/
   
   AVAssetWriterInputPixelBufferAdaptor *adaptor = [AVAssetWriterInputPixelBufferAdaptor
                                                    assetWriterInputPixelBufferAdaptorWithAssetWriterInput:videoWriterInput
                                                    sourcePixelBufferAttributes:adaptorAttributes];
 
+  NSAssert(adaptor, @"assetWriterInputPixelBufferAdaptorWithAssetWriterInput");
+    
   // Media data comes from an input file, not real time
   
   videoWriterInput.expectsMediaDataInRealTime = NO;
@@ -163,6 +175,12 @@
   
   [videoWriter startWriting];
   [videoWriter startSessionAtSourceTime:kCMTimeZero];
+  
+  // If the pixelBufferPool is nil after the call to startSessionAtSourceTime then something went wrong
+  // when creating the pixel buffer. Typically, an error indicates the the size of the video data is
+  // not acceptable to the AVAssetWriterInput (like smaller than 128 in either dimension).
+  
+  NSAssert(adaptor.pixelBufferPool, @"adaptor.pixelBufferPool is nil");
  
   CVPixelBufferRef buffer = NULL;
   
@@ -204,6 +222,7 @@
     [self fillPixelBufferFromImage:frameImage buffer:buffer size:movieSize];
     
     // FIXME: this while loop can sometimes go into an infinite loop. Unclear about timing from one encode to another
+    // http://stackoverflow.com/questions/11033421/optimization-of-cvpixelbufferref (see input loop block usage)
     
     while (adaptor.assetWriterInput.readyForMoreMediaData == FALSE) {
       // FIXME : Wait until assetWriter is ready to accept additional input data

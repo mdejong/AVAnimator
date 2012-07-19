@@ -1059,49 +1059,46 @@
 
 // Encode and existing .mvid video file as a .m4v video file compressed with H264 codec.
 
-+ (void) testEncodeSuperwalkH264WithTrackWriter
++ (void) DISABLED_testDecodeAndEncodeSuperwalkH264WithFrameDecoder
 {
-  // Verify that "superwalk.mvid" already exists in the tmp dir. This test depends on
-  // the output of an earlier test.
+  NSString *resourceName = @"superwalk_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
   
-  NSString *tmpFilename = nil;
-  NSString *tmpInputPath = nil;
-  NSString *tmpOutputPath = nil;
-
-  tmpFilename = @"superwalk.mvid";
-  tmpInputPath = [AVFileUtil getTmpDirPath:tmpFilename];
-  tmpFilename = @"superwalk_h264.mov";
+  NSString *tmpFilename = @"superwalk_h264.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
   
-  // Make sure output file does not exists before running test
-
-  NSString *tmpDir = NSTemporaryDirectory();
-  tmpOutputPath = [tmpDir stringByAppendingPathComponent:tmpFilename];
-  BOOL fileExists = [AVFileUtil fileExists:tmpOutputPath];
-  
-  if (fileExists) {
-    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpOutputPath error:nil];
-    NSAssert(worked, @"could not remove tmp file");    
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
   }
-
-  // Define input .mvid file as the video data source
   
-  AVAssetWriterConvertFromMaxvid *obj = [AVAssetWriterConvertFromMaxvid aVAssetWriterConvertFromMaxvid];
-
-  NSAssert([obj retainCount] == 1, @"retainCount");
+  AVAsset2MvidResourceLoader *loader = [AVAsset2MvidResourceLoader aVAsset2MvidResourceLoader];
+  loader.movieFilename = [fileURL path];
+  loader.outPath = tmpPath;
   
-  obj.inputPath = tmpInputPath;
-  obj.outputPath = tmpOutputPath;
+  [loader load];
   
-  [obj encodeOutputFile];
-
-  // FIXME: success must wait until other thread is done once threading is enabled.
+  BOOL worked = [RegressionTests waitUntilTrue:loader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
   
-  NSAssert(obj.state == AVAssetWriterConvertFromMaxvidStateSuccess, @"success");
-  
-  NSLog(@"wrote %@", obj.outputPath);
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"superwalk_h264_encoded.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
   
   return;
 }
+
+// Aspect Ratio Info
+//128
+// http://clipstream.com/help/video3/aspect_ratios.shtml
 
 // FIXME: need determine if encoding some other video at like 200x200 works. Still not clear
 // if these API calls are really correct. Might just be a problem with the specific video sizes.
