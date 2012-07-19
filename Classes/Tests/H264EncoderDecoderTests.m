@@ -398,11 +398,38 @@
   return;
 }
 
+// encode .mvid to .h264 as a blocking operation
+
++ (void) util_encodeMvidAsH264:(NSString*)mvidTmpPath
+                   h264TmpPath:(NSString*)h264TmpPath
+{
+  if ([AVFileUtil fileExists:h264TmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:h264TmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  // Define input .mvid file as the video data source
+  
+  AVAssetWriterConvertFromMaxvid *obj = [AVAssetWriterConvertFromMaxvid aVAssetWriterConvertFromMaxvid];
+  
+  NSAssert([obj retainCount] == 1, @"retainCount");
+  
+  obj.inputPath = mvidTmpPath;
+  obj.outputPath = h264TmpPath;
+  
+  [obj encodeOutputFile];
+  
+  // FIXME: success must wait until other thread is done once threading is enabled.
+  
+  NSAssert(obj.state == AVAssetWriterConvertFromMaxvidStateSuccess, @"success");
+  
+  NSLog(@"wrote %@", obj.outputPath);
+}
 
 // This test case will attempt to decode a 16x16 H264 video and print out
 // what the "extended" pixel info is.
 
-+ (void) testDecode16x16H264WithFrameDecoder
++ (void) DISABLED_testDecode16x16H264WithFrameDecoder
 {
   NSString *resourceName = @"16x16_black_blue_h264.mov";
   NSString *resPath = [AVFileUtil getResourcePath:resourceName];
@@ -426,11 +453,20 @@
                                       selector:@selector(isReady)
                                    maxWaitTime:10.0];
   NSAssert(worked, @"worked");
+ 
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
     
+    NSString *tmpEncodedFilename = @"16x16_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
   return;
 }
 
-+ (void) testDecode16x17H264WithFrameDecoder
++ (void) DISABLED_testDecode16x17H264WithFrameDecoder
 {
   NSString *resourceName = @"16x17_black_blue_h264.mov";
   NSString *resPath = [AVFileUtil getResourcePath:resourceName];
@@ -454,11 +490,20 @@
                                       selector:@selector(isReady)
                                    maxWaitTime:10.0];
   NSAssert(worked, @"worked");
+ 
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"16x17_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
   
   return;
 }
 
-+ (void) testDecode17x16H264WithFrameDecoder
++ (void) DISABLED_testDecode17x16H264WithFrameDecoder
 {
   NSString *resourceName = @"17x16_black_blue_h264.mov";
   NSString *resPath = [AVFileUtil getResourcePath:resourceName];
@@ -483,10 +528,19 @@
                                    maxWaitTime:10.0];
   NSAssert(worked, @"worked");
   
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"17x16_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
   return;
 }
 
-+ (void) testDecode17x17H264WithFrameDecoder
++ (void) DISABLED_testDecode17x17H264WithFrameDecoder
 {
   NSString *resourceName = @"17x17_black_blue_h264.mov";
   NSString *resPath = [AVFileUtil getResourcePath:resourceName];
@@ -511,10 +565,19 @@
                                    maxWaitTime:10.0];
   NSAssert(worked, @"worked");
   
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"17x17_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
   return;
 }
 
-+ (void) testDecode17x18H264WithFrameDecoder
++ (void) DISABLED_testDecode17x18H264WithFrameDecoder
 {
   NSString *resourceName = @"17x18_black_blue_h264.mov";
   NSString *resPath = [AVFileUtil getResourcePath:resourceName];
@@ -539,10 +602,19 @@
                                    maxWaitTime:10.0];
   NSAssert(worked, @"worked");
   
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"17x18_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
   return;
 }
 
-+ (void) testDecode17x19H264WithFrameDecoder
++ (void) DISABLED_testDecode17x19H264WithFrameDecoder
 {
   NSString *resourceName = @"17x19_black_blue_h264.mov";
   NSString *resPath = [AVFileUtil getResourcePath:resourceName];
@@ -567,10 +639,19 @@
                                    maxWaitTime:10.0];
   NSAssert(worked, @"worked");
   
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"17x19_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
   return;
 }
 
-+ (void) testDecode18x18H264WithFrameDecoder
++ (void) DISABLED_testDecode18x18H264WithFrameDecoder
 {
   NSString *resourceName = @"18x18_black_blue_h264.mov";
   NSString *resPath = [AVFileUtil getResourcePath:resourceName];
@@ -595,8 +676,335 @@
                                    maxWaitTime:10.0];
   NSAssert(worked, @"worked");
   
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"18x18_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
   return;
 }
+
++ (void) DISABLED_testDecodeAndEncode32x32H264WithFrameDecoder
+{
+  NSString *resourceName = @"32x32_black_blue_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+  
+  NSString *tmpFilename = @"32x32_black_blue.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  AVAsset2MvidResourceLoader *loader = [AVAsset2MvidResourceLoader aVAsset2MvidResourceLoader];
+  loader.movieFilename = [fileURL path];
+  loader.outPath = tmpPath;
+  
+  [loader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:loader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"32x32_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
+  return;
+}
+
+// This 64x64 encode will fail on an iPhone 4 and on an iPad 2.
+
++ (void) DISABLED_testDecodeAndEncode64x64H264WithFrameDecoder
+{
+  NSString *resourceName = @"64x64_black_blue_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+  
+  NSString *tmpFilename = @"64x64_black_blue.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  AVAsset2MvidResourceLoader *loader = [AVAsset2MvidResourceLoader aVAsset2MvidResourceLoader];
+  loader.movieFilename = [fileURL path];
+  loader.outPath = tmpPath;
+  
+  [loader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:loader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"64x64_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
+  return;
+}
+
+// This encode will fail on an iPad 2.
+
++ (void) DISABLED_testDecodeAndEncode96x96H264WithFrameDecoder
+{
+  NSString *resourceName = @"96x96_black_blue_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+  
+  NSString *tmpFilename = @"96x96_black_blue.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  AVAsset2MvidResourceLoader *loader = [AVAsset2MvidResourceLoader aVAsset2MvidResourceLoader];
+  loader.movieFilename = [fileURL path];
+  loader.outPath = tmpPath;
+  
+  [loader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:loader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"96x96_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
+  return;
+}
+
+// 124x124 (just a touch smaller than the known to work 128x128 size)
+// This does not encode properly on an iPhone 4 (writes corrupted data)
+// This fails to encode in an iPad 2
+
++ (void) DISABLED_testDecodeAndEncode124x124H264WithFrameDecoder
+{
+  NSString *resourceName = @"124x124_black_blue_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+  
+  NSString *tmpFilename = @"124x124_black_blue.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  AVAsset2MvidResourceLoader *loader = [AVAsset2MvidResourceLoader aVAsset2MvidResourceLoader];
+  loader.movieFilename = [fileURL path];
+  loader.outPath = tmpPath;
+  
+  [loader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:loader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"124x124_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
+  return;
+}
+
+
+// A 128x128 video with 2 frames will encode correctly on an iPhone 4 and a iPad 2
+
++ (void) testDecodeAndEncode128x128H264WithFrameDecoder
+{
+  NSString *resourceName = @"128x128_black_blue_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+  
+  NSString *tmpFilename = @"128x128_black_blue.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  AVAsset2MvidResourceLoader *loader = [AVAsset2MvidResourceLoader aVAsset2MvidResourceLoader];
+  loader.movieFilename = [fileURL path];
+  loader.outPath = tmpPath;
+  
+  [loader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:loader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"128x128_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
+  return;
+}
+
+// 3:2 aspect ration but smaller dimension that the 128 min size.
+// This does not encode properly on an iPhone 4 (writes corrupted data)
+// This fails to encode in an iPad 2
+
++ (void) DISABLED_testDecodeAndEncode120x80H264WithFrameDecoder
+{
+  NSString *resourceName = @"120x80_black_blue_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+  
+  NSString *tmpFilename = @"120x80_black_blue.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  AVAsset2MvidResourceLoader *loader = [AVAsset2MvidResourceLoader aVAsset2MvidResourceLoader];
+  loader.movieFilename = [fileURL path];
+  loader.outPath = tmpPath;
+  
+  [loader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:loader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"120x80_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
+  return;
+}
+
+// 3:2 aspect ratio with 128 as min dimension
+// success with iPad 2
+
++ (void) testDecodeAndEncode192x128H264WithFrameDecoder
+{
+  NSString *resourceName = @"192x128_black_blue_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+  
+  NSString *tmpFilename = @"192x128_black_blue.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  AVAsset2MvidResourceLoader *loader = [AVAsset2MvidResourceLoader aVAsset2MvidResourceLoader];
+  loader.movieFilename = [fileURL path];
+  loader.outPath = tmpPath;
+  
+  [loader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:loader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"192x128_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
+  return;
+}
+
+// 3:2 aspect ratio at 240x160
+
++ (void) testDecodeAndEncode240x160H264WithFrameDecoder
+{
+  NSString *resourceName = @"240x160_black_blue_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+  
+  NSString *tmpFilename = @"240x160_black_blue.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  AVAsset2MvidResourceLoader *loader = [AVAsset2MvidResourceLoader aVAsset2MvidResourceLoader];
+  loader.movieFilename = [fileURL path];
+  loader.outPath = tmpPath;
+  
+  [loader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:loader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  if (TRUE) {
+    // Now that .h264 has been decoded to .mvid, encode the same movie to .h264 again
+    
+    NSString *tmpEncodedFilename = @"240x160_black_blue_encoded_h264.mov";
+    NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+    
+    [self util_encodeMvidAsH264:tmpPath h264TmpPath:tmpEncodedFilenamePath];
+  }
+  
+  return;
+}
+
+// FIXME: disabled because the writer gets stuck in output loop on iPad 2
 
 // AlphaGhost_ANI.mvid (480 x 320) -> AlphaGhost_encoded_h264.mov
 
@@ -643,6 +1051,9 @@
   
   return;
 }
+
+// FIXME: Test disabled since it currently depends on test ordering to generate the
+// .mvid in the tmp file in another test.
 
 // superwalk.mvid () -> superwalk_h264.mov
 

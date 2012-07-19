@@ -188,7 +188,7 @@
       CVReturn poolResult = CVPixelBufferPoolCreatePixelBuffer(NULL, adaptor.pixelBufferPool, &buffer);
       NSAssert(poolResult == kCVReturnSuccess, @"CVPixelBufferPoolCreatePixelBuffer");
       
-      // kCVReturnInvalidArgument = -6661
+      // kCVReturnInvalidArgument = -6661 (typically some configuration value is invalid, like the input dimensions < 128)
       // kCVReturnAllocationFailed = -6662
     } else {
       // Don't use a pool
@@ -202,6 +202,8 @@
     }
     
     [self fillPixelBufferFromImage:frameImage buffer:buffer size:movieSize];
+    
+    // FIXME: this while loop can sometimes go into an infinite loop. Unclear about timing from one encode to another
     
     while (adaptor.assetWriterInput.readyForMoreMediaData == FALSE) {
       // FIXME : Wait until assetWriter is ready to accept additional input data
@@ -236,6 +238,11 @@
   [videoWriter finishWriting];
   
   [frameDecoder close];
+  
+  if (TRUE) {
+    // Give hardware time to shut down (issue on iPad 2)
+    [NSThread sleepForTimeInterval:0.1];
+  }
   
   self.state = AVAssetWriterConvertFromMaxvidStateSuccess;
   
