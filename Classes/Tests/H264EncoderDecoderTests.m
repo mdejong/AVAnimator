@@ -44,6 +44,15 @@
 
 #if defined(HAS_AVASSET_CONVERT_MAXVID)
 
+// Test hardware available detection logic
+
++ (void) testIsHardwareDecoderAvailable
+{
+  BOOL isHardwareEncoderAvailable;
+  isHardwareEncoderAvailable = [AVAssetWriterConvertFromMaxvid isHardwareEncoderAvailable];
+  NSAssert(isHardwareEncoderAvailable == TRUE || isHardwareEncoderAvailable == FALSE, @"isHardwareEncoderAvailable");
+}
+
 // Read video data from a single track (only one video track is supported anyway)
 
 + (void) DISABLED_testDecodeH264WithTrackReader

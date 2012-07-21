@@ -64,6 +64,12 @@ typedef enum
 
 - (void) blockingEncode;
 
+// Return TRUE if a hardware h264 encoder is available for use with this
+// iPhone, iPod Touch, or iPad model. This function always returns TRUE
+// in the simulator.
+
++ (BOOL) isHardwareEncoderAvailable;
+
 @end
 
 #endif // HAS_AVASSET_CONVERT_MAXVID : iOS 4.1 or newer

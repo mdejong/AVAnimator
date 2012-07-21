@@ -5,14 +5,14 @@
 //
 //  License terms defined in License.txt.
 //
-//  This module implements a MVID to H264 encoder API that can be used to
-//  encode the video frames from an MVID file into a H264 video in
-//  a Quicktime container. The H264 video format is lossy as compared to
-//  a lossless H264, but the space savings can be quite significant.
+//  See header for module description and usage info.
 
 #import "AVAssetWriterConvertFromMaxvid.h"
 
 #if defined(HAS_AVASSET_CONVERT_MAXVID)
+
+#include <sys/types.h>
+#include <sys/sysctl.h>
 
 #import <AVFoundation/AVFoundation.h>
 
@@ -177,7 +177,7 @@
   [videoWriter startSessionAtSourceTime:kCMTimeZero];
   
   // If the pixelBufferPool is nil after the call to startSessionAtSourceTime then something went wrong
-  // when creating the pixel buffer. Typically, an error indicates the the size of the video data is
+  // when creating the pixel buffers. Typically, an error indicates the the size of the video data is
   // not acceptable to the AVAssetWriterInput (like smaller than 128 in either dimension).
   
   if (adaptor.pixelBufferPool == nil) {
@@ -373,6 +373,75 @@
   CVPixelBufferUnlockBaseAddress(buffer, 0);
     
   return;
+}
+
+// Return a string that describes the hardware this code is executing on.
+
++ (NSString*) platform
+{
+  size_t size;
+  sysctlbyname("hw.machine", NULL, &size, NULL, 0);
+  char *machine = malloc(size);
+  sysctlbyname("hw.machine", machine, &size, NULL, 0);
+  NSString *platform = [NSString stringWithUTF8String:machine];
+  free(machine);
+  return platform;
+}
+
+// Return TRUE if this device contains a hardware H264 encoder.
+
++ (BOOL) isHardwareEncoderAvailable
+{
+  BOOL hasEncoder;
+  NSString *platform = [self platform];
+
+  if ([platform hasPrefix:@"iPhone"]) {
+    NSDictionary *knownModelsWithoutEncoder = [NSDictionary dictionaryWithObjectsAndKeys:
+                                               @"", @"iPhone1,1", // iPhone 1G
+                                               @"", @"iPhone1,2", // iPhone 3G
+                                               @"", @"iPhone2,1", // iPhone 3GS
+                                               nil];
+
+    if ([knownModelsWithoutEncoder objectForKey:platform] != nil) {
+      hasEncoder = FALSE;
+    } else {
+      // Assume that all newer models will contain encoder hardware
+      // 
+      // "iPhone3,1" // "iPhone 4"
+      // "iPhone3,3" // "Verizon iPhone 4"
+      // "iPhone4,1" // "iPhone 4S"
+      hasEncoder = TRUE;      
+    }
+  } else if ([platform hasPrefix:@"iPod"]) {
+    NSDictionary *knownModelsWithoutEncoder = [NSDictionary dictionaryWithObjectsAndKeys:
+                                               @"", @"iPod1,1",   // iPod Touch 1G
+                                               @"", @"iPod2,1",   // iPod Touch 2G
+                                               @"", @"iPod3,1",   // iPod Touch 3G
+                                               nil];
+    
+    if ([knownModelsWithoutEncoder objectForKey:platform] != nil) {
+      hasEncoder = FALSE;
+    } else {
+      // Assume that all newer models will contain encoder hardware
+      // 
+      // "iPod4,1"   // "iPod Touch 4G"
+      hasEncoder = TRUE;      
+    }    
+  } else if ([platform hasPrefix:@"iPad"]) {
+    // All iPad models contain the hardware encoder
+    
+    hasEncoder = TRUE;
+  } else if ([platform isEqualToString:@"i386"] || [platform isEqualToString:@"x86_64"]) {
+    // Assume the Simulator supports H264 encoding using platform software codec
+    
+    hasEncoder = TRUE;
+  } else {
+    // Unknown model
+    
+    hasEncoder = FALSE;
+  }
+  
+  return hasEncoder;
 }
 
 @end
