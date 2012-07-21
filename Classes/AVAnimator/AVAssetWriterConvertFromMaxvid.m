@@ -64,8 +64,12 @@
   [super dealloc];
 }
 
-- (void) encodeOutputFile
+// Kick off blocking encode operation to convert .mvid to .mov (h264)
+
+- (void) blockingEncode
 {
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  
   BOOL worked;
   
   // Input file is a .mvid video file like "walk.mvid"
@@ -86,6 +90,7 @@
     NSLog(@"frameDecoder openForReading failed");
     // FIXME: create specific failure flags for input vs output files
     self.state = AVAssetWriterConvertFromMaxvidStateFailed;
+    [pool drain];
     return;
   }
   
@@ -95,12 +100,13 @@
     NSLog(@"frameDecoder allocateDecodeResources failed");
     // FIXME: create specific failure flags for input vs output files
     self.state = AVAssetWriterConvertFromMaxvidStateFailed;
+    [pool drain];
     return;
   }
   
   CGSize movieSize = CGSizeMake([frameDecoder width], [frameDecoder height]);
   
-  // Output file is typically something like "out.m4v"
+  // Output file is a file name like "out.mov" or "out.m4v"
   
   NSString *outputPath = self.outputPath;
   NSAssert(outputPath, @"outputPath");
@@ -119,12 +125,6 @@
     
   NSNumber *widthNum = [NSNumber numberWithUnsignedInt:movieSize.width];
   NSNumber *heightNum = [NSNumber numberWithUnsignedInt:movieSize.height];
-  
-  //NSString *animationCodec = [NSString stringWithCString:@"%s", kCMVideoCodecType_Animation];
-  //NSString *animationCodec = @"rle ";
-  
-  // AVVideoCodecH264
-  // AVVideoCodecJPEG
   
   NSDictionary *videoSettings = [NSDictionary dictionaryWithObjectsAndKeys:
                                  AVVideoCodecH264, AVVideoCodecKey,
@@ -180,7 +180,19 @@
   // when creating the pixel buffer. Typically, an error indicates the the size of the video data is
   // not acceptable to the AVAssetWriterInput (like smaller than 128 in either dimension).
   
-  NSAssert(adaptor.pixelBufferPool, @"adaptor.pixelBufferPool is nil");
+  if (adaptor.pixelBufferPool == nil) {
+    [videoWriterInput markAsFinished];
+    [videoWriter finishWriting];
+    
+    // Remove output file when H264 compressor is not working
+    
+    worked = [[NSFileManager defaultManager] removeItemAtPath:outputPath error:nil];
+    NSAssert(worked, @"could not remove output file");
+    
+    self.state = AVAssetWriterConvertFromMaxvidStateFailed;
+    [pool drain];
+    return;    
+  }
  
   CVPixelBufferRef buffer = NULL;
   
@@ -202,22 +214,12 @@
       self.lastFrameImage = frameImage;
     }
     
-    if (TRUE) {
-      CVReturn poolResult = CVPixelBufferPoolCreatePixelBuffer(NULL, adaptor.pixelBufferPool, &buffer);
-      NSAssert(poolResult == kCVReturnSuccess, @"CVPixelBufferPoolCreatePixelBuffer");
-      
-      // kCVReturnInvalidArgument = -6661 (typically some configuration value is invalid, like the input dimensions < 128)
-      // kCVReturnAllocationFailed = -6662
-    } else {
-      // Don't use a pool
-      NSDictionary *options = [NSDictionary dictionaryWithObjectsAndKeys:
-                               [NSNumber numberWithBool:YES], kCVPixelBufferCGImageCompatibilityKey, 
-                               [NSNumber numberWithBool:YES], kCVPixelBufferCGBitmapContextCompatibilityKey, nil];
-      CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, movieSize.width, movieSize.height, kCVPixelFormatType_32BGRA, (CFDictionaryRef) options, &buffer);
-      // CVReturn status = CVPixelBufferPoolCreatePixelBuffer(NULL, adaptor.pixelBufferPool, &pxbuffer);
-      
-      NSParameterAssert(status == kCVReturnSuccess && buffer != NULL); 
-    }
+    CVReturn poolResult = CVPixelBufferPoolCreatePixelBuffer(NULL, adaptor.pixelBufferPool, &buffer);
+    NSAssert(poolResult == kCVReturnSuccess, @"CVPixelBufferPoolCreatePixelBuffer");
+    
+    // Buffer pool error conditions should have been handled already:
+    // kCVReturnInvalidArgument = -6661 (some configuration value is invalid, like adaptor.pixelBufferPool is nil)
+    // kCVReturnAllocationFailed = -6662
     
     [self fillPixelBufferFromImage:frameImage buffer:buffer size:movieSize];
     
@@ -256,15 +258,16 @@
   
   [videoWriter finishWriting];
   
-  [frameDecoder close];
+  // Note that [frameDecoder close] is implicitly invoked when the autorelease pool is drained.
   
-  if (TRUE) {
+  if (FALSE) {
     // Give hardware time to shut down (issue on iPad 2)
     [NSThread sleepForTimeInterval:0.1];
   }
   
   self.state = AVAssetWriterConvertFromMaxvidStateSuccess;
   
+  [pool drain];
   return;
 }
 
@@ -282,6 +285,7 @@
   NSAssert(size.height == CVPixelBufferGetHeight(buffer), @"CVPixelBufferGetHeight");
   
   // zero out all pixel buffer memory before rendering an image (buffers are reused in pool)
+  
   if (FALSE) {
     size_t bytesPerPBRow = CVPixelBufferGetBytesPerRow(buffer);
     size_t totalNumPBBytes = bytesPerPBRow * CVPixelBufferGetHeight(buffer);
@@ -293,7 +297,7 @@
     memset(pxdata, 0, bufferSize);
   }
   
-  if (TRUE) {
+  if (FALSE) {
     size_t bufferSize = CVPixelBufferGetDataSize(buffer);
     
     size_t bytesPerRow = CVPixelBufferGetBytesPerRow(buffer);
@@ -337,7 +341,7 @@
   if (EMIT_FRAMES) {
     static int frameCount = 0;
     UIImage *useImage /*= image*/;
-        
+    
     if (FALSE) {
       CGFrameBuffer *cgFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24
                                                                              width:size.width

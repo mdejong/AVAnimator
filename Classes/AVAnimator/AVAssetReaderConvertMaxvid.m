@@ -358,7 +358,7 @@ retcode:
   
   size_t bufferSize = CVPixelBufferGetDataSize(imageBuffer);
   
-  if (TRUE) {
+  if (FALSE) {
     size_t left, right, top, bottom;
     CVPixelBufferGetExtendedPixels(imageBuffer, &left, &right, &top, &bottom);
     NSLog(@"extended pixels : left %d right %d top %d bottom %d", (int)left, (int)right, (int)top, (int)bottom);

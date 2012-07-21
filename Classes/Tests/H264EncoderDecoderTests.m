@@ -417,7 +417,7 @@
   obj.inputPath = mvidTmpPath;
   obj.outputPath = h264TmpPath;
   
-  [obj encodeOutputFile];
+  [obj blockingEncode];
   
   // FIXME: success must wait until other thread is done once threading is enabled.
   
@@ -1041,7 +1041,7 @@
   obj.inputPath = tmpInputPath;
   obj.outputPath = tmpOutputPath;
   
-  [obj encodeOutputFile];
+  [obj blockingEncode];
   
   // FIXME: success must wait until other thread is done once threading is enabled.
   
