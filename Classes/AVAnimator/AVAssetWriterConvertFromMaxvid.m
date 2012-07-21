@@ -200,8 +200,24 @@
   
   for (int frameNum=0; frameNum < numFrames; frameNum++) {
     NSAutoreleasePool *innerPool = [[NSAutoreleasePool alloc] init];
-    // FIXME: might want to put a release loop around each iteration to avoid
-    // running out of memory.
+    
+    // FIXME: might reconsider logic design in terms of using block pull approach
+
+    // http://stackoverflow.com/questions/11033421/optimization-of-cvpixelbufferref
+    // https://developer.apple.com/library/mac/#documentation/AVFoundation/Reference/AVAssetWriterInput_Class/Reference/Reference.html
+    
+    while (adaptor.assetWriterInput.readyForMoreMediaData == FALSE) {
+      // In the case where the input is not ready to accept input yet, wait until it is.
+      // This is a little complex in the case of the main thread, because we would
+      // need to visit the event loop in order for other processing tasks to happen.
+            
+      NSLog(@"sleep until writer is ready");
+      
+      NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:0.1];
+      [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+    }
+    
+    // Pull frame of data from MVID file
     
     UIImage *frameImage = [frameDecoder advanceToFrame:frameNum];
     
@@ -222,28 +238,16 @@
     // kCVReturnAllocationFailed = -6662
     
     [self fillPixelBufferFromImage:frameImage buffer:buffer size:movieSize];
-    
-    // FIXME: this while loop can sometimes go into an infinite loop. Unclear about timing from one encode to another
-    // http://stackoverflow.com/questions/11033421/optimization-of-cvpixelbufferref (see input loop block usage)
-    
-    while (adaptor.assetWriterInput.readyForMoreMediaData == FALSE) {
-      // FIXME : Wait until assetWriter is ready to accept additional input data
-      NSLog(@"sleep until writer is ready");
-      
-      [NSThread sleepForTimeInterval:0.1];
-    }
-    
+        
     int numerator = frameNum;
     int denominator = 1 / frameDecoder.frameDuration;
     CMTime presentationTime = CMTimeMake(numerator, denominator);
     worked = [adaptor appendPixelBuffer:buffer withPresentationTime:presentationTime];
     
     if (worked == FALSE) {
-      // Fails on 3G, but works on iphone 4, due to lack of hardware encoder on 3G and earlier
-      
+      // Fails on 3G, but works on iphone 4, due to lack of hardware encoder on versions < 4      
       // com.apple.mediaserverd[18] : VTSelectAndCreateVideoEncoderInstance: no video encoder found for 'avc1'
       
-      NSLog(@"failed to append buffer");
       NSAssert(FALSE, @"appendPixelBuffer failed");
     }
     
@@ -259,11 +263,6 @@
   [videoWriter finishWriting];
   
   // Note that [frameDecoder close] is implicitly invoked when the autorelease pool is drained.
-  
-  if (FALSE) {
-    // Give hardware time to shut down (issue on iPad 2)
-    [NSThread sleepForTimeInterval:0.1];
-  }
   
   self.state = AVAssetWriterConvertFromMaxvidStateSuccess;
   

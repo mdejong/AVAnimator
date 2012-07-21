@@ -1017,7 +1017,7 @@
 
 // AlphaGhost_ANI.mvid (480 x 320) -> AlphaGhost_encoded_h264.mov
 
-+ (void) DISABLED_testEncodeAlphaGhostH264WithTrackWriter
++ (void) testEncodeAlphaGhostH264WithTrackWriter
 {
   // Verify that "superwalk.mvid" already exists in the tmp dir. This test depends on
   // the output of an earlier test.
@@ -1104,6 +1104,9 @@
   
   return;
 }
+
+// FIXME: add a working emit test where the named file already exists on the filesystem.
+// The output logic should remove an existing file with the given name if it exists.
 
 // Aspect Ratio Info
 //128
