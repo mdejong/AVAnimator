@@ -20,7 +20,8 @@
 //  on tested iOS hardware appears to be 128x128. A video with a dimension
 //  smaller than 128 will either fail to encode (iPad2) or it will encode
 //  with corrupted video data (iPhone4). Video with well known aspect
-//  ratios (2:1, 3:2, 4:3) encode correctly.
+//  ratios (2:1, 3:2, 4:3) encode correctly. Also note that video dimensions
+//  should be a multiple of 4.
 //
 //  In addition, H264 supports only 24BPP fully opaque video. Attempting to
 //  encode a .mvid with an alpha channel will not work as expected, the
@@ -37,6 +38,14 @@ typedef enum
   AVAssetWriterConvertFromMaxvidStateSuccess,
   AVAssetWriterConvertFromMaxvidStateFailed
 } AVAssetWriterConvertFromMaxvidState;
+
+// The following notifications can be delivered as a result of invoking
+// the 
+
+extern NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification;
+extern NSString * const AVAssetWriterConvertFromMaxvidFailedNotification;
+
+// AVAssetWriterConvertFromMaxvid
 
 @interface AVAssetWriterConvertFromMaxvid : NSObject
 
@@ -63,6 +72,12 @@ typedef enum
 // the encoding operation is completed.
 
 - (void) blockingEncode;
+
+// Kick off an async (non-blocking call) encode operation in a secondary
+// thread. This method will deliver a Completed or Failed notification
+// in the main thread when complete.
+
+- (void) nonblockingEncode;
 
 // Return TRUE if a hardware h264 encoder is available for use with this
 // iPhone, iPod Touch, or iPad model. This function always returns TRUE

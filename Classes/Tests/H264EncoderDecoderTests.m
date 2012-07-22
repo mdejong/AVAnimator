@@ -32,6 +32,69 @@
 
 #import "AVAssetWriterConvertFromMaxvid.h"
 
+
+// Util class for use in testing
+
+@interface AVAssetWriterConvertFromMaxvid_NotificationUtil : NSObject {
+  BOOL m_wasDelivered;
+}
+
+@property (nonatomic, assign) BOOL wasDelivered;
+
++ (AVAssetWriterConvertFromMaxvid_NotificationUtil*) notificationUtil;
+
+- (void) setupNotification:(AVAssetWriterConvertFromMaxvid*)obj;
+
+@end
+
+// This utility object will register to receive a AVAnimatorFailedToLoadNotification and set
+// a boolean flag to indicate if the notification is delivered.
+
+@implementation AVAssetWriterConvertFromMaxvid_NotificationUtil
+
+@synthesize wasDelivered = m_wasDelivered;
+
++ (AVAssetWriterConvertFromMaxvid_NotificationUtil*) notificationUtil
+{
+  AVAssetWriterConvertFromMaxvid_NotificationUtil *obj = [[AVAssetWriterConvertFromMaxvid_NotificationUtil alloc] init];
+  return [obj autorelease];
+}
+
+- (void) dealloc {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  [super dealloc];
+}
+
+- (void) setupNotification:(AVAssetWriterConvertFromMaxvid*)obj
+{  
+  // AVAssetWriterConvertFromMaxvidCompletedNotification
+  // AVAssetWriterConvertFromMaxvidFailedNotification
+
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(completedLoadNotification:) 
+                                               name:AVAssetWriterConvertFromMaxvidCompletedNotification
+                                             object:obj];    
+
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(failedToLoadNotification:) 
+                                               name:AVAssetWriterConvertFromMaxvidFailedNotification
+                                             object:obj];  
+}
+
+- (void) completedLoadNotification:(NSNotification*)notification
+{
+  self.wasDelivered = TRUE;
+}
+
+- (void) failedToLoadNotification:(NSNotification*)notification
+{
+  self.wasDelivered = TRUE;
+}
+
+@end // NotificationUtil
+
+
+
 @interface H264EncoderDecoderTests : NSObject {}
 @end
 
@@ -1018,10 +1081,7 @@
 // AlphaGhost_ANI.mvid (480 x 320) -> AlphaGhost_encoded_h264.mov
 
 + (void) testEncodeAlphaGhostH264WithTrackWriter
-{
-  // Verify that "superwalk.mvid" already exists in the tmp dir. This test depends on
-  // the output of an earlier test.
-  
+{  
   NSString *tmpFilename = nil;
   NSString *tmpInputPath = nil;
   NSString *tmpOutputPath = nil;
@@ -1055,6 +1115,63 @@
   // FIXME: success must wait until other thread is done once threading is enabled.
   
   NSAssert(obj.state == AVAssetWriterConvertFromMaxvidStateSuccess, @"success");
+  
+  NSLog(@"wrote %@", obj.outputPath);
+  
+  return;
+}
+
+// Non-blocking encode of same video from previous test
+
++ (void) testEncodeAlphaGhostH264WithTrackWriterNonBlocking
+{  
+  NSString *tmpFilename = nil;
+  NSString *tmpInputPath = nil;
+  NSString *tmpOutputPath = nil;
+  
+  tmpFilename = @"AlphaGhost_ANI.mvid";
+  tmpInputPath = [AVFileUtil getResourcePath:tmpFilename];
+  tmpFilename = @"AlphaGhost_encoded_h264.mov";
+  
+  // Make sure output file does not exists before running test
+  
+  NSString *tmpDir = NSTemporaryDirectory();
+  tmpOutputPath = [tmpDir stringByAppendingPathComponent:tmpFilename];
+  BOOL fileExists = [AVFileUtil fileExists:tmpOutputPath];
+  
+  if (fileExists) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpOutputPath error:nil];
+    NSAssert(worked, @"could not remove tmp file");    
+  }
+  
+  // Define input .mvid file as the video data source
+  
+  AVAssetWriterConvertFromMaxvid *obj = [AVAssetWriterConvertFromMaxvid aVAssetWriterConvertFromMaxvid];
+  
+  NSAssert([obj retainCount] == 1, @"retainCount");
+  
+  obj.inputPath = tmpInputPath;
+  obj.outputPath = tmpOutputPath;
+  
+  // This util object gets a notification, it is useful for testing purposes. In real code the view controller
+  // or some other object would process the notification in the module.
+  
+  AVAssetWriterConvertFromMaxvid_NotificationUtil *notificationUtil = [AVAssetWriterConvertFromMaxvid_NotificationUtil notificationUtil];
+  
+  [notificationUtil setupNotification:obj];
+  
+  [obj nonblockingEncode];
+  
+  // Wait in loop until Notification is delivered.
+  
+  while (TRUE) {
+    if (notificationUtil.wasDelivered) {
+      break;
+    }
+    
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:0.1];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
   
   NSLog(@"wrote %@", obj.outputPath);
   

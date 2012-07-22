@@ -29,6 +29,12 @@
 
 #import "AVMvidFrameDecoder.h"
 
+// Notification name constants
+
+NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAssetWriterConvertFromMaxvidCompletedNotification";
+
+NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWriterConvertFromMaxvidFailedNotification";
+
 // Private API
 
 @interface AVAssetWriterConvertFromMaxvid ()
@@ -371,6 +377,52 @@
   
   CVPixelBufferUnlockBaseAddress(buffer, 0);
     
+  return;
+}
+
+// This method will send a notification to indicate that a encoding has completed successfully.
+
+- (void) notifyEncodingDoneInMainThread
+{
+  NSAssert([NSThread isMainThread] == TRUE, @"isMainThread");
+ 
+  NSString *notificationName;
+  
+  if (self.state == AVAssetWriterConvertFromMaxvidStateSuccess) {
+    // Success
+    notificationName = AVAssetWriterConvertFromMaxvidCompletedNotification;
+  } else {
+    // Failed
+    notificationName = AVAssetWriterConvertFromMaxvidFailedNotification;
+  }
+  
+  [[NSNotificationCenter defaultCenter] postNotificationName:notificationName
+                                                      object:self];	
+}
+
+// Secondary thread entry point for non blocking encode operation
+
+- (void) nonblockingEncodeEntryPoint {  
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  
+  [self blockingEncode];
+  
+  [self performSelectorOnMainThread:@selector(notifyEncodingDoneInMainThread) withObject:nil waitUntilDone:TRUE];
+  
+  [pool drain];
+  return;
+}
+
+// Kick off an async (non-blocking call) encode operation in a secondary
+// thread. This method will deliver a Completed or Failed notification
+// in the main thread when complete.
+
+- (void) nonblockingEncode
+{
+  if (FALSE) {
+    [self nonblockingEncodeEntryPoint];
+  }
+  [NSThread detachNewThreadSelector:@selector(nonblockingEncodeEntryPoint) toTarget:self withObject:nil];
   return;
 }
 
