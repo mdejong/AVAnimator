@@ -398,7 +398,6 @@
     NSDictionary *knownModelsWithoutEncoder = [NSDictionary dictionaryWithObjectsAndKeys:
                                                @"", @"iPhone1,1", // iPhone 1G
                                                @"", @"iPhone1,2", // iPhone 3G
-                                               @"", @"iPhone2,1", // iPhone 3GS
                                                nil];
 
     if ([knownModelsWithoutEncoder objectForKey:platform] != nil) {
@@ -406,6 +405,7 @@
     } else {
       // Assume that all newer models will contain encoder hardware
       // 
+      // "iPhone2,1" // "iPhone 3GS"
       // "iPhone3,1" // "iPhone 4"
       // "iPhone3,3" // "Verizon iPhone 4"
       // "iPhone4,1" // "iPhone 4S"
