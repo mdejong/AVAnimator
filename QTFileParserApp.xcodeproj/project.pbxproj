@@ -253,19 +253,9 @@
 		CDCE474B12DA98D0005BF94A /* Bounce_32BPP_15FPS.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */; };
 		CDD9888F1371F4A60072C06B /* libapng.c in Sources */ = {isa = PBXBuildFile; fileRef = CDD9888D1371F4A60072C06B /* libapng.c */; };
 		CDD988901371F4A60072C06B /* libapng.c in Sources */ = {isa = PBXBuildFile; fileRef = CDD9888D1371F4A60072C06B /* libapng.c */; };
-		CDDC5C6015B7E8BE00127A37 /* 96x96_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDDC5C5F15B7E8BE00127A37 /* 96x96_black_blue_h264.mov */; };
 		CDDC5C6415B7EDA700127A37 /* 124x124_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDDC5C6315B7EDA700127A37 /* 124x124_black_blue_h264.mov */; };
-		CDDC5C6615B7EF1B00127A37 /* 120x80_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDDC5C6515B7EF1B00127A37 /* 120x80_black_blue_h264.mov */; };
 		CDDC5C6815B7F1C900127A37 /* 192x128_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDDC5C6715B7F1C900127A37 /* 192x128_black_blue_h264.mov */; };
-		CDE2B85415B27D970071E2BB /* 16x16_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDE2B85315B27D970071E2BB /* 16x16_black_blue_h264.mov */; };
 		CDE2B85615B27F450071E2BB /* H264EncoderDecoderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CDE2B85515B27F450071E2BB /* H264EncoderDecoderTests.m */; };
-		CDE2B85815B285240071E2BB /* 16x17_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDE2B85715B285240071E2BB /* 16x17_black_blue_h264.mov */; };
-		CDE2B85A15B285D80071E2BB /* 17x16_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDE2B85915B285D70071E2BB /* 17x16_black_blue_h264.mov */; };
-		CDE2B85C15B288C90071E2BB /* 17x17_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDE2B85B15B288C90071E2BB /* 17x17_black_blue_h264.mov */; };
-		CDE2B85E15B28C2D0071E2BB /* 17x18_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDE2B85D15B28C2D0071E2BB /* 17x18_black_blue_h264.mov */; };
-		CDE2B86115B28D430071E2BB /* 17x19_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDE2B85F15B28D430071E2BB /* 17x19_black_blue_h264.mov */; };
-		CDE2B86215B28D430071E2BB /* 18x18_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDE2B86015B28D430071E2BB /* 18x18_black_blue_h264.mov */; };
-		CDE46F7E15B38D300037BA28 /* 64x64_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDE46F7D15B38D300037BA28 /* 64x64_black_blue_h264.mov */; };
 		CDE65F07136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDE65F06136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m */; };
 		CDE65F08136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDE65F06136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m */; };
 		CDE66096136F884800F4E8E6 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = CDE66095136F884800F4E8E6 /* libz.dylib */; };
@@ -499,19 +489,9 @@
 		CDCE474912DA98D0005BF94A /* Bounce_32BPP_15FPS.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Bounce_32BPP_15FPS.mov; sourceTree = "<group>"; };
 		CDD9888D1371F4A60072C06B /* libapng.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = libapng.c; sourceTree = "<group>"; };
 		CDD9888E1371F4A60072C06B /* libapng.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = libapng.h; sourceTree = "<group>"; };
-		CDDC5C5F15B7E8BE00127A37 /* 96x96_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 96x96_black_blue_h264.mov; sourceTree = "<group>"; };
 		CDDC5C6315B7EDA700127A37 /* 124x124_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 124x124_black_blue_h264.mov; sourceTree = "<group>"; };
-		CDDC5C6515B7EF1B00127A37 /* 120x80_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 120x80_black_blue_h264.mov; sourceTree = "<group>"; };
 		CDDC5C6715B7F1C900127A37 /* 192x128_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 192x128_black_blue_h264.mov; sourceTree = "<group>"; };
-		CDE2B85315B27D970071E2BB /* 16x16_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 16x16_black_blue_h264.mov; sourceTree = "<group>"; };
 		CDE2B85515B27F450071E2BB /* H264EncoderDecoderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = H264EncoderDecoderTests.m; sourceTree = "<group>"; };
-		CDE2B85715B285240071E2BB /* 16x17_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 16x17_black_blue_h264.mov; sourceTree = "<group>"; };
-		CDE2B85915B285D70071E2BB /* 17x16_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 17x16_black_blue_h264.mov; sourceTree = "<group>"; };
-		CDE2B85B15B288C90071E2BB /* 17x17_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 17x17_black_blue_h264.mov; sourceTree = "<group>"; };
-		CDE2B85D15B28C2D0071E2BB /* 17x18_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 17x18_black_blue_h264.mov; sourceTree = "<group>"; };
-		CDE2B85F15B28D430071E2BB /* 17x19_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 17x19_black_blue_h264.mov; sourceTree = "<group>"; };
-		CDE2B86015B28D430071E2BB /* 18x18_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 18x18_black_blue_h264.mov; sourceTree = "<group>"; };
-		CDE46F7D15B38D300037BA28 /* 64x64_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 64x64_black_blue_h264.mov; sourceTree = "<group>"; };
 		CDE65F05136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVApng2MvidResourceLoader.h; sourceTree = "<group>"; };
 		CDE65F06136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVApng2MvidResourceLoader.m; sourceTree = "<group>"; };
 		CDE66095136F884800F4E8E6 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
@@ -767,17 +747,7 @@
 				CD9A3641139043A1003F70BC /* 480x320_black_blue_16BPP.mov.7z */,
 				CD9A367013904865003F70BC /* 480x320_black_blue_1LD_16BPP.mov.7z */,
 				CDF1919B13BD893D0008672A /* 1x1.gif */,
-				CDE2B85315B27D970071E2BB /* 16x16_black_blue_h264.mov */,
-				CDE2B85715B285240071E2BB /* 16x17_black_blue_h264.mov */,
-				CDE2B85915B285D70071E2BB /* 17x16_black_blue_h264.mov */,
-				CDE2B85B15B288C90071E2BB /* 17x17_black_blue_h264.mov */,
-				CDE2B85D15B28C2D0071E2BB /* 17x18_black_blue_h264.mov */,
-				CDE2B85F15B28D430071E2BB /* 17x19_black_blue_h264.mov */,
-				CDE2B86015B28D430071E2BB /* 18x18_black_blue_h264.mov */,
 				CD561CA214DF9E41001E4F43 /* 32x32_black_blue_h264.mov */,
-				CDE46F7D15B38D300037BA28 /* 64x64_black_blue_h264.mov */,
-				CDDC5C5F15B7E8BE00127A37 /* 96x96_black_blue_h264.mov */,
-				CDDC5C6515B7EF1B00127A37 /* 120x80_black_blue_h264.mov */,
 				CDDC5C6315B7EDA700127A37 /* 124x124_black_blue_h264.mov */,
 				CDC1CE0C15B7DFEB003F61C1 /* 128x128_black_blue_h264.mov */,
 				CDDC5C6715B7F1C900127A37 /* 192x128_black_blue_h264.mov */,
@@ -1228,19 +1198,9 @@
 				CDF15B97152A176A00D8AD2F /* AVOfflineComposition32x32BlackBlueTest.plist in Resources */,
 				CDF54BE31530D53E0050C393 /* AVOfflineCompositionTwoFrameBlackBlueScaleMovieTest.plist in Resources */,
 				CD46E33915B00B8700E0047A /* AlphaGhost_ANI.mvid in Resources */,
-				CDE2B85415B27D970071E2BB /* 16x16_black_blue_h264.mov in Resources */,
-				CDE2B85815B285240071E2BB /* 16x17_black_blue_h264.mov in Resources */,
-				CDE2B85A15B285D80071E2BB /* 17x16_black_blue_h264.mov in Resources */,
-				CDE2B85C15B288C90071E2BB /* 17x17_black_blue_h264.mov in Resources */,
-				CDE2B85E15B28C2D0071E2BB /* 17x18_black_blue_h264.mov in Resources */,
-				CDE2B86115B28D430071E2BB /* 17x19_black_blue_h264.mov in Resources */,
-				CDE2B86215B28D430071E2BB /* 18x18_black_blue_h264.mov in Resources */,
-				CDE46F7E15B38D300037BA28 /* 64x64_black_blue_h264.mov in Resources */,
 				CDC1CE0E15B7DFEB003F61C1 /* 128x128_black_blue_h264.mov in Resources */,
 				CDC1CE1115B7E19B003F61C1 /* 240x160_black_blue_h264.mov in Resources */,
-				CDDC5C6015B7E8BE00127A37 /* 96x96_black_blue_h264.mov in Resources */,
 				CDDC5C6415B7EDA700127A37 /* 124x124_black_blue_h264.mov in Resources */,
-				CDDC5C6615B7EF1B00127A37 /* 120x80_black_blue_h264.mov in Resources */,
 				CDDC5C6815B7F1C900127A37 /* 192x128_black_blue_h264.mov in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
