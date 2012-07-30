@@ -177,15 +177,28 @@
 
 // Properties
 
-// Dimensions of each frame
+// Dimensions of each frame. This logic assumes all frames have same dimensions.
+
 - (NSUInteger) width
 {
-  return -1;
+  UIImage *image;
+  if (self.currentFrame == nil) {
+    image = [self advanceToFrame:0];    
+  } else {
+    image = self.currentFrame;
+  }
+  return image.size.width;
 }
 
 - (NSUInteger) height
 {
-  return -1;
+  UIImage *image;
+  if (self.currentFrame == nil) {
+    image = [self advanceToFrame:0];    
+  } else {
+    image = self.currentFrame;
+  }
+  return image.size.height;
 }
 
 // True when resource has been opened via openForReading
@@ -212,7 +225,13 @@
 // Time each frame shold be displayed
 - (NSTimeInterval) frameDuration
 {
-  return 0.0;
+  return self->m_frameDuration;
+}
+
+// This method will explicitly set value returned by frameDuration.
+- (void) setFrameDuration:(NSTimeInterval)duration
+{
+  self->m_frameDuration = duration;
 }
 
 - (BOOL) hasAlphaChannel

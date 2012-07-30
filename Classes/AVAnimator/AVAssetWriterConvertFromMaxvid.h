@@ -39,6 +39,8 @@ typedef enum
   AVAssetWriterConvertFromMaxvidStateFailed
 } AVAssetWriterConvertFromMaxvidState;
 
+@class AVFrameDecoder;
+
 // The following notifications can be delivered as a result of invoking
 // the 
 
@@ -63,6 +65,10 @@ extern NSString * const AVAssetWriterConvertFromMaxvidFailedNotification;
 // video file to be written.
 
 @property (nonatomic, copy) NSString *outputPath;
+
+#if defined(REGRESSION_TESTS)
+@property (nonatomic, retain) AVFrameDecoder *frameDecoder;
+#endif // REGRESSION_TESTS
 
 // constructor
 

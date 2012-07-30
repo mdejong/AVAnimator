@@ -26,6 +26,7 @@
   NSArray *m_dataObjs;
   NSArray *m_cachedImageObjs;
   UIImage *m_currentFrame;
+  NSTimeInterval m_frameDuration;
   BOOL m_resourceUsageLimit;
 }
 
@@ -91,6 +92,9 @@
 
 // Time each frame shold be displayed
 - (NSTimeInterval) frameDuration;
+
+// This method will explicitly set value returned by frameDuration.
+- (void) setFrameDuration:(NSTimeInterval)duration;
 
 - (BOOL) hasAlphaChannel;
 

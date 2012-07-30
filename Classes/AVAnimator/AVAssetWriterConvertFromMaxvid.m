@@ -47,6 +47,8 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
                            buffer:(CVPixelBufferRef)buffer
                              size:(CGSize)size;
 
+- (AVMvidFrameDecoder*) initMvidEncoder;
+
 @end
 
 
@@ -57,6 +59,10 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
 @synthesize outputPath = m_outputPath;
 @synthesize aVAssetWriter = m_aVAssetWriter;
 @synthesize lastFrameImage = m_lastFrameImage;
+
+#if defined(REGRESSION_TESTS)
+@synthesize frameDecoder = m_frameDecoder;
+#endif // REGRESSION_TESTS
 
 + (AVAssetWriterConvertFromMaxvid*) aVAssetWriterConvertFromMaxvid
 {
@@ -70,6 +76,38 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
   [super dealloc];
 }
 
+// ------------------------------------------------------------------------------------
+// initMvidEncoder
+// 
+// In the normal case where a .mvid file will be read from, this method will open
+// the file and return a frame decoder. If the file can't be opened, then nil
+// will be returned.
+// ------------------------------------------------------------------------------------
+
+- (AVMvidFrameDecoder*) initMvidEncoder
+{
+  BOOL worked;
+ 
+  // Input file is a .mvid video file like "walk.mvid"
+  
+  NSString *inputPath = self.inputPath;
+  NSAssert(inputPath, @"inputPath");
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  NSAssert(frameDecoder, @"frameDecoder");
+  
+  // FIXME: add support for ".mvid.7z" compressed entries (current a .mvid is required)
+  
+  worked = [frameDecoder openForReading:inputPath];
+  
+  if (!worked) {
+    NSLog(@"frameDecoder openForReading failed");
+    return nil;
+  }
+  
+  return frameDecoder;
+}
+
 // Kick off blocking encode operation to convert .mvid to .mov (h264)
 
 - (void) blockingEncode
@@ -78,22 +116,20 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
   
   BOOL worked;
   
-  // Input file is a .mvid video file like "walk.mvid"
-
-  NSString *inputPath = self.inputPath;
-  NSAssert(inputPath, @"inputPath");
+  AVFrameDecoder *frameDecoder = nil;
   
-  // FIXME: add support for ".mvid.7z" compressed entries (current a .mvid is required)
+#if defined(REGRESSION_TESTS)
+  if (self.frameDecoder == nil) {
+    frameDecoder = [self initMvidEncoder];
+  } else {
+    // Optionally use a custom frame decoder in test mode
+    frameDecoder = self.frameDecoder;
+  }
+#else  // REGRESSION_TESTS
+  frameDecoder = [self initMvidEncoder];
+#endif // REGRESSION_TESTS
   
-  // FIXME: ensure that decode is closed in any failure path from this function.
-  
-  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
-  NSAssert(frameDecoder, @"frameDecoder");
-  
-  worked = [frameDecoder openForReading:inputPath];
-  
-  if (!worked) {
-    NSLog(@"frameDecoder openForReading failed");
+  if (frameDecoder == nil) {
     // FIXME: create specific failure flags for input vs output files
     self.state = AVAssetWriterConvertFromMaxvidStateFailed;
     [pool drain];
@@ -110,7 +146,9 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
     return;
   }
   
-  CGSize movieSize = CGSizeMake([frameDecoder width], [frameDecoder height]);
+  NSUInteger width = [frameDecoder width];
+  NSUInteger height = [frameDecoder height];  
+  CGSize movieSize = CGSizeMake(width, height);
   
   // Output file is a file name like "out.mov" or "out.m4v"
   
@@ -129,8 +167,8 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
                                                             error:&error];
   NSAssert(videoWriter, @"videoWriter");
     
-  NSNumber *widthNum = [NSNumber numberWithUnsignedInt:movieSize.width];
-  NSNumber *heightNum = [NSNumber numberWithUnsignedInt:movieSize.height];
+  NSNumber *widthNum = [NSNumber numberWithUnsignedInt:width];
+  NSNumber *heightNum = [NSNumber numberWithUnsignedInt:height];
   
   NSDictionary *videoSettings = [NSDictionary dictionaryWithObjectsAndKeys:
                                  AVVideoCodecH264, AVVideoCodecKey,
@@ -244,9 +282,11 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
     // kCVReturnAllocationFailed = -6662
     
     [self fillPixelBufferFromImage:frameImage buffer:buffer size:movieSize];
-        
+    
+    NSTimeInterval frameDuration = frameDecoder.frameDuration;
+    NSAssert(frameDuration != 0.0, @"frameDuration not set in frameDecoder");
     int numerator = frameNum;
-    int denominator = 1 / frameDecoder.frameDuration;
+    int denominator = 1.0 / frameDuration;
     CMTime presentationTime = CMTimeMake(numerator, denominator);
     worked = [adaptor appendPixelBuffer:buffer withPresentationTime:presentationTime];
     
