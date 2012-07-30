@@ -162,9 +162,9 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
   // AVFileTypeQuickTimeMovie
   // AVFileTypeMPEG4 (no)
   
-  AVAssetWriter *videoWriter = [[AVAssetWriter alloc] initWithURL:outputPathURL
+  AVAssetWriter *videoWriter = [[[AVAssetWriter alloc] initWithURL:outputPathURL
                                                          fileType:AVFileTypeQuickTimeMovie
-                                                            error:&error];
+                                                            error:&error] autorelease];
   NSAssert(videoWriter, @"videoWriter");
     
   NSNumber *widthNum = [NSNumber numberWithUnsignedInt:width];
@@ -255,7 +255,7 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
       // This is a little complex in the case of the main thread, because we would
       // need to visit the event loop in order for other processing tasks to happen.
             
-      NSLog(@"sleep until writer is ready");
+      //NSLog(@"sleep until writer is ready");
       
       NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:0.1];
       [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
@@ -295,6 +295,8 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
       // com.apple.mediaserverd[18] : VTSelectAndCreateVideoEncoderInstance: no video encoder found for 'avc1'
       
       NSAssert(FALSE, @"appendPixelBuffer failed");
+      
+      // FIXME: Need to break out of loop and free writer elements in this fail case
     }
     
     CVPixelBufferRelease(buffer);
@@ -408,7 +410,7 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
     NSString *path = [NSTemporaryDirectory() stringByAppendingPathComponent:filename];
     NSData *data = [NSData dataWithData:UIImagePNGRepresentation(useImage)];
     [data writeToFile:path atomically:YES];
-    NSLog(@"wrote %@", path);
+    //NSLog(@"wrote %@", path);
   }
   
   CGContextRelease(bitmapContext);

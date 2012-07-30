@@ -910,7 +910,7 @@
 // encoding properly. This test case will encode a 2 frame animation over and over to
 // determine if the H.264 encoding for a specific width x height.
 
-+ (void) util_encodeTwoFrameBlackBlueAsH264:(CGSize)size
++ (BOOL) util_encodeTwoFrameBlackBlueAsH264:(CGSize)size
                                 h264TmpPath:(NSString*)h264TmpPath
 {
   if ([AVFileUtil fileExists:h264TmpPath]) {
@@ -980,9 +980,14 @@
   
   [obj blockingEncode];
   
-  NSAssert(obj.state == AVAssetWriterConvertFromMaxvidStateSuccess, @"success");
+  //NSAssert(obj.state == AVAssetWriterConvertFromMaxvidStateSuccess, @"success");  
+  //NSLog(@"wrote %@", obj.outputPath);
   
-  NSLog(@"wrote %@", obj.outputPath);
+  if (obj.state == AVAssetWriterConvertFromMaxvidStateSuccess) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }  
 }
 
 // Get all pixels values from an image as 32 bpp values
@@ -1129,7 +1134,7 @@
     return FALSE;
   }
   
-  if (TRUE) {
+  if (FALSE) {
     // Dump frame 0 to tmp PNG file
     
     tmpPNGFilenamePath = [AVFileUtil getTmpDirPath:frame0TmpFilename];
@@ -1160,7 +1165,7 @@
   imgSize = img.size;
   NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
   
-  if (TRUE) {
+  if (FALSE) {
     // Dump frame 1 to tmp PNG file
     
     tmpPNGFilenamePath = [AVFileUtil getTmpDirPath:frame1TmpFilename];
@@ -1195,19 +1200,26 @@
 {
   NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
   
-  [self util_encodeTwoFrameBlackBlueAsH264:size h264TmpPath:h264TmpPath];
-  BOOL same = [self util_checkTwoFrameBlackBlueAsH264:size h264TmpPath:h264TmpPath];
+  BOOL worked;
+  
+  worked = [self util_encodeTwoFrameBlackBlueAsH264:size h264TmpPath:h264TmpPath];
+  if (worked) {
+    worked = [self util_checkTwoFrameBlackBlueAsH264:size h264TmpPath:h264TmpPath];
+  }
   
   [pool drain];
   
-  if (same) {
+  if (worked) {
     NSLog(@"encoding %d x %d buffers was successful", (int)size.width, (int)size.height); 
   } else {
-    NSLog(@"encoding %d x %d buffers failed", (int)size.width, (int)size.height);   
+    //NSLog(@"encoding %d x %d buffers failed", (int)size.width, (int)size.height);   
   }
   
-  return same;
+  return worked;
 }
+
+// This test checks the encoding logic at different sizes. This test boils down the different
+// poosible results to a BOOL indicating the status of an encode.
 
 + (void) testEncodeH264VideoOfDifferentWidthHeight
 {
@@ -1222,6 +1234,53 @@
   
   return;
 }
+
+// This encoding logic 
+
+// This test checks the encoding logic at different sizes. This test boils down the different
+// poosible results to a BOOL indicating the status of an encode.
+
++ (void) testEncodeH264Extensive
+{
+  NSString *tmpEncodedFilename = @"encode_h264.mov";
+  NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];
+  
+  BOOL worked;
+  int width;
+  int height;
+  int maxWidth;
+  int maxHeight;
+
+  // Test every encoding size from 16x16 to 512x512
+  
+  width = 16;
+  height = 16;
+  maxWidth = 512;
+  maxHeight = 512;
+  
+  while (TRUE) {
+    // max width 512
+    // max height 512
+    
+    //NSLog(@"testing %d x %d", width, height);
+    
+    if (width > maxWidth) {
+      width = 16;
+      height++;
+    }
+
+    if (height > maxHeight) {
+      break;
+    }
+    
+    worked = [self util_encodeAndCheckTwoFrameBlackBlueAsH264:CGSizeMake(width, height) h264TmpPath:tmpEncodedFilenamePath];
+    
+    width++;
+  }
+    
+  return;
+}
+
 
 #endif // HAS_AVASSET_CONVERT_MAXVID
 
