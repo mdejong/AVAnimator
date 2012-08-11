@@ -10,7 +10,7 @@
 //  a Quicktime container (.mvid -> .mov). The H264 video format is
 //  lossy as compared to the lossless MVID format, but the space savings
 //  can be quite significant. Note that because this module depends on
-//  a hardware encoder on the iOS deice, it will not function on devices
+//  a hardware encoder on the iOS device, it will not function on devices
 //  that do not include an H264 encoder. For example, iPhones earlier than
 //  the iPhone4 (like the 3G and 3GS) do not include a hardware h264 encoder.
 //  All iPad devices include H264 encoding hardware.
@@ -22,6 +22,14 @@
 //  with corrupted video data (iPhone4). Video with well known aspect
 //  ratios (2:1, 3:2, 4:3) encode correctly. Also note that video dimensions
 //  should be a multiple of 4.
+//
+//  See http://en.wikipedia.org/wiki/Display_resolution for examples of resolutions
+//  that are standard and known to work. Because H264 encoding hardware differs from
+//  model to model, you will have to test the encoding logic with your specific
+//  hardware and the specific input dimensions. If you find that the encoded video is
+//  corrupted in strange ways, change the width x height of the video and see if that
+//  fixes the problem. The corruption happens at the hardware level, there is no
+//  available workaround as the problem is not at a software level.
 //
 //  In addition, H264 supports only 24BPP fully opaque video. Attempting to
 //  encode a .mvid with an alpha channel will not work as expected, the

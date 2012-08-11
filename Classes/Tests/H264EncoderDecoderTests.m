@@ -1210,7 +1210,7 @@
   [pool drain];
   
   if (worked) {
-    NSLog(@"encoding %d x %d buffers was successful", (int)size.width, (int)size.height); 
+    NSLog(@"encoding successful :\t%d\tx\t%d", (int)size.width, (int)size.height); 
   } else {
     //NSLog(@"encoding %d x %d buffers failed", (int)size.width, (int)size.height);   
   }
@@ -1258,10 +1258,21 @@
   maxWidth = 512;
   maxHeight = 512;
   
+  // iPhone => 480 x 320 (960 x 640 pixels)
+  // iPad 1 and 2 => 1024 x 768
+  // iPas 3 => 2048 x 1536
+ 
+  // h.264 support
+  // iPhone3 => 640x480 (playback only, no encoder)
+  // iPhone4 => 720p (1280x720) at 16:9
+  // iPhone4S => 1080p (1920 × 1080) at 16:9
+  
+  // Max H264 dimensions on iPhone 640 x 480 pixels
+  
   while (TRUE) {
     // max width 512
     // max height 512
-    
+        
     //NSLog(@"testing %d x %d", width, height);
     
     if (width > maxWidth) {
@@ -1272,8 +1283,21 @@
     if (height > maxHeight) {
       break;
     }
+
+    BOOL skip = FALSE;
     
-    worked = [self util_encodeAndCheckTwoFrameBlackBlueAsH264:CGSizeMake(width, height) h264TmpPath:tmpEncodedFilenamePath];
+    if ((width % 2) != 0) {
+      // Ignore odd width
+      skip = TRUE;
+    }
+    if ((height % 2) != 0) {
+      // Ignore odd height
+      skip = TRUE;
+    }
+    
+    if (skip == FALSE) {
+      worked = [self util_encodeAndCheckTwoFrameBlackBlueAsH264:CGSizeMake(width, height) h264TmpPath:tmpEncodedFilenamePath];
+    }
     
     width++;
   }
