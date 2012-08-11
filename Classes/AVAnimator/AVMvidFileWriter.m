@@ -1,5 +1,5 @@
 //
-//  AVMvidFileWriter.h
+//  AVMvidFileWriter.m
 //
 //  Created by Moses DeJong on 2/20/12.
 //
@@ -17,6 +17,51 @@
 #ifdef EXTRA_CHECKS
 #define ALWAYS_GENERATE_ADLER
 #endif // EXTRA_CHECKS
+
+// Emit zero length words up to the next page bound when emitting a keyframe.
+// Pass in the current offset, function returns the new offset. This method
+// will emit zero words of padding if exactly on the page bound already.
+
+static inline
+uint32_t maxvid_file_padding_before_keyframe(FILE *outFile, uint32_t offset) {
+  assert((offset % 4) == 0);
+  
+  const uint32_t boundSize = MV_PAGESIZE;
+  uint32_t bytesToBound = UINTMOD(offset, boundSize);
+  assert(bytesToBound >= 0 && bytesToBound <= boundSize);
+  
+  bytesToBound = boundSize - bytesToBound;
+  uint32_t wordsToBound = bytesToBound >> 2;
+  wordsToBound &= ((MV_PAGESIZE >> 2) - 1);
+  
+  if (wordsToBound > 0) {
+    assert(bytesToBound == (wordsToBound * 4));
+    assert(wordsToBound < (boundSize / 4));
+  }
+  
+  uint32_t zero = 0;
+  while (wordsToBound != 0) {
+    size_t size = fwrite(&zero, sizeof(zero), 1, outFile);
+    assert(size == 1);
+    wordsToBound--;
+  }
+  
+  uint32_t offsetAfter = ftell(outFile);
+  
+  assert(UINTMOD(offsetAfter, boundSize) == 0);
+  
+  return offsetAfter;
+}
+
+// Emit zero length words up to the next page bound after the keyframe data.
+// Pass in the current offset, function returns the new offset.
+// This method will emit zero words of padding if exactly on the page bound already.
+
+static inline
+uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
+  return maxvid_file_padding_before_keyframe(outFile, offset);
+}
+
 
 @interface AVMvidFileWriter ()
 
