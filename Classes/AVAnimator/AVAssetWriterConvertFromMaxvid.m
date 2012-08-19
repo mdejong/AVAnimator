@@ -52,6 +52,8 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
 @end
 
 
+//#define LOGGING
+
 @implementation AVAssetWriterConvertFromMaxvid
 
 @synthesize state = m_state;
@@ -150,6 +152,10 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
   NSUInteger height = [frameDecoder height];  
   CGSize movieSize = CGSizeMake(width, height);
   
+#ifdef LOGGING
+  NSLog(@"Writing movie with size %d x %d", width, height);
+#endif // LOGGING
+  
   // Output file is a file name like "out.mov" or "out.m4v"
   
   NSString *outputPath = self.outputPath;
@@ -225,6 +231,10 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
   // not acceptable to the AVAssetWriterInput (like smaller than 128 in either dimension).
   
   if (adaptor.pixelBufferPool == nil) {
+#ifdef LOGGING
+    NSLog(@"Failed to start exprt session with movie size %d x %d", width, height);
+#endif // LOGGING
+    
     [videoWriterInput markAsFinished];
     [videoWriter finishWriting];
     
@@ -241,9 +251,13 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
   CVPixelBufferRef buffer = NULL;
   
   const int numFrames = [frameDecoder numFrames];
-  
-  for (int frameNum=0; frameNum < numFrames; frameNum++) {
+  int frameNum;
+  for (frameNum = 0; frameNum < numFrames; frameNum++) {
     NSAutoreleasePool *innerPool = [[NSAutoreleasePool alloc] init];
+
+#ifdef LOGGING
+    NSLog(@"Writing frame %d", frameNum);
+#endif // LOGGING
     
     // FIXME: might reconsider logic design in terms of using block pull approach
 
@@ -254,8 +268,10 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
       // In the case where the input is not ready to accept input yet, wait until it is.
       // This is a little complex in the case of the main thread, because we would
       // need to visit the event loop in order for other processing tasks to happen.
-            
-      //NSLog(@"sleep until writer is ready");
+      
+#ifdef LOGGING
+      NSLog(@"Waiting until writer is ready");
+#endif // LOGGING
       
       NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:0.1];
       [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
@@ -276,6 +292,10 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
     
     CVReturn poolResult = CVPixelBufferPoolCreatePixelBuffer(NULL, adaptor.pixelBufferPool, &buffer);
     NSAssert(poolResult == kCVReturnSuccess, @"CVPixelBufferPoolCreatePixelBuffer");
+    
+#ifdef LOGGING
+    NSLog(@"filling pixel buffer");
+#endif // LOGGING
     
     // Buffer pool error conditions should have been handled already:
     // kCVReturnInvalidArgument = -6661 (some configuration value is invalid, like adaptor.pixelBufferPool is nil)
@@ -303,6 +323,12 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
     
     [innerPool drain];
   }
+  
+  NSAssert(frameNum == numFrames, @"numFrames");
+  
+#ifdef LOGGING
+  NSLog(@"successfully wrote %d frames", numFrames);
+#endif // LOGGING
   
   // Done writing video data
   

@@ -12,7 +12,7 @@
 // If RegressionTestsJustThisModule is defined, then only the tests in the
 // indicated module will be executed.
 
-//#define RegressionTestsJustThisModule @"H264EncoderDecoderTests"
+#define RegressionTestsJustThisModule @"H264EncoderDecoderTests"
 
 @implementation RegressionTests
 

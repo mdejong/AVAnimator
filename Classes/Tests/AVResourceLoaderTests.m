@@ -30,8 +30,6 @@
 
 #import "AVAsset2MvidResourceLoader.h"
 
-#import "AVAssetWriterConvertFromMaxvid.h"
-
 @interface AVResourceLoaderTests : NSObject {}
 @end
 
