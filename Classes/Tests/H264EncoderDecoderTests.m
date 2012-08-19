@@ -479,6 +479,63 @@
   return;
 }
 
+// The test case reads the movie data in Waterfall_tiny_h264.mov, the movie duration is an exact multiplier
+// of the frame rate, but we end up with too many frames when all frames are extracted from the asset.
+
++ (void) testDecodeWaterfallH264WithFrameDecoder
+{
+  NSString *resourceName = @"Waterfall_tiny_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+  
+  NSString *tmpFilename = @"Waterfall_tiny.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  AVAsset2MvidResourceLoader *loader = [AVAsset2MvidResourceLoader aVAsset2MvidResourceLoader];
+  loader.movieFilename = [fileURL path];
+  loader.outPath = tmpPath;
+  
+  [loader load];
+  
+#define MAX_WATERFALL_WAIT 10.0
+//#define MAX_WATERFALL_WAIT 1000.0
+  
+  BOOL worked = [RegressionTests waitUntilTrue:loader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:MAX_WATERFALL_WAIT];
+  NSAssert(worked, @"worked");
+  
+  BOOL decodeFrames = TRUE;
+  
+  if (decodeFrames) {
+    // Open the .mvid file and verify that the number of frames written is 575. This video
+    // suffers from a very weird clock drift problem where the actual display time of
+    // the frame falls too far behind the expected time to the point where an extra frame
+    // would have been introduced. The converter logic deals with the inconsistency by
+    // dropping frame 526. This keeps the total number of frames correct and means that
+    // the final frame of the video is displayed as expected. It is better to drop one
+    // frame during the video than to drop the final frame or have the video duration
+    // get longer because of a weird edge case in the H264 decoder. This issues is likely
+    // caused by a floating point accumulation error that is not dealt with in the decoder.
+    
+    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+    
+    BOOL worked = [frameDecoder openForReading:tmpPath];
+    NSAssert(worked, @"worked");
+    
+    int numFrames = [frameDecoder numFrames];
+    
+    NSAssert(numFrames == 575, @"numFrames");    
+  }
+  
+  return;
+}
+
 // encode .mvid to .h264 as a blocking operation
 
 + (void) util_encodeMvidAsH264:(NSString*)mvidTmpPath
@@ -1235,12 +1292,10 @@
   return;
 }
 
-// This encoding logic 
-
 // This test checks the encoding logic at different sizes. This test boils down the different
 // poosible results to a BOOL indicating the status of an encode.
 
-+ (void) testEncodeH264Extensive
++ (void) DISABLED_testEncodeH264Extensive
 {
   NSString *tmpEncodedFilename = @"encode_h264.mov";
   NSString *tmpEncodedFilenamePath = [AVFileUtil getTmpDirPath:tmpEncodedFilename];

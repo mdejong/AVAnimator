@@ -121,18 +121,19 @@
   float duration = (float)CMTimeGetSeconds(timeRange.duration);
   
   float nominalFrameRate = videoTrack.nominalFrameRate;
-    
-  self.frameDuration = 1.0 / nominalFrameRate;
+  
+  float frameDuration = 1.0 / nominalFrameRate;
+  self.frameDuration = frameDuration;
 
-  float numFramesFloat = duration / self.frameDuration;
+  float numFramesFloat = duration / frameDuration;
   int numFrames = round( numFramesFloat );
-  float durationForNumFrames = numFrames * self.frameDuration;
+  float durationForNumFrames = numFrames * frameDuration;
   float durationRemainder = duration - durationForNumFrames;
-  float durationTenPercent = self.frameDuration * 0.10;
+  float durationTenPercent = frameDuration * 0.10;
   
 #ifdef LOGGING
   NSLog(@"frame rate = %0.2f FPS", nominalFrameRate);
-  NSLog(@"frame duration = %0.4f FPS", self.frameDuration);
+  NSLog(@"frame duration = %0.4f FPS", frameDuration);
   NSLog(@"duration = %0.2f S", duration);
   NSLog(@"numFrames = %0.4f -> %d", numFramesFloat, numFrames);
   NSLog(@"durationRemainder = %0.4f", durationRemainder);
@@ -211,6 +212,8 @@
   
   float prevFrameDisplayTime = 0.0;
   
+  float frameDurationTooEarly = (self.frameDuration * 0.90);
+  
   while ((writeFailed == FALSE) && ([aVAssetReader status] == AVAssetReaderStatusReading))
   {
     NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
@@ -236,11 +239,47 @@
       
       float frameDisplayTime = (float) CMTimeGetSeconds(presentationTimeStamp);
       
+      float expectedFrameDisplayTime = self.frameNum * self.frameDuration;
+      
 #ifdef LOGGING
       NSLog(@"frame presentation time = %0.4f", frameDisplayTime);
+      NSLog(@"expected frame presentation time = %0.4f", expectedFrameDisplayTime);
       NSLog(@"prev frame presentation time = %0.4f", prevFrameDisplayTime);
 #endif // LOGGING
       
+      // Check for display time clock drift. This is caused by a frame that has
+      // a frame display time that is so early that it is almost a whole frame
+      // early. The decoder can't deal with this case because we have to maintain
+      // an absolute display delta between frames. To fix the problem, we have
+      // to drop a frame to let actual display time catch up to the expected
+      // frame display time. We have already calculated the total number of frames
+      // based on the reported duration of the whole movie, so this logic has the
+      // effect of keeping the total duration consistent once the data is stored
+      // in equally spaced frames.
+      
+      float frameDisplayEarly = 0.0;
+      if (frameDisplayTime < expectedFrameDisplayTime) {
+        frameDisplayEarly = expectedFrameDisplayTime - frameDisplayTime;
+      }
+      if (frameDisplayEarly > frameDurationTooEarly) {
+        // The actual presentation time has drifted from the expected presentation time
+        
+#ifdef LOGGING
+        NSLog(@"frame presentation drifted too early = %0.4f", frameDisplayEarly);
+#endif // LOGGING
+        
+        // Drop the frame, meaning we do not write it to the .mvid file. Instead, let
+        // processing continue with the next frame which will display at about the
+        // right expected time. The frame number stays the same since no output
+        // buffer was written. Note that we need to reset the prevFrameDisplayTime so
+        // that no trailing nop frame is emitted in the normal case.
+        
+        prevFrameDisplayTime = expectedFrameDisplayTime;
+        CFRelease(sampleBuffer);
+        [inner_pool drain];
+        continue;
+      }
+            
       float delta = frameDisplayTime - prevFrameDisplayTime;
       
       prevFrameDisplayTime = frameDisplayTime;
@@ -300,6 +339,10 @@
     [inner_pool drain];
   }
 
+  // Double check that we did not write too few frames.
+  
+  NSAssert(self.frameNum == self.totalNumFrames, @"frameNum == totalNumFrames");
+  
   // Explicitly release the retained frameBuffer
   
   [frameBuffer release];
