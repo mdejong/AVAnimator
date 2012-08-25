@@ -26,6 +26,8 @@
 
 //#define LOGGING
 
+NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetReaderConvertMaxvidCompletedNotification";
+
 // Private API
 
 @interface AVAssetReaderConvertMaxvid ()
@@ -43,6 +45,7 @@
 @synthesize assetURL = m_assetURL;
 @synthesize aVAssetReader = m_aVAssetReader;
 @synthesize aVAssetReaderOutput = m_aVAssetReaderOutput;
+@synthesize wasSuccessful = m_wasSuccessful;
 
 - (void) dealloc
 {  
@@ -163,11 +166,13 @@
 
 // Read video data from a single track (only one video track is supported anyway)
 
-- (BOOL) decodeAssetURL
+- (BOOL) blockingDecode
 {
   BOOL worked;
   BOOL retstatus = FALSE;
-    
+  
+  self.wasSuccessful = FALSE;
+  
   AVAssetReader *aVAssetReader = nil;
   
   worked = [self setupAsset];
@@ -371,6 +376,11 @@ retcode:
 #endif // LOGGING
   }
   
+  if (retstatus) {
+    self.wasSuccessful = TRUE;
+  } else {
+    self.wasSuccessful = FALSE;
+  }
   return retstatus;
 }
 
@@ -437,6 +447,48 @@ retcode:
   CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
   
   return TRUE;
+}
+
+// This method will send a notification to indicate that op has completed successfully.
+
+- (void) notifyDecodingDoneInMainThread
+{
+  NSAssert([NSThread isMainThread] == TRUE, @"isMainThread");
+  
+  NSString *notificationName = AVAssetReaderConvertMaxvidCompletedNotification;
+  
+  [[NSNotificationCenter defaultCenter] postNotificationName:notificationName
+                                                      object:self];	
+}
+
+// Secondary thread entry point for non blocking operation
+
+- (void) nonblockingDecodeEntryPoint {  
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  
+  [self blockingDecode];
+  
+  if (FALSE) {
+    [self notifyDecodingDoneInMainThread];
+  }
+  
+  [self performSelectorOnMainThread:@selector(notifyDecodingDoneInMainThread) withObject:nil waitUntilDone:TRUE];
+  
+  [pool drain];
+  return;
+}
+
+// Kick off an async (non-blocking call) decode operation in a secondary
+// thread. This method will deliver a Completed notification
+// in the main thread when complete.
+
+- (void) nonblockingDecode
+{
+  if (FALSE) {
+    [self nonblockingDecodeEntryPoint];
+  }
+  [NSThread detachNewThreadSelector:@selector(nonblockingDecodeEntryPoint) toTarget:self withObject:nil];
+  return;
 }
 
 @end

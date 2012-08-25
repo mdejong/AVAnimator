@@ -571,7 +571,7 @@ typedef enum
         
         //converter.genAdler = TRUE;
         
-        worked = [converter decodeAssetURL];
+        worked = [converter blockingDecode];
         
         // FIXME: Write to tmp file, then rename to final output file to avoid invalid file due to crash
 #else

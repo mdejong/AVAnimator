@@ -16,6 +16,12 @@
 
 #import "AVMvidFileWriter.h"
 
+// The following notification is delivered when the conversion process is complete.
+// The notification is delivered in both the success and failure case. The caller
+// can check the object.state value to determine the actual result.
+
+extern NSString * const AVAssetReaderConvertMaxvidCompletedNotification;
+
 @class AVAssetReader;
 @class AVAssetReaderOutput;
 
@@ -24,16 +30,29 @@
   NSURL *m_assetURL;
   AVAssetReader *m_aVAssetReader;
   AVAssetReaderOutput *m_aVAssetReaderOutput;
+  BOOL m_wasSuccessful;
 }
 
 @property (nonatomic, retain) NSURL         *assetURL;
 
+@property (nonatomic, assign) BOOL          wasSuccessful;
+
 + (AVAssetReaderConvertMaxvid*) aVAssetReaderConvertMaxvid;
 
+// This method is a blocking call that will read data from the
+// asset and write the output as a .mvid file. Note that decoding
+// is done in the calling thread, so this method should typically
+// be invoked only from a secondary thread.
 // Return TRUE if successful, FALSE otherwise.
-// Decoding is done in a secondary thread.
 
-- (BOOL) decodeAssetURL;
+- (BOOL) blockingDecode;
+
+// Kick off an async (non-blocking call) decode operation in a secondary
+// thread. This method will deliver a AVAssetReaderConvertMaxvidCompletedNotification
+// in the main thread when complete. Check the state property during this notification to
+// determine if the encoding process was a success or a failure.
+
+- (void) nonblockingDecode;
 
 @end
 

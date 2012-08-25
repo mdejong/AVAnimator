@@ -472,7 +472,7 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
 }
 
 // Kick off an async (non-blocking call) encode operation in a secondary
-// thread. This method will deliver a Completed or Failed notification
+// thread. This method will deliver a Completed notification
 // in the main thread when complete.
 
 - (void) nonblockingEncode

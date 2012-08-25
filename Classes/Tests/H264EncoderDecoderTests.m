@@ -36,7 +36,72 @@
 
 #import "AVImageFrameDecoder.h"
 
-// Util class for use in testing
+// Util class for use in testing decoder
+
+@interface AVAssetReaderConvertMaxvid_NotificationUtil : NSObject {
+  BOOL m_wasDelivered;
+}
+
+@property (nonatomic, assign) BOOL wasDelivered;
+
++ (AVAssetReaderConvertMaxvid_NotificationUtil*) notificationUtil;
+
+- (void) setupNotification:(AVAssetReaderConvertMaxvid*)obj;
+
+@end
+
+// This utility object will register to receive a AVAnimatorFailedToLoadNotification and set
+// a boolean flag to indicate if the notification is delivered.
+
+@implementation AVAssetReaderConvertMaxvid_NotificationUtil
+
+@synthesize wasDelivered = m_wasDelivered;
+
++ (AVAssetReaderConvertMaxvid_NotificationUtil*) notificationUtil
+{
+  AVAssetReaderConvertMaxvid_NotificationUtil *obj = [[[AVAssetReaderConvertMaxvid_NotificationUtil alloc] init] autorelease];
+  return obj;
+}
+
+- (void) dealloc {
+  [[NSNotificationCenter defaultCenter] removeObserver:self];
+  [super dealloc];
+}
+
+- (void) setupNotification:(AVAssetReaderConvertMaxvid*)obj
+{  
+  // AVAssetReaderConvertMaxvidCompletedNotification
+  
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(completedLoadNotification:) 
+                                               name:AVAssetReaderConvertMaxvidCompletedNotification
+                                             object:obj];
+}
+
+- (void) completedLoadNotification:(NSNotification*)notification
+{
+  // Note that this wasDelivered flag is only set in the main thread
+  // after the notification has been delivered. So, there is no danger
+  // of a threaded race condition related to a BOOL being set and then
+  // read from two different threads.
+  
+  self.wasDelivered = TRUE;
+  
+  // The wasSuccessful property is either TRUE or FALSE
+  
+  AVAssetReaderConvertMaxvid *obj = [notification object];
+  
+  NSAssert(obj, @"notification source object");
+  
+  BOOL wasSuccessful = obj.wasSuccessful;
+  NSAssert(wasSuccessful == TRUE, @"wasSuccessful");
+}
+
+@end // AVAssetReaderConvertMaxvid_NotificationUtil
+
+
+
+// Util class for use in testing encoder
 
 @interface AVAssetWriterConvertFromMaxvid_NotificationUtil : NSObject {
   BOOL m_wasDelivered;
@@ -80,6 +145,11 @@
 
 - (void) completedLoadNotification:(NSNotification*)notification
 {
+  // Note that this wasDelivered flag is only set in the main thread
+  // after the notification has been delivered. So, there is no danger
+  // of a threaded race condition related to a BOOL being set and then
+  // read from two different threads.
+  
   self.wasDelivered = TRUE;
 
   // The state is either AVAssetWriterConvertFromMaxvidStateSuccess or
@@ -96,7 +166,7 @@
             state == AVAssetWriterConvertFromMaxvidStateFailed), @"converter state");
 }
 
-@end // NotificationUtil
+@end // AVAssetWriterConvertFromMaxvid_NotificationUtil
 
 
 
@@ -144,8 +214,8 @@
   obj.mvidPath = tmpPath;
   obj.genAdler = TRUE;
   
-  BOOL worked = [obj decodeAssetURL];
-  NSAssert(worked, @"decodeAssetURL");
+  BOOL worked = [obj blockingDecode];
+  NSAssert(worked, @"blockingDecode");
   
   BOOL decodeFrames = TRUE;
   BOOL emitFrames = TRUE;
@@ -223,8 +293,8 @@
   obj.mvidPath = tmpPath;
   obj.genAdler = TRUE;
   
-  BOOL worked = [obj decodeAssetURL];
-  NSAssert(worked, @"decodeAssetURL");
+  BOOL worked = [obj blockingDecode];
+  NSAssert(worked, @"blockingDecode");
   
   BOOL decodeFrames = TRUE;
   BOOL emitFrames = TRUE;
@@ -315,8 +385,125 @@
   obj.mvidPath = tmpPath;
   obj.genAdler = TRUE;
   
-  BOOL worked = [obj decodeAssetURL];
-  NSAssert(worked, @"decodeAssetURL");
+  BOOL worked = [obj blockingDecode];
+  NSAssert(worked, @"blockingDecode");
+  
+  BOOL decodeFrames = TRUE;
+  BOOL emitFrames = TRUE;
+  
+  if (decodeFrames) {
+    // Create MVID frame decoder and iterate over the frames in the mvid file.
+    // This will validate the emitted data via the adler checksum logic
+    // in the decoding process.
+    
+    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+    
+    BOOL worked = [frameDecoder openForReading:tmpPath];
+    NSAssert(worked, @"worked");
+    
+    NSAssert([frameDecoder numFrames] == 9, @"numFrames");
+    
+    worked = [frameDecoder allocateDecodeResources];
+    NSAssert(worked, @"worked");
+    
+    UIImage *img;
+    NSData *data;
+    NSString *path;
+    
+    CGSize expectedSize = CGSizeMake(86, 114);
+    CGSize imgSize;
+    
+    img = [frameDecoder advanceToFrame:0];
+    NSAssert(img, @"frame 0");
+    
+    imgSize = img.size;
+    NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+    
+    if (emitFrames) {
+      path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame0.png"];
+      data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+      [data writeToFile:path atomically:YES];
+      NSLog(@"wrote %@", path);
+    }
+    
+    img = [frameDecoder advanceToFrame:1];
+    NSAssert(img, @"frame 1");
+    
+    imgSize = img.size;
+    NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+    
+    if (emitFrames) {
+      path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame1.png"];
+      data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+      [data writeToFile:path atomically:YES];
+      NSLog(@"wrote %@", path);
+    }
+    
+    img = [frameDecoder advanceToFrame:2];
+    NSAssert(img, @"frame 2");
+    
+    imgSize = img.size;
+    NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+    
+    if (emitFrames) {
+      path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame2.png"];
+      data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+      [data writeToFile:path atomically:YES];
+      NSLog(@"wrote %@", path);
+    }
+  }
+  
+  return;
+}
+
+// Decode stutterwalk_h264.mov contanining H264 video with nonblocking API
+
++ (void) testDecodeStutterwalkH264WithTrackReaderNonBlocking
+{
+  NSString *resourceName = @"stutterwalk_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+  
+  NSString *tmpFilename = @"stutterwalk.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  AVAssetReaderConvertMaxvid *obj = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
+  obj.assetURL = fileURL;
+  obj.mvidPath = tmpPath;
+  obj.genAdler = TRUE;
+  
+  // This util object gets a notification, it is useful for testing purposes. In real code the view controller
+  // or some other object would process the notification in the module.
+  
+  AVAssetReaderConvertMaxvid_NotificationUtil *notificationUtil = [AVAssetReaderConvertMaxvid_NotificationUtil notificationUtil];
+  
+  [notificationUtil setupNotification:obj];
+  
+  [obj nonblockingDecode];
+  
+  // Wait in loop until Notification is delivered. Note that this wasDelivered flag is set only
+  // in the main thread, so there is no danger of a threaded race condition.
+  
+  while (TRUE) {
+    if (notificationUtil.wasDelivered) {
+      break;
+    }
+    
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:0.1];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
+
+  BOOL worked = obj.wasSuccessful;
+  NSAssert(worked, @"wasSuccessful");
+  
+  NSLog(@"wrote %@", obj.mvidPath);
+
+  // Check decoded frame data
   
   BOOL decodeFrames = TRUE;
   BOOL emitFrames = TRUE;
@@ -894,7 +1081,8 @@
   
   [obj nonblockingEncode];
   
-  // Wait in loop until Notification is delivered.
+  // Wait in loop until Notification is delivered. Note that this wasDelivered flag is set only
+  // in the main thread, so there is no danger of a threaded race condition.
   
   while (TRUE) {
     if (notificationUtil.wasDelivered) {
@@ -1147,8 +1335,8 @@
 
   // Blocking decode from .mov to .mvid
   
-  BOOL worked = [obj decodeAssetURL];
-  NSAssert(worked, @"decodeAssetURL");
+  BOOL worked = [obj blockingDecode];
+  NSAssert(worked, @"blockingDecode");
   
   // Open decoded .mvid and examine file headers
   

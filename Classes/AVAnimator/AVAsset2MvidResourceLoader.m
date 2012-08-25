@@ -73,8 +73,8 @@
       obj.genAdler = TRUE;
     }
     
-    worked = [obj decodeAssetURL];
-    NSAssert(worked, @"decodeAssetURL");
+    worked = [obj blockingDecode];
+    NSAssert(worked, @"blockingDecode");
 
 #ifdef LOGGING
     NSLog(@"done asset decompression %@", [assetPath lastPathComponent]);
