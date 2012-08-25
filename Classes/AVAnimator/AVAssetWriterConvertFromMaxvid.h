@@ -49,11 +49,11 @@ typedef enum
 
 @class AVFrameDecoder;
 
-// The following notifications can be delivered as a result of invoking
-// the 
+// The following notification is delivered when the conversion process is complete.
+// The notification is delivered in both the success and failure case. The caller
+// can check the object.state value to determine the actual result.
 
 extern NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification;
-extern NSString * const AVAssetWriterConvertFromMaxvidFailedNotification;
 
 // AVAssetWriterConvertFromMaxvid
 
@@ -83,13 +83,16 @@ extern NSString * const AVAssetWriterConvertFromMaxvidFailedNotification;
 + (AVAssetWriterConvertFromMaxvid*) aVAssetWriterConvertFromMaxvid;
 
 // Kick off an encode operation. This will block the calling thread until
-// the encoding operation is completed.
+// the encoding operation is completed. Be careful not to block the main
+// thread with this invocation, this method would typically only be used
+// from a secondary thread.
 
 - (void) blockingEncode;
 
 // Kick off an async (non-blocking call) encode operation in a secondary
-// thread. This method will deliver a Completed or Failed notification
-// in the main thread when complete.
+// thread. This method will deliver a AVAssetWriterConvertFromMaxvidCompletedNotification
+// in the main thread when complete. Check the state property during this notification to
+// determine if the encoding process was a success or a failure.
 
 - (void) nonblockingEncode;
 

@@ -71,27 +71,29 @@
 - (void) setupNotification:(AVAssetWriterConvertFromMaxvid*)obj
 {  
   // AVAssetWriterConvertFromMaxvidCompletedNotification
-  // AVAssetWriterConvertFromMaxvidFailedNotification
 
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(completedLoadNotification:) 
                                                name:AVAssetWriterConvertFromMaxvidCompletedNotification
-                                             object:obj];    
-
-  [[NSNotificationCenter defaultCenter] addObserver:self
-                                           selector:@selector(failedToLoadNotification:) 
-                                               name:AVAssetWriterConvertFromMaxvidFailedNotification
-                                             object:obj];  
+                                             object:obj];
 }
 
 - (void) completedLoadNotification:(NSNotification*)notification
 {
   self.wasDelivered = TRUE;
-}
 
-- (void) failedToLoadNotification:(NSNotification*)notification
-{
-  self.wasDelivered = TRUE;
+  // The state is either AVAssetWriterConvertFromMaxvidStateSuccess or
+  // AVAssetWriterConvertFromMaxvidStateFailed, but it can't be
+  // AVAssetWriterConvertFromMaxvidStateInit.
+  
+  AVAssetWriterConvertFromMaxvid *obj = [notification object];
+  
+  NSAssert(obj, @"notification source object");
+
+  AVAssetWriterConvertFromMaxvidState state = obj.state;
+  
+  NSAssert((state == AVAssetWriterConvertFromMaxvidStateSuccess ||
+            state == AVAssetWriterConvertFromMaxvidStateFailed), @"converter state");
 }
 
 @end // NotificationUtil

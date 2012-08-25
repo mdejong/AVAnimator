@@ -33,8 +33,6 @@
 
 NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAssetWriterConvertFromMaxvidCompletedNotification";
 
-NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWriterConvertFromMaxvidFailedNotification";
-
 // Private API
 
 @interface AVAssetWriterConvertFromMaxvid ()
@@ -454,15 +452,7 @@ NSString * const AVAssetWriterConvertFromMaxvidFailedNotification = @"AVAssetWri
 {
   NSAssert([NSThread isMainThread] == TRUE, @"isMainThread");
  
-  NSString *notificationName;
-  
-  if (self.state == AVAssetWriterConvertFromMaxvidStateSuccess) {
-    // Success
-    notificationName = AVAssetWriterConvertFromMaxvidCompletedNotification;
-  } else {
-    // Failed
-    notificationName = AVAssetWriterConvertFromMaxvidFailedNotification;
-  }
+  NSString *notificationName = AVAssetWriterConvertFromMaxvidCompletedNotification;
   
   [[NSNotificationCenter defaultCenter] postNotificationName:notificationName
                                                       object:self];	
