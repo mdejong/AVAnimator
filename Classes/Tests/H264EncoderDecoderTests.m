@@ -691,7 +691,8 @@
   
   [loader load];
   
-#define MAX_WATERFALL_WAIT 10.0
+// Max time must be at least a couple of munites to allow decoding to complete on slow devices.
+#define MAX_WATERFALL_WAIT 120.0
 //#define MAX_WATERFALL_WAIT 1000.0
   
   BOOL worked = [RegressionTests waitUntilTrue:loader
