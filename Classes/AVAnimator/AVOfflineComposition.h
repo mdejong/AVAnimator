@@ -34,6 +34,8 @@ extern NSString * const AVOfflineCompositionFailedNotification;
   CGSize     m_compSize;
 }
 
+@property (nonatomic, copy) NSString *destination;
+
 + (AVOfflineComposition*) aVOfflineComposition;
 
 // Initiate a composition operation given info about the composition

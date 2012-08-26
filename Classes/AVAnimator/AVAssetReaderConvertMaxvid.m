@@ -1,5 +1,5 @@
 //
-//  AVAssetReaderConvertMaxvid.h
+//  AVAssetReaderConvertMaxvid.m
 //
 //  Created by Moses DeJong on 2/4/12.
 //
