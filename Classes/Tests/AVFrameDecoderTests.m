@@ -44,6 +44,7 @@
   BOOL worked = [frameDecoder allocateDecodeResources];
   NSAssert(worked, @"worked");
   
+  AVFrame *frame;
   UIImage* img;
   NSAutoreleasePool *pool;
   
@@ -53,7 +54,8 @@
   for (int i=0; i < [frameDecoder numFrames]; i++) {
     pool = [[NSAutoreleasePool alloc] init];
     
-    img = [frameDecoder advanceToFrame:i];
+    frame = [frameDecoder advanceToFrame:i];
+    img = frame.image;
     NSAssert(img != nil, @"advanceToFrame");
     
     NSAssert([frameDecoder frameIndex] == i, @"frameIndex");
@@ -67,15 +69,18 @@
   
   [frameDecoder rewind];
 
-  img = [frameDecoder advanceToFrame:0];  
+  frame = [frameDecoder advanceToFrame:0];
+  img = frame.image;
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 0, @"frameIndex");
-  
-  img = [frameDecoder advanceToFrame:1];  
+
+  frame = [frameDecoder advanceToFrame:1];
+  img = frame.image;
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 1, @"frameIndex");
 
-  img = [frameDecoder advanceToFrame:2];
+  frame = [frameDecoder advanceToFrame:2];
+  img = frame.image;
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 2, @"frameIndex");
   
@@ -87,11 +92,13 @@
   
   [frameDecoder rewind];
   
-  img = [frameDecoder advanceToFrame:0];  
+  frame = [frameDecoder advanceToFrame:0];
+  img = frame.image;
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 0, @"frameIndex");
-    
-  img = [frameDecoder advanceToFrame:2];
+  
+  frame = [frameDecoder advanceToFrame:2];
+  img = frame.image;
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 2, @"frameIndex");
   
@@ -103,11 +110,13 @@
   
   [frameDecoder rewind];
   
-  img = [frameDecoder advanceToFrame:0];  
+  frame = [frameDecoder advanceToFrame:0];
+  img = frame.image;
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 0, @"frameIndex");
-  
-  img = [frameDecoder advanceToFrame:3];
+
+  frame = [frameDecoder advanceToFrame:3];
+  img = frame.image;
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 3, @"frameIndex");
   
@@ -119,15 +128,18 @@
   
   [frameDecoder rewind];
   
-  img = [frameDecoder advanceToFrame:0];  
+  frame = [frameDecoder advanceToFrame:0];
+  img = frame.image;
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 0, @"frameIndex");
   
-  img = [frameDecoder advanceToFrame:15];
+  frame = [frameDecoder advanceToFrame:15];
+  img = frame.image;
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 15, @"frameIndex");
 
-  img = [frameDecoder advanceToFrame:29];
+  frame = [frameDecoder advanceToFrame:29];
+  img = frame.image;
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 29, @"frameIndex");  
   
@@ -139,11 +151,13 @@
   
   [frameDecoder rewind];
   
-  img = [frameDecoder advanceToFrame:0];  
+  frame = [frameDecoder advanceToFrame:0];
+  img = frame.image;
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 0, @"frameIndex");
-    
-  img = [frameDecoder advanceToFrame:29];
+
+  frame = [frameDecoder advanceToFrame:29];
+  img = frame.image;
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 29, @"frameIndex");  
   
@@ -309,9 +323,11 @@
   // At this point the frame decoder has read the header, but it has not
   // yet attempted to map the whole file into memory.
   
-  UIImage *frame;
+  AVFrame *frame;
+  UIImage *image;
   
   frame = [frameDecoder advanceToFrame:0];
+  image = frame.image;
   
   // The file would be mapped at this point. Unmap it.
   
@@ -391,9 +407,12 @@
   // At this point the frame decoder has read the header, but it has not
   // yet attempted to map the whole file into memory.
   
-  UIImage *frame;
+  AVFrame *frame;
+  UIImage *img;
   
   frame = [frameDecoder advanceToFrame:0];
+  NSAssert(frame, @"frame");
+  img = frame.image;
     
   // The file would be mapped at this point. Unmap it.
   
@@ -465,9 +484,11 @@
   // At this point the frame decoder has read the header, but it has not
   // yet attempted to map the whole file into memory.
   
-  UIImage *frame;
+  AVFrame *frame;
+  UIImage *image;
   
   frame = [frameDecoder advanceToFrame:0];
+  image = frame.image;
   
   // Verify that the file has been mapped into memory by
   // checking to see if the mappedData ref is nil.
@@ -481,6 +502,7 @@
   frameDecoder.simulateMemoryMapFailure = TRUE;
   
   frame = [frameDecoder advanceToFrame:1];
+  image = frame.image;
   
   // Frame should be nil to indicate that decoder could not update to the new frame.
   // This is treated as a repeated frame as far as the render logic is concerned.
@@ -494,6 +516,7 @@
   frameDecoder.simulateMemoryMapFailure = FALSE;
   
   frame = [frameDecoder advanceToFrame:1];
+  image = frame.image;
 
   NSAssert(frame != nil, @"should return decoded second frame");
   

@@ -1419,8 +1419,9 @@
   // the next frame is exactly the same as the previous frame,
   // nil will be returned. Note that nextFrame is left the same
   // in the case where the frame is not changed.
-    
-	UIImage *img = [self.frameDecoder advanceToFrame:nextFrameNum];
+  
+	AVFrame *frame = [self.frameDecoder advanceToFrame:nextFrameNum];
+	UIImage *img = frame.image;
   
 	if (img == nil) {
 		return FALSE;
@@ -1500,7 +1501,8 @@
   // Note that duplicateCurrentFrame could return nil.
 
   if (copyFinalFrame) {
-    UIImage *finalFrameCopy = [self.frameDecoder duplicateCurrentFrame];
+    AVFrame *frame = [self.frameDecoder duplicateCurrentFrame];
+    UIImage *finalFrameCopy = frame.image;
     self.renderer.image = finalFrameCopy;
   } else {
     self.renderer.image = nil;

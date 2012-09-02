@@ -10,7 +10,8 @@
 //  video data from a file or other resource.
 
 #import <Foundation/Foundation.h>
-#import <UIKit/UIKit.h>
+
+#import "AVFrame.h"
 
 @class CGFrameBuffer;
 
@@ -33,7 +34,7 @@
 // encoded as a UIImage object, or nil if the frame data was not changed. The UIImage
 // returned is assumed to be in the autorelease pool.
 
-- (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex;
+- (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex;
 
 // Decoding frames may require additional resources that are not required
 // to open the file and examine the header contents. This method will
@@ -58,7 +59,7 @@
 // ref to the final frame will waste significant resources, for
 // example if the normal frames hold references to mapped memory.
 
-- (UIImage*) duplicateCurrentFrame;
+- (AVFrame*) duplicateCurrentFrame;
 
 // Properties
 

@@ -14,7 +14,7 @@
 @synthesize urls = m_urls;
 @synthesize dataObjs = m_dataObjs;
 @synthesize cachedImageObjs = m_cachedImageObjs;
-@synthesize currentFrame = m_currentFrame;
+@synthesize currentFrameImage = m_currentFrameImage;
 
 - (void) dealloc {
   [AutoPropertyRelease releaseProperties:self thisClass:AVImageFrameDecoder.class];
@@ -114,27 +114,36 @@
   return obj;
 }
 
-- (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex
+- (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex
 {
   NSAssert(newFrameIndex >= 0 || newFrameIndex < [self.urls count], @"newFrameIndex is out of range");
   
   // If decoded images were cached in memory, no need to decode
   
   if (self.cachedImageObjs != nil) {
-    return [self.cachedImageObjs objectAtIndex:newFrameIndex];
+    UIImage *img = [self.cachedImageObjs objectAtIndex:newFrameIndex];
+    
+    AVFrame *frame = [AVFrame aVFrame];
+    frame.image = img;
+    return frame;
   }
     
   //NSURL *url = [self.urls objectAtIndex:newFrameIndex];
   NSData *data = [self.dataObjs objectAtIndex:newFrameIndex];
 	UIImage *img = [UIImage imageWithData:data];
   NSAssert(img, @"img is nil");
-  self.currentFrame = img;
-  return img;
+  self.currentFrameImage = img;
+  
+  AVFrame *frame = [AVFrame aVFrame];
+  frame.image = img;
+  return frame;
 }
 
-- (UIImage*) duplicateCurrentFrame
+- (AVFrame*) duplicateCurrentFrame
 {
-  return self.currentFrame;
+  AVFrame *frame = [AVFrame aVFrame];
+  frame.image = self.currentFrameImage;
+  return frame;
 }
 
 - (void) resourceUsageLimit:(BOOL)enabled
@@ -181,22 +190,26 @@
 
 - (NSUInteger) width
 {
+  AVFrame *frame;
   UIImage *image;
-  if (self.currentFrame == nil) {
-    image = [self advanceToFrame:0];    
+  if (self.currentFrameImage == nil) {
+    frame = [self advanceToFrame:0];
+    image = frame.image;    
   } else {
-    image = self.currentFrame;
+    image = self.currentFrameImage;
   }
   return image.size.width;
 }
 
 - (NSUInteger) height
 {
+  AVFrame *frame;
   UIImage *image;
-  if (self.currentFrame == nil) {
-    image = [self advanceToFrame:0];    
+  if (self.currentFrameImage == nil) {
+    frame = [self advanceToFrame:0];
+    image = frame.image;    
   } else {
-    image = self.currentFrame;
+    image = self.currentFrameImage;
   }
   return image.size.height;
 }

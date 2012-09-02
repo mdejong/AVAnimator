@@ -235,6 +235,7 @@
     worked = [frameDecoder allocateDecodeResources];
     NSAssert(worked, @"worked");
 
+    AVFrame *frame;
     UIImage *img;
     NSData *data;
     NSString *path;
@@ -242,8 +243,9 @@
     CGSize expectedSize = CGSizeMake(32, 32);
     CGSize imgSize;
     
-    img = [frameDecoder advanceToFrame:0];
-    NSAssert(img, @"frame 0");
+    frame = [frameDecoder advanceToFrame:0];
+    NSAssert(frame, @"frame 0");
+    img = frame.image;
 
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -255,8 +257,9 @@
     NSLog(@"wrote %@", path);
     }
     
-    img = [frameDecoder advanceToFrame:1];
-    NSAssert(img, @"frame 1");
+    frame = [frameDecoder advanceToFrame:1];
+    NSAssert(frame, @"frame 1");
+    img = frame.image;
 
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -314,6 +317,7 @@
     worked = [frameDecoder allocateDecodeResources];
     NSAssert(worked, @"worked");
     
+    AVFrame *frame;
     UIImage *img;
     NSData *data;
     NSString *path;
@@ -321,8 +325,9 @@
     CGSize expectedSize = CGSizeMake(86, 114);
     CGSize imgSize;
     
-    img = [frameDecoder advanceToFrame:0];
-    NSAssert(img, @"frame 0");
+    frame = [frameDecoder advanceToFrame:0];
+    NSAssert(frame, @"frame 0");
+    img = frame.image;
     
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -334,8 +339,9 @@
       NSLog(@"wrote %@", path);
     }
     
-    img = [frameDecoder advanceToFrame:1];
-    NSAssert(img, @"frame 1");
+    frame = [frameDecoder advanceToFrame:1];
+    NSAssert(frame, @"frame 1");
+    img = frame.image;
     
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -347,8 +353,9 @@
       NSLog(@"wrote %@", path);
     }
     
-    img = [frameDecoder advanceToFrame:2];
-    NSAssert(img, @"frame 2");
+    frame = [frameDecoder advanceToFrame:2];
+    NSAssert(frame, @"frame 2");
+    img = frame.image;
     
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -406,6 +413,7 @@
     worked = [frameDecoder allocateDecodeResources];
     NSAssert(worked, @"worked");
     
+    AVFrame *frame;
     UIImage *img;
     NSData *data;
     NSString *path;
@@ -413,8 +421,9 @@
     CGSize expectedSize = CGSizeMake(86, 114);
     CGSize imgSize;
     
-    img = [frameDecoder advanceToFrame:0];
-    NSAssert(img, @"frame 0");
+    frame = [frameDecoder advanceToFrame:0];
+    NSAssert(frame, @"frame 0");
+    img = frame.image;
     
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -426,8 +435,9 @@
       NSLog(@"wrote %@", path);
     }
     
-    img = [frameDecoder advanceToFrame:1];
-    NSAssert(img, @"frame 1");
+    frame = [frameDecoder advanceToFrame:1];
+    NSAssert(frame, @"frame 1");
+    img = frame.image;
     
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -439,8 +449,9 @@
       NSLog(@"wrote %@", path);
     }
     
-    img = [frameDecoder advanceToFrame:2];
-    NSAssert(img, @"frame 2");
+    frame = [frameDecoder advanceToFrame:2];
+    NSAssert(frame, @"frame 2");
+    img = frame.image;
     
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -523,6 +534,7 @@
     worked = [frameDecoder allocateDecodeResources];
     NSAssert(worked, @"worked");
     
+    AVFrame *frame;
     UIImage *img;
     NSData *data;
     NSString *path;
@@ -530,8 +542,9 @@
     CGSize expectedSize = CGSizeMake(86, 114);
     CGSize imgSize;
     
-    img = [frameDecoder advanceToFrame:0];
-    NSAssert(img, @"frame 0");
+    frame = [frameDecoder advanceToFrame:0];
+    NSAssert(frame, @"frame 0");
+    img = frame.image;
     
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -543,8 +556,9 @@
       NSLog(@"wrote %@", path);
     }
     
-    img = [frameDecoder advanceToFrame:1];
-    NSAssert(img, @"frame 1");
+    frame = [frameDecoder advanceToFrame:1];
+    NSAssert(frame, @"frame 1");
+    img = frame.image;
     
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -556,8 +570,9 @@
       NSLog(@"wrote %@", path);
     }
     
-    img = [frameDecoder advanceToFrame:2];
-    NSAssert(img, @"frame 2");
+    frame = [frameDecoder advanceToFrame:2];
+    NSAssert(frame, @"frame 2");
+    img = frame.image;
     
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -618,6 +633,7 @@
     worked = [frameDecoder allocateDecodeResources];
     NSAssert(worked, @"worked");
     
+    AVFrame *frame;
     UIImage *img;
     NSData *data;
     NSString *path;
@@ -625,8 +641,9 @@
     CGSize expectedSize = CGSizeMake(86, 114);
     CGSize imgSize;
     
-    img = [frameDecoder advanceToFrame:0];
-    NSAssert(img, @"frame 0");
+    frame = [frameDecoder advanceToFrame:0];
+    NSAssert(frame, @"frame 0");
+    img = frame.image;
     
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -638,8 +655,9 @@
       NSLog(@"wrote %@", path);
     }
     
-    img = [frameDecoder advanceToFrame:1];
-    NSAssert(img, @"frame 1");
+    frame = [frameDecoder advanceToFrame:1];
+    NSAssert(frame, @"frame 1");
+    img = frame.image;
     
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -651,8 +669,9 @@
       NSLog(@"wrote %@", path);
     }
     
-    img = [frameDecoder advanceToFrame:2];
-    NSAssert(img, @"frame 2");
+    frame = [frameDecoder advanceToFrame:2];
+    NSAssert(frame, @"frame 2");
+    img = frame.image;
     
     imgSize = img.size;
     NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
@@ -1353,6 +1372,7 @@
   worked = [frameDecoder allocateDecodeResources];
   NSAssert(worked, @"worked");
   
+  AVFrame *frame;
   UIImage *img;  
   CGSize expectedSize = size;
   CGSize imgSize;
@@ -1370,8 +1390,9 @@
     [[NSFileManager defaultManager] removeItemAtPath:tmpPNGFilenamePath error:nil];
   }
   
-  img = [frameDecoder advanceToFrame:0];
-  NSAssert(img, @"frame 0");
+  frame = [frameDecoder advanceToFrame:0];
+  NSAssert(frame, @"frame 0");
+  img = frame.image;
   
   imgSize = img.size;
   if (CGSizeEqualToSize(imgSize, expectedSize) == FALSE) {
@@ -1407,8 +1428,9 @@
   
   // Frame 1 is all blue pixels
   
-  img = [frameDecoder advanceToFrame:1];
-  NSAssert(img, @"frame 1");
+  frame = [frameDecoder advanceToFrame:1];
+  NSAssert(frame, @"frame 1");
+  img = frame.image;
   
   imgSize = img.size;
   NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");

@@ -829,7 +829,10 @@ typedef enum
         // and UI layer rendering functions, so it should be thread safe to just
         // hold on to a UIImage and the CGImageRef it contains.
         
-        UIImage *image = [mvidFrameDecoder advanceToFrame:clipFrame];
+        // FIXME: would need to reimpl port over to MacOSX, use platform specific types
+        
+        AVFrame *frame = [mvidFrameDecoder advanceToFrame:clipFrame];
+        UIImage *image = frame.image;
         
         // In the case where a frame is a no-op or is the same as the previous
         // frame, nill is returned. Deal with this case by saving the image

@@ -32,7 +32,7 @@
 	return;
 }
 
-- (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex
+- (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex
 {
   [self doesNotRecognizeSelector:_cmd];
 	return FALSE;
@@ -56,7 +56,7 @@
 	return FALSE;
 }
 
-- (UIImage*) duplicateCurrentFrame
+- (AVFrame*) duplicateCurrentFrame
 {
   [self doesNotRecognizeSelector:_cmd];
 	return nil;

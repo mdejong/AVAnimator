@@ -312,7 +312,7 @@ int num_words(uint32_t numBytes)
 
 #endif // USE_MMAP
 
-- (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex
+- (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex
 {
   // Get from queue of frame buffers!
   
@@ -426,23 +426,20 @@ int num_words(uint32_t numBytes)
   if (!changeFrameData) {
     return nil;
   } else {
-    // Return a CGImage wrapped in a UIImage
+    // Return a CGImage wrapped in a AVFrame
+    
+    AVFrame *frame = [AVFrame aVFrame];
+    NSAssert(frame, @"AVFrame is nil");
     
     CGFrameBuffer *cgFrameBuffer = self.currentFrameBuffer;
-    CGImageRef imgRef = [cgFrameBuffer createCGImageRef];
-    NSAssert(imgRef, @"CGImageRef returned by createCGImageRef is NULL");
+    frame.cgFrameBuffer = cgFrameBuffer;
     
-    UIImage *uiImage = [UIImage imageWithCGImage:imgRef];
-    CGImageRelease(imgRef);
-
-    NSAssert(cgFrameBuffer.isLockedByDataProvider, @"image buffer should be locked by frame UIImage");
-    
-    NSAssert(uiImage, @"uiImage is nil");
-    return uiImage;    
+    [frame makeImageFromFramebuffer];
+    return frame;
   }
 }
 
-- (UIImage*) duplicateCurrentFrame
+- (AVFrame*) duplicateCurrentFrame
 {
   if (self.currentFrameBuffer == nil) {
     return nil;
@@ -460,16 +457,13 @@ int num_words(uint32_t numBytes)
   //[cgFrameBuffer copyPixels:self.currentFrameBuffer];
   [cgFrameBuffer memcopyPixels:self.currentFrameBuffer];
   
-  CGImageRef imgRef = [cgFrameBuffer createCGImageRef];
-  NSAssert(imgRef, @"CGImageRef returned by createCGImageRef is NULL");
+  AVFrame *frame = [AVFrame aVFrame];
   
-  UIImage *uiImage = [UIImage imageWithCGImage:imgRef];
-  CGImageRelease(imgRef);
+  frame.cgFrameBuffer = cgFrameBuffer;
   
-  NSAssert(cgFrameBuffer.isLockedByDataProvider, @"image buffer should be locked by frame UIImage");
+  [frame makeImageFromFramebuffer];
   
-  NSAssert(uiImage, @"uiImage is nil");
-  return uiImage;  
+  return frame;  
 }
 
 - (void) resourceUsageLimit:(BOOL)enabled

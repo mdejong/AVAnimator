@@ -537,7 +537,10 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 
 - (void) zeroCopyToPixels
 {
-  assert(self.zeroCopyPixels != NULL);
+  if (self.zeroCopyPixels == NULL) {
+    // No zero copy pixels in use, so this is a no-op
+    return;
+  }
     
   [self osCopyImpl:self.zeroCopyPixels];
   

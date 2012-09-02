@@ -12,8 +12,12 @@
 
 // If USE_SEGMENTED_MMAP is defined, then each frame will be contained in a separate
 // mmap segment. Otherwise, a single memory map will be used for the entire mvid file.
+// This segmented mapping is only needed on iOS since memory usage limits are very
+// strict. MacOSX fully supports swapping with virtual memory so segmenting is not important.
 
-#define USE_SEGMENTED_MMAP
+#if TARGET_OS_IPHONE
+# define USE_SEGMENTED_MMAP
+#endif // TARGET_OS_IPHONE
 
 #if defined(USE_SEGMENTED_MMAP)
 @class SegmentedMappedData;
@@ -72,7 +76,7 @@
 
 // Advance the current frame index to the indicated frame index and store result in nextFrameBuffer
 
-- (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex;
+- (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex;
 
 // Decoding frames may require additional resources that are not required
 // to open the file and examine the header contents. This method will

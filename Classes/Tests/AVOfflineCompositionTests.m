@@ -152,16 +152,17 @@
     worked = [frameDecoder allocateDecodeResources];
     NSAssert(worked, @"allocateDecodeResources");
     
-    for (NSUInteger frame = 0; frame < frameDecoder.numFrames; frame++) {
+    for (NSUInteger frameIndex = 0; frameIndex < frameDecoder.numFrames; frameIndex++) {
       NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-      NSLog(@"render frame %d", frame);
-      UIImage *img = [frameDecoder advanceToFrame:frame];
+      NSLog(@"render frame %d", frameIndex);
+      AVFrame *frame = [frameDecoder advanceToFrame:frameIndex];
+      UIImage *img = frame.image;
       
       // Write image as PNG
       
       NSString *tmpDir = NSTemporaryDirectory();
       
-      NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"Frame%d.png", (frame + 1)];
+      NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"Frame%d.png", (frameIndex + 1)];
       
       NSData *data = [NSData dataWithData:UIImagePNGRepresentation(img)];
       [data writeToFile:tmpPNGPath atomically:YES];

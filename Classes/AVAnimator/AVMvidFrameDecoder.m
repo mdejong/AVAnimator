@@ -374,7 +374,7 @@
   self.currentFrameBuffer = nil;
 }
 
-- (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex
+- (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex
 {
   // The movie data must have been mapped into memory by the time advanceToFrame is invoked
   
@@ -503,7 +503,7 @@
         // explicitly copy the data from the zero copy buffer to the framebuffer so that we
         // have a writable memory region that a delta can be applied over.
         
-        if (isDeltaFrame && (self.currentFrameBuffer.zeroCopyPixels != NULL)) {
+        if (isDeltaFrame) {
           [self.currentFrameBuffer zeroCopyToPixels];
         }
       }
@@ -615,23 +615,21 @@
   if (!changeFrameData) {
     return nil;
   } else {
-    // Return a CGImage wrapped in a UIImage
+    // Return a CGImage wrapped in a AVFrame
+
+    AVFrame *frame = [AVFrame aVFrame];
+    NSAssert(frame, @"AVFrame is nil");
     
     CGFrameBuffer *cgFrameBuffer = self.currentFrameBuffer;
-    CGImageRef imgRef = [cgFrameBuffer createCGImageRef];
-    NSAssert(imgRef, @"CGImageRef returned by createCGImageRef is NULL");
+    frame.cgFrameBuffer = cgFrameBuffer;
     
-    UIImage *uiImage = [UIImage imageWithCGImage:imgRef];
-    CGImageRelease(imgRef);
+    [frame makeImageFromFramebuffer];
     
-    NSAssert(cgFrameBuffer.isLockedByDataProvider, @"image buffer should be locked by frame UIImage");
-    
-    NSAssert(uiImage, @"uiImage is nil");
-    return uiImage;    
+    return frame;    
   }
 }
 
-- (UIImage*) duplicateCurrentFrame
+- (AVFrame*) duplicateCurrentFrame
 {
   if (self.currentFrameBuffer == nil) {
     return nil;
@@ -649,16 +647,16 @@
   //[cgFrameBuffer copyPixels:self.currentFrameBuffer];
   [cgFrameBuffer memcopyPixels:self.currentFrameBuffer];
   
-  CGImageRef imgRef = [cgFrameBuffer createCGImageRef];
-  NSAssert(imgRef, @"CGImageRef returned by createCGImageRef is NULL");
+  // Return a CGImage wrapped in a AVFrame
   
-  UIImage *uiImage = [UIImage imageWithCGImage:imgRef];
-  CGImageRelease(imgRef);
+  AVFrame *frame = [AVFrame aVFrame];
+  NSAssert(frame, @"AVFrame is nil");
   
-  NSAssert(cgFrameBuffer.isLockedByDataProvider, @"image buffer should be locked by frame UIImage");
+  frame.cgFrameBuffer = cgFrameBuffer;
   
-  NSAssert(uiImage, @"uiImage is nil");
-  return uiImage;  
+  [frame makeImageFromFramebuffer];
+  
+  return frame;
 }
 
 - (void) resourceUsageLimit:(BOOL)enabled
@@ -724,7 +722,7 @@
   return [self _getHeader]->numFrames;
 }
 
-- (int) frameIndex
+- (NSInteger) frameIndex
 {
   // FIXME: What is the initial value of frameIndex, seems to be zero in MV impl, is it -1 in MOV reader?
   

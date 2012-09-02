@@ -25,7 +25,7 @@
   NSArray *m_urls;
   NSArray *m_dataObjs;
   NSArray *m_cachedImageObjs;
-  UIImage *m_currentFrame;
+  UIImage *m_currentFrameImage;
   NSTimeInterval m_frameDuration;
   BOOL m_resourceUsageLimit;
 }
@@ -34,7 +34,7 @@
 @property (nonatomic, copy) NSArray *urls;
 @property (nonatomic, copy) NSArray *dataObjs;
 @property (nonatomic, copy) NSArray *cachedImageObjs;
-@property (nonatomic, retain) UIImage *currentFrame;
+@property (nonatomic, retain) UIImage *currentFrameImage;
 
 + (NSArray*) arrayWithNumberedNames:(NSString*)filenamePrefix
                          rangeStart:(NSInteger)rangeStart
@@ -59,7 +59,7 @@
 
 // Advance the current frame index to the indicated frame index and store result in nextFrameBuffer
 
-- (UIImage*) advanceToFrame:(NSUInteger)newFrameIndex;
+- (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex;
 
 // Decoding frames may require additional resources that are not required
 // to open the file and examine the header contents. This method will

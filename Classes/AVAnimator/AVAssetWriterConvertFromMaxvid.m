@@ -277,7 +277,8 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
     
     // Pull frame of data from MVID file
     
-    UIImage *frameImage = [frameDecoder advanceToFrame:frameNum];
+    AVFrame *frame = [frameDecoder advanceToFrame:frameNum];
+    UIImage *frameImage = frame.image;
     
     if (frameImage == nil) {
       // FIXME: (can output frame  duration time be explicitly set to deal with this duplication)
