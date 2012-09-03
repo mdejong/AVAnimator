@@ -6,6 +6,10 @@
 
 #import "maxvid_decode.h"
 
+#import <Foundation/Foundation.h>
+
+@class AVMvidFileWriter;
+
 #ifndef __OPTIMIZE__
 // Automatically define EXTRA_CHECKS when not optimizing (in debug mode)
 # define EXTRA_CHECKS
@@ -174,5 +178,45 @@ maxvid_encode_c4_sample32(
                           const char * restrict filePath,
                           FILE * restrict file,
                           const uint32_t encodeFlags);
+
+// These utility methods work for either a 16 bpp or 24/32 bpp buffer and
+// encode the pixels that changed from one frame to the next as maxvid
+// generic codes stored in a NSData.
+
+NSData*
+maxvid_encode_generic_delta_pixels16(const uint16_t * restrict prevInputBuffer16,
+                                     const uint16_t * restrict currentInputBuffer16,
+                                     const uint32_t inputBufferNumWords,
+                                     uint32_t width,
+                                     uint32_t height);
+
+NSData*
+maxvid_encode_generic_delta_pixels32(const uint32_t * restrict prevInputBuffer32,
+                                     const uint32_t * restrict currentInputBuffer32,
+                                     const uint32_t inputBufferNumWords,
+                                     uint32_t width,
+                                     uint32_t height);
+
+// This method will convert maxvid codes to the final output format, calculate an adler
+// checksum for the frame data and then write the data to the mvidWriter.
+
+BOOL
+maxvid_write_delta_pixels(AVMvidFileWriter *mvidWriter,
+                          NSData *maxvidData,
+                          void *inputBuffer,
+                          uint32_t inputBufferNumBytes,
+                          NSUInteger frameBufferNumPixels);
+
+// Util struct/object
+
+@interface DeltaPixel : NSObject {
+@public
+	uint32_t x;
+	uint32_t y;
+	uint32_t offset;
+	uint32_t oldValue;
+	uint32_t newValue;  
+}
+@end
 
 #undef EXTRA_CHECKS
