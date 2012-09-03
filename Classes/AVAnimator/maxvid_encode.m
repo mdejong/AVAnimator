@@ -1890,6 +1890,7 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
     // nextPixelOffset value.
     
     prevPixelOffset = lastPixelOffset;
+    prevPixelOffset++;
   }
   
   // Emit SKIP pixels to advance from the last offset written as part of
@@ -1989,21 +1990,6 @@ maxvid_calculate_delta_pixels(NSArray *deltaPixels,
   
   process_pixel_run(mvidWordCodes, mPixelRun, prevPixelOffset, frameBufferNumPixels);
   
-  /*
-   if (prevPixelOffset < frameBufferNumPixels) {
-   // Emit one trailing SKIP operation to cover the unchanged pixels from the end of the
-   // delta pixels to the end of the whole framebuffer
-   
-   int numToSkip = frameBufferNumPixels - prevPixelOffset;
-   
-   uint32_t skipCode = maxvid32_code(SKIP, numToSkip);
-   
-   NSData *wordCode = [NSData dataWithBytes:&skipCode length:sizeof(uint32_t)];
-   
-   [mvidWordCodes appendData:wordCode];
-   }
-   */
-  
   // Emit DONE code to indicate that all codes have been emitted
   {    
     uint32_t doneCode = maxvid32_code(DONE, 0);
@@ -2012,6 +1998,8 @@ maxvid_calculate_delta_pixels(NSArray *deltaPixels,
     
     [mvidWordCodes appendData:wordCode];    
   }
+  
+  // App end all word codes specific to this run of pixels
   
   [mData appendData:mvidWordCodes];
   

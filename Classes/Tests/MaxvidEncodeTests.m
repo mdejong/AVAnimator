@@ -79,24 +79,87 @@
   return [NSString stringWithString:mStr];
 }
 
-// This test case checks a 1x1 input matrix at 32bpp. Could be identical frames, or 1 delta pixel.
+// This test case checks a 1x1 frame with identical pixel values.
 
-+ (void) testEncode1x1At32BPP
++ (void) testEncode1x1IdenticalAt32BPP
 {
   uint32_t prev[] = { 0x1 };
-  uint32_t curr_same[] = { 0x1 };
-  uint32_t curr_diff[] = { 0x2 };
+  uint32_t curr[] = { 0x1 };
   
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr_same, 1, 1, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 1, 1);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"IDENTICAL"], @"isEqualToString");
+  
+  return;
+}
 
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr_diff, 1, 1, 1);
+// This test case checks a 1x1 frame with different pixel values.
+
++ (void) testEncode1x1DifferentAt32BPP
+{
+  uint32_t prev[] = { 0x1 };
+  uint32_t curr[] = { 0x2 };
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 1, 1);
   results = [self util_printMvidCodes32:codes];
-  NSAssert([results isEqualToString:@"COPY 0x2 DONE"], @"isEqualToString");
+  NSAssert([results isEqualToString:@"COPY 1 0x2 DONE"], @"isEqualToString");
+  
+  return;
+}
+
+// Check that a SKIP is being emitted after a delta pixel
+
++ (void) testEncode2x1CopySkipAt32BPP
+{
+  uint32_t prev[] = { 0x1, 0x2 };
+  uint32_t curr[] = { 0x3, 0x2 };
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 2, 1);
+  results = [self util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"COPY 1 0x3 SKIP 1 DONE"], @"isEqualToString");
+  
+  return;
+}
+
+// Check that a SKIP is being emitted before a delta pixel
+
++ (void) testEncode2x1SkipCopyAt32BPP
+{
+  uint32_t prev[] = { 0x2, 0x1 };
+  uint32_t curr[] = { 0x2, 0x3 };
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 2, 1);
+  results = [self util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 DONE"], @"isEqualToString");
+  
+  return;
+}
+
+// Emit a SKIP both before and after a COPY
+
++ (void) testEncode3x1SkipCopySkipAt32BPP
+{
+  uint32_t prev[] = { 0x2, 0x1, 0x4 };
+  uint32_t curr[] = { 0x2, 0x3, 0x4 };
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1);
+  results = [self util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 SKIP 1 DONE"], @"isEqualToString");
   
   return;
 }
