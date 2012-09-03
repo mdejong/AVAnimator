@@ -207,16 +207,4 @@ maxvid_write_delta_pixels(AVMvidFileWriter *mvidWriter,
                           uint32_t inputBufferNumBytes,
                           NSUInteger frameBufferNumPixels);
 
-// Util struct/object
-
-@interface DeltaPixel : NSObject {
-@public
-	uint32_t x;
-	uint32_t y;
-	uint32_t offset;
-	uint32_t oldValue;
-	uint32_t newValue;  
-}
-@end
-
 #undef EXTRA_CHECKS

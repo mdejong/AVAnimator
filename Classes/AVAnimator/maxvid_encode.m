@@ -111,6 +111,18 @@ int fpsize(FILE *fp, uint32_t *filesize) {
   return 0;
 }
 
+// Util struct/object used only in this module
+
+@interface DeltaPixel : NSObject {
+@public
+	uint32_t x;
+	uint32_t y;
+	uint32_t offset;
+	uint32_t oldValue;
+	uint32_t newValue;  
+}
+@end
+
 // Scan for next generic op code, one of (SKIP, DUP, COPY, DONE)
 //
 // These methods do not change the input Buffer, it simply
