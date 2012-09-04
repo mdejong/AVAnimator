@@ -164,4 +164,121 @@
   return;
 }
 
++ (void) testEncode3x1CopySkipCopyAt32BPP
+{
+  uint32_t prev[] = { 0x1, 0x2, 0x3 };
+  uint32_t curr[] = { 0x4, 0x2, 0x5 };
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1);
+  results = [self util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"COPY 1 0x4 SKIP 1 COPY 1 0x5 DONE"], @"isEqualToString");
+  
+  return;
+}
+
+// Two different COPY pixels in a run
+
++ (void) testEncode2x1CopyCopyAt32BPP
+{
+  uint32_t prev[] = { 0x1, 0x2 };
+  uint32_t curr[] = { 0x3, 0x4 };
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 2, 1);
+  results = [self util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"COPY 2 0x3 0x4 DONE"], @"isEqualToString");
+  
+  return;
+}
+
+// Two identical pixels in a run is a DUP
+
++ (void) testEncode2x1Dup2At32BPP
+{
+  uint32_t prev[] = { 0x1, 0x2 };
+  uint32_t curr[] = { 0x3, 0x3 };
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 2, 1);
+  results = [self util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"DUP 2 0x3 DONE"], @"isEqualToString");
+  
+  return;
+}
+
+// Two identical DUP pixels followed by a COPY
+
++ (void) testEncode3x1DupCopy2At32BPP
+{
+  uint32_t prev[] = { 0x1, 0x2, 0x3 };
+  uint32_t curr[] = { 0x3, 0x3, 0x4 };
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1);
+  results = [self util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"DUP 2 0x3 COPY 1 0x4 DONE"], @"isEqualToString");
+  
+  return;
+}
+
+// COPY followed by two identical DUP pixels
+
++ (void) testEncode3x1CopyDup2At32BPP
+{
+  uint32_t prev[] = { 0x1, 0x2, 0x3 };
+  uint32_t curr[] = { 0x4, 0x5, 0x5 };
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1);
+  results = [self util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"COPY 1 0x4 DUP 2 0x5 DONE"], @"isEqualToString");
+  
+  return;
+}
+
+// DUP COPY DUP in one pixel run
+
++ (void) testEncode5x1Dup2CopyDup2At32BPP
+{
+  uint32_t prev[] = { 0x1, 0x2, 0x3, 0x4, 0x5 };
+  uint32_t curr[] = { 0x6, 0x6, 0x7, 0x8, 0x8 };
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 5, 1);
+  results = [self util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"DUP 2 0x6 COPY 1 0x7 DUP 2 0x8 DONE"], @"isEqualToString");
+  
+  return;
+}
+
+// COPY DUP COPY in one pixel run
+
++ (void) testEncode4x1CopyDup2CopyAt32BPP
+{
+  uint32_t prev[] = { 0x1, 0x2, 0x3, 0x4 };
+  uint32_t curr[] = { 0x5, 0x6, 0x6, 0x7 };
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 4, 1);
+  results = [self util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"COPY 1 0x5 DUP 2 0x6 COPY 1 0x7 DONE"], @"isEqualToString");
+  
+  return;
+}
+
 @end

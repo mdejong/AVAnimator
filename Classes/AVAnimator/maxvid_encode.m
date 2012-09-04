@@ -1825,6 +1825,45 @@ maxvid_encode_generic_delta_pixels32(const uint32_t * restrict prevInputBuffer32
   return [NSData dataWithData:mData];
 }
 
+// Emit a DUP code for a specific run of pixels with all the same value
+
+static
+void emit_dup_run(NSMutableData *mvidWordCodes,
+                  int dupCount,
+                  uint32_t pixelValue,
+                  int bpp)
+
+{
+  uint32_t dupCode = maxvid32_code(DUP, dupCount);
+  
+  [mvidWordCodes appendBytes:&dupCode length:sizeof(uint32_t)];
+  
+  // FIXME: 16 bit support
+  
+  [mvidWordCodes appendBytes:&pixelValue length:sizeof(uint32_t)];
+}
+
+// Emit a COPY code for a run of pixels with different values
+
+static
+void emit_copy_run(NSMutableData *mvidWordCodes,
+                   NSMutableArray *copyPixels,
+                   int bpp)
+
+{
+  int copyLength = [copyPixels count];
+  uint32_t copyCode = maxvid32_code(COPY, copyLength);
+  
+  [mvidWordCodes appendBytes:&copyCode length:sizeof(uint32_t)];
+  
+  for (DeltaPixel *copyDeltaPixel in copyPixels) {
+    uint32_t copyPixelValue = copyDeltaPixel->newValue;
+    [mvidWordCodes appendBytes:&copyPixelValue length:sizeof(uint32_t)];
+  }
+  
+  [copyPixels removeAllObjects];
+}
+
 // Given a buffer of modified pixels, figure out how to write the pixels
 // into mvidWordCodes. Pixels are emitted as COPY unless there is a run
 // of 2 or more of the same value. Use a DUP in the case of a run.
@@ -1842,47 +1881,77 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
     int firstPixelOffset = -1;
     int lastPixelOffset = -1;
     
-    if (TRUE) {
-      // Additional checking of the data run mPixelRun, not required
+    runLength = [mPixelRun count];
       
-      for (DeltaPixel *deltaPixel in mPixelRun) {
-        runLength++;
-        if (firstPixelOffset == -1) {
-          firstPixelOffset = deltaPixel->offset;
-        }
-        lastPixelOffset = deltaPixel->offset;
-      }
-    } else {
-      runLength = [mPixelRun count];
-      
-      firstPixelOffset = ((DeltaPixel*)[mPixelRun objectAtIndex:0])->offset;
-      lastPixelOffset = ((DeltaPixel*)[mPixelRun lastObject])->offset;
-    }
+    firstPixelOffset = ((DeltaPixel*)[mPixelRun objectAtIndex:0])->offset;
+    lastPixelOffset = ((DeltaPixel*)[mPixelRun lastObject])->offset;
     
     assert((lastPixelOffset - firstPixelOffset + 1) == runLength);
     
-    // FIXME: scan pixel run for DUP pattern
+    // Scan over the pixels in a run looking for a DUP pattern,
+    // meaning a run of delta pixels where each value is the same
+    // as the previous one.
     
-    // EMIT COPY code to indicate how many delta pixels to copy
+    int dupCount = 0;
+    NSMutableArray *copyPixels = [NSMutableArray array];
     
-    uint32_t copyCode = maxvid32_code(COPY, runLength);
-    
-    NSData *wordCode = [NSData dataWithBytes:&copyCode length:sizeof(uint32_t)];
-    
-    [mvidWordCodes appendData:wordCode];
-    
-    // Emit a word for each pixel in the COPY
+    uint32_t prevPixelValue;
+    BOOL isFirstPixelInRun = TRUE;
     
     for (DeltaPixel *deltaPixel in mPixelRun) {
       uint32_t value = deltaPixel->newValue;
       
-      // FIXME: support for 16 bit pixel values
+      if ((isFirstPixelInRun == FALSE) && (value == prevPixelValue)) {
+        // This delta pixel is the same value as the previous one
+        
+        if ((dupCount == 0) && ([copyPixels count] > 0)) {
+          // This pixel is the second pixel in a DUP series, but the
+          // previous loop appended the previous pixel to copyPixels.
+          // Undo that addition so that the COPY emit can be completed.
+          
+          [copyPixels removeLastObject];
+        }
+        
+        if ([copyPixels count] > 0) {
+          // Emit previous run of COPY pixels and empty copyPixels array
+          
+          emit_copy_run(mvidWordCodes, copyPixels, 32);
+        }
+
+        if (dupCount == 0) {
+          dupCount = 2;
+        } else {
+          dupCount++;          
+        }
+      } else {
+        // This pixel is not the same value as the previous one, or it is the first pixel
+        
+        if (dupCount != 0) {
+          // Emit a previous DUP pattern when durrent pixel does not match previous
+          
+          emit_dup_run(mvidWordCodes, dupCount, prevPixelValue, 32);
+          dupCount = 0;
+        }
+        
+        [copyPixels addObject:deltaPixel];
+      }
       
-      NSData *pixelData = [NSData dataWithBytes:&value length:sizeof(uint32_t)];
+      isFirstPixelInRun = FALSE;
+      prevPixelValue = value;
+    }
+        
+    // After loop, check for pending COPY or DUP op
+    
+    if (dupCount != 0) {
+      assert([copyPixels count] == 0);
       
-      // FIXME: can we just append 4 bytes instead of creating a NSData here?
+      emit_dup_run(mvidWordCodes, dupCount, prevPixelValue, 32);
+    } else if ([copyPixels count] > 0) {
+      assert(dupCount == 0);
       
-      [mvidWordCodes appendData:pixelData];
+      // Emit previous run of COPY pixels and empty copyPixels array
+      
+      emit_copy_run(mvidWordCodes, copyPixels, 32);
     }
     
     // Update prevPixelOffset so that it contains the offset that the pixel run just
@@ -1923,39 +1992,7 @@ maxvid_calculate_delta_pixels(NSArray *deltaPixels,
                               NSMutableData *mData,
                               NSUInteger frameBufferNumPixels)
 {
-  //int retcode;
-  
   NSMutableData *mvidWordCodes = [NSMutableData data];
-  
-  //int bpp = mvidWriter.bpp;
-  
-  // Create MVID word codes in a buffer
-  
-  //adler = 0;
-  
-  // FIXME: assumes 32 bit
-  
-  /*
-   
-   {    
-   uint32_t skipCode = maxvid32_code(SKIP, frameBufferNumPixels);
-   
-   NSData *wordCode = [NSData dataWithBytes:&skipCode length:sizeof(uint32_t)];
-   
-   [mvidWordCodes appendData:wordCode];    
-   }
-   
-   */
-  
-  /*
-   
-   Use CASES
-   
-   // 0 (add to pixel run)
-   // 1 (add)
-   // 3 (process last pixel run, SKIP to current, add to run)
-   
-   */
   
   int prevPixelOffset = 0;
   BOOL isFirstPixel = TRUE;
