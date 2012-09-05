@@ -1834,13 +1834,18 @@ void emit_dup_run(NSMutableData *mvidWordCodes,
                   int bpp)
 
 {
-  uint32_t dupCode = maxvid32_code(DUP, dupCount);
-  
-  [mvidWordCodes appendBytes:&dupCode length:sizeof(uint32_t)];
-  
-  // FIXME: 16 bit support
-  
-  [mvidWordCodes appendBytes:&pixelValue length:sizeof(uint32_t)];
+  if (bpp == 16) {
+    uint32_t dupCode = maxvid16_code(DUP, dupCount);
+    uint16_t pixel = (uint16_t) pixelValue;
+    uint32_t pixel32 = (pixel << 16) | pixel;
+    
+    [mvidWordCodes appendBytes:&dupCode length:sizeof(uint32_t)];
+    [mvidWordCodes appendBytes:&pixel32 length:sizeof(uint32_t)];
+  } else {
+    uint32_t dupCode = maxvid32_code(DUP, dupCount);  
+    [mvidWordCodes appendBytes:&dupCode length:sizeof(uint32_t)];
+    [mvidWordCodes appendBytes:&pixelValue length:sizeof(uint32_t)];
+  }
 }
 
 // Emit a COPY code for a run of pixels with different values
@@ -1852,15 +1857,54 @@ void emit_copy_run(NSMutableData *mvidWordCodes,
 
 {
   int copyLength = [copyPixels count];
-  uint32_t copyCode = maxvid32_code(COPY, copyLength);
   
-  [mvidWordCodes appendBytes:&copyCode length:sizeof(uint32_t)];
-  
-  for (DeltaPixel *copyDeltaPixel in copyPixels) {
-    uint32_t copyPixelValue = copyDeltaPixel->newValue;
-    [mvidWordCodes appendBytes:&copyPixelValue length:sizeof(uint32_t)];
+  if (bpp == 16) {
+    // Write COPY code followed by pairs of 16 bit pixels
+    
+    uint32_t copyCode = maxvid16_code(COPY, copyLength);
+    [mvidWordCodes appendBytes:&copyCode length:sizeof(uint32_t)];
+    
+    for ( ; [copyPixels count] > 0; ) {
+      DeltaPixel *copyDeltaPixel;
+      uint32_t pixel32 = 0;
+      
+      if ([copyPixels count] == 1) {
+        // Only 1 16 bit pixel left
+
+        copyDeltaPixel = [copyPixels objectAtIndex:0];
+        uint16_t pixel1 = (uint16_t) copyDeltaPixel->newValue;
+        [copyPixels removeObjectAtIndex:0];
+
+        // Note that the high half word is zero
+        pixel32 = pixel1;
+      } else {
+        // Emit 2 pixels as 1 word
+        
+        copyDeltaPixel = [copyPixels objectAtIndex:0];
+        uint16_t pixel1 = (uint16_t) copyDeltaPixel->newValue;
+        [copyPixels removeObjectAtIndex:0];
+        
+        copyDeltaPixel = [copyPixels objectAtIndex:0];
+        uint16_t pixel2 = (uint16_t) copyDeltaPixel->newValue;
+        [copyPixels removeObjectAtIndex:0];        
+
+        pixel32 = (pixel2 << 16) | pixel1;
+      }
+      
+      [mvidWordCodes appendBytes:&pixel32 length:sizeof(uint32_t)];
+    }
+  } else {
+    // Write COPY code followed by 32 bit pixels
+    
+    uint32_t copyCode = maxvid32_code(COPY, copyLength);
+    [mvidWordCodes appendBytes:&copyCode length:sizeof(uint32_t)];
+    
+    for (DeltaPixel *copyDeltaPixel in copyPixels) {
+      uint32_t copyPixelValue = copyDeltaPixel->newValue;
+      [mvidWordCodes appendBytes:&copyPixelValue length:sizeof(uint32_t)];
+    }
   }
-  
+    
   [copyPixels removeAllObjects];
 }
 
@@ -1872,7 +1916,8 @@ static
 void process_pixel_run(NSMutableData *mvidWordCodes,
                        NSMutableArray *mPixelRun,
                        int prevPixelOffset,
-                       int nextPixelOffset)
+                       int nextPixelOffset,
+                       int bpp)
 {
   if ([mPixelRun count] > 0) {
     // Emit codes for this run of pixels
@@ -1915,7 +1960,7 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
         if ([copyPixels count] > 0) {
           // Emit previous run of COPY pixels and empty copyPixels array
           
-          emit_copy_run(mvidWordCodes, copyPixels, 32);
+          emit_copy_run(mvidWordCodes, copyPixels, bpp);
         }
 
         if (dupCount == 0) {
@@ -1929,7 +1974,7 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
         if (dupCount != 0) {
           // Emit a previous DUP pattern when durrent pixel does not match previous
           
-          emit_dup_run(mvidWordCodes, dupCount, prevPixelValue, 32);
+          emit_dup_run(mvidWordCodes, dupCount, prevPixelValue, bpp);
           dupCount = 0;
         }
         
@@ -1945,13 +1990,13 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
     if (dupCount != 0) {
       assert([copyPixels count] == 0);
       
-      emit_dup_run(mvidWordCodes, dupCount, prevPixelValue, 32);
+      emit_dup_run(mvidWordCodes, dupCount, prevPixelValue, bpp);
     } else if ([copyPixels count] > 0) {
       assert(dupCount == 0);
       
       // Emit previous run of COPY pixels and empty copyPixels array
       
-      emit_copy_run(mvidWordCodes, copyPixels, 32);
+      emit_copy_run(mvidWordCodes, copyPixels, bpp);
     }
     
     // Update prevPixelOffset so that it contains the offset that the pixel run just
@@ -1971,11 +2016,14 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
   
   if (numToSkip > 0)
   {
-    uint32_t skipCode = maxvid32_code(SKIP, numToSkip);
-    
+    uint32_t skipCode;
+    if (bpp == 16) {
+      skipCode = maxvid16_code(SKIP, numToSkip);
+    } else {
+      skipCode = maxvid32_code(SKIP, numToSkip);
+    }
     NSData *wordCode = [NSData dataWithBytes:&skipCode length:sizeof(uint32_t)];
-    
-    [mvidWordCodes appendData:wordCode];    
+    [mvidWordCodes appendData:wordCode];
   }
   
   [mPixelRun removeAllObjects];
@@ -2013,7 +2061,7 @@ maxvid_calculate_delta_pixels(NSArray *deltaPixels,
       // and in that case the existing run is of zero length. Otherwise, emit
       // the previous run of pixels so that we can start a new run.
       
-      process_pixel_run(mvidWordCodes, mPixelRun, prevPixelOffset, nextPixelOffset);
+      process_pixel_run(mvidWordCodes, mPixelRun, prevPixelOffset, nextPixelOffset, bpp);
       
       [mPixelRun addObject:deltaPixel];
     }
@@ -2025,15 +2073,19 @@ maxvid_calculate_delta_pixels(NSArray *deltaPixels,
   // At the end of the delta pixels, we could have a run of pixels that still need to
   // be processed. In addition, we might need to SKIP to the end of the framebuffer.
   
-  process_pixel_run(mvidWordCodes, mPixelRun, prevPixelOffset, frameBufferNumPixels);
+  process_pixel_run(mvidWordCodes, mPixelRun, prevPixelOffset, frameBufferNumPixels, bpp);
   
   // Emit DONE code to indicate that all codes have been emitted
-  {    
-    uint32_t doneCode = maxvid32_code(DONE, 0);
+  {
+    uint32_t doneCode;
+    if (bpp == 16) {
+      doneCode = maxvid16_code(DONE, 0x0);
+    } else {
+      doneCode = maxvid32_code(DONE, 0x0);    
+    }
     
     NSData *wordCode = [NSData dataWithBytes:&doneCode length:sizeof(uint32_t)];
-    
-    [mvidWordCodes appendData:wordCode];    
+    [mvidWordCodes appendData:wordCode];
   }
   
   // App end all word codes specific to this run of pixels
