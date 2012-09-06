@@ -1829,22 +1829,40 @@ maxvid_encode_generic_delta_pixels32(const uint32_t * restrict prevInputBuffer32
 
 static
 void emit_dup_run(NSMutableData *mvidWordCodes,
-                  int dupCount,
+                  uint32_t dupCount,
                   uint32_t pixelValue,
                   int bpp)
 
 {
-  if (bpp == 16) {
-    uint32_t dupCode = maxvid16_code(DUP, dupCount);
-    uint16_t pixel = (uint16_t) pixelValue;
-    uint32_t pixel32 = (pixel << 16) | pixel;
+  // Maximum number of pixels that can be duplicated in one 16 bit code is
+  // 0xFFFF, so don't emit a DUP larger than that. No specific reason to
+  // use a different constant for 16 vs 32 bit values since the encoding
+  // logic will recombine DUP values later for a specific encoding.
+  
+  while (dupCount != 0) {
+    uint32_t dupCode;
+    uint32_t pixel32;
+    uint32_t numToDupThisLoop;
+    
+    if (dupCount > MV_MAX_16_BITS) {
+      numToDupThisLoop = MV_MAX_16_BITS;
+    } else {
+      numToDupThisLoop = dupCount;
+    }
+    
+    if (bpp == 16) {
+      dupCode = maxvid16_code(DUP, numToDupThisLoop);
+      uint16_t pixel = (uint16_t) pixelValue;
+      pixel32 = (pixel << 16) | pixel;
+    } else {
+      dupCode = maxvid32_code(DUP, numToDupThisLoop);
+      pixel32 = pixelValue;
+    }
     
     [mvidWordCodes appendBytes:&dupCode length:sizeof(uint32_t)];
     [mvidWordCodes appendBytes:&pixel32 length:sizeof(uint32_t)];
-  } else {
-    uint32_t dupCode = maxvid32_code(DUP, dupCount);  
-    [mvidWordCodes appendBytes:&dupCode length:sizeof(uint32_t)];
-    [mvidWordCodes appendBytes:&pixelValue length:sizeof(uint32_t)];
+    
+    dupCount -= numToDupThisLoop;
   }
 }
 
@@ -1970,7 +1988,7 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
     // meaning a run of delta pixels where each value is the same
     // as the previous one.
     
-    int dupCount = 0;
+    uint32_t dupCount = 0;
     NSMutableArray *copyPixels = [NSMutableArray array];
     
     uint32_t prevPixelValue;
@@ -1999,7 +2017,6 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
         if (dupCount == 0) {
           dupCount = 2;
         } else {
-          // FIXME: max DUP count that can be emitted is 0xFFFF
           dupCount++;          
         }
       } else {

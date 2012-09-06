@@ -644,9 +644,83 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   return;
 }
 
-// FIXME:
++ (void) testEncodeLargeCopySkipAt32BPP
+{
+  int numBytes = 480 * 320 * sizeof(uint32_t);
+  uint32_t *prev = (uint32_t *) malloc( numBytes );
+  uint32_t *curr = (uint32_t *) malloc( numBytes );
+  
+  bzero(prev, numBytes);
+  prev[0] = 0x1;
+  bzero(curr, numBytes);
+  curr[0] = 0x2;
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), 480, 320);
+  results = [self util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"COPY 1 0x2 SKIP 65535 SKIP 65535 SKIP 22529 DONE"], @"isEqualToString");
+  
+  free(prev);
+  free(curr);
+  
+  return;
+}
 
 // Delta a buffer where every single pixel is changed to the same other pixel, aka a large DUP.
+
++ (void) testEncodeLargeDupAt16BPP
+{
+  int numBytes = 480 * 320 * sizeof(uint16_t);
+  uint16_t *prev = (uint16_t *) malloc( numBytes );
+  uint16_t *curr = (uint16_t *) malloc( numBytes );
+  
+  bzero(prev, numBytes);  
+  for (int i=0; i < 480 * 320; i++) {
+    curr[i] = 0x1;
+  }
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), 480, 320);
+  results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"DUP 65535 0x1 DUP 65535 0x1 DUP 22530 0x1 DONE"], @"isEqualToString");
+  
+  free(prev);
+  free(curr);
+  
+  return;
+}
+
+// Delta a buffer where every single pixel is changed to the same other pixel, aka a large DUP.
+
++ (void) testEncodeLargeDupAt32BPP
+{
+  int numBytes = 480 * 320 * sizeof(uint32_t);
+  uint32_t *prev = (uint32_t *) malloc( numBytes );
+  uint32_t *curr = (uint32_t *) malloc( numBytes );
+  
+  bzero(prev, numBytes);  
+  for (int i=0; i < 480 * 320; i++) {
+    curr[i] = 0x1;
+  }
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), 480, 320);
+  results = [self util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"DUP 65535 0x1 DUP 65535 0x1 DUP 22530 0x1 DONE"], @"isEqualToString");
+  
+  free(prev);
+  free(curr);
+  
+  return;
+}
+
+// FIXME:
 
 // Delta a buffer where every single pixel is changed to some other pixel, aka a large COPY.
 
