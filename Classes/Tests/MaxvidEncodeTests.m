@@ -616,4 +616,38 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   return;
 }
 
+// Delta a very large buffer to generate a skip that is buffer length minus one. This
+// will be processed as COPY and then a large SKIP, the SKIP value is so large that
+// it can't be contained in one single 16 bit value.
+
++ (void) testEncodeLargeCopySkipAt16BPP
+{
+  int numBytes = 480 * 320 * sizeof(uint16_t);
+  uint16_t *prev = (uint16_t *) malloc( numBytes );
+  uint16_t *curr = (uint16_t *) malloc( numBytes );
+
+  bzero(prev, numBytes);
+  prev[0] = 0x1;
+  bzero(curr, numBytes);
+  curr[0] = 0x2;
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), 480, 320);
+  results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"COPY 1 0x2 SKIP 65535 SKIP 65535 SKIP 22529 DONE"], @"isEqualToString");
+
+  free(prev);
+  free(curr);
+  
+  return;
+}
+
+// FIXME:
+
+// Delta a buffer where every single pixel is changed to the same other pixel, aka a large DUP.
+
+// Delta a buffer where every single pixel is changed to some other pixel, aka a large COPY.
+
 @end

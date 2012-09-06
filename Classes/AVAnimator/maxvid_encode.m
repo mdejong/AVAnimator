@@ -1908,6 +1908,39 @@ void emit_copy_run(NSMutableData *mvidWordCodes,
   [copyPixels removeAllObjects];
 }
 
+static
+void emit_skip_run(NSMutableData *mvidWordCodes,
+                   uint32_t numPixelsToSkip,
+                   int bpp)
+
+{
+  // Maximum number of pixels that can be skipped over in one 16 bit code is
+  // 0xFFFF, so don't emit a skip larger than that. No specific reason to
+  // use a different constant for 16 vs 32 bit values since the encoding
+  // logic will recombine SKIP values later for a specific encoding.
+
+  while (numPixelsToSkip != 0) {
+    uint32_t skipCode;
+    uint32_t numToSkipThisLoop;
+    
+    if (numPixelsToSkip > MV_MAX_16_BITS) {
+      numToSkipThisLoop = MV_MAX_16_BITS;
+    } else {
+      numToSkipThisLoop = numPixelsToSkip;
+    }
+    
+    if (bpp == 16) {
+      skipCode = maxvid16_code(SKIP, numToSkipThisLoop);
+    } else {
+      skipCode = maxvid32_code(SKIP, numToSkipThisLoop);
+    }
+    NSData *wordCode = [NSData dataWithBytes:&skipCode length:sizeof(uint32_t)];
+    [mvidWordCodes appendData:wordCode];
+    
+    numPixelsToSkip -= numToSkipThisLoop;
+  }
+}
+
 // Given a buffer of modified pixels, figure out how to write the pixels
 // into mvidWordCodes. Pixels are emitted as COPY unless there is a run
 // of 2 or more of the same value. Use a DUP in the case of a run.
@@ -1966,6 +1999,7 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
         if (dupCount == 0) {
           dupCount = 2;
         } else {
+          // FIXME: max DUP count that can be emitted is 0xFFFF
           dupCount++;          
         }
       } else {
@@ -1977,6 +2011,8 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
           emit_dup_run(mvidWordCodes, dupCount, prevPixelValue, bpp);
           dupCount = 0;
         }
+        
+        // FIXME: max COPY count that can be emitted is 0xFFFF
         
         [copyPixels addObject:deltaPixel];
       }
@@ -2016,14 +2052,7 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
   
   if (numToSkip > 0)
   {
-    uint32_t skipCode;
-    if (bpp == 16) {
-      skipCode = maxvid16_code(SKIP, numToSkip);
-    } else {
-      skipCode = maxvid32_code(SKIP, numToSkip);
-    }
-    NSData *wordCode = [NSData dataWithBytes:&skipCode length:sizeof(uint32_t)];
-    [mvidWordCodes appendData:wordCode];
+    emit_skip_run(mvidWordCodes, numToSkip, bpp);
   }
   
   [mPixelRun removeAllObjects];
