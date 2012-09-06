@@ -74,7 +74,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
         }
       }
     } else if (opCode == DUP) {
-      // DUP word contains the number and next word contains the pixel
+      // DUP word contains the number and the next word contains the pixel
       index++;
       inword = ptr[index++];
       uint16_t pixel16 = (uint16_t)inword;      
@@ -578,6 +578,40 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 4, 1);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x5 DUP 2 0x6 COPY 1 0x7 DONE"], @"isEqualToString");
+  
+  return;
+}
+
+// SKIP COPY SKIP SKIP
+
++ (void) testEncode4x1SkipCopySkip2At16BPP
+{
+  uint16_t prev[] = { 0x1, 0x2, 0x3, 0x3 };
+  uint16_t curr[] = { 0x1, 0x3, 0x3, 0x3 };
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 4, 1);
+  results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 SKIP 2 DONE"], @"isEqualToString");
+  
+  return;
+}
+
+// SKIP COPY SKIP SKIP
+
++ (void) testEncode4x1SkipCopySkip2At32BPP
+{
+  uint32_t prev[] = { 0x1, 0x2, 0x3, 0x3 };
+  uint32_t curr[] = { 0x1, 0x3, 0x3, 0x3 };
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 4, 1);
+  results = [self util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 SKIP 2 DONE"], @"isEqualToString");
   
   return;
 }
