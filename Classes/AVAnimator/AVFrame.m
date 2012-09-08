@@ -56,6 +56,13 @@ NSImage*
   CGImageRef imgRef = [cgFrameBuffer createCGImageRef];
   NSAssert(imgRef != NULL, @"CGImageRef returned by createCGImageRef is NULL");
   
+  // Note that we create a pool around the allocation of the image object
+  // so that after the assignment to self.image, the only active reference
+  // lives in this object. If the image object is created in the caller's
+  // autorelease pool then we could not set image property to release.
+  
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  
 #if TARGET_OS_IPHONE
   UIImage *uiImage = [UIImage imageWithCGImage:imgRef];
   NSAssert(uiImage, @"uiImage is nil");
@@ -72,6 +79,9 @@ NSImage*
 #endif // TARGET_OS_IPHONE
   
   CGImageRelease(imgRef);
+  
+  [pool drain];
+  
   NSAssert(cgFrameBuffer.isLockedByDataProvider, @"image buffer should be locked by frame image");  
 }
 
