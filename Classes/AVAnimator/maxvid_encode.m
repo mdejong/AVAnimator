@@ -1917,13 +1917,17 @@ void emit_copy_run(NSMutableData *mvidWordCodes,
     uint32_t copyCode = maxvid32_code(COPY, copyLength);
     [mvidWordCodes appendBytes:&copyCode length:sizeof(uint32_t)];
     
-    for (DeltaPixel *copyDeltaPixel in copyPixels) {
+    for ( ; [copyPixels count] > 0; ) {
+      DeltaPixel *copyDeltaPixel = [copyPixels objectAtIndex:0];
       uint32_t copyPixelValue = copyDeltaPixel->newValue;
+      [copyPixels removeObjectAtIndex:0];
+      
       [mvidWordCodes appendBytes:&copyPixelValue length:sizeof(uint32_t)];
     }
   }
-    
-  [copyPixels removeAllObjects];
+  
+  // All copyPixels have to have been removed by pixel loop
+  assert([copyPixels count] == 0);
 }
 
 static
