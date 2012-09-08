@@ -730,7 +730,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
 // Delta a buffer where every single pixel is changed to some other pixel, aka a large COPY.
 
-+ (void) DISABLED_testEncodeLargeCopyAt16BPP
++ (void) testEncodeLargeCopyAt16BPP
 {
   int width = 480;
   int height = 320;
@@ -743,7 +743,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   bzero(prev, numBytes);
   
-  // Note that the value range for 0 -> 153600 will overflow the 16bit pixel value
+  // Note that the value range for 0 -> 153600 will overflow a 16bit pixel value
   for (int i=0; i < width * height; i++) {
     uint16_t pixelValue;
     if ((i % 3) == 0) {
@@ -764,13 +764,28 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), width, height);
   results = [self util_printMvidCodes16:codes];
   
-  // Generate a string like "COPY 65535 0x1 0x2 0x3 ... COPY 65535 ... COPY 65535 ... DONE"
+  // Generate a string like "COPY 65535 0x1 0x2 0x3 ... COPY 65535 ... COPY 22530 ... DONE"
   
+  NSMutableString *mStr = [NSMutableString string];
   
+  [mStr appendFormat:@"COPY %d ", 65535];
+  for (int i=0; i < 65535 / 3; i++) {
+    [mStr appendString:@"0x1 0x2 0x3 "];
+  }
+  [mStr appendFormat:@"COPY %d ", 65535];
+  for (int i=0; i < 65535 / 3; i++) {
+    [mStr appendString:@"0x1 0x2 0x3 "];
+  }
+  [mStr appendFormat:@"COPY %d ", 22530];
+  for (int i=0; i < 22530 / 3; i++) {
+    [mStr appendString:@"0x1 0x2 0x3 "];
+  }
   
-  // We can't simply write 
+  [mStr appendString:@"DONE"];
   
-  NSAssert([results isEqualToString:@"COPY 65535 0x1 DUP 65535 0x1 DUP 22530 0x1 DONE"], @"isEqualToString");
+  NSString *expected = [NSString stringWithString:mStr];
+  
+  NSAssert([results isEqualToString:expected], @"isEqualToString");
   
   free(prev);
   free(curr);
@@ -793,7 +808,6 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   bzero(prev, numBytes);
   
-  // Note that the value range for 0 -> 153600 will overflow the 16bit pixel value
   for (int i=0; i < width * height; i++) {
     uint32_t pixelValue;
     if ((i % 3) == 0) {
@@ -814,14 +828,20 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height);
   results = [self util_printMvidCodes32:codes];
   
-  // Generate a string like "COPY 153600 0x1 0x2 0x3 ... DONE"
-  // Generate a string like "COPY 65535 0x1 0x2 0x3 ... COPY 65535 ... COPY 65535 ... DONE"
+  // Generate a string like "COPY 65535 0x1 0x2 0x3 ... COPY 65535 ... COPY 22530 ... DONE"
   
   NSMutableString *mStr = [NSMutableString string];
   
-  [mStr appendFormat:@"COPY %d ", width * height];
-
-  for (int i=0; i < 51200; i++) {
+  [mStr appendFormat:@"COPY %d ", 65535];
+  for (int i=0; i < 65535 / 3; i++) {
+    [mStr appendString:@"0x1 0x2 0x3 "];
+  }
+  [mStr appendFormat:@"COPY %d ", 65535];
+  for (int i=0; i < 65535 / 3; i++) {
+    [mStr appendString:@"0x1 0x2 0x3 "];
+  }
+  [mStr appendFormat:@"COPY %d ", 22530];
+  for (int i=0; i < 22530 / 3; i++) {
     [mStr appendString:@"0x1 0x2 0x3 "];
   }
   
