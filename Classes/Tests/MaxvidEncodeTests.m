@@ -622,7 +622,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
 + (void) testEncodeLargeCopySkipAt16BPP
 {
-  int numBytes = 480 * 320 * sizeof(uint16_t);
+  int width = 480;
+  int height = 320;
+  int numBytes = width * height * sizeof(uint16_t);
   uint16_t *prev = (uint16_t *) malloc( numBytes );
   uint16_t *curr = (uint16_t *) malloc( numBytes );
 
@@ -634,7 +636,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), 480, 320);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), width, height);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x2 SKIP 65535 SKIP 65535 SKIP 22529 DONE"], @"isEqualToString");
 
@@ -646,7 +648,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
 + (void) testEncodeLargeCopySkipAt32BPP
 {
-  int numBytes = 480 * 320 * sizeof(uint32_t);
+  int width = 480;
+  int height = 320;
+  int numBytes = width * height * sizeof(uint32_t);
   uint32_t *prev = (uint32_t *) malloc( numBytes );
   uint32_t *curr = (uint32_t *) malloc( numBytes );
   
@@ -658,7 +662,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), 480, 320);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x2 SKIP 65535 SKIP 65535 SKIP 22529 DONE"], @"isEqualToString");
   
@@ -672,19 +676,21 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
 + (void) testEncodeLargeDupAt16BPP
 {
-  int numBytes = 480 * 320 * sizeof(uint16_t);
+  int width = 480;
+  int height = 320;
+  int numBytes = width * height * sizeof(uint16_t);
   uint16_t *prev = (uint16_t *) malloc( numBytes );
   uint16_t *curr = (uint16_t *) malloc( numBytes );
   
   bzero(prev, numBytes);  
-  for (int i=0; i < 480 * 320; i++) {
+  for (int i=0; i < (width * height); i++) {
     curr[i] = 0x1;
   }
   
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), 480, 320);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), width, height);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"DUP 65535 0x1 DUP 65535 0x1 DUP 22530 0x1 DONE"], @"isEqualToString");
   
@@ -698,19 +704,21 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
 + (void) testEncodeLargeDupAt32BPP
 {
-  int numBytes = 480 * 320 * sizeof(uint32_t);
+  int width = 480;
+  int height = 320;
+  int numBytes = width * height * sizeof(uint32_t);
   uint32_t *prev = (uint32_t *) malloc( numBytes );
   uint32_t *curr = (uint32_t *) malloc( numBytes );
   
   bzero(prev, numBytes);  
-  for (int i=0; i < 480 * 320; i++) {
+  for (int i=0; i < width * height; i++) {
     curr[i] = 0x1;
   }
   
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), 480, 320);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"DUP 65535 0x1 DUP 65535 0x1 DUP 22530 0x1 DONE"], @"isEqualToString");
   
@@ -720,8 +728,56 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   return;
 }
 
+// Delta a buffer where every single pixel is changed to some other pixel, aka a large COPY.
+
++ (void) testEncodeLargeCopyAt16BPP
+{
+  int width = 480;
+  int height = 320;
+  int numBytes = width * height * sizeof(uint16_t);
+  uint16_t *prev = (uint16_t *) malloc( numBytes );
+  uint16_t *curr = (uint16_t *) malloc( numBytes );
+  
+  // All pixels is prev buffer are 0, so take care to note emit a pixel with the
+  // value zero in the curr buffer.
+  
+  bzero(prev, numBytes);
+  
+  // Note that the value range for 0 -> 153600 will overflow the 16bit pixel value
+  for (int i=0; i < width * height; i++) {
+    uint16_t pixelValue;
+    if ((i % 3) == 0) {
+      pixelValue = 0x1;
+    } else if ((i % 3) == 1) {
+      pixelValue = 0x2;
+    } else if ((i % 3) == 2) {
+      pixelValue = 0x3;
+    }
+    curr[i] = pixelValue;
+  }
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), width, height);
+  results = [self util_printMvidCodes16:codes];
+  
+  // Generate a string like "COPY 65535 0x1 0x2 0x3 ... COPY 65535 ... COPY 65535 ... DONE"
+  
+  
+  
+  // We can't simply write 
+  
+  NSAssert([results isEqualToString:@"COPY 65535 0x1 DUP 65535 0x1 DUP 22530 0x1 DONE"], @"isEqualToString");
+  
+  free(prev);
+  free(curr);
+  
+  return;
+}
+
 // FIXME:
 
-// Delta a buffer where every single pixel is changed to some other pixel, aka a large COPY.
+
 
 @end
