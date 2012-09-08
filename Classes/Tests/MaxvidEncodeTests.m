@@ -730,7 +730,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
 // Delta a buffer where every single pixel is changed to some other pixel, aka a large COPY.
 
-+ (void) testEncodeLargeCopyAt16BPP
++ (void) DISABLED_testEncodeLargeCopyAt16BPP
 {
   int width = 480;
   int height = 320;
@@ -752,6 +752,8 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
       pixelValue = 0x2;
     } else if ((i % 3) == 2) {
       pixelValue = 0x3;
+    } else {
+      assert(0);
     }
     curr[i] = pixelValue;
   }
@@ -776,8 +778,63 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   return;
 }
 
-// FIXME:
+// Delta a buffer where every single pixel is changed to some other pixel, aka a large COPY.
 
++ (void) testEncodeLargeCopyAt32BPP
+{
+  int width = 480;
+  int height = 320;
+  int numBytes = width * height * sizeof(uint32_t);
+  uint32_t *prev = (uint32_t *) malloc( numBytes );
+  uint32_t *curr = (uint32_t *) malloc( numBytes );
+  
+  // All pixels is prev buffer are 0, so take care to note emit a pixel with the
+  // value zero in the curr buffer.
+  
+  bzero(prev, numBytes);
+  
+  // Note that the value range for 0 -> 153600 will overflow the 16bit pixel value
+  for (int i=0; i < width * height; i++) {
+    uint32_t pixelValue;
+    if ((i % 3) == 0) {
+      pixelValue = 0x1;
+    } else if ((i % 3) == 1) {
+      pixelValue = 0x2;
+    } else if ((i % 3) == 2) {
+      pixelValue = 0x3;
+    } else {
+      assert(0);
+    }
+    curr[i] = pixelValue;
+  }
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height);
+  results = [self util_printMvidCodes32:codes];
+  
+  // Generate a string like "COPY 153600 0x1 0x2 0x3 ... DONE"
+  // Generate a string like "COPY 65535 0x1 0x2 0x3 ... COPY 65535 ... COPY 65535 ... DONE"
+  
+  NSMutableString *mStr = [NSMutableString string];
+  
+  [mStr appendFormat:@"COPY %d ", width * height];
 
+  for (int i=0; i < 51200; i++) {
+    [mStr appendString:@"0x1 0x2 0x3 "];
+  }
+  
+  [mStr appendString:@"DONE"];
+  
+  NSString *expected = [NSString stringWithString:mStr];
+  
+  NSAssert([results isEqualToString:expected], @"isEqualToString");
+  
+  free(prev);
+  free(curr);
+  
+  return;
+}
 
 @end
