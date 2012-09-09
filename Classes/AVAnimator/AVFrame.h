@@ -22,6 +22,16 @@
 @class CGFrameBuffer;
 
 @interface AVFrame : NSObject
+{
+#if TARGET_OS_IPHONE
+  UIImage *m_image;
+#else
+  NSImage *m_image;
+#endif // TARGET_OS_IPHONE
+
+  CGFrameBuffer *m_cgFrameBuffer;
+  BOOL m_isDuplicate;
+}
 
 #if TARGET_OS_IPHONE
 @property (nonatomic, retain) UIImage *image;
@@ -34,6 +44,8 @@
 // platform specific image data.
 
 @property (nonatomic, retain) CGFrameBuffer *cgFrameBuffer;
+
+@property (nonatomic, assign) BOOL     isDuplicate;
 
 // Constructor
 

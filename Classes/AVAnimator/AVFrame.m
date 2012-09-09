@@ -13,6 +13,7 @@
 
 @synthesize image = m_image;
 @synthesize cgFrameBuffer = m_cgFrameBuffer;
+@synthesize isDuplicate = m_isDuplicate;
 
 // Constructor
 
@@ -29,30 +30,14 @@
   [super dealloc];
 }
 
-// Getter for self.image property. The property is platform specific.
-
-- (
-#if TARGET_OS_IPHONE
-UIImage*
-#else
-NSImage*
-#endif // TARGET_OS_IPHONE
-  )
-  image
-{
-  if (self->m_image == nil)
-  {
-    if (self.cgFrameBuffer != nil) {
-      [self makeImageFromFramebuffer];
-    }
-  }
-  return self->m_image;
-}
-
 - (void) makeImageFromFramebuffer
 {
+  // Release previous image if there was one created from this frame buffer
+  
+  self.image = nil;
+  
   CGFrameBuffer *cgFrameBuffer = self.cgFrameBuffer;
-    
+  
   CGImageRef imgRef = [cgFrameBuffer createCGImageRef];
   NSAssert(imgRef != NULL, @"CGImageRef returned by createCGImageRef is NULL");
   

@@ -1415,20 +1415,25 @@
     //		}
 	}
   
-	// Advance the "current frame" in the movie. In the case where
+  // Advance the "current frame" in the movie. In the case where
   // the next frame is exactly the same as the previous frame,
-  // nil will be returned. Note that nextFrame is left the same
-  // in the case where the frame is not changed.
+  // then the isDuplicate flag is TRUE.
   
-	AVFrame *frame = [self.frameDecoder advanceToFrame:nextFrameNum];
-	UIImage *img = frame.image;
+  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  BOOL wasChanged;
   
-	if (img == nil) {
-		return FALSE;
+  AVFrame *frame = [self.frameDecoder advanceToFrame:nextFrameNum];
+  
+  if (frame.isDuplicate == TRUE) {
+    wasChanged = FALSE;
   } else {
+    UIImage *img = frame.image;
     self.nextFrame = img;
-    return TRUE;
+    wasChanged = TRUE;
   }
+  
+  [pool drain];
+  return wasChanged;
 }
 
 - (BOOL) hasAudio

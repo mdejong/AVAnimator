@@ -39,8 +39,6 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
 
 @property (nonatomic, retain) AVAssetWriter *aVAssetWriter;
 
-@property (nonatomic, retain) UIImage *lastFrameImage;
-
 - (void) fillPixelBufferFromImage:(UIImage*)image
                            buffer:(CVPixelBufferRef)buffer
                              size:(CGSize)size;
@@ -58,7 +56,6 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
 @synthesize inputPath = m_inputPath;
 @synthesize outputPath = m_outputPath;
 @synthesize aVAssetWriter = m_aVAssetWriter;
-@synthesize lastFrameImage = m_lastFrameImage;
 
 #if defined(REGRESSION_TESTS)
 @synthesize frameDecoder = m_frameDecoder;
@@ -279,14 +276,12 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
     
     AVFrame *frame = [frameDecoder advanceToFrame:frameNum];
     UIImage *frameImage = frame.image;
-    
-    if (frameImage == nil) {
+
+    NSAssert(frame, @"advanceToFrame returned nil frame");
+    NSAssert(frameImage, @"advanceToFrame returned frame with nil image");
+    if (frame.isDuplicate) {
       // FIXME: (can output frame  duration time be explicitly set to deal with this duplication)
-      // Input frame data is the same as the previous one : (keep using previous one)
-      frameImage = self.lastFrameImage;
-      NSAssert(frameImage, @"self.lastFrameImage");
-    } else {
-      self.lastFrameImage = frameImage;
+      // Input frame data is the same as the previous one : (keep using previous one)      
     }
     
     CVReturn poolResult = CVPixelBufferPoolCreatePixelBuffer(NULL, adaptor.pixelBufferPool, &buffer);

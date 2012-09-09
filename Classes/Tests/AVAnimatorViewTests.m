@@ -928,7 +928,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   return;
 }
 
-// This test case invokes advanceToFrame on a MOV frame decoder twice with the
+// This test case invokes showFrame on a MOV frame decoder twice with the
 // same index. The second invocation must be a no-op.
 
 + (void) testAdvanceToSameFrame

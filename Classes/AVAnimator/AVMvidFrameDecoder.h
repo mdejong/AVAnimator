@@ -38,6 +38,8 @@
   CGFrameBuffer *m_currentFrameBuffer;  
   NSArray *m_cgFrameBuffers;
   
+  AVFrame *m_lastFrame;
+  
   int frameIndex;
   BOOL m_resourceUsageLimit;
 
@@ -74,7 +76,7 @@
 
 - (void) rewind;
 
-// Advance the current frame index to the indicated frame index and store result in nextFrameBuffer
+// Advance the current frame index, see AVFrameDecoder.h for full method description.
 
 - (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex;
 

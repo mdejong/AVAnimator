@@ -27,6 +27,8 @@
 
 #import "AVFileUtil.h"
 
+#import "CGFrameBuffer.h"
+
 @interface AVFrameDecoderTests : NSObject {
 }
 @end
@@ -438,11 +440,75 @@
 }
 
 // This test case simulates a memory mapping failure in the mvid frame decoder
+// during the first frame decode. It is possible that no previous frame would
+// have returned successfully, so if the first frame decode fails then a nil
+// image would be returned in the AVFrame object.
+
++ (void) testMvidDecoderSimulateMapFailureOnFirstFrameDecode
+{  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
+  
+  // Create loader that will read a movie file from app resources.
+  
+	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+  
+  // The resource loader should be "ready" at this point because the decoded
+  // file should be available in the app resources.
+  
+  BOOL isReady = [resLoader isReady];
+  NSAssert(isReady, @"isReady");
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  
+	NSArray *resourcePathsArr = [resLoader getResources];  
+	NSAssert([resourcePathsArr count] == 1, @"expected 1 resource paths");
+	NSString *videoPath = [resourcePathsArr objectAtIndex:0];
+  
+  BOOL worked;
+  
+  worked = [frameDecoder openForReading:videoPath];
+	NSAssert(worked, @"frameDecoder openForReading failed");
+  
+  // By default, usage limit is TRUE
+  
+  NSAssert([frameDecoder isResourceUsageLimit] == TRUE, @"initial isResourceUsageLimit");
+  
+  worked = [frameDecoder allocateDecodeResources];
+  NSAssert(worked, @"allocateDecodeResources");
+  
+  NSAssert([frameDecoder isResourceUsageLimit] == FALSE, @"isResourceUsageLimit");
+  
+  // At this point the frame decoder has read the header, but it has not
+  // yet attempted to map the file into memory.
+  
+  AVFrame *frame;
+  UIImage *image;
+  
+  frameDecoder.simulateMemoryMapFailure = TRUE;
+  
+  frame = [frameDecoder advanceToFrame:0];
+  NSAssert(frame, @"advanceToFrame returned nil");
+  
+  // Note that the getter for the frame.image property should not automatically
+  // create an image if the frame buffer is set but the image is nil. If that
+  // were the implementation, then we could not detect the case where the image
+  // is actually nil.
+  
+  image = frame.image;
+  NSAssert(image == nil, @"image is nil");
+  
+  NSAssert(frame.isDuplicate == TRUE, @"isDuplicate");
+    
+  return;
+}
+
+// This test case simulates a memory mapping failure in the mvid frame decoder
 // during a frame decode operation. When a segmented mapping model is used
 // it becomes possible that decoding a specific frame could fail due to a
 // failed mapping pages into memory.
 
-+ (void) testMvidDecoderSimulateMapFailureOnFrameDecode
++ (void) testMvidDecoderSimulateMapFailureOnSecondFrameDecode
 {
 	id appDelegate = [[UIApplication sharedApplication] delegate];
 	UIWindow *window = [appDelegate window];
@@ -488,7 +554,11 @@
   UIImage *image;
   
   frame = [frameDecoder advanceToFrame:0];
+  NSAssert(frame, @"advanceToFrame returned nil");
   image = frame.image;
+  NSAssert(image, @"advanceToFrame returned frame with nil image");
+  
+  NSAssert(frame.isDuplicate == FALSE, @"isDuplicate");
   
   // Verify that the file has been mapped into memory by
   // checking to see if the mappedData ref is nil.
@@ -502,12 +572,14 @@
   frameDecoder.simulateMemoryMapFailure = TRUE;
   
   frame = [frameDecoder advanceToFrame:1];
+  NSAssert(frame, @"advanceToFrame returned nil");
   image = frame.image;
+  NSAssert(image, @"advanceToFrame returned frame with nil image");
   
-  // Frame should be nil to indicate that decoder could not update to the new frame.
-  // This is treated as a repeated frame as far as the render logic is concerned.
+  // Frame should be marked as a duplicate, a failed mapping will return the
+  // last successfully decoded image as a no-op delta.
   
-  NSAssert(frame == nil, @"should return no change nil value");
+  NSAssert(frame.isDuplicate == TRUE, @"isDuplicate");
 
   NSAssert(frameDecoder.frameIndex == 0, @"decoder frame index should not have changed");
   
@@ -516,9 +588,13 @@
   frameDecoder.simulateMemoryMapFailure = FALSE;
   
   frame = [frameDecoder advanceToFrame:1];
+  NSAssert(frame, @"advanceToFrame returned nil");
   image = frame.image;
+  NSAssert(image, @"advanceToFrame returned frame with nil image");
 
   NSAssert(frame != nil, @"should return decoded second frame");
+  
+  NSAssert(frame.isDuplicate == FALSE, @"isDuplicate");
   
   NSAssert(frameDecoder.frameIndex == 1, @"decoder frame index should be 1");
   
@@ -575,6 +651,86 @@
   worked = [frameDecoder openForReading:videoPath];
 	NSAssert(worked == FALSE, @"frameDecoder openForReading should have failed");
       
+  return;
+}
+
+// This test case checks a specific detail of the AVFrame implementation.
+// An AVFrame contains a ref to an image, and an image holds on to a ref
+// to the CGFrameBuffer that implements the image. While the UIImage is
+// valid, we expect that the CGFrameBuffer will not change and that
+// it will not again be referenced by another image source pointing to
+// the same buffer. In the case where the ref to the image in the AVFrame
+// object is dropped, the CGFrameBuffer should be marked as no longer
+// being used by the UIImage object.
+
++ (void) testFrameDropRefToImage
+{
+  BOOL worked;
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];  
+    
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  
+  frameDecoder.filePath = resPath;
+  
+  worked = [frameDecoder openForReading:resPath];
+	NSAssert(worked, @"frameDecoder openForReading failed");
+  
+  // Get the first frame from the decoder
+  
+  worked = [frameDecoder allocateDecodeResources];
+	NSAssert(worked, @"allocateDecodeResources failed");
+  
+  AVFrame *frame = [frameDecoder advanceToFrame:0];
+  NSAssert(frame, @"frame"); 
+  
+  UIImage *image = frame.image;
+  CGFrameBuffer *frameBuffer = frame.cgFrameBuffer;
+
+  NSAssert(image, @"image"); 
+  
+  NSAssert(frameBuffer.isLockedByDataProvider == TRUE, @"isLockedByDataProvider"); 
+  
+  // Drop ref to UIImage, this must drop the ref to CGFrameBuffer data
+  
+  frame.image = nil;
+
+  NSAssert(frameBuffer.isLockedByDataProvider == FALSE, @"isLockedByDataProvider"); 
+  
+  return;
+}
+
+// This test case checks an edge case in the frame decoder where the exact
+// same frame index is decoded twice in a row. This decoder should return
+// the exact same AVFrame object in this case. This could happen if the audio
+// clock reported the same time over and over.
+
++ (void) testDuplicateAdvanceToSameOffset
+{
+  BOOL worked;
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];  
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  
+  frameDecoder.filePath = resPath;
+  
+  worked = [frameDecoder openForReading:resPath];
+	NSAssert(worked, @"frameDecoder openForReading failed");
+  
+  // Get the first frame from the decoder
+  
+  worked = [frameDecoder allocateDecodeResources];
+	NSAssert(worked, @"allocateDecodeResources failed");
+  
+  AVFrame *frame1 = [frameDecoder advanceToFrame:0];
+  NSAssert(frame1, @"frame1"); 
+
+  AVFrame *frame2 = [frameDecoder advanceToFrame:0];
+  NSAssert(frame2, @"frame2"); 
+  
+  NSAssert(frame1 == frame2, @"same frame expected"); 
+  
   return;
 }
 

@@ -40,7 +40,6 @@ typedef enum
 {
   NSString   *m_clipSource;
   AVMvidFrameDecoder *m_mvidFrameDecoder;
-  UIImage *m_lastFrameImage;
 @public
   AVOfflineCompositionClipType clipType;
   NSInteger clipX;
@@ -56,8 +55,6 @@ typedef enum
 @property (nonatomic, copy) NSString *clipSource;
 
 @property (nonatomic, retain) AVMvidFrameDecoder *mvidFrameDecoder;
-
-@property (nonatomic, retain) UIImage *lastFrameImage;
 
 + (AVOfflineCompositionClip*) aVOfflineCompositionClip;
 
@@ -827,23 +824,11 @@ typedef enum
         
         // While this advanceToFrame returns a UIImage, we are not actually using
         // and UI layer rendering functions, so it should be thread safe to just
-        // hold on to a UIImage and the CGImageRef it contains.
-        
-        // FIXME: would need to reimpl port over to MacOSX, use platform specific types
+        // hold on to a UIImage and the CGImageRef it contains. Note that we don't
+        // care if the frame returned is a duplicate since we just render it.
         
         AVFrame *frame = [mvidFrameDecoder advanceToFrame:clipFrame];
         UIImage *image = frame.image;
-        
-        // In the case where a frame is a no-op or is the same as the previous
-        // frame, nill is returned. Deal with this case by saving the image
-        // object into the lastFrameImage property.
-        
-        if (image) {
-          compClip.lastFrameImage = image;
-        } else {
-          image = compClip.lastFrameImage;
-        }
-        
         NSAssert(image, @"image");
         cgImageRef = image.CGImage;
       } else {
@@ -885,8 +870,6 @@ typedef enum
 
 @synthesize mvidFrameDecoder = m_mvidFrameDecoder;
 
-@synthesize lastFrameImage = m_lastFrameImage;
-
 + (AVOfflineCompositionClip*) aVOfflineCompositionClip
 {
   AVOfflineCompositionClip *obj = [[AVOfflineCompositionClip alloc] init];
@@ -895,8 +878,6 @@ typedef enum
 
 - (void) dealloc
 {
-  // Make sure all UIImage refs to memory are dropped before mapped memory is dropped
-  self.lastFrameImage = nil;
   [AutoPropertyRelease releaseProperties:self thisClass:AVOfflineCompositionClip.class];
   [super dealloc];
 }

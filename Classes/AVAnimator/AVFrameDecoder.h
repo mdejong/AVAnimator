@@ -31,8 +31,11 @@
 - (void) rewind;
 
 // Advance the current frame index to the indicated frame index. Return the new frame
-// encoded as a UIImage object, or nil if the frame data was not changed. The UIImage
-// returned is assumed to be in the autorelease pool.
+// object, the frame contains the platform specific image object. If a duplicate (no-op)
+// frame is found then the frame data has not changed. A no-op frame is indicated by
+// the frame.isDuplicate property being set to TRUE. Note that this advanceToFrame
+// method should never return nil, even in the case where the frame data cannot be
+// loaded, a valid AVFrame should be returned with a nil image property to indicate failure.
 
 - (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex;
 

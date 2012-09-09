@@ -157,6 +157,7 @@
       NSLog(@"render frame %d", frameIndex);
       AVFrame *frame = [frameDecoder advanceToFrame:frameIndex];
       UIImage *img = frame.image;
+      NSAssert(img, @"frame image is nil");
       
       // Write image as PNG
       

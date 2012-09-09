@@ -38,6 +38,17 @@ int num_words(uint32_t numBytes)
 	return numWords;
 }
 
+// private properties declaration for class
+
+@interface AVQTAnimationFrameDecoder ()
+
+// This is the last AVFrame object returned via a call to advanceToFrame
+
+@property (nonatomic, retain) AVFrame *lastFrame;
+
+@end
+
+
 // AVQTAnimationFrameDecoder class
 
 @implementation AVQTAnimationFrameDecoder
@@ -45,6 +56,7 @@ int num_words(uint32_t numBytes)
 @synthesize mappedData = m_mappedData;
 @synthesize currentFrameBuffer = m_currentFrameBuffer;
 @synthesize cgFrameBuffers = m_cgFrameBuffers;
+@synthesize lastFrame = m_lastFrame;
 
 #if defined(REGRESSION_TESTS)
 @synthesize simulateMemoryMapFailure = m_simulateMemoryMapFailure;
@@ -106,6 +118,7 @@ int num_words(uint32_t numBytes)
   self.filePath = nil;
   self.mappedData = nil;
   self.currentFrameBuffer = nil;
+  self.lastFrame = nil;
   
   /*
    for (CGFrameBuffer *aBuffer in self.cgFrameBuffers) {
@@ -172,6 +185,8 @@ int num_words(uint32_t numBytes)
 - (void) _freeFrameBuffers
 {
   self.cgFrameBuffers = nil;
+  // Drop AVFrame since it holds on to the image which holds on to a framebuffer
+  self.lastFrame = nil;
 }
 
 - (CGFrameBuffer*) _getNextFramebuffer
@@ -275,6 +290,7 @@ int num_words(uint32_t numBytes)
   
 	frameIndex = -1;
   self.currentFrameBuffer = nil;
+  self.lastFrame = nil;
   
   self->m_isOpen = FALSE;
 }
@@ -287,6 +303,7 @@ int num_words(uint32_t numBytes)
   
 	frameIndex = -1;
   self.currentFrameBuffer = nil;
+  self.lastFrame = nil;
 }
 
 // Private utils to map the .mvid file into memory.
@@ -334,7 +351,8 @@ int num_words(uint32_t numBytes)
   // Advance to same frame is a no-op
 
 	if ((frameIndex != -1) && (newFrameIndex == frameIndex)) {
-    return nil;
+    NSAssert(self.lastFrame != nil, @"lastFrame");
+    return self.lastFrame;
 	} else if ((frameIndex != -1) && (newFrameIndex < frameIndex)) {
     	// movie frame index can only go forward via advanceToFrame
 		NSString *msg = [NSString stringWithFormat:@"%@: %d -> %d",
@@ -424,8 +442,31 @@ int num_words(uint32_t numBytes)
 	}
   
   if (!changeFrameData) {
-    return nil;
+    // When no change from previous frame is found, return a new AVFrame object
+    // but make sure to return the same image object as was returned in the last frame.
+    
+    AVFrame *frame = [AVFrame aVFrame];
+    NSAssert(frame, @"AVFrame is nil");
+    
+    // The image from the previous rendered frame is returned. Note that it is possible
+    // that memory resources could not be mapped and in that case the previous frame
+    // could be nil. Return either the last image or nil in this case.
+    
+    id lastFrameImage = self.lastFrame.image;
+    frame.image = lastFrameImage;
+    
+    CGFrameBuffer *cgFrameBuffer = self.currentFrameBuffer;
+    frame.cgFrameBuffer = cgFrameBuffer;
+    
+    frame.isDuplicate = TRUE;
+    
+    return frame;
   } else {
+    // Delete ref to previous frame to be sure that image ref to framebuffer
+    // is dropped before a new one is created.
+    
+    self.lastFrame = nil;
+    
     // Return a CGImage wrapped in a AVFrame
     
     AVFrame *frame = [AVFrame aVFrame];
@@ -435,7 +476,10 @@ int num_words(uint32_t numBytes)
     frame.cgFrameBuffer = cgFrameBuffer;
     
     [frame makeImageFromFramebuffer];
-    return frame;
+    
+    self.lastFrame = frame;
+    
+    return frame;    
   }
 }
 

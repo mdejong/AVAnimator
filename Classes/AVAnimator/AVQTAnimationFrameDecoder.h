@@ -34,6 +34,8 @@ typedef struct MovData *MovDataPtr;
   CGFrameBuffer *m_currentFrameBuffer;  
 	NSArray *m_cgFrameBuffers;
   
+  AVFrame *m_lastFrame;
+  
 	int frameIndex;
   
   BOOL m_resourceUsageLimit;
