@@ -26,8 +26,6 @@
 
 #import "AVFileUtil.h"
 
-#import "AVAssetReaderConvertMaxvid.h"
-
 #import "AVAsset2MvidResourceLoader.h"
 
 @interface AVResourceLoaderTests : NSObject {}

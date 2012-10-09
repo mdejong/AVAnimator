@@ -184,6 +184,13 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   
   self.bpp = 24;
   
+  // Note that by default, the device RGB colorspace on iOS is sRGB. So, explicitly mark
+  // the .mvid file as being encoded in the sRGB colorspace. When not running on iOS,
+  // the target framebuffer must be set to the sRGB colorspace in order for the output
+  // pixels to be converted to sRGB.
+  
+  self.isSRGB = TRUE;
+    
   worked = [self open];
   
   if (worked == FALSE) {
@@ -404,9 +411,7 @@ retcode:
   size_t width = CVPixelBufferGetWidth(imageBuffer);
   
   size_t height = CVPixelBufferGetHeight(imageBuffer);
-  
-  CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-  
+    
   void *baseAddress = CVPixelBufferGetBaseAddress(imageBuffer);
   
   size_t bufferSize = CVPixelBufferGetDataSize(imageBuffer);
@@ -419,6 +424,20 @@ retcode:
     NSLog(@"buffer size = %d (bpr %d), row bytes (%d) * height (%d) = %d", (int)bufferSize, (int)(bufferSize/height), (int)bytesPerRow, (int)height, (int)(bytesPerRow * height));
   }
   
+  // Under iOS, the output pixels are implicitly treated as sRGB when using the device
+  // colorspace. Under MacOSX, explicitly set the output colorspace to sRGB.
+  
+  CGColorSpaceRef colorSpace = NULL;
+#if TARGET_OS_IPHONE
+  colorSpace = CGColorSpaceCreateDeviceRGB();
+#else
+  // MacOSX
+  
+  //colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+  colorSpace = CVImageBufferGetColorSpace(imageBuffer);
+#endif // TARGET_OS_IPHONE
+  NSAssert(colorSpace, @"colorSpace");  
+
   // Create a Quartz direct-access data provider that uses data we supply.
   
   CGDataProviderRef dataProvider =
@@ -434,10 +453,21 @@ retcode:
   // Render CoreGraphics image into a flat bitmap framebuffer. Note that this object is
   // not autoreleased, instead the caller must explicitly release the ref.
   
-  if (frameBuffer == NULL) {    
+  if (frameBuffer == NULL) {
     *frameBufferPtr = [[CGFrameBuffer alloc] initWithBppDimensions:24 width:width height:height];
     frameBuffer = *frameBufferPtr;
     NSAssert(frameBuffer, @"frameBuffer");
+    
+    // Use sRGB by default on iOS. Explicitly set sRGB as colorspace on MacOSX.
+    
+#if TARGET_OS_IPHONE
+    // No-op
+#else
+    // MacOSX
+    colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    frameBuffer.colorspace = colorSpace;
+    CGColorSpaceRelease(colorSpace);
+#endif // TARGET_OS_IPHONE
   }
   
   [frameBuffer renderCGImage:cgImageRef];

@@ -1,5 +1,5 @@
 //
-//  AVOfflineComposition.h
+//  AVOfflineComposition.m
 //  Created by Moses DeJong on 3/31/12.
 //
 //  License terms defined in License.txt.
@@ -201,6 +201,7 @@ typedef enum
 
 - (CGColorRef) createCGColor:(CGFloat)red green:(CGFloat)green blue:(CGFloat)blue alpha:(CGFloat)alpha
 {
+  // FIXME: should this be RGB or sRGB colorspace?
   CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
   CGFloat components[4] = {red, green, blue, alpha};
   CGColorRef cgColor = CGColorCreate(colorSpace, components);
@@ -589,6 +590,9 @@ typedef enum
       return FALSE;
     }
     
+    // FIXME: print a log message saying that non-SRGB .mvid was found?
+    //NSAssert([mvidFrameDecoder isSRGB] == TRUE, @"isSRGB");
+  
     compClip.mvidFrameDecoder = mvidFrameDecoder;
     
     // Grab the clip's frame duration out of the mvid header. This frame duration may

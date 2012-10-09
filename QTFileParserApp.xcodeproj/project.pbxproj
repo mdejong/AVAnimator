@@ -153,6 +153,9 @@
 		CD5AEE4512D8F35C00A50135 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE4412D8F35C00A50135 /* Foundation.framework */; };
 		CD5AEE4912D8F36500A50135 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5AEE4812D8F36500A50135 /* CoreGraphics.framework */; };
 		CD5BC94F14A3F2CA00185880 /* AVAnimatorMediaTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD5BC94E14A3F2CA00185880 /* AVAnimatorMediaTests.m */; };
+		CD5E3C561623356F002D7374 /* Colorbands_sRGB.png in Resources */ = {isa = PBXBuildFile; fileRef = CD5E3C551623356F002D7374 /* Colorbands_sRGB.png */; };
+		CD5E3C58162335A4002D7374 /* ColorspaceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD5E3C57162335A4002D7374 /* ColorspaceTests.m */; };
+		CD5E3C5E16236A66002D7374 /* sRGB Profile.icc in Resources */ = {isa = PBXBuildFile; fileRef = CD5E3C5D16236A66002D7374 /* sRGB Profile.icc */; };
 		CD5F5C4714CCD809005A2809 /* SegmentedMappedData.m in Sources */ = {isa = PBXBuildFile; fileRef = CD5F5C4614CCD809005A2809 /* SegmentedMappedData.m */; };
 		CD5F5C4814CCD809005A2809 /* SegmentedMappedData.m in Sources */ = {isa = PBXBuildFile; fileRef = CD5F5C4614CCD809005A2809 /* SegmentedMappedData.m */; };
 		CD5F5C4B14CCDC97005A2809 /* SegmentedMappedDataTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD5F5C4A14CCDC97005A2809 /* SegmentedMappedDataTests.m */; };
@@ -400,6 +403,9 @@
 		CD5AEE4412D8F35C00A50135 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		CD5AEE4812D8F36500A50135 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		CD5BC94E14A3F2CA00185880 /* AVAnimatorMediaTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorMediaTests.m; sourceTree = "<group>"; };
+		CD5E3C551623356F002D7374 /* Colorbands_sRGB.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Colorbands_sRGB.png; sourceTree = "<group>"; };
+		CD5E3C57162335A4002D7374 /* ColorspaceTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ColorspaceTests.m; sourceTree = "<group>"; };
+		CD5E3C5D16236A66002D7374 /* sRGB Profile.icc */ = {isa = PBXFileReference; lastKnownFileType = file; path = "sRGB Profile.icc"; sourceTree = "<group>"; };
 		CD5F5C4514CCD809005A2809 /* SegmentedMappedData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SegmentedMappedData.h; sourceTree = "<group>"; };
 		CD5F5C4614CCD809005A2809 /* SegmentedMappedData.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SegmentedMappedData.m; sourceTree = "<group>"; };
 		CD5F5C4A14CCDC97005A2809 /* SegmentedMappedDataTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SegmentedMappedDataTests.m; sourceTree = "<group>"; };
@@ -740,6 +746,7 @@
 				CDAD8C2A15279C130089206E /* AVOfflineCompositionTests.m */,
 				CDE2B85515B27F450071E2BB /* H264EncoderDecoderTests.m */,
 				CD40216C15F5070100A47E59 /* MaxvidEncodeTests.m */,
+				CD5E3C57162335A4002D7374 /* ColorspaceTests.m */,
 				CD288D3E12D93865005F0EEA /* 2x2_black_blue_16BPP.mov */,
 				CD8265DE1364D5EE00640B94 /* 2x2_black_blue_16BPP.mvid */,
 				CD922D24136206DE0024AFBB /* 2x2_black_blue_16BPP.mov.7z */,
@@ -774,6 +781,8 @@
 				CDF15B96152A176A00D8AD2F /* AVOfflineComposition32x32BlackBlueTest.plist */,
 				CD46E33815B00B8700E0047A /* AlphaGhost_ANI.mvid */,
 				CD3A341415E1080B008733C3 /* Waterfall_tiny_h264.mov */,
+				CD5E3C551623356F002D7374 /* Colorbands_sRGB.png */,
+				CD5E3C5D16236A66002D7374 /* sRGB Profile.icc */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -1223,6 +1232,8 @@
 				CD9CB98415C5F83700DCEA90 /* 129x128_black_blue_h264.mov in Resources */,
 				CDC3EF0C15C5FD240055C8A3 /* 132x128_black_blue_h264.mov in Resources */,
 				CD3A341515E1080B008733C3 /* Waterfall_tiny_h264.mov in Resources */,
+				CD5E3C561623356F002D7374 /* Colorbands_sRGB.png in Resources */,
+				CD5E3C5E16236A66002D7374 /* sRGB Profile.icc in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1359,6 +1370,7 @@
 				CD93915215F35B5000E1D7CC /* AVFrame.m in Sources */,
 				CD78DC9015F50636007D3EFF /* maxvid_encode.m in Sources */,
 				CD40216D15F5070100A47E59 /* MaxvidEncodeTests.m in Sources */,
+				CD5E3C58162335A4002D7374 /* ColorspaceTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

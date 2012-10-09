@@ -229,6 +229,8 @@
     
     BOOL worked = [frameDecoder openForReading:tmpPath];
     NSAssert(worked, @"worked");
+
+    NSAssert([frameDecoder isSRGB] == TRUE, @"isSRGB");
     
     NSAssert([frameDecoder numFrames] == 2, @"numFrames");
     
@@ -311,6 +313,8 @@
     
     BOOL worked = [frameDecoder openForReading:tmpPath];
     NSAssert(worked, @"worked");
+    
+    NSAssert([frameDecoder isSRGB] == TRUE, @"isSRGB");
     
     NSAssert([frameDecoder numFrames] == 6, @"numFrames");
     
@@ -407,6 +411,8 @@
     
     BOOL worked = [frameDecoder openForReading:tmpPath];
     NSAssert(worked, @"worked");
+    
+    NSAssert([frameDecoder isSRGB] == TRUE, @"isSRGB");
     
     NSAssert([frameDecoder numFrames] == 9, @"numFrames");
     
@@ -529,6 +535,8 @@
     BOOL worked = [frameDecoder openForReading:tmpPath];
     NSAssert(worked, @"worked");
     
+    NSAssert([frameDecoder isSRGB] == TRUE, @"isSRGB");
+    
     NSAssert([frameDecoder numFrames] == 9, @"numFrames");
     
     worked = [frameDecoder allocateDecodeResources];
@@ -627,7 +635,9 @@
     
     BOOL worked = [frameDecoder openForReading:tmpPath];
     NSAssert(worked, @"worked");
-    
+        
+    NSAssert([frameDecoder isSRGB] == TRUE, @"isSRGB");
+
     NSAssert([frameDecoder numFrames] == 6, @"numFrames");
     
     worked = [frameDecoder allocateDecodeResources];
@@ -737,6 +747,8 @@
     BOOL worked = [frameDecoder openForReading:tmpPath];
     NSAssert(worked, @"worked");
     
+    NSAssert([frameDecoder isSRGB] == TRUE, @"isSRGB");
+  
     int numFrames = [frameDecoder numFrames];
     
     NSAssert(numFrames == 575, @"numFrames");    
@@ -1364,6 +1376,8 @@
   
   worked = [frameDecoder openForReading:obj.mvidPath];
   NSAssert(worked, @"worked");
+  
+  NSAssert([frameDecoder isSRGB] == TRUE, @"isSRGB");
   
   NSAssert([frameDecoder numFrames] == 2, @"numFrames");
   

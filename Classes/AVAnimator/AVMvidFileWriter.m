@@ -81,6 +81,7 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
 @synthesize frameNum = frameNum;
 @synthesize bpp = m_bpp;
 @synthesize genAdler = m_genAdler;
+@synthesize isSRGB = m_isSRGB;
 @synthesize movieSize = m_movieSize;
 
 - (void) close
@@ -304,6 +305,10 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   assert(mvHeader->frameDuration > 0.0);
   
   mvHeader->numFrames = self.totalNumFrames;
+  
+  if (self.isSRGB) {
+    maxvid_file_colorspace_set_srgb(mvHeader);
+  }
   
   (void)fseek(maxvidOutFile, 0L, SEEK_SET);
   

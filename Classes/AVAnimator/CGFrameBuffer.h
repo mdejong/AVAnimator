@@ -34,6 +34,7 @@
 	size_t m_bytesPerPixel;
 	int32_t m_isLockedByDataProvider;
 	CGImageRef m_lockedByImageRef;
+	CGColorSpaceRef m_colorspace;
 }
 
 @property (readonly) char *pixels;
@@ -47,6 +48,14 @@
 
 @property (nonatomic, assign) BOOL isLockedByDataProvider;
 @property (nonatomic, readonly) CGImageRef lockedByImageRef;
+
+// The colorspace will default to device RGB unless explicitly set. If set, then
+// the indicated colorspace will be used when invoking CGBitmapContextCreate()
+// such that a drawing operation will output pixels in the indicated colorspace.
+// The same colorspace will be used when creating a CGImageRef via createCGImageRef.
+// While this property is marked as assign, it will retain a ref to the indicate colorspace.
+
+@property (nonatomic, assign) CGColorSpaceRef colorspace;
 
 + (CGFrameBuffer*) cGFrameBufferWithBppDimensions:(NSInteger)bitsPerPixel width:(NSInteger)width height:(NSInteger)height;
 

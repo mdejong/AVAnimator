@@ -39,6 +39,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 @synthesize bytesPerPixel = m_bytesPerPixel;
 //@synthesize isLockedByDataProvider = m_isLockedByDataProvider;
 @synthesize lockedByImageRef = m_lockedByImageRef;
+@synthesize colorspace = m_colorspace;
 
 + (CGFrameBuffer*) cGFrameBufferWithBppDimensions:(NSInteger)bitsPerPixel
                                             width:(NSInteger)width
@@ -199,8 +200,13 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 
 	CGBitmapInfo bitmapInfo = [self getBitmapInfo];
 
-	CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-
+  CGColorSpaceRef colorSpace = self.colorspace;
+  if (colorSpace) {
+    CGColorSpaceRetain(colorSpace);
+  } else {
+    colorSpace = CGColorSpaceCreateDeviceRGB();
+  }
+  
 	NSAssert(self.pixels != NULL, @"pixels must not be NULL");
 
 	NSAssert(self.isLockedByDataProvider == FALSE, @"renderView: pixel buffer locked by data provider");
@@ -267,7 +273,12 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   
 	CGBitmapInfo bitmapInfo = [self getBitmapInfo];
 	
-	CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+  CGColorSpaceRef colorSpace = self.colorspace;
+  if (colorSpace) {
+    CGColorSpaceRetain(colorSpace);
+  } else {
+    colorSpace = CGColorSpaceCreateDeviceRGB();
+  }
 
 	NSAssert(self.pixels != NULL, @"pixels must not be NULL");
 	NSAssert(self.isLockedByDataProvider == FALSE, @"renderCGImage: pixel buffer locked by data provider");
@@ -323,10 +334,15 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   
 	CGBitmapInfo bitmapInfo = [self getBitmapInfo];
 	
-	CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+  CGColorSpaceRef colorSpace = self.colorspace;
+  if (colorSpace) {
+    CGColorSpaceRetain(colorSpace);
+  } else {
+    colorSpace = CGColorSpaceCreateDeviceRGB();
+  }
   
 	NSAssert(self.pixels != NULL, @"pixels must not be NULL");
-	NSAssert(self.isLockedByDataProvider == FALSE, @"renderCGImage: pixel buffer locked by data provider");
+	NSAssert(self.isLockedByDataProvider == FALSE, @"createBitmapContext: pixel buffer locked by data provider");
   
 	CGContextRef bitmapContext =
     CGBitmapContextCreate(self.pixels, self.width, self.height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo);
@@ -383,7 +399,12 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 
 	CGColorRenderingIntent renderIntent = kCGRenderingIntentDefault;
 
-	CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+  CGColorSpaceRef colorSpace = self.colorspace;
+  if (colorSpace) {
+    CGColorSpaceRetain(colorSpace);
+  } else {
+    colorSpace = CGColorSpaceCreateDeviceRGB();
+  }
 
 	CGImageRef inImageRef = CGImageCreate(self.width, self.height, bitsPerComponent, bitsPerPixel, bytesPerRow,
 										  colorSpace, bitmapInfo, dataProviderRef, NULL,
@@ -552,6 +573,8 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 - (void)dealloc {
 	NSAssert(self.isLockedByDataProvider == FALSE, @"dealloc: buffer still locked by data provider");
 
+	self.colorspace = NULL;
+  
 #if defined(USE_MACH_VM_ALLOCATE)
 	if (self.pixels != NULL) {
     kern_return_t ret;
@@ -593,6 +616,22 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 {
   return [NSString stringWithFormat:@"CGFrameBuffer %p, pixels %p, %d x %d, %d BPP, isLocked %d", self, self.pixels,
           self.width, self.height, self.bitsPerPixel, (int)self.isLockedByDataProvider];
+}
+
+// Setter for self.colorspace property. While this property is declared as assign,
+// it will actually retain a ref to the colorspace.
+
+- (void) setColorspace:(CGColorSpaceRef)colorspace
+{
+  if (colorspace) {
+    CGColorSpaceRetain(colorspace);
+  }
+  
+  if (self->m_colorspace) {
+    CGColorSpaceRelease(self->m_colorspace);
+  }
+  
+  self->m_colorspace = colorspace;
 }
 
 @end

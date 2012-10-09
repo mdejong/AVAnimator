@@ -62,6 +62,10 @@
 @property (nonatomic, assign) BOOL simulateMemoryMapFailure;
 #endif // REGRESSION_TESTS
 
+// Return TRUE if RGB values are calibrated in the SRGB colorspace.
+
+@property (nonatomic, readonly) BOOL isSRGB;
+
 + (AVMvidFrameDecoder*) aVMvidFrameDecoder;
 
 // Open resource identified by path
@@ -114,5 +118,9 @@
 
 // Time each frame shold be displayed
 - (NSTimeInterval) frameDuration;
+
+// Return direct access to the header info, caller might want to inspect the header without decoding
+
+- (MVFileHeader*) header;
 
 @end

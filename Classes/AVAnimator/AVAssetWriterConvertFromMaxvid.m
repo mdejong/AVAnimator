@@ -43,7 +43,7 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
                            buffer:(CVPixelBufferRef)buffer
                              size:(CGSize)size;
 
-- (AVMvidFrameDecoder*) initMvidEncoder;
+- (AVMvidFrameDecoder*) initMvidDecoder;
 
 @end
 
@@ -74,14 +74,14 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
 }
 
 // ------------------------------------------------------------------------------------
-// initMvidEncoder
+// initMvidDecoder
 // 
 // In the normal case where a .mvid file will be read from, this method will open
 // the file and return a frame decoder. If the file can't be opened, then nil
 // will be returned.
 // ------------------------------------------------------------------------------------
 
-- (AVMvidFrameDecoder*) initMvidEncoder
+- (AVMvidFrameDecoder*) initMvidDecoder
 {
   BOOL worked;
  
@@ -117,13 +117,13 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
   
 #if defined(REGRESSION_TESTS)
   if (self.frameDecoder == nil) {
-    frameDecoder = [self initMvidEncoder];
+    frameDecoder = [self initMvidDecoder];
   } else {
     // Optionally use a custom frame decoder in test mode
     frameDecoder = self.frameDecoder;
   }
 #else  // REGRESSION_TESTS
-  frameDecoder = [self initMvidEncoder];
+  frameDecoder = [self initMvidDecoder];
 #endif // REGRESSION_TESTS
   
   if (frameDecoder == nil) {
@@ -340,6 +340,13 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
 
 #define EMIT_FRAMES 0
 
+// Given an input image that comes from the MVID file, write the image data out to
+// the system pixel buffer.
+
+// FIXME: It should be possible to avoid a render operation for each .mvid frame
+// by checking to see if an already rendered framebuffer was created from
+// reading the .mvid file.
+
 - (void) fillPixelBufferFromImage:(UIImage*)image
                            buffer:(CVPixelBufferRef)buffer
                              size:(CGSize)size
@@ -392,12 +399,10 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
 	CGBitmapInfo bitmapInfo = 0;
   bitmapInfo |= kCGBitmapByteOrder32Host | kCGImageAlphaNoneSkipFirst;
   
-	CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+	CGColorSpaceRef colorSpace = CGImageGetColorSpace(image.CGImage);
   
 	CGContextRef bitmapContext =
     CGBitmapContextCreate(pxdata, size.width, size.height, bitsPerComponent, bytesPerRow, colorSpace, bitmapInfo);
-  
-	CGColorSpaceRelease(colorSpace);
   
 	if (bitmapContext == NULL) {
     NSAssert(FALSE, @"CGBitmapContextCreate() failed");
@@ -413,6 +418,7 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
       CGFrameBuffer *cgFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24
                                                                              width:size.width
                                                                             height:size.height];
+      cgFrameBuffer.colorspace = colorSpace;
       
       memcpy(cgFrameBuffer.pixels, pxdata, size.width * size.height * sizeof(uint32_t));
       

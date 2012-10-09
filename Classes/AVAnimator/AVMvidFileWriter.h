@@ -21,7 +21,7 @@
 @interface AVMvidFileWriter : NSObject {
 @private
   NSString *m_mvidPath;
-  float frameDuration;
+  float m_frameDuration;
   int   frameNum;
   int   m_totalNumFrames;
   MVFileHeader *mvHeader;
@@ -36,6 +36,7 @@
 
   BOOL  isOpen;
   BOOL  m_genAdler;
+  BOOL  m_isSRGB;
 }
 
 @property (nonatomic, copy)   NSString      *mvidPath;
@@ -43,6 +44,7 @@
 @property (nonatomic, readonly) int         frameNum;
 @property (nonatomic, assign) int           totalNumFrames;
 @property (nonatomic, assign) BOOL          genAdler;
+@property (nonatomic, assign) BOOL          isSRGB;
 @property (nonatomic, assign) uint32_t      bpp;
 @property (nonatomic, assign) CGSize        movieSize;
 

@@ -544,6 +544,11 @@ process_apng_frame(
       } while (--count != 0);
     }    
     
+    // FIXME: unclear what to do with .apng data that is not in the sRGB colorspace
+    // when running under iOS. We do not know what colorspace the input RGB values
+    // are in, and the system does not support color profiles. Logic might need to
+    // require that input pixels be in sRGB colorspace or else fail to load on iOS.
+    
     // Each frame is emitted as a keyframe
     
     BOOL worked = [aVMvidFileWriter writeKeyframe:(char*)userDataPtr->cgFrameBuffer bufferSize:framebufferNumBytes];

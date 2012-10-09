@@ -8,6 +8,12 @@
 
 #define MV_FILE_MAGIC 0xCAFEBABE
 
+// Note that the RGB and SRGB colorsspaces use the same bit flag. So, if
+// SRGB colorspace bit is not set then it means that the RGB colorspace
+// was used.
+
+#define MV_FILE_COLORSPACE_SRGB 0x1
+
 #define MV_FRAME_IS_KEYFRAME 0x1
 #define MV_FRAME_IS_NOPFRAME 0x2
 
@@ -17,17 +23,23 @@
 // usage or portability. Data is a maxvid file is not validated, so the input data can't be
 // invalid. This assumption is based on the fact that most usage will involve
 // generating a maxvid file based on an intermediate format that can be validated.
+// Instead of validating on data access on the embedded device, we validate on write
+// typically done on the desktop.
 
 typedef struct {
   uint32_t magic;
   uint32_t width;
   uint32_t height;
   uint32_t bpp;
-  // FIXME: is flaot 32 bit on 64 bit systems ?
+  // FIXME: is float 32 bit on 64 bit systems ?
   float frameDuration;
   uint32_t numFrames;
+  // revision is the MVID file format revision, in cases where an earlier
+  // version of the file needs to be read by a later version of the library.
+  // The revision portion is the first 8 bits while the rest are bit flags.
+  uint32_t revisionAndFlags;
   // Padding out to 16 words, so that there is room to add additional fields later
-  uint32_t padding[16-6];
+  uint32_t padding[16-7];
 } MVFileHeader;
 
 // After the MVFileHeader, an array of numFrames MVFrame word pairs.
@@ -135,6 +147,50 @@ uint32_t maxvid_file_is_valid(FILE *inFile) {
     assert(magic == 0);
     return 0;
   }
+}
+
+// Query the file "revision", meaning a integer number that would get incremented
+// when an incompatible change to the file format is made. This is only useful
+// for library internals that might need to do something slightly different
+// depending on the binary layout of older versions of the file.
+
+static inline
+uint8_t maxvid_file_revision(MVFileHeader *fileHeaderPtr) {
+  uint8_t revision = fileHeaderPtr->revisionAndFlags & 0xFF;
+  return revision;
+}
+
+// Explicitly set the maxvid file revision. The initial revision used is zero.
+
+static inline
+void maxvid_file_set_revision(MVFileHeader *fileHeaderPtr, uint8_t revision) {
+  uint32_t flags = fileHeaderPtr->revisionAndFlags >> 8;
+  fileHeaderPtr->revisionAndFlags = (flags << 8) | revision;  
+}
+
+// Return TRUE if the colorspace indicated in the file is the RGB generic colorspace.
+
+static inline
+uint32_t maxvid_file_colorspace_is_rgb(MVFileHeader *fileHeaderPtr) {
+  uint32_t flags = fileHeaderPtr->revisionAndFlags >> 8;
+  uint32_t isSRGB = flags & MV_FILE_COLORSPACE_SRGB;
+  return (isSRGB == 0);
+}
+
+// Return TRUE if the colorspace indicated in the file is the SRGB calibrated colorspace.
+
+static inline
+uint32_t maxvid_file_colorspace_is_srgb(MVFileHeader *fileHeaderPtr) {
+  uint32_t flags = fileHeaderPtr->revisionAndFlags >> 8;
+  uint32_t isSRGB = flags & MV_FILE_COLORSPACE_SRGB;
+  return isSRGB;
+}
+
+// Explicitly set the colorspace flag to indicate SRGB is used.
+
+static inline
+void maxvid_file_colorspace_set_srgb(MVFileHeader *fileHeaderPtr) {  
+  fileHeaderPtr->revisionAndFlags |= (MV_FILE_COLORSPACE_SRGB << 8);
 }
 
 // adler32 calculation method

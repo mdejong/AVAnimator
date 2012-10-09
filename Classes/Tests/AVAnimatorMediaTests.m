@@ -243,7 +243,7 @@
   resLoader.movieFilename = resourceName;
 	media.resourceLoader = resLoader;
   
-  // Create decoder that will generate frames from Quicktime Animation encoded data
+  // Create decoder that will generate frames from mvid encoded data
   
   AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
