@@ -655,7 +655,7 @@
 	OSStatus result =
 	AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(sessionCategory), &sessionCategory);
 	if (result != 0) {
-		NSLog(@"%@", [NSString stringWithFormat:@"AudioSessionSetProperty(kAudioSessionProperty_AudioCategory,kAudioSessionCategory_MediaPlayback) error : %d", result]);
+		NSLog(@"%@", [NSString stringWithFormat:@"AudioSessionSetProperty(kAudioSessionProperty_AudioCategory,kAudioSessionCategory_MediaPlayback) error : %d", (int)result]);
 	}
 }
 

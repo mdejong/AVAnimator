@@ -4,6 +4,11 @@
 // maxvid_decode_c4_sample16()
 // maxvid_decode_c4_sample32()
 
+// This ARM asm file will generate an error with clang 4 (xcode 4.5 and newer) because
+// the integrated assembler does not accept AT&T syntax. This .s target will need to
+// have the "-no-integrated-as" command line option passed via
+// "Target" -> "Build Phases" -> "maxvid_decode_arm.s"
+
 #if defined(__arm__)
 # define COMPILE_ARM 1
 # if defined(__thumb__)

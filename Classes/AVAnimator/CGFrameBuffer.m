@@ -615,7 +615,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 - (NSString*) description
 {
   return [NSString stringWithFormat:@"CGFrameBuffer %p, pixels %p, %d x %d, %d BPP, isLocked %d", self, self.pixels,
-          self.width, self.height, self.bitsPerPixel, (int)self.isLockedByDataProvider];
+          (int)self.width, (int)self.height, (int)self.bitsPerPixel, (int)self.isLockedByDataProvider];
 }
 
 // Setter for self.colorspace property. While this property is declared as assign,
