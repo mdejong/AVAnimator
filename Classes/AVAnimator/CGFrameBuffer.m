@@ -66,7 +66,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 
   // 16bpp -> 2 bytes per pixel, 24bpp and 32bpp -> 4 bytes per pixel
   
-  int bytesPerPixel;
+  size_t bytesPerPixel;
   if (bitsPerPixel == 16) {
     bytesPerPixel = 2;
   } else if (bitsPerPixel == 24 || bitsPerPixel == 32) {
@@ -75,7 +75,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
     NSAssert(FALSE, @"bitsPerPixel is invalid");
   }
   
-	int inNumBytes = numPixelsToAllocate * bytesPerPixel;
+	size_t inNumBytes = numPixelsToAllocate * bytesPerPixel;
 
   // FIXME: if every frame is a key frame, then don't use the kernel memory interface
   // since it would not help at all in terms of performance. Would be faster to
@@ -88,8 +88,8 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   size_t allocNumBytes;
   
 #if defined(USE_MACH_VM_ALLOCATE)
-  int pagesize = getpagesize();
-  int numpages = (inNumBytes / pagesize);
+  size_t pagesize = (size_t)getpagesize();
+  size_t numpages = (inNumBytes / pagesize);
   if (inNumBytes % pagesize) {
     numpages++;
   }
@@ -109,8 +109,8 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 #else
   // Regular malloc(), or page aligned malloc()
 # if defined(USE_ALIGNED_VALLOC)
-  int pagesize = getpagesize();
-  int numpages = (inNumBytes / pagesize);
+  size_t pagesize = getpagesize();
+  size_t numpages = (inNumBytes / pagesize);
   if (inNumBytes % pagesize) {
     numpages++;
   }
