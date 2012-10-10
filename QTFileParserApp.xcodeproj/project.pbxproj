@@ -128,8 +128,8 @@
 		CD3F4ECF12D8F6B00067FDDF /* ViewLoadTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD3F4ECD12D8F6B00067FDDF /* ViewLoadTests.m */; };
 		CD3F4F1312D8FA0A0067FDDF /* AVAnimatorViewTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD3F4F1212D8FA0A0067FDDF /* AVAnimatorViewTests.m */; };
 		CD40216D15F5070100A47E59 /* MaxvidEncodeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD40216C15F5070100A47E59 /* MaxvidEncodeTests.m */; };
-		CD45EC6114955B6800FD0C6A /* maxvid_decode_arm.s in Sources */ = {isa = PBXBuildFile; fileRef = CD45EC6014955B6800FD0C6A /* maxvid_decode_arm.s */; settings = {COMPILER_FLAGS = "-no-integrated-as"; }; };
-		CD45EC6214955B6800FD0C6A /* maxvid_decode_arm.s in Sources */ = {isa = PBXBuildFile; fileRef = CD45EC6014955B6800FD0C6A /* maxvid_decode_arm.s */; settings = {COMPILER_FLAGS = "-no-integrated-as"; }; };
+		CD45EC6114955B6800FD0C6A /* maxvid_decode_arm.s in Sources */ = {isa = PBXBuildFile; fileRef = CD45EC6014955B6800FD0C6A /* maxvid_decode_arm.s */; };
+		CD45EC6214955B6800FD0C6A /* maxvid_decode_arm.s in Sources */ = {isa = PBXBuildFile; fileRef = CD45EC6014955B6800FD0C6A /* maxvid_decode_arm.s */; };
 		CD46E33915B00B8700E0047A /* AlphaGhost_ANI.mvid in Resources */ = {isa = PBXBuildFile; fileRef = CD46E33815B00B8700E0047A /* AlphaGhost_ANI.mvid */; };
 		CD4AAB3613675B270010148E /* GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD4AAB3513675B270010148E /* GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z */; };
 		CD4AABD513675FEF0010148E /* Matrix_480_320_10FPS_16BPP.mov.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD4AABD413675FEF0010148E /* Matrix_480_320_10FPS_16BPP.mov.7z */; };
@@ -1023,7 +1023,7 @@
 		29B97313FDCFA39411CA2CEA /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0450;
+				LastUpgradeCheck = 0420;
 			};
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "QTFileParserApp" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -1388,7 +1388,6 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = QTFileParserApp_Prefix.pch;
 				INFOPLIST_FILE = "QTFileParserApp-Info.plist";
-				OTHER_CFLAGS = "";
 				PRODUCT_NAME = QTFileParserApp;
 			};
 			name = Debug;
@@ -1402,7 +1401,6 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = QTFileParserApp_Prefix.pch;
 				INFOPLIST_FILE = "QTFileParserApp-Info.plist";
-				OTHER_CFLAGS = "";
 				PRODUCT_NAME = QTFileParserApp;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -1416,13 +1414,11 @@
 					armv7,
 				);
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				GCC_CW_ASM_SYNTAX = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_THREADSAFE_STATICS = NO;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 3.1.3;
-				OTHER_CFLAGS = "";
 				SDKROOT = iphoneos;
 			};
 			name = Debug;
@@ -1435,7 +1431,6 @@
 					armv7,
 				);
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				GCC_CW_ASM_SYNTAX = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_STRICT_ALIASING = YES;
 				GCC_THREADSAFE_STATICS = NO;
