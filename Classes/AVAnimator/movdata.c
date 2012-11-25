@@ -758,12 +758,14 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
         if (read_be_uint32(movFile, &entry->size) != 0) {
           movData->errCode = ERR_READ;
           snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for dref table entry size");
+          free(table);
           return 1;
         }
         
         if (read_uint32(movFile, &entry->type) != 0) {
           movData->errCode = ERR_READ;
           snprintf(movData->errMsg, sizeof(movData->errMsg), "read error for dref table entry type");
+          free(table);
           return 1;
         }
         // type must be 'dref' ?
@@ -1476,7 +1478,7 @@ process_sample_tables(FILE *movFile, MovData *movData) {
     movData->errCode = ERR_INVALID_FIELD;
     snprintf(movData->errMsg, sizeof(movData->errMsg),
              "found invalid smallest sample duration, re-exporting from Quicktime may fix this");
-    return 1;
+    goto reterr;
   }  
   
   // Use the effective frame rate to calculate the approx FPS and
@@ -1505,7 +1507,7 @@ process_sample_tables(FILE *movFile, MovData *movData) {
     snprintf(movData->errMsg, sizeof(movData->errMsg),
              "found %d samples, but only %d frames of video, re-exporting from Quicktime may fix this",
              num_samples, numFramesInt);
-    return 1;
+    goto reterr;
   }
     
   movData->frames = malloc(sizeof(MovSample*) * numFramesInt);
@@ -1984,6 +1986,22 @@ read_ARGB_and_premultiply(const char *ptr) {
 // Regular 32 bit system
 #define UINTMOD(ptr, pot) (((uint32_t)ptr) & (pot - 1))
 #endif
+
+// method to return values without moving pointer
+
+uint32_t byte_read_be_uint32(const char *samplePtr) {
+  uint16_t one;
+  uint16_t two;
+  READ_UINT16(one, samplePtr);
+  READ_UINT16(two, samplePtr);
+  return (one << 16) | two;
+}
+
+uint16_t byte_read_be_uint16(const char *samplePtr) {
+  uint16_t val;
+  READ_UINT16(val, samplePtr);
+  return val;
+}
 
 // 16 bit rgb555 pixels with no alpha channel
 // Works for (RBG555, RGB5551, or RGB565) though only XRRRRRGGGGGBBBBB is supported.
