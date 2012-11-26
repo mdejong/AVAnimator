@@ -480,6 +480,7 @@ DUPLABEL:
 #ifdef EXTRA_CHECKS
   numPixelsSaved = numPixels;
   pixel32Saved = pixel32Alias;
+  MAXVID_ASSERT(pixel32Alias == pixel32Saved, "pixel32Saved");
 #endif // EXTRA_CHECKS  
   
 #ifdef EXTRA_CHECKS

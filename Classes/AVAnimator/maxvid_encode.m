@@ -2212,6 +2212,8 @@ maxvid_write_delta_pixels(AVMvidFileWriter *mvidWriter,
     retcode = maxvid_encode_c4_sample16(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, NULL, tmpfp, 0);
   } else if (bpp == 24 || bpp == 32) {
     retcode = maxvid_encode_c4_sample32(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, NULL, tmpfp, 0);
+  } else {
+    assert(FALSE);
   }
   
   // Read tmp file contents into buffer.

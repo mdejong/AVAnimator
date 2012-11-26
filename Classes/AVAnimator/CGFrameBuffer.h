@@ -76,7 +76,7 @@
 // directly into the bitmap pixels. The handle must
 // be explicitly released by the caller via CGContextRelease()
 
-- (CGContextRef) createBitmapContext;
+- (CGContextRef) createBitmapContext CF_RETURNS_RETAINED;
 
 // Create a Core Graphics image from the pixel data
 // in this buffer. The hasDataProvider property

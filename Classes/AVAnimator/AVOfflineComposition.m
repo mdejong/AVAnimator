@@ -199,7 +199,11 @@ typedef enum
   return plist;  
 }
 
-- (CGColorRef) createCGColor:(CGFloat)red green:(CGFloat)green blue:(CGFloat)blue alpha:(CGFloat)alpha
+- (CGColorRef) createCGColor:(CGFloat)red
+                       green:(CGFloat)green
+                        blue:(CGFloat)blue
+                       alpha:(CGFloat)alpha
+CF_RETURNS_RETAINED
 {
   // FIXME: should this be RGB or sRGB colorspace?
   CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
@@ -210,6 +214,7 @@ typedef enum
 }
 
 - (CGColorRef) createColorWithHexString:(NSString*)stringToConvert
+CF_RETURNS_RETAINED
 {
   NSScanner *scanner = [NSScanner scannerWithString:stringToConvert];
   unsigned hex;
@@ -246,6 +251,7 @@ typedef enum
 // Parse color from a string specification, must be "#RRGGBB" or "#RRGGBBAA"
 
 - (CGColorRef) createParsedCGColor:(NSString*)colorSpec
+CF_RETURNS_RETAINED
 {
   int len = [colorSpec length];
   if (len != 7 && len != 9) {

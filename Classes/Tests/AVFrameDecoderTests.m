@@ -330,6 +330,7 @@
   
   frame = [frameDecoder advanceToFrame:0];
   image = frame.image;
+  NSAssert(image, @"image");
   
   // The file would be mapped at this point. Unmap it.
   
@@ -415,6 +416,7 @@
   frame = [frameDecoder advanceToFrame:0];
   NSAssert(frame, @"frame");
   img = frame.image;
+  NSAssert(img, @"image");
     
   // The file would be mapped at this point. Unmap it.
   

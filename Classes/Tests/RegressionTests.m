@@ -61,7 +61,7 @@
     return NULL;
   }
   
-  Method *testMethods = malloc(sizeof(Method*) * matchCount);
+  Method *testMethods = (Method*) malloc(sizeof(Method) * matchCount);
   int j = 0;
   for (int i=0; i < classCount; i++) {
     SEL selector = method_getName(methods[i]);

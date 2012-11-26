@@ -43,7 +43,7 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
                            buffer:(CVPixelBufferRef)buffer
                              size:(CGSize)size;
 
-- (AVMvidFrameDecoder*) initMvidDecoder;
+- (AVMvidFrameDecoder*) makeMvidDecoder;
 
 @end
 
@@ -74,14 +74,14 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
 }
 
 // ------------------------------------------------------------------------------------
-// initMvidDecoder
+// makeMvidDecoder
 // 
 // In the normal case where a .mvid file will be read from, this method will open
 // the file and return a frame decoder. If the file can't be opened, then nil
 // will be returned.
 // ------------------------------------------------------------------------------------
 
-- (AVMvidFrameDecoder*) initMvidDecoder
+- (AVMvidFrameDecoder*) makeMvidDecoder
 {
   BOOL worked;
  
@@ -117,13 +117,13 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
   
 #if defined(REGRESSION_TESTS)
   if (self.frameDecoder == nil) {
-    frameDecoder = [self initMvidDecoder];
+    frameDecoder = [self makeMvidDecoder];
   } else {
     // Optionally use a custom frame decoder in test mode
     frameDecoder = self.frameDecoder;
   }
 #else  // REGRESSION_TESTS
-  frameDecoder = [self initMvidDecoder];
+  frameDecoder = [self makeMvidDecoder];
 #endif // REGRESSION_TESTS
   
   if (frameDecoder == nil) {

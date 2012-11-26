@@ -367,7 +367,7 @@ goto retcode; \
           fread_half_word(fp, &fcTLChunk.delay_den) != 0 ||
           fread(&fcTLChunk.dispose_op, 1, 1, fp) != 1 ||
           fread(&fcTLChunk.blend_op, 1, 1, fp) != 1) {
-        return READ_ERROR;
+        RETCODE(READ_ERROR);
       }
 
       float frameDuration = libapng_frame_delay(fcTLChunk.delay_num, fcTLChunk.delay_den);

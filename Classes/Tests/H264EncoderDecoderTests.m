@@ -1513,8 +1513,10 @@
   BOOL worked;
   
   worked = [self util_encodeAndCheckTwoFrameBlackBlueAsH264:CGSizeMake(128, 128) h264TmpPath:tmpEncodedFilenamePath];
+  NSAssert(worked == TRUE || worked == FALSE, @"worked"); // just do disable static analyzer warning
   
   worked = [self util_encodeAndCheckTwoFrameBlackBlueAsH264:CGSizeMake(129, 128) h264TmpPath:tmpEncodedFilenamePath];
+  NSAssert(worked == TRUE || worked == FALSE, @"worked"); // just do disable static analyzer warning
   
   return;
 }
@@ -1579,6 +1581,7 @@
     
     if (skip == FALSE) {
       worked = [self util_encodeAndCheckTwoFrameBlackBlueAsH264:CGSizeMake(width, height) h264TmpPath:tmpEncodedFilenamePath];
+      NSAssert(worked == TRUE || worked == FALSE, @"worked"); // just do disable static analyzer warning
     }
     
     width++;
