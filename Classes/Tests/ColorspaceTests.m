@@ -101,6 +101,10 @@
   return;
 }
 
+/*
+
+// This approach never really worked, SRGB conversion needs to be done on the desktop
+ 
 // This test case will attempt to explicitly load a sRGB colorspace and set the
 // colospace for a frame buffer before rendering into it. This test basically
 // checks to see if the emitted sRGB pixels are exactly the same as the
@@ -174,7 +178,6 @@
   
   // Known adler32 for fully decompressed sRGB pixels
   
-  /*
    if (TRUE) {
    NSData *data = [NSData dataWithBytes:buffer length:numBytesInBuffer];
    NSString *tmpFile = @"out.data";
@@ -188,7 +191,6 @@
    // Write adler32 as an integer
    NSLog(@"adler32 %d", adler32);
    }
-   */
   
   uint32_t expectedAdler = 3784927541;
   uint32_t adler;
@@ -200,5 +202,6 @@
   return;
 }
 
+ */
 
 @end
