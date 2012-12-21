@@ -2192,7 +2192,9 @@ maxvid_write_delta_pixels(AVMvidFileWriter *mvidWriter,
   
   int bpp = mvidWriter.bpp;
   
-  // Calculate adlre32 checksum on original frame data
+  // Calculate adler32 checksum on original frame data. Note that this
+  // adler will include any zero padding pixels in the event that the
+  // framebuffer has an off number of pixels.
   
   uint32_t adler = 0;
   adler = maxvid_adler32(0, (unsigned char *)inputBuffer, inputBufferNumBytes);

@@ -30,6 +30,8 @@
 
 @property (nonatomic, retain) AVFrame *lastFrame;
 
+@property (nonatomic, assign) MVFrame *mvFrames;
+
 @end
 
 
@@ -40,6 +42,7 @@
 @synthesize currentFrameBuffer = m_currentFrameBuffer;
 @synthesize cgFrameBuffers = m_cgFrameBuffers;
 @synthesize lastFrame = m_lastFrame;
+@synthesize mvFrames = m_mvFrames;
 
 #if defined(REGRESSION_TESTS)
 @synthesize simulateMemoryMapFailure = m_simulateMemoryMapFailure;
@@ -409,6 +412,27 @@
   self.lastFrame = nil;
 }
 
+// This module scoped method will assert that the adler calculated from
+// the passed in framebuffer exactly matches the expected adler checksum.
+// In the case of an odd number of pixels in the framebuffer, the additional
+// zero padded pixels in the framebuffer are included in the adler calculation
+// logic.
+
+#if defined(EXTRA_CHECKS) || defined(ALWAYS_CHECK_ADLER)
+
+- (void) assertSameAdler:(uint32_t)expectedAdler
+             frameBuffer:(void*)frameBuffer
+     frameBufferNumBytes:(uint32_t)frameBufferNumBytes
+{
+  // If mvid file has adler checksum for frame, verify that it matches the decoded framebuffer contents
+  if (expectedAdler != 0) {
+    uint32_t frameAdler = maxvid_adler32(0, (unsigned char*)frameBuffer, frameBufferNumBytes);
+    NSAssert(frameAdler == expectedAdler, @"frameAdler");
+  }
+}
+
+#endif // EXTRA_CHECKS || ALWAYS_CHECK_ADLER
+
 - (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex
 {
   // The movie data must have been mapped into memory by the time advanceToFrame is invoked
@@ -462,12 +486,7 @@
   void *frameBuffer = (void*)nextFrameBuffer.pixels;
   uint32_t frameBufferSize = [self width] * [self height];
   uint32_t bpp = [self header]->bpp;
-  uint32_t frameBufferNumBytes;
-  if (bpp == 16) {
-    frameBufferNumBytes = frameBufferSize * sizeof(uint16_t);
-  } else {
-    frameBufferNumBytes = frameBufferSize * sizeof(uint32_t);
-  }
+  uint32_t frameBufferNumBytes = nextFrameBuffer.numBytes;
   
   // Check for the case where multiple frames need to be processed,
   // if one of the frames between the current frame and the target
@@ -611,11 +630,33 @@
         NSAssert(status == 0, @"status");
         
 #if defined(EXTRA_CHECKS) || defined(ALWAYS_CHECK_ADLER)
-        // If mvid file has adler checksum for frame, verify that it matches the decoded framebuffer contents    
-        if (frame->adler != 0) {
-          uint32_t frameAdler = maxvid_adler32(0, (unsigned char*)frameBuffer, frameBufferNumBytes);
-          NSAssert(frame->adler == frameAdler, @"frameAdler");
-        }        
+        // Mvid file verison 0 would calculate a delta checksum and not include zero padding pixels
+        // in the checksum. This is inconsistent with the keyframe calculation which includes the
+        // pixels and a zero padding pixel values. This issue is only a problem with a framebuffer
+        // that has an odd number of pixels.
+        
+        MVFileHeader *header = [self header];
+        
+        uint32_t numBytesToIncludeInAdler;
+        
+        if (maxvid_file_version(header) == MV_FILE_VERSION_ZERO) {
+          // File rev 0 will calculate an adler checksum using (width * height * numBytesInPixel)
+          // such that an odd sized buffer will not include the zero padding pixels. This logic
+          // was changes for file rev 1 so that both the keyframe and delta frame checksums
+          // include any zero padding for odd sized framebuffers.
+          
+          if (bpp == 16) {
+            numBytesToIncludeInAdler = frameBufferSize * sizeof(uint16_t);
+          } else {
+            numBytesToIncludeInAdler = frameBufferSize * sizeof(uint32_t);
+          }
+        } else {
+          // File rev > 0, include any padding pixel in the delta frame calculation
+          
+          numBytesToIncludeInAdler = frameBufferNumBytes;
+        }
+
+        [self assertSameAdler:frame->adler frameBuffer:frameBuffer frameBufferNumBytes:numBytesToIncludeInAdler];
 #endif // EXTRA_CHECKS
       } else {
         // Input buffer contains a complete keyframe, use zero copy optimization
@@ -625,20 +666,27 @@
 #ifdef EXTRA_CHECKS
         // FIXME: use zero copy of pointer into mapped file, impl OS page copy in util class
         if (bpp == 16) {
-          NSAssert(inputBuffer32NumBytes == (frameBufferSize * sizeof(uint16_t)), @"framebuffer num bytes");
+          if ((inputBuffer32NumBytes == (frameBufferSize * sizeof(uint16_t))) ||
+              (inputBuffer32NumBytes == ((frameBufferSize+1) * sizeof(uint16_t)))) {
+            // No-op
+          } else {
+            NSAssert(FALSE, @"framebuffer num bytes");
+          }
         } else {
-          NSAssert(inputBuffer32NumBytes == (frameBufferSize * sizeof(uint32_t)), @"framebuffer num bytes");
+          if ((inputBuffer32NumBytes == (frameBufferSize * sizeof(uint32_t))) ||
+              (inputBuffer32NumBytes == ((frameBufferSize+1) * sizeof(uint32_t)))) {
+            // No-op
+          } else {
+            NSAssert(FALSE, @"framebuffer num bytes");
+          }
         }
         NSAssert(((uint32_t)inputBuffer32 % MV_PAGESIZE) == 0, @"framebuffer num bytes");
 #endif // EXTRA_CHECKS
     
 #if defined(EXTRA_CHECKS) || defined(ALWAYS_CHECK_ADLER)
-        // If mvid file has adler checksum for frame, verify that it matches
-        
-        if (frame->adler != 0) {
-          uint32_t frameAdler = maxvid_adler32(0, (unsigned char*)inputBuffer32, inputBuffer32NumBytes);
-          NSAssert(frame->adler == frameAdler, @"frameAdler");
-        }        
+        // Calculate the keyframe checksum including the pixels and and zero padding pixels.
+        NSAssert(inputBuffer32NumBytes == frameBufferNumBytes, @"frameBufferNumBytes");
+        [self assertSameAdler:frame->adler frameBuffer:inputBuffer32 frameBufferNumBytes:inputBuffer32NumBytes];
 #endif // EXTRA_CHECKS
   
         [nextFrameBuffer zeroCopyPixels:inputBuffer32 mappedData:mappedDataObj];

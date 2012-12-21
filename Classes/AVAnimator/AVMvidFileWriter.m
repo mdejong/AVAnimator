@@ -306,6 +306,12 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   
   mvHeader->numFrames = self.totalNumFrames;
   
+  // This file writer always emits a file with version set to 1, since
+  // the adler checksum change required a binary compatibility change
+  // from the initial version 0.
+  
+  maxvid_file_set_version(mvHeader, MV_FILE_VERSION_ONE);
+  
   if (self.isSRGB) {
     maxvid_file_colorspace_set_srgb(mvHeader);
   }

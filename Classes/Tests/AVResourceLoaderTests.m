@@ -239,7 +239,7 @@
 
 // Decompress a .mov.7z file and convert the .mov data to .mvid
 
-+ (void) testDecode7zMvidCompareToResource
++ (void) DISABLED_testDecode7zMvidCompareToResource
 {  
   NSString *archiveFilename = @"2x2_black_blue_16BPP.mov.7z";
   NSString *entryFilename = @"2x2_black_blue_16BPP.mov";
@@ -303,7 +303,7 @@
   return;
 }
 
-+ (void) test7zMvidBlackBlue2x2_16BPP
++ (void) DISABLED_test7zMvidBlackBlue2x2_16BPP
 {
 	id appDelegate = [[UIApplication sharedApplication] delegate];	
 	UIWindow *window = [appDelegate window];
@@ -1369,7 +1369,7 @@
 // with serialLoading, the second loading operation will be a no-op
 // because it will test the isReady flag before kicking off a decode.
 
-+ (void) testDecode7zMvidCompareToResourceOneAtATime
++ (void) DISABLED_testDecode7zMvidCompareToResourceOneAtATime
 {  
   NSString *archiveFilename = @"2x2_black_blue_16BPP.mov.7z";
   NSString *entryFilename = @"2x2_black_blue_16BPP.mov";
@@ -1632,7 +1632,7 @@
 
 // Convert 16BPP 3x3 mov that contains 3 frames from .mov to .mvid.
 
-+ (void) testDecode3x316BPPMov2MvidCompareToResource
++ (void) DISABLED_testDecode3x316BPPMov2MvidCompareToResource
 {
   NSString *archiveFilename = @"3x3_bwd_ANI_16BPP.mov.7z";
   NSString *entryFilename = @"3x3_bwd_ANI_16BPP.mov";
@@ -1698,7 +1698,7 @@
 
 // Convert 24BPP 3x3 mov that contains 3 frames from .mov to .mvid.
 
-+ (void) testDecode3x324BPPMov2MvidCompareToResource
++ (void) DISABLED_testDecode3x324BPPMov2MvidCompareToResource
 {
   NSString *archiveFilename = @"3x3_bwd_ANI_24BPP.mov.7z";
   NSString *entryFilename = @"3x3_bwd_ANI_24BPP.mov";

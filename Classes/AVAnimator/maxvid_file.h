@@ -17,6 +17,13 @@
 #define MV_FRAME_IS_KEYFRAME 0x1
 #define MV_FRAME_IS_NOPFRAME 0x2
 
+// These constants define .mvid file revision constants. For example, AVAnimator 1.0
+// versions made use of the value 0, while AVAnimator 2.0 now emits files with the
+// version set to 1.
+
+#define MV_FILE_VERSION_ZERO 0
+#define MV_FILE_VERSION_ONE 1
+
 // A maxvid file is an "in memory" representation of video data that has been
 // written to a file. The data is always in the native endian format.
 // The data structures are sized for efficient execution, not minimal space
@@ -34,10 +41,10 @@ typedef struct {
   // FIXME: is float 32 bit on 64 bit systems ?
   float frameDuration;
   uint32_t numFrames;
-  // revision is the MVID file format revision, in cases where an earlier
+  // version is the MVID file format version number, in cases where an earlier
   // version of the file needs to be read by a later version of the library.
-  // The revision portion is the first 8 bits while the rest are bit flags.
-  uint32_t revisionAndFlags;
+  // The version portion is the first 8 bits while the rest are bit flags.
+  uint32_t versionAndFlags;
   // Padding out to 16 words, so that there is room to add additional fields later
   uint32_t padding[16-7];
 } MVFileHeader;
@@ -149,30 +156,31 @@ uint32_t maxvid_file_is_valid(FILE *inFile) {
   }
 }
 
-// Query the file "revision", meaning a integer number that would get incremented
+// Query the file "version", meaning a integer number that would get incremented
 // when an incompatible change to the file format is made. This is only useful
 // for library internals that might need to do something slightly different
 // depending on the binary layout of older versions of the file.
 
 static inline
-uint8_t maxvid_file_revision(MVFileHeader *fileHeaderPtr) {
-  uint8_t revision = fileHeaderPtr->revisionAndFlags & 0xFF;
-  return revision;
+uint8_t maxvid_file_version(MVFileHeader *fileHeaderPtr) {
+  uint8_t version = fileHeaderPtr->versionAndFlags & 0xFF;
+  return version;
 }
 
-// Explicitly set the maxvid file revision. The initial revision used is zero.
+// Explicitly set the maxvid file version. The initial version used is zero.
 
 static inline
-void maxvid_file_set_revision(MVFileHeader *fileHeaderPtr, uint8_t revision) {
-  uint32_t flags = fileHeaderPtr->revisionAndFlags >> 8;
-  fileHeaderPtr->revisionAndFlags = (flags << 8) | revision;  
+void maxvid_file_set_version(MVFileHeader *fileHeaderPtr, uint8_t revision) {
+  uint32_t flags = fileHeaderPtr->versionAndFlags >> 8;
+  fileHeaderPtr->versionAndFlags = (flags << 8) | revision;  
 }
 
 // Return TRUE if the colorspace indicated in the file is the RGB generic colorspace.
 
 static inline
 uint32_t maxvid_file_colorspace_is_rgb(MVFileHeader *fileHeaderPtr) {
-  uint32_t flags = fileHeaderPtr->revisionAndFlags >> 8;
+  assert(maxvid_file_version(fileHeaderPtr) >= MV_FILE_VERSION_ONE);
+  uint32_t flags = fileHeaderPtr->versionAndFlags >> 8;
   uint32_t isSRGB = flags & MV_FILE_COLORSPACE_SRGB;
   return (isSRGB == 0);
 }
@@ -181,7 +189,7 @@ uint32_t maxvid_file_colorspace_is_rgb(MVFileHeader *fileHeaderPtr) {
 
 static inline
 uint32_t maxvid_file_colorspace_is_srgb(MVFileHeader *fileHeaderPtr) {
-  uint32_t flags = fileHeaderPtr->revisionAndFlags >> 8;
+  uint32_t flags = fileHeaderPtr->versionAndFlags >> 8;
   uint32_t isSRGB = flags & MV_FILE_COLORSPACE_SRGB;
   return isSRGB;
 }
@@ -190,7 +198,7 @@ uint32_t maxvid_file_colorspace_is_srgb(MVFileHeader *fileHeaderPtr) {
 
 static inline
 void maxvid_file_colorspace_set_srgb(MVFileHeader *fileHeaderPtr) {  
-  fileHeaderPtr->revisionAndFlags |= (MV_FILE_COLORSPACE_SRGB << 8);
+  fileHeaderPtr->versionAndFlags |= (MV_FILE_COLORSPACE_SRGB << 8);
 }
 
 // adler32 calculation method
