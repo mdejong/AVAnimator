@@ -27,12 +27,29 @@
 
 void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size);
 
+// Private API
+
+@interface CGFrameBuffer ()
+
+// This property indicates the actual size of the allocated buffer pointed to
+// by the pixels property. It is possible that the actual allocated size
+// is larger than the value returned by the numBytes property, but this
+// is an implementation detail of this class and would not need to be known
+// outside this module.
+
+@property (readonly) size_t numBytesAllocated;
+
+@end
+
+// class CGFrameBuffer
+
 @implementation CGFrameBuffer
 
 @synthesize pixels = m_pixels;
 @synthesize zeroCopyPixels = m_zeroCopyPixels;
 @synthesize zeroCopyMappedData = m_zeroCopyMappedData;
 @synthesize numBytes = m_numBytes;
+@synthesize numBytesAllocated = m_numBytesAllocated;
 @synthesize width = m_width;
 @synthesize height = m_height;
 @synthesize bitsPerPixel = m_bitsPerPixel;
@@ -136,7 +153,8 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
     self->m_bitsPerPixel = bitsPerPixel;
     self->m_bytesPerPixel = bytesPerPixel;
     self->m_pixels = buffer;
-    self->m_numBytes = allocNumBytes;
+    self->m_numBytes = inNumBytes;
+    self->m_numBytesAllocated = allocNumBytes;
     self->m_width = width;
     self->m_height = height;
   } else {
@@ -498,11 +516,13 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   kern_return_t ret;
   vm_address_t src = (vm_address_t) srcPtr;
   vm_address_t dst = (vm_address_t) self.pixels;
-  ret = vm_copy((vm_map_t) mach_task_self(), src, (vm_size_t) self.numBytes, dst);
+  ret = vm_copy((vm_map_t) mach_task_self(), src, (vm_size_t) self.numBytesAllocated, dst);
   if (ret != KERN_SUCCESS) {
     assert(0);
   }
 #else
+  // FIXME: add assert here to check num bytes
+  // FIXME: this code will not compile if USE_MACH_VM_ALLOCATE is not defined
   memcpy(self.pixels, anotherFrameBufferPixelsPtr, anotherFrameBuffer.numBytes);
 #endif  
 }
@@ -578,7 +598,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 #if defined(USE_MACH_VM_ALLOCATE)
 	if (self.pixels != NULL) {
     kern_return_t ret;
-    ret = vm_deallocate((vm_map_t) mach_task_self(), (vm_address_t) self.pixels, (vm_size_t) self.numBytes);
+    ret = vm_deallocate((vm_map_t) mach_task_self(), (vm_address_t) self.pixels, (vm_size_t) self.numBytesAllocated);
     if (ret != KERN_SUCCESS) {
       assert(0);
     }

@@ -63,6 +63,8 @@
   worked = [framebuffer renderCGImage:cgImage];
   NSAssert(worked, @"worked");
   
+  // FIXME: adler should always include padding zero bytes.
+  
   // Size should not include extra padding in numBytes
   
   uint32_t expectedNumBytes = 3041280;
@@ -136,6 +138,7 @@
     
     CGColorSpaceRef colorSpace;
     
+    // FIXME: remove icc profile from project file and this test case.
     NSString *iccProfilePath = [[NSBundle mainBundle] pathForResource:@"sRGB Profile" ofType:@"icc"];
     NSAssert(iccProfilePath, @"Cannot find \"sRGB Profile.icc\" in app resources");
     
