@@ -15,9 +15,7 @@
 
 #import "AVAppResourceLoader.h"
 #import "AV7zAppResourceLoader.h"
-#import "AV7zQT2MvidResourceLoader.h"
 
-#import "AVQTAnimationFrameDecoder.h"
 #import "AVMvidFrameDecoder.h"
 
 #import "AVImageFrameDecoder.h"
@@ -937,7 +935,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -959,7 +957,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -1046,7 +1044,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -1074,7 +1072,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -1121,7 +1119,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -1149,7 +1147,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -1356,7 +1354,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -1380,7 +1378,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -1432,8 +1430,8 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceOneName = @"2x2_black_blue_16BPP.mov";
-  NSString *resourceTwoName = @"2x2_black_blue_24BPP.mov";
+  NSString *resourceOneName = @"2x2_black_blue_16BPP.mvid";
+  NSString *resourceTwoName = @"2x2_black_blue_24BPP.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -1460,10 +1458,10 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder1 = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder1 = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media1.frameDecoder = frameDecoder1;
 
-  AVQTAnimationFrameDecoder *frameDecoder2 = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder2 = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media2.frameDecoder = frameDecoder2;
   
   media1.animatorFrameDuration = 1.0;
@@ -1627,7 +1625,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -1649,7 +1647,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -1767,7 +1765,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"Bounce_16BPP_15FPS.mov";
+  NSString *resourceName = @"Bounce_16BPP_15FPS.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -1789,7 +1787,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -1853,7 +1851,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   return;
 }
 
-// Decode .mov.7z attached as a resource
+// Decode .mvid.7z attached as a resource
 
 + (void) test16BPPMov7z
 {
@@ -1863,8 +1861,8 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *archiveFilename = @"Bounce_16BPP_15FPS.mov.7z";
-  NSString *entryFilename = @"Bounce_16BPP_15FPS.mov";  
+  NSString *archiveFilename = @"Bounce_16BPP_15FPS.mvid.7z";
+  NSString *entryFilename = @"Bounce_16BPP_15FPS.mvid";  
   NSString *outPath = [AVFileUtil getTmpDirPath:entryFilename];  
   
   // Create a plain AVAnimatorView without a movie controls and display
@@ -1893,7 +1891,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -1967,8 +1965,8 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *archiveFilename = @"Bounce_16BPP_15FPS.mov.7z";
-  NSString *entryFilename = @"Bounce_16BPP_15FPS.mov";
+  NSString *archiveFilename = @"Bounce_16BPP_15FPS.mvid.7z";
+  NSString *entryFilename = @"Bounce_16BPP_15FPS.mvid";
   NSString *outFilename = @"Bounce_16BPP_15FPS.mvid";
   NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];  
   
@@ -1991,7 +1989,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create loader that will read a movie file from app resources.
   
-	AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+	AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
   resLoader.archiveFilename = archiveFilename;
   resLoader.movieFilename = entryFilename;
   resLoader.outPath = outPath;
@@ -2063,13 +2061,13 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   return;
 }
 
-+ (void) test24BPP
++ (void) DISABLED_test24BPP
 {
 	id appDelegate = [[UIApplication sharedApplication] delegate];	
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"Bounce_24BPP_15FPS.mov";
+  NSString *resourceName = @"Bounce_24BPP_15FPS.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -2091,7 +2089,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -2161,7 +2159,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"Bounce_32BPP_15FPS.mov";
+  NSString *resourceName = @"Bounce_32BPP_15FPS.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -2183,7 +2181,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -2253,7 +2251,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -2275,7 +2273,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -2355,7 +2353,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"2x2_black_blue_24BPP.mov";
+  NSString *resourceName = @"2x2_black_blue_24BPP.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -2377,7 +2375,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -2448,7 +2446,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"2x2_black_blue_32BPP.mov";
+  NSString *resourceName = @"2x2_black_blue_32BPP.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -2470,7 +2468,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -2545,7 +2543,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"2x2_nop.mov";
+  NSString *resourceName = @"2x2_16BPP_1FPS_3Frames_nop.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -2567,7 +2565,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -2675,7 +2673,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");
   
-  NSString *videoResourceName = @"Sweep15FPS_ANI.mov";
+  NSString *videoResourceName = @"Sweep15FPS.mvid";
   NSString *audioResourceName = @"Sweep15FPS.m4a";
   
   // Create a plain AVAnimatorView without a movie controls and display
@@ -2699,7 +2697,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = AVAnimator15FPS;
@@ -2862,7 +2860,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");
   
-  NSString *videoResourceName = @"Sweep15FPS_ANI.mov";
+  NSString *videoResourceName = @"Sweep15FPS.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -2884,7 +2882,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = AVAnimator15FPS;

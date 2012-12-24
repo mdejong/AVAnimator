@@ -6,8 +6,8 @@
 //  License terms defined in License.txt.
 //
 // Extend AVAppResourceLoader to support loading of 7zip compressed resource files.
-// For example, a resource named "2x2_black_blue_16BPP.mov.7z" could be decompressed
-// to "2x2_black_blue_16BPP.mov". The file is decompressed into the tmp dir in
+// For example, a resource named "2x2_black_blue_16BPP.mvid.7z" could be decompressed
+// to "2x2_black_blue_16BPP.mvid". The file is decompressed into the tmp dir in
 // a second thread. The caller must define the archiveFilename, movieFilename, and
 // outPath properties. The outPath is a .mvid file path.
 

@@ -11,7 +11,7 @@
 
 // Given a filename (typically an archive entry name), return the filename
 // in the tmp dir that corresponds to the entry. For example,
-// "2x2_black_blue_16BPP.mov" -> "/tmp/2x2_black_blue_16BPP.mov" where "/tmp"
+// "2x2_black_blue_16BPP.mvid" -> "/tmp/2x2_black_blue_16BPP.mvid" where "/tmp"
 // is the app tmp dir.
 
 + (NSString*) getTmpDirPath:(NSString*)filename

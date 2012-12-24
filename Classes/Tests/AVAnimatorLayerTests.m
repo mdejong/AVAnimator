@@ -14,7 +14,7 @@
 #import "AVAnimatorMediaPrivate.h"
 
 #import "AVAppResourceLoader.h"
-#import "AVQTAnimationFrameDecoder.h"
+#import "AVMvidFrameDecoder.h"
 
 #import "AVFileUtil.h"
 
@@ -39,13 +39,17 @@
   CFRelease(pixelData);
 }
 
+// This test case will load a mvid attached as a project resource
+// and test the pixel colors to verify that the decoding logic is
+// converting in the case of 16 BPP rle555 pixels.
+
 + (void) testBlackBlue2x2_16BPP
 {
 	id appDelegate = [[UIApplication sharedApplication] delegate];	
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -70,7 +74,7 @@
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;

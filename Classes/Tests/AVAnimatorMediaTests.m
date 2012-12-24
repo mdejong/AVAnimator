@@ -20,10 +20,8 @@
 #import "AVAnimatorMediaPrivate.h"
 
 #import "AVAppResourceLoader.h"
-#import "AVQTAnimationFrameDecoder.h"
 
 #import "AV7zAppResourceLoader.h"
-#import "AV7zQT2MvidResourceLoader.h"
 
 #import "AVMvidFrameDecoder.h"
 

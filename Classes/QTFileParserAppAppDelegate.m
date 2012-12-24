@@ -21,15 +21,11 @@
 
 #import "AVAppResourceLoader.h"
 
-#import "AVQTAnimationFrameDecoder.h"
-
 #import "AVImageFrameDecoder.h"
 
 #import "AVMvidFrameDecoder.h"
 
 #import "AVFileUtil.h"
-
-#import "AV7zQT2MvidResourceLoader.h"
 
 #import "AV7zApng2MvidResourceLoader.h"
 
@@ -187,76 +183,34 @@
 }
 
 // This generic loading util will setup a resource loader and configure a Media
-// object to use the proper type of loader depending on wether the convertToMvid
-// flag is TRUE. If convertToMvid is FALSE, then a .mov will be decompressed
-// from a 7zip compressed archive. If convertToMvid is TRUE, then a .mov file
-// attached as a 7zip compressed file will be extracted and converted to a
-// .mvid format.
+// object to use the proper type of loader. A .mvid will be decompressed
+// from a 7zip compressed archive.
 
 - (void) genericResourceLoader:(NSString*)resourcePrefix
-                 convertToMvid:(BOOL)convertToMvid
                          media:(AVAnimatorMedia*)media
 {
   NSString *videoResourceArchiveName;
   NSString *videoResourceEntryName;
   NSString *videoResourceOutName;
   NSString *videoResourceOutPath;
-
-  NSString *mvidResFilename = [NSString stringWithFormat:@"%@.mvid.7z", [resourcePrefix lastPathComponent]];
-	NSString* mvidResPath = [[NSBundle mainBundle] pathForResource:mvidResFilename ofType:nil];
   
-  BOOL convertToMvidLoader = TRUE;
-  if (convertToMvid == FALSE) {
-    convertToMvidLoader = FALSE;
-  }
+  // Extract existing FILENAME.mvid from FILENAME.mvid.7z attached as app resource
   
-  if (convertToMvid && (mvidResPath != nil)) {
-    // Extract existing FILENAME.mvid from FILENAME.mvid.7z attached as app resource
-    videoResourceArchiveName = [NSString stringWithFormat:@"%@.mvid.7z", resourcePrefix];
-    videoResourceEntryName = [NSString stringWithFormat:@"%@.mvid", resourcePrefix];
-    NSString *resourceTail = [resourcePrefix lastPathComponent];
-    videoResourceOutName = [NSString stringWithFormat:@"%@.mvid", resourceTail];
-    videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];
-    convertToMvidLoader = FALSE;
-  } else if (convertToMvid) {
-    // Extract to /tmp/FILENAME.mvid
-    videoResourceArchiveName = [NSString stringWithFormat:@"%@.mov.7z", resourcePrefix];
-    videoResourceEntryName = [NSString stringWithFormat:@"%@.mov", resourcePrefix];
-    NSString *resourceTail = [resourcePrefix lastPathComponent];
-    videoResourceOutName = [NSString stringWithFormat:@"%@.mvid", resourceTail];
-    videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];    
-  } else {
-    // Extract to /tmp/FILENAME.mov
-    videoResourceArchiveName = [NSString stringWithFormat:@"%@.mov.7z", resourcePrefix];
-    videoResourceEntryName = [NSString stringWithFormat:@"%@.mov", resourcePrefix];
-    NSString *resourceTail = [resourcePrefix lastPathComponent];
-    videoResourceOutName = [NSString stringWithFormat:@"%@.mov", resourceTail];
-    videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];        
-  }
+  videoResourceArchiveName = [NSString stringWithFormat:@"%@.mvid.7z", resourcePrefix];
+  videoResourceEntryName = [NSString stringWithFormat:@"%@.mvid", resourcePrefix];
+  NSString *resourceTail = [resourcePrefix lastPathComponent];
+  videoResourceOutName = [NSString stringWithFormat:@"%@.mvid", resourceTail];
+  videoResourceOutPath = [AVFileUtil getTmpDirPath:videoResourceOutName];
   
-  if (convertToMvidLoader) {
-    AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
-    resLoader.archiveFilename = videoResourceArchiveName;
-    resLoader.movieFilename = videoResourceEntryName;
-    resLoader.outPath = videoResourceOutPath;
-    
-    media.resourceLoader = resLoader;
-  } else {
-    AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
-    resLoader.archiveFilename = videoResourceArchiveName;
-    resLoader.movieFilename = videoResourceEntryName;
-    resLoader.outPath = videoResourceOutPath;    
-    
-    media.resourceLoader = resLoader;
-  }
+  AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = videoResourceArchiveName;
+  resLoader.movieFilename = videoResourceEntryName;
+  resLoader.outPath = videoResourceOutPath;
   
-  if (convertToMvid) {
-    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
-    media.frameDecoder = frameDecoder;
-  } else {
-    AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
-    media.frameDecoder = frameDecoder;
-  }
+  media.resourceLoader = resLoader;
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  media.frameDecoder = frameDecoder;
   
   return;
 }
@@ -506,9 +460,7 @@
   
 	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  BOOL convertToMvid = TRUE;
-  
-  [self genericResourceLoader:resourceName convertToMvid:convertToMvid media:media];  
+  [self genericResourceLoader:resourceName media:media];
   
   if (frameDuration == -1.0) {
     frameDuration = AVAnimator30FPS;
@@ -571,9 +523,7 @@
   
 	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  BOOL convertToMvid = TRUE;
-  
-  [self genericResourceLoader:resPrefix convertToMvid:convertToMvid media:media];  
+  [self genericResourceLoader:resPrefix media:media];
 
   // An alpha 480x320 animation seems to be able to hit about 15 to 20 FPS.
   // Not as good as 24bpp, but the alpha blending and premultiplicaiton
@@ -676,9 +626,7 @@
   
 	AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  BOOL convertToMvid = TRUE;
-  
-  [self genericResourceLoader:resourcePrefix convertToMvid:convertToMvid media:media];
+  [self genericResourceLoader:resourcePrefix media:media];
   
   // Movie is 10FPS  
   // This animation can run smoothly at 30 FPS on a iPhone 3G,
@@ -761,7 +709,7 @@
     [view addSubview:imageView];
     [self.window addSubview:view];
   } else {
-    NSString *resourceName = @"JigsawPuzzle_205_99_10FPS_16BPP.mov";
+    NSString *resourceName = @"JigsawPuzzle_205_99_10FPS_16BPP.mvid";
     
     AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:screenRect];
     
@@ -778,9 +726,10 @@
     resLoader.movieFilename = resourceName;
     media.resourceLoader = resLoader;
     
-    // Create decoder that will generate frames from Quicktime Animation encoded data
+    // Create decoder that will generate frames from input .mvid file stored
+    // in an app resource file.
     
-    AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
     media.frameDecoder = frameDecoder;
     
     // Movie is 10FPS  
@@ -822,7 +771,7 @@
 - (void) loadSweepAnimation:(float)frameDuration
                   withSound:(BOOL)withSound
 {
-  NSString *videoResourceName = @"Sweep15FPS_ANI";
+  NSString *videoResourceName = @"Sweep15FPS";
   
   NSString *audioResourceName = @"Sweep15FPS.m4a"; // AAC in a M4AF container
 //  NSString *audioResourceName = @"Sweep15FPS.caf"; // AAC in a CAF container
@@ -838,9 +787,7 @@
   
   AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  BOOL convertToMvid = FALSE;
-  
-  [self genericResourceLoader:videoResourceName convertToMvid:convertToMvid media:media];  
+  [self genericResourceLoader:videoResourceName media:media];
   
   // Grab loader and add sound filename also
   
@@ -897,15 +844,12 @@
   
   AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  // Create loader to read from project resources and render frames (either from .mov or converted .mvid)
-
-  // Setting this to TRUE will load from "GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z" instead of converting
-  // from an existing .mov. This loads more quickly, and the attached .mvid.7z file compresses to a smaller
-  // size than the .mov.7z file.
+  // Create loader to read from project resources and render frames. This logic
+  // loads a version 0 mvid file where all frames are keyframes. This type of input
+  // is able to make better use of mmap to map a file into memory and then send
+  // that memory to the video hardware.
   
-  BOOL convertToMvid = TRUE;
-  
-  [self genericResourceLoader:@"GradientColorWheel_2FPS_32BPP_Keyframes" convertToMvid:convertToMvid media:media];
+  [self genericResourceLoader:@"GradientColorWheel_2FPS_32BPP_Keyframes" media:media];
   
   if (frameDuration != -1.0) {
     // Don't set a frame duration, use the 2.0 FPS encoded in the MOV file
@@ -983,9 +927,7 @@
   
   AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  BOOL convertToMvid = TRUE;
-  
-  [self genericResourceLoader:resPrefix convertToMvid:convertToMvid media:media];    
+  [self genericResourceLoader:resPrefix media:media];
   
   if (frameDuration != -1.0) {
     media.animatorFrameDuration = frameDuration;

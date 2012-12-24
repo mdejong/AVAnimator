@@ -18,10 +18,8 @@
 #import "AVAnimatorMediaPrivate.h"
 
 #import "AVAppResourceLoader.h"
-#import "AVQTAnimationFrameDecoder.h"
 
 #import "AV7zAppResourceLoader.h"
-#import "AV7zQT2MvidResourceLoader.h"
 
 #import "AVMvidFrameDecoder.h"
 
@@ -171,13 +169,13 @@
 // This test case will allocate a frame decoder and then invoke a generic test method that will skip around inside the
 // frames of the video.
 
-+ (void) testBounce32SeekMov
++ (void) testBounce32SeekMvid
 {
 	id appDelegate = [[UIApplication sharedApplication] delegate];	
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"Bounce_32BPP_15FPS.mov";
+  NSString *resourceName = @"Bounce_32BPP_15FPS.mvid";
     
   // Create Media object
   
@@ -191,7 +189,7 @@
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
 	media.frameDecoder = frameDecoder;
   
   media.animatorFrameDuration = 1.0;
@@ -223,14 +221,14 @@
 // Same seek logic as above, but this test converts to .mvid file first. Seeking in an mvid file
 // will validate the adler checksums on each frame change in debug mode.
 
-+ (void) testBounce32SeekMvid
++ (void) testBounce32SeekMvid7z
 {
 	id appDelegate = [[UIApplication sharedApplication] delegate];	
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *archiveFilename = @"Bounce_32BPP_15FPS.mov.7z";
-  NSString *entryFilename = @"Bounce_32BPP_15FPS.mov";
+  NSString *archiveFilename = @"Bounce_32BPP_15FPS.mvid.7z";
+  NSString *entryFilename = @"Bounce_32BPP_15FPS.mvid";
   NSString *outFilename = @"Bounce_32BPP_15FPS.mvid";
   NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
   
@@ -241,14 +239,13 @@
   AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
   // Create loader that will read a movie file from app resources.
-  
-	AV7zQT2MvidResourceLoader *resLoader = [AV7zQT2MvidResourceLoader aV7zQT2MvidResourceLoader];
+    
+	AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
   resLoader.archiveFilename = archiveFilename;
   resLoader.movieFilename = entryFilename;
   resLoader.outPath = outPath;
-	media.resourceLoader = resLoader;
   
-  resLoader.alwaysGenerateAdler = TRUE;
+	media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
@@ -291,7 +288,7 @@
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"2x2_black_blue_16BPP.mov";
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
 
   // Create loader that will read a movie file from app resources.
   
@@ -304,7 +301,7 @@
   BOOL isReady = [resLoader isReady];
   NSAssert(isReady, @"isReady");
   
-  AVQTAnimationFrameDecoder *frameDecoder = [AVQTAnimationFrameDecoder aVQTAnimationFrameDecoder];
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
   
 	NSArray *resourcePathsArr = [resLoader getResources];  
 	NSAssert([resourcePathsArr count] == 1, @"expected 1 resource paths");
