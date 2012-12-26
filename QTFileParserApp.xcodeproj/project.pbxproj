@@ -214,8 +214,6 @@
 		CDAD8C2B15279C130089206E /* AVOfflineCompositionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CDAD8C2A15279C130089206E /* AVOfflineCompositionTests.m */; };
 		CDBA6B2512DC50A8001B44EB /* nexttrack.png in Resources */ = {isa = PBXBuildFile; fileRef = CDBA6B2412DC50A8001B44EB /* nexttrack.png */; };
 		CDBA6B2612DC50A9001B44EB /* nexttrack.png in Resources */ = {isa = PBXBuildFile; fileRef = CDBA6B2412DC50A8001B44EB /* nexttrack.png */; };
-		CDBAAE66151A5AD4004AF10E /* MovdataConvertMaxvid.m in Sources */ = {isa = PBXBuildFile; fileRef = CDBAAE65151A5AD4004AF10E /* MovdataConvertMaxvid.m */; };
-		CDBAAE67151A5AD4004AF10E /* MovdataConvertMaxvid.m in Sources */ = {isa = PBXBuildFile; fileRef = CDBAAE65151A5AD4004AF10E /* MovdataConvertMaxvid.m */; };
 		CDBB005414F349B900AC6F5B /* AVMvidFileWriter.m in Sources */ = {isa = PBXBuildFile; fileRef = CDBB005314F349B800AC6F5B /* AVMvidFileWriter.m */; };
 		CDBB005514F349B900AC6F5B /* AVMvidFileWriter.m in Sources */ = {isa = PBXBuildFile; fileRef = CDBB005314F349B800AC6F5B /* AVMvidFileWriter.m */; };
 		CDBDC10E12E0EA7500EF5BD4 /* LCD.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */; };
@@ -449,8 +447,6 @@
 		CDAD8C28152799850089206E /* AVOfflineCompositionTwoFrameBlueBackgroundTest.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = AVOfflineCompositionTwoFrameBlueBackgroundTest.plist; sourceTree = "<group>"; };
 		CDAD8C2A15279C130089206E /* AVOfflineCompositionTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVOfflineCompositionTests.m; sourceTree = "<group>"; };
 		CDBA6B2412DC50A8001B44EB /* nexttrack.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = nexttrack.png; sourceTree = "<group>"; };
-		CDBAAE64151A5AD4004AF10E /* MovdataConvertMaxvid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MovdataConvertMaxvid.h; sourceTree = "<group>"; };
-		CDBAAE65151A5AD4004AF10E /* MovdataConvertMaxvid.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MovdataConvertMaxvid.m; sourceTree = "<group>"; };
 		CDBB005214F349B800AC6F5B /* AVMvidFileWriter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVMvidFileWriter.h; sourceTree = "<group>"; };
 		CDBB005314F349B800AC6F5B /* AVMvidFileWriter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVMvidFileWriter.m; sourceTree = "<group>"; };
 		CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = LCD.jpg; sourceTree = "<group>"; };
@@ -860,8 +856,6 @@
 				CD78DC8E15F50636007D3EFF /* maxvid_encode.m */,
 				CD0BD0391363523800D8287A /* maxvid_file.h */,
 				CD0BD0381363523800D8287A /* maxvid_file.c */,
-				CDBAAE64151A5AD4004AF10E /* MovdataConvertMaxvid.h */,
-				CDBAAE65151A5AD4004AF10E /* MovdataConvertMaxvid.m */,
 				CDD9888E1371F4A60072C06B /* libapng.h */,
 				CDD9888D1371F4A60072C06B /* libapng.c */,
 				CDF00A0415AA499100C654E2 /* AVAssetConvertCommon.h */,
@@ -1231,7 +1225,6 @@
 				CDBB005414F349B900AC6F5B /* AVMvidFileWriter.m in Sources */,
 				CD70DF7B14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m in Sources */,
 				CDFF8A8614F97B2A00F3E816 /* ApngConvertMaxvid.m in Sources */,
-				CDBAAE66151A5AD4004AF10E /* MovdataConvertMaxvid.m in Sources */,
 				CDAD8C1B1527965B0089206E /* AVOfflineComposition.m in Sources */,
 				CDF00A0215AA482C00C654E2 /* AVAssetWriterConvertFromMaxvid.m in Sources */,
 				CD93915115F35B5000E1D7CC /* AVFrame.m in Sources */,
@@ -1298,7 +1291,6 @@
 				CDBB005514F349B900AC6F5B /* AVMvidFileWriter.m in Sources */,
 				CD70DF7C14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m in Sources */,
 				CDFF8A8714F97B2A00F3E816 /* ApngConvertMaxvid.m in Sources */,
-				CDBAAE67151A5AD4004AF10E /* MovdataConvertMaxvid.m in Sources */,
 				CDAD8C1C1527965B0089206E /* AVOfflineComposition.m in Sources */,
 				CDAD8C2B15279C130089206E /* AVOfflineCompositionTests.m in Sources */,
 				CDF00A0315AA482C00C654E2 /* AVAssetWriterConvertFromMaxvid.m in Sources */,

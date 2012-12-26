@@ -675,9 +675,7 @@ CF_RETURNS_RETAINED
 
   NSUInteger width = self.compSize.width;
   NSUInteger height = self.compSize.height;
-  
-  const uint32_t framebufferNumBytes = width * height * sizeof(uint32_t);
-  
+    
   // Allocate buffer that will contain the rendered frame for each time step
   
   CGFrameBuffer *cgFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24
@@ -731,7 +729,7 @@ CF_RETURNS_RETAINED
     
     // Write frame buffer out to .mvid container
     
-    worked = [fileWriter writeKeyframe:(char*)cgFrameBuffer.pixels bufferSize:framebufferNumBytes];
+    worked = [fileWriter writeKeyframe:(char*)cgFrameBuffer.pixels bufferSize:cgFrameBuffer.numBytes];
     
     if (worked == FALSE) {
       retcode = FALSE;

@@ -317,16 +317,17 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
       }
       
       // Calculate how many bytes make up the image via (bytesPerRow * height). The
-      // numBytes value may be padded out to fit to an OS page bound.
+      // numBytes value may be padded out to fit to an OS page bound. If the buffer
+      // is padded in the case of an odd number of pixels, pass the buffer size
+      // including the padding pixels.
       
-      int bufferSize = movieWidth * movieHeight * frameBuffer.bytesPerPixel;
-      int expectedBufferSize = (movieWidth * movieHeight * sizeof(uint32_t));
-      NSAssert(bufferSize == expectedBufferSize, @"framebuffer size");
+      int bufferSize = frameBuffer.numBytes;
+      void *pixelsPtr = frameBuffer.pixels;
       
       // write entire buffer of raw 32bit pixels to the file.
       // bitmap info is native (kCGImageAlphaNoneSkipFirst|kCGBitmapByteOrder32Little)
       
-      worked = [self writeKeyframe:frameBuffer.pixels bufferSize:bufferSize];
+      worked = [self writeKeyframe:pixelsPtr bufferSize:bufferSize];
       
       if (worked == FALSE) {
         writeFailed = TRUE;

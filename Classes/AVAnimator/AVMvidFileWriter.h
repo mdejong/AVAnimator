@@ -62,7 +62,9 @@
 
 - (void) skipToNextPageBound;
 
-// Write a self contained key frame
+// Write a self contained key frame. Note that the bufferSize argument
+// here should contain all the pixels and any zero pading in the case
+// of an odd number of pixels.
 
 - (BOOL) writeKeyframe:(char*)ptr bufferSize:(int)bufferSize;
 

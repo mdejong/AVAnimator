@@ -469,7 +469,18 @@ process_apng_frame(
   
   AVMvidFileWriter *aVMvidFileWriter = userDataPtr->avMvidFileWriter;
   
-  const uint32_t framebufferNumBytes = width * height * sizeof(uint32_t);
+  uint32_t framebufferNumBytes;
+  
+  if (((width * height) % 2) == 0) {
+    // Even number of pixels in framebuffer
+    framebufferNumBytes = width * height * sizeof(uint32_t);
+  } else {
+    // Odd number of pixels in framebuffer, include one more pixel
+    // of padding and make sure it is initialized to zero.
+    framebufferNumBytes = (width * height) + 1;
+    assert((framebufferNumBytes % 2) == 0);
+    framebufferNumBytes *= sizeof(uint32_t);
+  }
 
 #ifdef DEBUG_PRINT_FRAME_DURATION
   printf("process_apng_frame(fbPtr, framei=%d, width=%d, height=%d, delta_x=%d, delta_y=%d, delta_width=%d, delta_height=%d, delay_num=%d, delay_den=%d, bpp=%d, ptr)\n",
