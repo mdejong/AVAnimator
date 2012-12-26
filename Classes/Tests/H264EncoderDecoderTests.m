@@ -1014,7 +1014,7 @@
 
 // FIXME: disabled because the writer gets stuck in output loop on iPad 2
 
-// AlphaGhost_ANI.mvid (480 x 320) -> AlphaGhost_encoded_h264.mov
+// encode AlphaGhost_ANI.mvid (480 x 320) -> AlphaGhost_encoded_h264.mov
 
 + (void) testEncodeAlphaGhostH264WithTrackWriter
 {  
