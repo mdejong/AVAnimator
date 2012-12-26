@@ -29,6 +29,7 @@
 		CD15C2D512BC9BDC00A26588 /* VolumeLeftTall.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C2CD12BC9BDC00A26588 /* VolumeLeftTall.png */; };
 		CD15C2D612BC9BDC00A26588 /* VolumeRightTall.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C2CE12BC9BDC00A26588 /* VolumeRightTall.png */; };
 		CD15C54F12BCADA800A26588 /* smiley.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C54E12BCADA800A26588 /* smiley.png */; };
+		CD17DF6C168BAAB500DE7E56 /* Sweep15FPS.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CDD64171168804CD00492B80 /* Sweep15FPS.mvid.7z */; };
 		CD2C6A5D14F81CD500C3CDB7 /* superwalk_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD84F51B14E268B20004C529 /* superwalk_h264.mov */; };
 		CD2F6D4812F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
 		CD2F6D4912F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
@@ -1168,6 +1169,7 @@
 				CDD6416016868FFA00492B80 /* Bounce_32BPP_15FPS.mvid.7z in Resources */,
 				CDD6416B1687B6E800492B80 /* 2x2_black_blue_24BPP.mvid in Resources */,
 				CDD6416C1687B6E800492B80 /* 2x2_black_blue_32BPP.mvid in Resources */,
+				CD17DF6C168BAAB500DE7E56 /* Sweep15FPS.mvid.7z in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1022,6 +1022,9 @@
   NSString *tmpInputPath = nil;
   NSString *tmpOutputPath = nil;
   
+  // FIXME: this alpha ghost file is 700 K decompressed, it would be better to
+  // just decode this from the known working AlphaGhost.mvid.7z archive.
+  
   tmpFilename = @"AlphaGhost_ANI.mvid";
   tmpInputPath = [AVFileUtil getResourcePath:tmpFilename];
   tmpFilename = @"AlphaGhost_encoded_h264.mov";

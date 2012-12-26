@@ -1763,9 +1763,14 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 {
 	id appDelegate = [[UIApplication sharedApplication] delegate];	
 	UIWindow *window = [appDelegate window];
-	NSAssert(window, @"window");  
+	NSAssert(window, @"window");
   
-  NSString *resourceName = @"Bounce_16BPP_15FPS.mvid";
+  NSString *archiveFilename = @"Bounce_16BPP_15FPS.mvid.7z";
+  NSString *entryFilename = @"Bounce_16BPP_15FPS.mvid";
+  NSString *outFilename = @"Bounce_16BPP_15FPS.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -1779,11 +1784,14 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  // Create loader that will read a movie file from app resources.
+  // Create loader that will read a movie file from 7z app resources.
   
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = resourceName;
-	media.resourceLoader = resLoader;
+  AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  
+  media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
@@ -2061,13 +2069,17 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   return;
 }
 
-+ (void) DISABLED_test24BPP
++ (void) test24BPP
 {
 	id appDelegate = [[UIApplication sharedApplication] delegate];	
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"Bounce_24BPP_15FPS.mvid";
+  NSString *archiveFilename = @"Bounce_24BPP_15FPS.mvid.7z";
+  NSString *entryFilename = @"Bounce_24BPP_15FPS.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:entryFilename];
+  
+  [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -2081,11 +2093,13 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  // Create loader that will read a movie file from app resources.
+  // Create loader that will read a movie file from 7z app resources.
   
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = resourceName;
-	media.resourceLoader = resLoader;
+  AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
@@ -2679,8 +2693,14 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");
   
-  NSString *videoResourceName = @"Sweep15FPS.mvid";
+  NSString *archiveFilename = @"Sweep15FPS.mvid.7z";
+  NSString *entryFilename = @"Sweep15FPS.mvid";
+  NSString *outFilename = @"Sweep15FPS.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+
   NSString *audioResourceName = @"Sweep15FPS.m4a";
+  
+  [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -2694,11 +2714,15 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  // Create loader that will read a movie file from app resources.
+  // Create loader that will read a movie file from 7z app resources.
   
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = videoResourceName;
+  AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  
   resLoader.audioFilename = audioResourceName;
+  
 	media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
@@ -2866,7 +2890,12 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");
   
-  NSString *videoResourceName = @"Sweep15FPS.mvid";
+  NSString *archiveFilename = @"Sweep15FPS.mvid.7z";
+  NSString *entryFilename = @"Sweep15FPS.mvid";
+  NSString *outFilename = @"Sweep15FPS.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
   
   // Create a plain AVAnimatorView without a movie controls and display
   // in portrait mode. This setup involves no containing views and
@@ -2880,10 +2909,13 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  // Create loader that will read a movie file from app resources.
+  // Create loader that will read a movie file from 7z app resources.
   
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = videoResourceName;
+  AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  
 	media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data

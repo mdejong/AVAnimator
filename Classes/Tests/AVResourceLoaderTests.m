@@ -1575,7 +1575,7 @@
   BOOL worked = [RegressionTests waitUntilTrue:resLoader
                                       selector:@selector(isReady)
                                    maxWaitTime:1000.0];
-  NSAssert(worked, @"worked");  
+  NSAssert(worked, @"worked");
   
   if (1) {    
     // Verify that the emitted .mvid file has a valid magic number

@@ -175,17 +175,25 @@
 	UIWindow *window = [appDelegate window];
 	NSAssert(window, @"window");  
   
-  NSString *resourceName = @"Bounce_32BPP_15FPS.mvid";
+  NSString *archiveFilename = @"Bounce_32BPP_15FPS.mvid.7z";
+  NSString *entryFilename = @"Bounce_32BPP_15FPS.mvid";
+  NSString *outFilename = @"Bounce_32BPP_15FPS.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
     
   // Create Media object
   
   AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  // Create loader that will read a movie file from app resources.
+  // Create loader that will read a movie file from 7z app resources.
   
-	AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
-  resLoader.movieFilename = resourceName;
-	media.resourceLoader = resLoader;
+  AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  
+  media.resourceLoader = resLoader;
   
   // Create decoder that will generate frames from Quicktime Animation encoded data
   
@@ -238,7 +246,7 @@
   
   AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
   
-  // Create loader that will read a movie file from app resources.
+  // Create loader that will read a movie file from 7z app resources.
     
 	AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
   resLoader.archiveFilename = archiveFilename;
