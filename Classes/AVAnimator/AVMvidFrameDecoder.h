@@ -62,10 +62,6 @@
 @property (nonatomic, assign) BOOL simulateMemoryMapFailure;
 #endif // REGRESSION_TESTS
 
-// Return TRUE if RGB values are calibrated in the SRGB colorspace.
-
-@property (nonatomic, readonly) BOOL isSRGB;
-
 + (AVMvidFrameDecoder*) aVMvidFrameDecoder;
 
 // Open resource identified by path

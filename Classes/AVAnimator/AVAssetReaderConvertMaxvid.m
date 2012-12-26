@@ -183,14 +183,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   CMSampleBufferRef sampleBuffer = NULL;
   
   self.bpp = 24;
-  
-  // Note that by default, the device RGB colorspace on iOS is sRGB. So, explicitly mark
-  // the .mvid file as being encoded in the sRGB colorspace. When not running on iOS,
-  // the target framebuffer must be set to the sRGB colorspace in order for the output
-  // pixels to be converted to sRGB.
-  
-  self.isSRGB = TRUE;
-    
+      
   worked = [self open];
   
   if (worked == FALSE) {

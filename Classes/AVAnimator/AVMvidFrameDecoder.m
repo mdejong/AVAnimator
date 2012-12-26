@@ -148,8 +148,10 @@
 #if TARGET_OS_IPHONE
   // No-op
 #else
-  // MacOSX
-  if ([self isSRGB]) {
+  // Under iOS, device is always sRGB. Under MacOSX we must always explicitly treat input pixels as
+  // being defined in the sRGB colorspace.
+  
+  if (1) {
     CGColorSpaceRef colorSpace = NULL;
     colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
     NSAssert(colorSpace, @"colorSpace");
@@ -860,17 +862,6 @@
     return TRUE;
   } else {
     assert(0);
-  }
-}
-
-// Return TRUE if RGB values are calibrated in the SRGB colorspace.
-
-- (BOOL) isSRGB
-{
-  if (maxvid_file_colorspace_is_srgb([self header])) {
-    return TRUE;
-  } else {
-    return FALSE;
   }
 }
 

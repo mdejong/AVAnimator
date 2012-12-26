@@ -8,12 +8,6 @@
 
 #define MV_FILE_MAGIC 0xCAFEBABE
 
-// Note that the RGB and SRGB colorsspaces use the same bit flag. So, if
-// SRGB colorspace bit is not set then it means that the RGB colorspace
-// was used.
-
-#define MV_FILE_COLORSPACE_SRGB 0x1
-
 #define MV_FRAME_IS_KEYFRAME 0x1
 #define MV_FRAME_IS_NOPFRAME 0x2
 
@@ -175,6 +169,7 @@ void maxvid_file_set_version(MVFileHeader *fileHeaderPtr, uint8_t revision) {
   fileHeaderPtr->versionAndFlags = (flags << 8) | revision;  
 }
 
+/*
 // Return TRUE if the colorspace indicated in the file is the RGB generic colorspace.
 
 static inline
@@ -200,6 +195,7 @@ static inline
 void maxvid_file_colorspace_set_srgb(MVFileHeader *fileHeaderPtr) {  
   fileHeaderPtr->versionAndFlags |= (MV_FILE_COLORSPACE_SRGB << 8);
 }
+*/
 
 // adler32 calculation method
 
