@@ -1764,7 +1764,8 @@ maxvid_encode_generic_delta_pixels16(const uint16_t * restrict prevInputBuffer16
                                      const uint16_t * restrict currentInputBuffer16,
                                      const uint32_t inputBufferNumWords,
                                      uint32_t width,
-                                     uint32_t height)
+                                     uint32_t height,
+                                     BOOL *emitKeyframeAnyway)
 {
   // Calculate delta between previous framebuffer and the current one
   
@@ -1776,6 +1777,9 @@ maxvid_encode_generic_delta_pixels16(const uint16_t * restrict prevInputBuffer16
                                                 width, height);
   
   if ([deltaPixels count] == 0) {
+    return nil;
+  } else if ((emitKeyframeAnyway != NULL) && ([deltaPixels count] == (width * height))) {
+    *emitKeyframeAnyway = TRUE;
     return nil;
   } else {
     // FIXME: what if this method fails? What would we return?
@@ -1799,7 +1803,8 @@ maxvid_encode_generic_delta_pixels32(const uint32_t * restrict prevInputBuffer32
                                      const uint32_t * restrict currentInputBuffer32,
                                      const uint32_t inputBufferNumWords,
                                      uint32_t width,
-                                     uint32_t height)
+                                     uint32_t height,
+                                     BOOL *emitKeyframeAnyway)
 {
   // Calculate delta between previous framebuffer and the current one
   
@@ -1811,6 +1816,9 @@ maxvid_encode_generic_delta_pixels32(const uint32_t * restrict prevInputBuffer32
                                                 width, height);
   
   if ([deltaPixels count] == 0) {
+    return nil;
+  } else if ((emitKeyframeAnyway != NULL) && ([deltaPixels count] == (width * height))) {
+    *emitKeyframeAnyway = TRUE;
     return nil;
   } else {
     // FIXME: what if this method fails? What would we return?

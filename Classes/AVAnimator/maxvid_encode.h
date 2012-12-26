@@ -188,14 +188,16 @@ maxvid_encode_generic_delta_pixels16(const uint16_t * restrict prevInputBuffer16
                                      const uint16_t * restrict currentInputBuffer16,
                                      const uint32_t inputBufferNumWords,
                                      uint32_t width,
-                                     uint32_t height);
+                                     uint32_t height,
+                                     BOOL *emitKeyframeAnyway);
 
 NSData*
 maxvid_encode_generic_delta_pixels32(const uint32_t * restrict prevInputBuffer32,
                                      const uint32_t * restrict currentInputBuffer32,
                                      const uint32_t inputBufferNumWords,
                                      uint32_t width,
-                                     uint32_t height);
+                                     uint32_t height,
+                                     BOOL *emitKeyframeAnyway);
 
 // This method will convert maxvid codes to the final output format, calculate an adler
 // checksum for the frame data and then write the data to the mvidWriter.

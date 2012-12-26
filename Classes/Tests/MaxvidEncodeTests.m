@@ -154,7 +154,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 1, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 1, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"IDENTICAL"], @"isEqualToString");
   
@@ -171,7 +171,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 1, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 1, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"IDENTICAL"], @"isEqualToString");
   
@@ -188,7 +188,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 1, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 1, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x2 DONE"], @"isEqualToString");
   
@@ -205,7 +205,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 1, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 1, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x2 DONE"], @"isEqualToString");
   
@@ -222,7 +222,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 2, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 2, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x3 SKIP 1 DONE"], @"isEqualToString");
   
@@ -239,7 +239,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 2, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 2, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x3 SKIP 1 DONE"], @"isEqualToString");
   
@@ -256,7 +256,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 2, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 2, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 DONE"], @"isEqualToString");
   
@@ -273,7 +273,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 2, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 2, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 DONE"], @"isEqualToString");
   
@@ -290,7 +290,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 SKIP 1 DONE"], @"isEqualToString");
   
@@ -307,7 +307,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 SKIP 1 DONE"], @"isEqualToString");
   
@@ -322,7 +322,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x4 SKIP 1 COPY 1 0x5 DONE"], @"isEqualToString");
   
@@ -337,7 +337,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x4 SKIP 1 COPY 1 0x5 DONE"], @"isEqualToString");
   
@@ -354,7 +354,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 2, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 2, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"COPY 2 0x3 0x4 DONE"], @"isEqualToString");
   
@@ -371,7 +371,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 2, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 2, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 2 0x3 0x4 DONE"], @"isEqualToString");
   
@@ -388,7 +388,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"COPY 3 0x4 0x5 0x6 DONE"], @"isEqualToString");
   
@@ -405,7 +405,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 3 0x4 0x5 0x6 DONE"], @"isEqualToString");
   
@@ -422,7 +422,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 2, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 2, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"DUP 2 0x3 DONE"], @"isEqualToString");
   
@@ -439,7 +439,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 2, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 2, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"DUP 2 0x3 DONE"], @"isEqualToString");
   
@@ -456,7 +456,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"DUP 2 0x3 COPY 1 0x4 DONE"], @"isEqualToString");
   
@@ -473,7 +473,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"DUP 2 0x3 COPY 1 0x4 DONE"], @"isEqualToString");
   
@@ -490,7 +490,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x4 DUP 2 0x5 DONE"], @"isEqualToString");
   
@@ -507,7 +507,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x4 DUP 2 0x5 DONE"], @"isEqualToString");
   
@@ -524,7 +524,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 5, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 5, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"DUP 2 0x6 COPY 1 0x7 DUP 2 0x8 DONE"], @"isEqualToString");
   
@@ -541,7 +541,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 5, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 5, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"DUP 2 0x6 COPY 1 0x7 DUP 2 0x8 DONE"], @"isEqualToString");
   
@@ -558,7 +558,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 4, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 4, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x5 DUP 2 0x6 COPY 1 0x7 DONE"], @"isEqualToString");
   
@@ -575,7 +575,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 4, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 4, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x5 DUP 2 0x6 COPY 1 0x7 DONE"], @"isEqualToString");
   
@@ -592,7 +592,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 4, 1);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 4, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 SKIP 2 DONE"], @"isEqualToString");
   
@@ -609,9 +609,43 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 4, 1);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 4, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 SKIP 2 DONE"], @"isEqualToString");
+  
+  return;
+}
+
+// COPY of all pixels in the buffer will be treated as a keyframe when non-NULL emitKeyframeAnyway
+// argument is passed.
+
++ (void) testEncode4x1CopyAllChangedAt16BPP
+{
+  uint16_t prev[] = { 0x1, 0x2, 0x3, 0x4 };
+  uint16_t curr[] = { 0x5, 0x6, 0x7, 0x8 };
+  
+  NSData *codes;
+  
+  BOOL emitKeyframeAnyway = FALSE;
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 4, 1, &emitKeyframeAnyway);
+  NSAssert(emitKeyframeAnyway == TRUE, @"emitKeyframeAnyway");
+  
+  return;
+}
+
+// COPY of all pixels in the buffer will be treated as a keyframe when non-NULL emitKeyframeAnyway
+// argument is passed.
+
++ (void) testEncode4x1CopyAllChangedAt32BPP
+{
+  uint32_t prev[] = { 0x1, 0x2, 0x3, 0x4 };
+  uint32_t curr[] = { 0x5, 0x6, 0x7, 0x8 };
+  
+  NSData *codes;
+  
+  BOOL emitKeyframeAnyway = FALSE;
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 4, 1, &emitKeyframeAnyway);
+  NSAssert(emitKeyframeAnyway == TRUE, @"emitKeyframeAnyway");
   
   return;
 }
@@ -636,7 +670,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), width, height);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), width, height, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x2 SKIP 65535 SKIP 65535 SKIP 22529 DONE"], @"isEqualToString");
 
@@ -662,7 +696,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x2 SKIP 65535 SKIP 65535 SKIP 22529 DONE"], @"isEqualToString");
   
@@ -690,7 +724,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), width, height);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), width, height, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"DUP 65535 0x1 DUP 65535 0x1 DUP 22530 0x1 DONE"], @"isEqualToString");
   
@@ -718,7 +752,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"DUP 65535 0x1 DUP 65535 0x1 DUP 22530 0x1 DONE"], @"isEqualToString");
   
@@ -761,7 +795,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), width, height);
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), width, height, NULL);
   results = [self util_printMvidCodes16:codes];
   
   // Generate a string like "COPY 65535 0x1 0x2 0x3 ... COPY 65535 ... COPY 22530 ... DONE"
@@ -825,7 +859,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSData *codes;
   NSString *results;
   
-  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height);
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height, NULL);
   results = [self util_printMvidCodes32:codes];
   
   // Generate a string like "COPY 65535 0x1 0x2 0x3 ... COPY 65535 ... COPY 22530 ... DONE"
