@@ -1012,21 +1012,43 @@
   return;
 }
 
+// This utility method will make sure that the "AlphaGhost.mvid" file
+// has been decoded in the tmp directory.
+
++ (NSString*) ensureDecodeOfAlphaGhostMvid
+{
+  NSString *archiveFilename = @"AlphaGhost.mvid.7z";
+  NSString *entryFilename = @"AlphaGhost.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:entryFilename];
+
+  // Create loader that will read a movie file from app resources.
+  
+  AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+
+  [resLoader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+
+  return outPath;
+}
+
 // FIXME: disabled because the writer gets stuck in output loop on iPad 2
 
-// encode AlphaGhost_ANI.mvid (480 x 320) -> AlphaGhost_encoded_h264.mov
+// encode AlphaGhost.mvid (480 x 320) -> AlphaGhost_encoded_h264.mov
 
 + (void) testEncodeAlphaGhostH264WithTrackWriter
 {  
   NSString *tmpFilename = nil;
   NSString *tmpInputPath = nil;
   NSString *tmpOutputPath = nil;
-  
-  // FIXME: this alpha ghost file is 700 K decompressed, it would be better to
-  // just decode this from the known working AlphaGhost.mvid.7z archive.
-  
-  tmpFilename = @"AlphaGhost_ANI.mvid";
-  tmpInputPath = [AVFileUtil getResourcePath:tmpFilename];
+    
+  tmpInputPath = [self ensureDecodeOfAlphaGhostMvid];
   tmpFilename = @"AlphaGhost_encoded_h264.mov";
   
   // Make sure output file does not exists before running test
@@ -1068,8 +1090,7 @@
   NSString *tmpInputPath = nil;
   NSString *tmpOutputPath = nil;
   
-  tmpFilename = @"AlphaGhost_ANI.mvid";
-  tmpInputPath = [AVFileUtil getResourcePath:tmpFilename];
+  tmpInputPath = [self ensureDecodeOfAlphaGhostMvid];
   tmpFilename = @"AlphaGhost_encoded_h264.mov";
   
   // Make sure output file does not exists before running test
