@@ -267,6 +267,11 @@
     [data writeToFile:path atomically:YES];
     NSLog(@"wrote %@", path);
     }
+    
+    // Check "all keyframes" flag
+    
+    BOOL isAllKeyframes = [frameDecoder isAllKeyframes];
+    NSAssert(isAllKeyframes == TRUE, @"isAllKeyframes");
   }
   
   return;

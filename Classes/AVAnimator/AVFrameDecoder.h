@@ -85,4 +85,10 @@
 // TRUE if the decoded frame supports and alpha channel.
 - (BOOL) hasAlphaChannel;
 
+// True when all mvid frames are keyframes. This means that none of
+// the frames are delta frames that require a previous state in order
+// to apply a delta.
+
+- (BOOL) isAllKeyframes;
+
 @end

@@ -865,4 +865,14 @@
   }
 }
 
+- (BOOL) isAllKeyframes
+{
+  uint32_t isCond = maxvid_file_is_all_keyframes([self header]);  
+  if (isCond) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
 @end

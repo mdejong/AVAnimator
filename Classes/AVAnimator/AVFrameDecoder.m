@@ -106,4 +106,10 @@
 	return FALSE;
 }
 
+- (BOOL) isAllKeyframes
+{
+  [self doesNotRecognizeSelector:_cmd];
+	return FALSE;
+}
+
 @end

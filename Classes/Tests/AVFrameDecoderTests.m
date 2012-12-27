@@ -279,6 +279,11 @@
   
   NSAssert(media.currentFrame == -1, @"currentFrame");
   
+  // Check "all keyframes" flag
+  
+  BOOL isAllKeyframes = [frameDecoder isAllKeyframes];
+  NSAssert(isAllKeyframes == FALSE, @"isAllKeyframes");
+  
   // Invoke logic to seek around in the frames
   
   [self doSeekTests:frameDecoder];
@@ -422,7 +427,14 @@
   NSAssert(frame, @"frame");
   img = frame.image;
   NSAssert(img, @"image");
-    
+  
+  // Check "all keyframes" flag, it should be TRUE
+  
+  BOOL isAllKeyframes = [frameDecoder isAllKeyframes];
+  NSAssert(isAllKeyframes == TRUE, @"isAllKeyframes");
+  
+  //NSAssert([frameDecoder isAllKeyframes] == TRUE, @"isAllKeyframes");
+  
   // The file would be mapped at this point. Unmap it.
   
   [frameDecoder releaseDecodeResources];

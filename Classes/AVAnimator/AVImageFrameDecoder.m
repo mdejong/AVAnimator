@@ -254,4 +254,9 @@
 	return FALSE;
 }
 
+- (BOOL) isAllKeyframes
+{
+	return TRUE;
+}
+
 @end
