@@ -510,6 +510,13 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 	}
 }
 
+// Set all pixels to 0x0
+
+- (void) clear
+{
+  bzero(self.pixels, self.numBytes);
+}
+
 - (void) osCopyImpl:(void*)srcPtr
 {  
 #if defined(USE_MACH_VM_ALLOCATE)
