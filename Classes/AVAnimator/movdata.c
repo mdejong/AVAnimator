@@ -1850,6 +1850,32 @@ uint8_t * restrict alphaTable = &alphaTables[alpha * TABLEMAX]; \
 result = (alpha << 24) | (alphaTable[red] << 16) | (alphaTable[green] << 8) | alphaTable[blue]; \
 }
 
+// Execute the premultiply logic on a BGRA "ios native" pixel.
+// For example, a pixel RGB (128, 0, 0) with A = 128
+// would return (255, 0, 0) with A = 128
+
+uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA)
+{
+  init_alphaTables();
+  
+  uint32_t alphaIn = (unpremultPixelBGRA >> 24) & 0xFF;
+  uint32_t redIn = (unpremultPixelBGRA >> 16) & 0xFF;
+  uint32_t greenIn = (unpremultPixelBGRA >> 8) & 0xFF;
+  uint32_t blueIn = (unpremultPixelBGRA >> 0) & 0xFF;
+  
+  uint8_t buffer[4] = { alphaIn, redIn, greenIn, blueIn };
+  uint8_t *bufferPtr = buffer;
+  
+  uint32_t result;
+  READ_AND_PREMULTIPLY(result, bufferPtr);
+  
+  if (alphaIn == 0) {
+    result = 0x0;
+  }
+  
+  return result;
+}
+
 static
 void init_alphaTables() {
   if (alphaTablesInitialized) {
