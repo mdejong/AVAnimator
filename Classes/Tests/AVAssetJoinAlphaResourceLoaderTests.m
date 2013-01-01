@@ -139,6 +139,13 @@
     NSAssert(isAllKeyframes == TRUE, @"isAllKeyframes");
   }
   
+  // remove large output file once done with test!
+  
+  if (TRUE) {
+    worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:NULL];
+    NSAssert(worked, @"rm %@", tmpPath);
+  }
+  
   return;
 }
 
