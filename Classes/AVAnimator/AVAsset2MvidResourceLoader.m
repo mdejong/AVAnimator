@@ -19,7 +19,8 @@
 
 + (AVAsset2MvidResourceLoader*) aVAsset2MvidResourceLoader
 {
-  return [[[AVAsset2MvidResourceLoader alloc] init] autorelease];
+  AVAsset2MvidResourceLoader *obj = [[AVAsset2MvidResourceLoader alloc] init];
+  return [obj autorelease];
 }
 
 - (void) dealloc
