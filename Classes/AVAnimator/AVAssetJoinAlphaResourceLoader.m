@@ -265,16 +265,36 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
     AVFrame *frameAlpha = [frameDecoderAlpha advanceToFrame:frameIndex];
     assert(frameAlpha);
     
+    if (FALSE) {
+      // Dump images for the RGB and ALPHA frames
+      
+      // Write image as PNG
+      
+      NSString *tmpDir = NSTemporaryDirectory();
+      
+      NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"JoinAlpha_RGB_Frame%d.png", (frameIndex + 1)];
+      
+      NSData *data = [NSData dataWithData:UIImagePNGRepresentation(frameRGB.image)];
+      [data writeToFile:tmpPNGPath atomically:YES];
+      NSLog(@"wrote %@", tmpPNGPath);
+      
+      tmpPNGPath = [tmpDir stringByAppendingFormat:@"JoinAlpha_ALPHA_Frame%d.png", (frameIndex + 1)];
+      
+      data = [NSData dataWithData:UIImagePNGRepresentation(frameAlpha.image)];
+      [data writeToFile:tmpPNGPath atomically:YES];
+      NSLog(@"wrote %@", tmpPNGPath);
+    }
+    
     // Release the UIImage ref inside the frame since we will operate on the image data directly.
     frameRGB.image = nil;
     frameAlpha.image = nil;
     
     CGFrameBuffer *cgFrameBufferRGB = frameRGB.cgFrameBuffer;
-    assert(cgFrameBufferRGB);
+    NSAssert(cgFrameBufferRGB, @"cgFrameBufferRGB");
     
     CGFrameBuffer *cgFrameBufferAlpha = frameAlpha.cgFrameBuffer;
-    assert(cgFrameBufferAlpha);
-        
+    NSAssert(cgFrameBufferAlpha, @"cgFrameBufferAlpha");
+    
     // sRGB
     
     if (frameIndex == 0) {
@@ -313,10 +333,6 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
       // Create BGRA pixel that is not premultiplied
       
       uint32_t combinedPixel = (pixelAlpha << 24) | pixelRGB;
-      
-      //if (pixelAlpha != 0) {
-      //  combinedPixel = combinedPixel + 0;
-      //}
       
       // Now pre multiple the pixel values to ensure that alpha values
       // are defined by the values in the alpha channel movie.
@@ -436,7 +452,7 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
     worked = [self joinRGBAndAlpha:phonyOutPath rgbPath:phonyRgbOutPath alphaPath:phonyAlphaOutPath];
     NSAssert(worked, @"joinRGBAndAlpha");
     
-    // FIXME: delete RGB and Alpha intermediate .mvid files
+    // Delete RGB and Alpha intermediate .mvid files since they are very large
     
     worked = [[NSFileManager defaultManager] removeItemAtPath:phonyRgbOutPath error:NULL];
     NSAssert(worked, @"rm %@", phonyRgbOutPath);

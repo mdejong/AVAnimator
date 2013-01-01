@@ -17,6 +17,8 @@
 
 #import "CGFrameBuffer.h"
 
+#define MAX_WAIT 120
+
 @interface AVAssetJoinAlphaResourceLoaderTests : NSObject {}
 @end
 
@@ -71,7 +73,7 @@
   
   BOOL worked = [RegressionTests waitUntilTrue:resLoader
                                       selector:@selector(isReady)
-                                   maxWaitTime:30.0];
+                                   maxWaitTime:MAX_WAIT];
   NSAssert(worked, @"worked");
   
   NSLog(@"Wrote : %@", tmpPath);
@@ -93,6 +95,7 @@
     NSAssert(worked, @"worked");
     
     NSAssert([frameDecoder numFrames] == 152, @"numFrames");
+    NSAssert([frameDecoder hasAlphaChannel] == TRUE, @"hasAlphaChannel");
     
     worked = [frameDecoder allocateDecodeResources];
     NSAssert(worked, @"worked");
@@ -118,6 +121,25 @@
       [data writeToFile:path atomically:YES];
       NSLog(@"wrote %@", path);
     }
+    
+    // The first framebuffer should have at least one non-black pixel. All pixels
+    // were coming out black in a previous buggy version that did not read from
+    // the zero copy pixels when inspecting buffer contents.
+    
+    uint32_t *pixelPtr = (uint32_t*)frame.cgFrameBuffer.pixels;
+    uint32_t numPixels = frame.cgFrameBuffer.width * frame.cgFrameBuffer.height;
+    BOOL has_non_zero_pixel = FALSE;
+    
+    for (int pixeli = 0; pixeli < numPixels; pixeli++) {
+      uint32_t pixel = pixelPtr[pixeli];
+      pixel &= 0xFFFF;
+      if (pixel != 0x0) {
+        has_non_zero_pixel = TRUE;
+      }
+    }
+    NSAssert(has_non_zero_pixel, @"has_non_zero_pixel");
+    
+    // Dump frame 2
     
     frame = [frameDecoder advanceToFrame:1];
     NSAssert(frame, @"frame 1");

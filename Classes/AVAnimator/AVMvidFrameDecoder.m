@@ -173,6 +173,9 @@
   self.lastFrame = nil;
 }
 
+// Return the next available framebuffer, this will be the framebuffer that the
+// next decode operation will decode into.
+
 - (CGFrameBuffer*) _getNextFramebuffer
 {
   [self _allocFrameBuffers];
@@ -484,8 +487,7 @@
   char *mappedPtr = (char*) [self.mappedData bytes];
   NSAssert(mappedPtr, @"mappedPtr");
 #endif // USE_SEGMENTED_MMAP
-
-  void *frameBuffer = (void*)nextFrameBuffer.pixels;
+  
   uint32_t frameBufferSize = [self width] * [self height];
   uint32_t bpp = [self header]->bpp;
   uint32_t frameBufferNumBytes = nextFrameBuffer.numBytes;
@@ -564,6 +566,17 @@
           [self.currentFrameBuffer zeroCopyToPixels];
         }
       }
+      
+      // Query the framebuffer after possibly calling zeroCopyToPixels to copy
+      // pixels from a zero copy buffer into the current framebuffer.
+      
+      void *frameBuffer = (void*)nextFrameBuffer.pixels;
+#ifdef EXTRA_CHECKS
+      NSAssert(frameBuffer, @"frameBuffer");
+      if (isDeltaFrame) {
+      NSAssert(frameBuffer != nextFrameBuffer.zeroCopyPixels, @"frameBuffer is zeroCopyPixels buffer");
+      }
+#endif // EXTRA_CHECKS
 
 #if defined(USE_SEGMENTED_MMAP)
       // Create a mapped segment using the frame offset and length for this frame.
