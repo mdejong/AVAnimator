@@ -35,6 +35,8 @@
 		CD288F131694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CD288F101694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v */; };
 		CD288F141694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CD288F111694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */; };
 		CD288F151694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CD288F111694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */; };
+		CD288F181694DEF200A5CDAD /* AlphaGhost_alpha_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CD288F161694DEF200A5CDAD /* AlphaGhost_alpha_CRF_30_24BPP.m4v */; };
+		CD288F191694DEF200A5CDAD /* AlphaGhost_rgb_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CD288F171694DEF200A5CDAD /* AlphaGhost_rgb_CRF_30_24BPP.m4v */; };
 		CD2C6A5D14F81CD500C3CDB7 /* superwalk_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD84F51B14E268B20004C529 /* superwalk_h264.mov */; };
 		CD2F6D4812F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
 		CD2F6D4912F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
@@ -345,6 +347,8 @@
 		CD15C54E12BCADA800A26588 /* smiley.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = smiley.png; sourceTree = "<group>"; };
 		CD288F101694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ExplosionAdjusted_alpha_CRF_30_24BPP.m4v; sourceTree = "<group>"; };
 		CD288F111694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ExplosionAdjusted_rgb_CRF_30_24BPP.m4v; sourceTree = "<group>"; };
+		CD288F161694DEF200A5CDAD /* AlphaGhost_alpha_CRF_30_24BPP.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = AlphaGhost_alpha_CRF_30_24BPP.m4v; sourceTree = "<group>"; };
+		CD288F171694DEF200A5CDAD /* AlphaGhost_rgb_CRF_30_24BPP.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = AlphaGhost_rgb_CRF_30_24BPP.m4v; sourceTree = "<group>"; };
 		CD2F6D4512F0B8AF0022413B /* AVAnimatorMedia.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorMedia.h; sourceTree = "<group>"; };
 		CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorMedia.m; sourceTree = "<group>"; };
 		CD2F6D4712F0B8AF0022413B /* AVAnimatorMediaPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorMediaPrivate.h; sourceTree = "<group>"; };
@@ -752,6 +756,8 @@
 				CD5E3C551623356F002D7374 /* Colorbands_sRGB.png */,
 				CD288F101694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v */,
 				CD288F111694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */,
+				CD288F161694DEF200A5CDAD /* AlphaGhost_alpha_CRF_30_24BPP.m4v */,
+				CD288F171694DEF200A5CDAD /* AlphaGhost_rgb_CRF_30_24BPP.m4v */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -1189,6 +1195,8 @@
 				CD17DF70168BB3C800DE7E56 /* AlphaGhost.mvid.7z in Resources */,
 				CD288F131694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v in Resources */,
 				CD288F151694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */,
+				CD288F181694DEF200A5CDAD /* AlphaGhost_alpha_CRF_30_24BPP.m4v in Resources */,
+				CD288F191694DEF200A5CDAD /* AlphaGhost_rgb_CRF_30_24BPP.m4v in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

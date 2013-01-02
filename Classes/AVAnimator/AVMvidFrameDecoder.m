@@ -491,6 +491,7 @@
   uint32_t frameBufferSize = [self width] * [self height];
   uint32_t bpp = [self header]->bpp;
   uint32_t frameBufferNumBytes = nextFrameBuffer.numBytes;
+  NSAssert(frameBufferNumBytes > 0, @"frameBufferNumBytes"); // to avoid compiler warning
   
   // Check for the case where multiple frames need to be processed,
   // if one of the frames between the current frame and the target

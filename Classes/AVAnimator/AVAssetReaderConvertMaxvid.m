@@ -24,7 +24,7 @@
 
 #import "CGFrameBuffer.h"
 
-#define LOGGING
+//#define LOGGING
 
 NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetReaderConvertMaxvidCompletedNotification";
 
