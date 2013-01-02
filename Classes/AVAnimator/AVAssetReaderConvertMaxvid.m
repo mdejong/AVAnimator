@@ -202,6 +202,8 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
     
     NSLog(@"status = %d", status);
     NSLog(@"error = %@", [error description]);
+    
+    goto retcode;
   }
   
   size_t movieWidth = 0;

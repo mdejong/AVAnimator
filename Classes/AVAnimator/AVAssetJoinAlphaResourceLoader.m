@@ -416,7 +416,8 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
     // RGB
     
     AVAssetReaderConvertMaxvid *rgbConverter = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
-    rgbConverter.assetURL = [NSURL fileURLWithPath:rgbAssetPath];
+    NSURL *rgbAssetURL = [NSURL fileURLWithPath:rgbAssetPath];
+    rgbConverter.assetURL = rgbAssetURL;
     rgbConverter.mvidPath = phonyRgbOutPath;
     
     if ([alwaysGenerateAdler intValue]) {
@@ -433,7 +434,8 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
     // Alpha
 
     AVAssetReaderConvertMaxvid *alphaConverter = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
-    alphaConverter.assetURL = [NSURL fileURLWithPath:alphaAssetPath];
+    NSURL *alphaAssetURL = [NSURL fileURLWithPath:alphaAssetPath];
+    alphaConverter.assetURL = alphaAssetURL;
     alphaConverter.mvidPath = phonyAlphaOutPath;
     
     if ([alwaysGenerateAdler intValue]) {
