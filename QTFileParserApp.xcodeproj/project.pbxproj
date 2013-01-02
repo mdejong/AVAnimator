@@ -31,6 +31,10 @@
 		CD15C54F12BCADA800A26588 /* smiley.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C54E12BCADA800A26588 /* smiley.png */; };
 		CD17DF6C168BAAB500DE7E56 /* Sweep15FPS.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CDD64171168804CD00492B80 /* Sweep15FPS.mvid.7z */; };
 		CD17DF70168BB3C800DE7E56 /* AlphaGhost.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CDD6416D1687FC3C00492B80 /* AlphaGhost.mvid.7z */; };
+		CD288F121694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CD288F101694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v */; };
+		CD288F131694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CD288F101694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v */; };
+		CD288F141694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CD288F111694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */; };
+		CD288F151694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CD288F111694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */; };
 		CD2C6A5D14F81CD500C3CDB7 /* superwalk_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD84F51B14E268B20004C529 /* superwalk_h264.mov */; };
 		CD2F6D4812F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
 		CD2F6D4912F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
@@ -226,10 +230,6 @@
 		CDC3EF0C15C5FD240055C8A3 /* 132x128_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDC3EF0B15C5FD240055C8A3 /* 132x128_black_blue_h264.mov */; };
 		CDC510E71692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDC510E61692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m */; };
 		CDC510E81692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDC510E61692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m */; };
-		CDC510EB1692C3A20069C891 /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CDC510E91692C3A20069C891 /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v */; };
-		CDC510EC1692C3A20069C891 /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CDC510E91692C3A20069C891 /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v */; };
-		CDC510ED1692C3A20069C891 /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CDC510EA1692C3A20069C891 /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */; };
-		CDC510EE1692C3A20069C891 /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CDC510EA1692C3A20069C891 /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */; };
 		CDC510F01692C45D0069C891 /* AVAssetJoinAlphaResourceLoaderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CDC510EF1692C45D0069C891 /* AVAssetJoinAlphaResourceLoaderTests.m */; };
 		CDD6413F1686525300492B80 /* JigsawPuzzle_205_99_10FPS_16BPP.mvid in Resources */ = {isa = PBXBuildFile; fileRef = CDD6413E1686525300492B80 /* JigsawPuzzle_205_99_10FPS_16BPP.mvid */; };
 		CDD641411686569800492B80 /* 2x2_black_blue_16BPP.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CDD641401686569800492B80 /* 2x2_black_blue_16BPP.mvid.7z */; };
@@ -343,6 +343,8 @@
 		CD15C2CD12BC9BDC00A26588 /* VolumeLeftTall.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = VolumeLeftTall.png; sourceTree = "<group>"; };
 		CD15C2CE12BC9BDC00A26588 /* VolumeRightTall.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = VolumeRightTall.png; sourceTree = "<group>"; };
 		CD15C54E12BCADA800A26588 /* smiley.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = smiley.png; sourceTree = "<group>"; };
+		CD288F101694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ExplosionAdjusted_alpha_CRF_30_24BPP.m4v; sourceTree = "<group>"; };
+		CD288F111694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ExplosionAdjusted_rgb_CRF_30_24BPP.m4v; sourceTree = "<group>"; };
 		CD2F6D4512F0B8AF0022413B /* AVAnimatorMedia.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorMedia.h; sourceTree = "<group>"; };
 		CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorMedia.m; sourceTree = "<group>"; };
 		CD2F6D4712F0B8AF0022413B /* AVAnimatorMediaPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorMediaPrivate.h; sourceTree = "<group>"; };
@@ -465,8 +467,6 @@
 		CDC3EF0B15C5FD240055C8A3 /* 132x128_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 132x128_black_blue_h264.mov; sourceTree = "<group>"; };
 		CDC510E51692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAssetJoinAlphaResourceLoader.h; sourceTree = "<group>"; };
 		CDC510E61692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAssetJoinAlphaResourceLoader.m; sourceTree = "<group>"; };
-		CDC510E91692C3A20069C891 /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ExplosionAdjusted_alpha_CRF_30_24BPP.m4v; sourceTree = "<group>"; };
-		CDC510EA1692C3A20069C891 /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ExplosionAdjusted_rgb_CRF_30_24BPP.m4v; sourceTree = "<group>"; };
 		CDC510EF1692C45D0069C891 /* AVAssetJoinAlphaResourceLoaderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAssetJoinAlphaResourceLoaderTests.m; sourceTree = "<group>"; };
 		CDD6413E1686525300492B80 /* JigsawPuzzle_205_99_10FPS_16BPP.mvid */ = {isa = PBXFileReference; lastKnownFileType = file; path = JigsawPuzzle_205_99_10FPS_16BPP.mvid; sourceTree = "<group>"; };
 		CDD641401686569800492B80 /* 2x2_black_blue_16BPP.mvid.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = 2x2_black_blue_16BPP.mvid.7z; sourceTree = "<group>"; };
@@ -750,8 +750,8 @@
 				CDF15B96152A176A00D8AD2F /* AVOfflineComposition32x32BlackBlueTest.plist */,
 				CD3A341415E1080B008733C3 /* Waterfall_tiny_h264.mov */,
 				CD5E3C551623356F002D7374 /* Colorbands_sRGB.png */,
-				CDC510E91692C3A20069C891 /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v */,
-				CDC510EA1692C3A20069C891 /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */,
+				CD288F101694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v */,
+				CD288F111694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -1083,8 +1083,8 @@
 				CDD6416E1687FC3C00492B80 /* AlphaGhost.mvid.7z in Resources */,
 				CDD64170168802F600492B80 /* Matrix_480_320_10FPS_16BPP.mvid.7z in Resources */,
 				CDD64172168804CD00492B80 /* Sweep15FPS.mvid.7z in Resources */,
-				CDC510EB1692C3A20069C891 /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v in Resources */,
-				CDC510ED1692C3A20069C891 /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */,
+				CD288F121694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v in Resources */,
+				CD288F141694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1187,8 +1187,8 @@
 				CDD6416C1687B6E800492B80 /* 2x2_black_blue_32BPP.mvid in Resources */,
 				CD17DF6C168BAAB500DE7E56 /* Sweep15FPS.mvid.7z in Resources */,
 				CD17DF70168BB3C800DE7E56 /* AlphaGhost.mvid.7z in Resources */,
-				CDC510EC1692C3A20069C891 /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v in Resources */,
-				CDC510EE1692C3A20069C891 /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */,
+				CD288F131694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v in Resources */,
+				CD288F151694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

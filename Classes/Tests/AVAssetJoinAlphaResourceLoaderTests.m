@@ -17,7 +17,7 @@
 
 #import "CGFrameBuffer.h"
 
-#define MAX_WAIT 120
+#define MAX_WAIT 600
 
 @interface AVAssetJoinAlphaResourceLoaderTests : NSObject {}
 @end
