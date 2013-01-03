@@ -256,6 +256,13 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
   
   CGFrameBuffer *combinedFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:32 width:width height:height];
 
+  // Pixel dump used to compare exected results to actual results produced by iOS decoder hardware
+  //NSString *tmpFilename = [NSString stringWithFormat:@"%@%@", joinedMvidPath, @".adump"];
+  //char *utf8Str = (char*) [tmpFilename UTF8String];
+  //NSLog(@"Writing %s", utf8Str);
+  //FILE *fp = fopen(utf8Str, "w");
+  //assert(fp);
+  
   for (NSUInteger frameIndex = 0; frameIndex < numFrames; frameIndex++) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     
@@ -308,6 +315,9 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
     uint32_t *rgbPixels = (uint32_t*)cgFrameBufferRGB.pixels;
     uint32_t *alphaPixels = (uint32_t*)cgFrameBufferAlpha.pixels;
     
+    //fprintf(fp, "Frame %d\n", frameIndex);
+    //NSLog(@"Frame %d\n", frameIndex);
+    
     for (NSUInteger pixeli = 0; pixeli < numPixels; pixeli++) {
       uint32_t pixelAlpha = alphaPixels[pixeli];
       
@@ -330,22 +340,29 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
           pixelAlpha = 0;
         } else if (pixelAlphaRed == pixelAlphaBlue) {
           // The R and B pixel values are equal but these two values are not the same as the G pixel.
-          // Make use of the two common values in this case, so that we do not need to divide by 3.
+          // This indicates that the grayscale conversion should have resulted in value between the
+          // two numbers.
           //
-          // R G B components (3 1 3)
-          // R G B components (2 0 2)
-          // R G B components (18 16 18)
+          // R G B components
+          //
+          // (3 1 3)       -> 2   <- (2, 2, 2) (sim)
+          // (2 0 2)       -> 1   <- (1, 1, 1) (sim)
+          // (18 16 18)    -> 17  <- (17, 17, 17) (sim)
+          // (219 218 219) -> 218 <- (218, 218, 218) (sim)
+          //
+          // Note that in some cases the original values (5, 5, 5) get decoded as (5, 4, 5) and that results in 4 as the
+          // alpha value. These cases are few and we just ignore them because the alpha is very close.
 
-          pixelAlpha = pixelAlphaRed;
+          pixelAlpha = pixelAlphaRed - 1;
 
           //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
           //NSLog(@"Using RED/BLUE Alpha level %d at pixel %d in frame %d", pixelAlpha, pixeli, frameIndex);
         } else if ((pixelAlphaRed == (pixelAlphaGreen + 1)) && (pixelAlphaRed == (pixelAlphaBlue - 1))) {
           // Common case seen in hardware decoder output, average is the middle value.
           //
-          // R G B components (62 61 63)
-          // R G B components (236 235 237)
-          // R G B components (214 213 215)
+          // R G B components
+          // (62, 61, 63)    -> 62  <- (62, 62, 62) (sim)
+          // (111, 110, 112) -> 111 <- (111, 111, 111) (sim)
           
           pixelAlpha = pixelAlphaRed;
           
@@ -358,14 +375,20 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
           
           pixelAlpha = sum / 3;
           
-          NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
-          NSLog(@"Using AVE Alpha level %d at pixel %d in frame %d", pixelAlpha, pixeli, frameIndex);
+          //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
+          //NSLog(@"Using AVE Alpha level %d at pixel %d in frame %d", pixelAlpha, pixeli, frameIndex);
         }
       } else {
         // All values are equal, does not matter which channel we use as the alpha value
         
         pixelAlpha = pixelAlphaRed;
       }
+
+      // Automatially filter out zero pixel values, because there are just so many
+      //if (pixelAlpha != 0) {
+      //fprintf(fp, "A[%d][%d] = %d\n", frameIndex, pixeli, pixelAlpha);
+      //fprintf(fp, "A[%d][%d] = %d <- (%d, %d, %d)\n", frameIndex, pixeli, pixelAlpha, pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue);
+      //}
       
       // RGB componenets are 24 BPP non pre multiplied values
       
@@ -402,6 +425,8 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
     
     [pool drain];
   }
+  
+  //fclose(fp);
   
   [fileWriter rewriteHeader];
   [fileWriter close];
