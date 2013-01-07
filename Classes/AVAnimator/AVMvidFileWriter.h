@@ -62,6 +62,11 @@
 
 - (void) writeNopFrame;
 
+// Count up the number of nop frames that would appear after the indicated
+// frame display time.
+
+- (int) countTrailingNopFrames:(float)currentFrameDuration;
+
 // Write 0 to N trailing nop frames, pass in total frame display time
 
 - (void) writeTrailingNopFrames:(float)frameDuration;
