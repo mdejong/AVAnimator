@@ -453,6 +453,8 @@
 		CD9CB98315C5F83700DCEA90 /* 129x128_black_blue_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 129x128_black_blue_h264.mov; sourceTree = "<group>"; };
 		CDA1DC0512E61F37004C570F /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
 		CDA2BADA12F0AA4000F299B4 /* Silence3S.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = Silence3S.wav; sourceTree = "<group>"; };
+		CDA9E74B1697554A00A49AA3 /* AVAssetFrameDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAssetFrameDecoder.h; sourceTree = "<group>"; };
+		CDA9E74C1697554A00A49AA3 /* AVAssetFrameDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAssetFrameDecoder.m; sourceTree = "<group>"; };
 		CDAAB16014DFAA9800F43810 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		CDAAB16314DFAAF100F43810 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		CDAD8C191527965B0089206E /* AVOfflineComposition.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVOfflineComposition.h; sourceTree = "<group>"; };
@@ -869,6 +871,8 @@
 				CDECCE7112D30FE80067D2EE /* AVImageFrameDecoder.m */,
 				CD659D60136390C1008AF6F9 /* AVMvidFrameDecoder.h */,
 				CD659D61136390C1008AF6F9 /* AVMvidFrameDecoder.m */,
+				CDA9E74B1697554A00A49AA3 /* AVAssetFrameDecoder.h */,
+				CDA9E74C1697554A00A49AA3 /* AVAssetFrameDecoder.m */,
 				CD6EF5A712F0F7920045659F /* movdata.h */,
 				CD6EF5A612F0F7920045659F /* movdata.c */,
 				CD0BD0351363523800D8287A /* maxvid_decode.h */,

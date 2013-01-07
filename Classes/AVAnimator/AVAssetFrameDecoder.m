@@ -1,18 +1,15 @@
 //
-//  AVAssetReaderConvertMaxvid.m
+//  AVAssetFrameDecoder.m
 //
-//  Created by Moses DeJong on 2/4/12.
+//  Created by Moses DeJong on 1/4/13.
 //
 //  License terms defined in License.txt.
-//
-//  This module implements a H264 to MVID decoder that can be used to
-//  save the raw bits of a H264 video into a file.
 
-#import "AVAssetReaderConvertMaxvid.h"
+#import "AVAssetFrameDecoder.h"
 
-#import "maxvid_file.h"
+#import "AutoPropertyRelease.h"
 
-#if defined(HAS_AVASSET_CONVERT_MAXVID)
+#import "CGFrameBuffer.h"
 
 #import <AVFoundation/AVFoundation.h>
 
@@ -22,15 +19,11 @@
 
 #import <CoreMedia/CMSampleBuffer.h>
 
-#import "CGFrameBuffer.h"
-
-//#define LOGGING
-
-NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetReaderConvertMaxvidCompletedNotification";
+#if defined(HAS_AVASSET_CONVERT_MAXVID)
 
 // Private API
 
-@interface AVAssetReaderConvertMaxvid ()
+@interface AVAssetFrameDecoder ()
 
 @property (nonatomic, retain) AVAssetReader *aVAssetReader;
 @property (nonatomic, retain) AVAssetReaderOutput *aVAssetReaderOutput;
@@ -40,24 +33,39 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
 @end
 
 
-@implementation AVAssetReaderConvertMaxvid
-
-@synthesize assetURL = m_assetURL;
-@synthesize aVAssetReader = m_aVAssetReader;
-@synthesize aVAssetReaderOutput = m_aVAssetReaderOutput;
-@synthesize wasSuccessful = m_wasSuccessful;
+@implementation AVAssetFrameDecoder
 
 - (void) dealloc
-{  
-  self.assetURL = nil;
-  self.aVAssetReader = nil;
-  self.aVAssetReaderOutput = nil;
+{
+  [AutoPropertyRelease releaseProperties:self thisClass:AVAssetFrameDecoder.class];
   [super dealloc];
 }
 
-+ (AVAssetReaderConvertMaxvid*) aVAssetReaderConvertMaxvid
++ (AVAssetFrameDecoder*) aVAssetFrameDecoder
 {
-  return [[[AVAssetReaderConvertMaxvid alloc] init] autorelease];
+  AVAssetFrameDecoder *obj = [[AVAssetFrameDecoder alloc] init];
+  return [obj autorelease];
+}
+
+// Gettter for self.frameDuration property
+
+- (NSTimeInterval) frameDuration
+{
+  float frameDuration = self->m_frameDuration;
+  return frameDuration;
+}
+
+// Total frame count
+- (NSUInteger) numFrames
+{
+  return self->m_numFrames;
+}
+
+// Close resource opened earlier
+
+- (void) close
+{
+// FIXME: impl ?
 }
 
 // This utility method will setup the asset so that it is opened and ready
@@ -66,7 +74,6 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
 - (BOOL) setupAsset
 {
   NSAssert(self.assetURL, @"assetURL");
-  NSAssert(self.mvidPath, @"mvidPath");
   
   NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES]
                                                       forKey:AVURLAssetPreferPreciseDurationAndTimingKey];
@@ -126,8 +133,8 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   float nominalFrameRate = videoTrack.nominalFrameRate;
   
   float frameDuration = 1.0 / nominalFrameRate;
-  self.frameDuration = frameDuration;
-
+  self->m_frameDuration = (NSTimeInterval)frameDuration;
+  
   float numFramesFloat = duration / frameDuration;
   int numFrames = round( numFramesFloat );
   float durationForNumFrames = numFrames * frameDuration;
@@ -148,7 +155,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
     numFrames += 1;
   }
   
-  self.totalNumFrames = numFrames;
+  self->m_numFrames = numFrames;
   
   AVAssetReaderTrackOutput *aVAssetReaderOutput = [[[AVAssetReaderTrackOutput alloc]
                                                     initWithTrack:videoTrack outputSettings:videoSettings] autorelease];
@@ -164,38 +171,14 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   return TRUE;
 }
 
-// Return TRUE if starting to read from the asset file is successful, FALSE otherwise.
-// Normally, reading from a H264 asset is successful as long as the file exists and it
-// contains properly formatted H264 data.
-
-- (BOOL) startReadingAsset
-{
-  BOOL worked;
-  AVAssetReader *aVAssetReader = self.aVAssetReader;
-  
-  worked = [aVAssetReader startReading];
-  
-  if (worked == FALSE) {
-    AVAssetReaderStatus status = aVAssetReader.status;
-    NSError *error = aVAssetReader.error;
-    
-    NSLog(@"status = %d", status);
-    NSLog(@"error = %@", [error description]);
-
-    return FALSE;
-  } else {
-    return TRUE;
-  }
-}
-
 // Read video data from a single track (only one video track is supported anyway)
 
-- (BOOL) blockingDecode
+- (BOOL) setupAssetReader
 {
   BOOL worked;
   BOOL retstatus = FALSE;
   
-  self.wasSuccessful = FALSE;
+  //self.wasSuccessful = FALSE;
   
   AVAssetReader *aVAssetReader = nil;
   
@@ -203,27 +186,33 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   if (worked == FALSE) {
     goto retcode;
   }
-    
+  
   CMSampleBufferRef sampleBuffer = NULL;
   
-  self.bpp = 24;
-      
-  worked = [self open];
-  
-  if (worked == FALSE) {
-    goto retcode;
-  }
+  //self.bpp = 24;
+  //worked = [self open];
+  //if (worked == FALSE) {
+  //  goto retcode;
+  //}
   
   // Start reading from asset
   
   aVAssetReader = self.aVAssetReader;
   
-  worked = [self startReadingAsset];
-  if (worked == FALSE) {
+  worked = [self.aVAssetReader startReading];
+  
+  if (!worked) {
+    AVAssetReaderStatus status = aVAssetReader.status;
+    NSError *error = aVAssetReader.error;
+    
+    NSLog(@"status = %d", status);
+    NSLog(@"error = %@", [error description]);
+    
     goto retcode;
   }
   
-  detectedMovieSize = CGSizeMake(0, 0);
+  size_t movieWidth = 0;
+  size_t movieHeight = 0;
   
   BOOL writeFailed = FALSE;
   
@@ -253,7 +242,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
       
       // If the delay between the previous frame and the current frame is more
       // than would be needed for one frame, then emit nop frames.
-
+      
       // If a sample would be displayed for one frame, then the next one should
       // be displayed right away. But, in the case where a sample duration is
       // longer than one frame, emit repeated frames as no-op frames.
@@ -302,33 +291,36 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
         [inner_pool drain];
         continue;
       }
-            
+      
       float delta = frameDisplayTime - prevFrameDisplayTime;
       
       prevFrameDisplayTime = frameDisplayTime;
       
       [self writeTrailingNopFrames:delta];
-            
+      
 #ifdef LOGGING
       NSLog(@"WRITTING frame %d", self.frameNum);
 #endif // LOGGING
       
       // Note that the frameBuffer object is explicitly retained so that it can
       // be used in each loop iteration.
-            
+      
       // Get and verify buffer width and height.
       
       size_t width = frameBuffer.width;
       size_t height = frameBuffer.height;
-
+      
       NSAssert(width > 0, @"width");
       NSAssert(height > 0, @"height");
       
-      if (detectedMovieSize.width == 0) {
-        detectedMovieSize = CGSizeMake(width, height);
-        self.movieSize = detectedMovieSize;
+      if (movieWidth == 0) {
+        movieWidth = width;
+        movieHeight = height;
+        
+        self.movieSize = CGSizeMake(movieWidth, movieHeight);
       } else {
-        NSAssert(CGSizeEqualToSize(detectedMovieSize, CGSizeMake(width, height)), @"size");
+        NSAssert(movieWidth == width, @"movieWidth");
+        NSAssert(movieHeight == height, @"movieHeight");
       }
       
       // Calculate how many bytes make up the image via (bytesPerRow * height). The
@@ -347,7 +339,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
       if (worked == FALSE) {
         writeFailed = TRUE;
       }
-            
+      
       CFRelease(sampleBuffer);
     } else if ([aVAssetReader status] == AVAssetReaderStatusReading) {
       AVAssetReaderStatus status = aVAssetReader.status;
@@ -359,7 +351,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
     
     [inner_pool drain];
   }
-
+  
   // Double check that we did not write too few frames.
   
   NSAssert(self.frameNum == self.totalNumFrames, @"frameNum == totalNumFrames");
@@ -367,7 +359,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   // Explicitly release the retained frameBuffer
   
   [frameBuffer release];
-
+  
   worked = [self rewriteHeader];
   
   [self close];
@@ -381,7 +373,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
 retcode:
   
   [aVAssetReader cancelReading];
-    
+  
   if (retstatus) {
 #ifdef LOGGING
     NSLog(@"wrote %@", self.mvidPath);
@@ -420,7 +412,7 @@ retcode:
   size_t width = CVPixelBufferGetWidth(imageBuffer);
   
   size_t height = CVPixelBufferGetHeight(imageBuffer);
-    
+  
   void *baseAddress = CVPixelBufferGetBaseAddress(imageBuffer);
   
   size_t bufferSize = CVPixelBufferGetDataSize(imageBuffer);
@@ -429,7 +421,7 @@ retcode:
     size_t left, right, top, bottom;
     CVPixelBufferGetExtendedPixels(imageBuffer, &left, &right, &top, &bottom);
     NSLog(@"extended pixels : left %d right %d top %d bottom %d", (int)left, (int)right, (int)top, (int)bottom);
-
+    
     NSLog(@"buffer size = %d (bpr %d), row bytes (%d) * height (%d) = %d", (int)bufferSize, (int)(bufferSize/height), (int)bytesPerRow, (int)height, (int)(bytesPerRow * height));
   }
   
@@ -445,20 +437,20 @@ retcode:
   //colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
   colorSpace = CVImageBufferGetColorSpace(imageBuffer);
 #endif // TARGET_OS_IPHONE
-  NSAssert(colorSpace, @"colorSpace");  
-
+  NSAssert(colorSpace, @"colorSpace");
+  
   // Create a Quartz direct-access data provider that uses data we supply.
   
   CGDataProviderRef dataProvider =
-    CGDataProviderCreateWithData(NULL, baseAddress, bufferSize, NULL);
+  CGDataProviderCreateWithData(NULL, baseAddress, bufferSize, NULL);
   
   CGImageRef cgImageRef = CGImageCreate(width, height, 8, 32, bytesPerRow,
-                colorSpace, kCGBitmapByteOrder32Host | kCGImageAlphaNoneSkipFirst,
-                dataProvider, NULL, true, kCGRenderingIntentDefault);
+                                        colorSpace, kCGBitmapByteOrder32Host | kCGImageAlphaNoneSkipFirst,
+                                        dataProvider, NULL, true, kCGRenderingIntentDefault);
   
 	CGColorSpaceRelease(colorSpace);
   CGDataProviderRelease(dataProvider);
-
+  
   // Render CoreGraphics image into a flat bitmap framebuffer. Note that this object is
   // not autoreleased, instead the caller must explicitly release the ref.
   
@@ -480,54 +472,12 @@ retcode:
   }
   
   [frameBuffer renderCGImage:cgImageRef];
-                                
+  
   CGImageRelease(cgImageRef);
-                                
+  
   CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
   
   return TRUE;
-}
-
-// This method will send a notification to indicate that op has completed successfully.
-
-- (void) notifyDecodingDoneInMainThread
-{
-  NSAssert([NSThread isMainThread] == TRUE, @"isMainThread");
-  
-  NSString *notificationName = AVAssetReaderConvertMaxvidCompletedNotification;
-  
-  [[NSNotificationCenter defaultCenter] postNotificationName:notificationName
-                                                      object:self];	
-}
-
-// Secondary thread entry point for non blocking operation
-
-- (void) nonblockingDecodeEntryPoint {  
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  
-  [self blockingDecode];
-  
-  if (FALSE) {
-    [self notifyDecodingDoneInMainThread];
-  }
-  
-  [self performSelectorOnMainThread:@selector(notifyDecodingDoneInMainThread) withObject:nil waitUntilDone:TRUE];
-  
-  [pool drain];
-  return;
-}
-
-// Kick off an async (non-blocking call) decode operation in a secondary
-// thread. This method will deliver a Completed notification
-// in the main thread when complete.
-
-- (void) nonblockingDecode
-{
-  if (FALSE) {
-    [self nonblockingDecodeEntryPoint];
-  }
-  [NSThread detachNewThreadSelector:@selector(nonblockingDecodeEntryPoint) toTarget:self withObject:nil];
-  return;
 }
 
 @end

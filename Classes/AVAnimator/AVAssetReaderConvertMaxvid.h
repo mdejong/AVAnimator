@@ -30,6 +30,7 @@ extern NSString * const AVAssetReaderConvertMaxvidCompletedNotification;
   NSURL *m_assetURL;
   AVAssetReader *m_aVAssetReader;
   AVAssetReaderOutput *m_aVAssetReaderOutput;
+  CGSize detectedMovieSize;
   BOOL m_wasSuccessful;
 }
 
