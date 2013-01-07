@@ -160,8 +160,6 @@
 		CD7E12B212E373190077CB9C /* Sweep15FPS.caf in Resources */ = {isa = PBXBuildFile; fileRef = CD7E12B112E373190077CB9C /* Sweep15FPS.caf */; };
 		CD7E12B312E373190077CB9C /* Sweep15FPS.caf in Resources */ = {isa = PBXBuildFile; fileRef = CD7E12B112E373190077CB9C /* Sweep15FPS.caf */; };
 		CD8265DF1364D5EE00640B94 /* 2x2_black_blue_16BPP.mvid in Resources */ = {isa = PBXBuildFile; fileRef = CD8265DE1364D5EE00640B94 /* 2x2_black_blue_16BPP.mvid */; };
-		CD83278F14E0FB7F0064A633 /* AVAssetReaderConvertMaxvid.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83278E14E0FB7F0064A633 /* AVAssetReaderConvertMaxvid.m */; };
-		CD83279014E0FB7F0064A633 /* AVAssetReaderConvertMaxvid.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83278E14E0FB7F0064A633 /* AVAssetReaderConvertMaxvid.m */; };
 		CD83D5EE12CA547300A88ABA /* MovieControlsAdaptor.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */; };
 		CD83F0A214ED7CA200D0D257 /* stutterwalk_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD83F0A114ED7CA200D0D257 /* stutterwalk_h264.mov */; };
 		CD84F51C14E268B20004C529 /* superwalk_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD84F51B14E268B20004C529 /* superwalk_h264.mov */; };
@@ -211,6 +209,8 @@
 		CDA1DC0612E61F37004C570F /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = CDA1DC0512E61F37004C570F /* Icon.png */; };
 		CDA1DC0712E61F37004C570F /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = CDA1DC0512E61F37004C570F /* Icon.png */; };
 		CDA2BADB12F0AA4000F299B4 /* Silence3S.wav in Resources */ = {isa = PBXBuildFile; fileRef = CDA2BADA12F0AA4000F299B4 /* Silence3S.wav */; };
+		CDA9E751169B6EF200A49AA3 /* AVAssetReaderConvertMaxvid.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83278E14E0FB7F0064A633 /* AVAssetReaderConvertMaxvid.m */; };
+		CDA9E752169B6EF300A49AA3 /* AVAssetReaderConvertMaxvid.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83278E14E0FB7F0064A633 /* AVAssetReaderConvertMaxvid.m */; };
 		CDAAB16114DFAA9800F43810 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDAAB16014DFAA9800F43810 /* CoreMedia.framework */; };
 		CDAAB16214DFAABF00F43810 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDAAB16014DFAA9800F43810 /* CoreMedia.framework */; };
 		CDAAB16414DFAAF100F43810 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDAAB16314DFAAF100F43810 /* CoreVideo.framework */; };
@@ -1254,7 +1254,6 @@
 				CDD9888F1371F4A60072C06B /* libapng.c in Sources */,
 				CD45EC6114955B6800FD0C6A /* maxvid_decode_arm.s in Sources */,
 				CD5F5C4714CCD809005A2809 /* SegmentedMappedData.m in Sources */,
-				CD83278F14E0FB7F0064A633 /* AVAssetReaderConvertMaxvid.m in Sources */,
 				CDBB005414F349B900AC6F5B /* AVMvidFileWriter.m in Sources */,
 				CD70DF7B14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m in Sources */,
 				CDFF8A8614F97B2A00F3E816 /* ApngConvertMaxvid.m in Sources */,
@@ -1263,6 +1262,7 @@
 				CD93915115F35B5000E1D7CC /* AVFrame.m in Sources */,
 				CD78DC8F15F50636007D3EFF /* maxvid_encode.m in Sources */,
 				CDC510E71692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m in Sources */,
+				CDA9E751169B6EF200A49AA3 /* AVAssetReaderConvertMaxvid.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1321,7 +1321,6 @@
 				CD5BC94F14A3F2CA00185880 /* AVAnimatorMediaTests.m in Sources */,
 				CD5F5C4814CCD809005A2809 /* SegmentedMappedData.m in Sources */,
 				CD5F5C4B14CCDC97005A2809 /* SegmentedMappedDataTests.m in Sources */,
-				CD83279014E0FB7F0064A633 /* AVAssetReaderConvertMaxvid.m in Sources */,
 				CDBB005514F349B900AC6F5B /* AVMvidFileWriter.m in Sources */,
 				CD70DF7C14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m in Sources */,
 				CDFF8A8714F97B2A00F3E816 /* ApngConvertMaxvid.m in Sources */,
@@ -1335,6 +1334,7 @@
 				CD5E3C58162335A4002D7374 /* ColorspaceTests.m in Sources */,
 				CDC510E81692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m in Sources */,
 				CDC510F01692C45D0069C891 /* AVAssetJoinAlphaResourceLoaderTests.m in Sources */,
+				CDA9E752169B6EF300A49AA3 /* AVAssetReaderConvertMaxvid.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

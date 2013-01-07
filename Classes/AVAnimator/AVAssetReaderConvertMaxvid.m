@@ -188,6 +188,46 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   }
 }
 
+// Verify width/height of frame being read from asset
+
+- (void) blockingDecodeVerifySize:(CGFrameBuffer*)frameBuffer
+{  
+  size_t width = frameBuffer.width;
+  size_t height = frameBuffer.height;
+  
+  NSAssert(width > 0, @"width");
+  NSAssert(height > 0, @"height");
+  
+  if (detectedMovieSize.width == 0) {
+    detectedMovieSize = CGSizeMake(width, height);
+    self.movieSize = detectedMovieSize;
+  } else {
+    NSAssert(CGSizeEqualToSize(detectedMovieSize, CGSizeMake(width, height)), @"size");
+  }
+}
+
+// Emit frame of data
+
+- (BOOL) blockingDecodeEmitFrame:(CGFrameBuffer*)frameBuffer
+{
+  BOOL worked;
+  
+  // Calculate how many bytes make up the image via (bytesPerRow * height). The
+  // numBytes value may be padded out to fit to an OS page bound. If the buffer
+  // is padded in the case of an odd number of pixels, pass the buffer size
+  // including the padding pixels.
+  
+  int bufferSize = frameBuffer.numBytes;
+  void *pixelsPtr = frameBuffer.pixels;
+  
+  // write entire buffer of raw 32bit pixels to the file.
+  // bitmap info is native (kCGImageAlphaNoneSkipFirst|kCGBitmapByteOrder32Little)
+  
+  worked = [self writeKeyframe:pixelsPtr bufferSize:bufferSize];
+  
+  return worked;
+}
+
 // Read video data from a single track (only one video track is supported anyway)
 
 - (BOOL) blockingDecode
@@ -233,7 +273,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   
   CGFrameBuffer *frameBuffer = nil;
   
-  float prevFrameDisplayTime = 0.0;
+  prevFrameDisplayTime = 0.0;
   
   float frameDurationTooEarly = (self.frameDuration * 0.90);
   
@@ -259,6 +299,8 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
       // longer than one frame, emit repeated frames as no-op frames.
       
       CMTime presentationTimeStamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
+      
+      CFRelease(sampleBuffer);
       
       float frameDisplayTime = (float) CMTimeGetSeconds(presentationTimeStamp);
       
@@ -298,9 +340,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
         // that no trailing nop frame is emitted in the normal case.
         
         prevFrameDisplayTime = expectedFrameDisplayTime;
-        CFRelease(sampleBuffer);
-        [inner_pool drain];
-        continue;
+        goto end_inner_loop;
       }
             
       float delta = frameDisplayTime - prevFrameDisplayTime;
@@ -308,47 +348,22 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
       prevFrameDisplayTime = frameDisplayTime;
       
       [self writeTrailingNopFrames:delta];
-            
+      
 #ifdef LOGGING
       NSLog(@"WRITTING frame %d", self.frameNum);
 #endif // LOGGING
       
       // Note that the frameBuffer object is explicitly retained so that it can
       // be used in each loop iteration.
-            
-      // Get and verify buffer width and height.
-      
-      size_t width = frameBuffer.width;
-      size_t height = frameBuffer.height;
 
-      NSAssert(width > 0, @"width");
-      NSAssert(height > 0, @"height");
+      [self blockingDecodeVerifySize:frameBuffer];
       
-      if (detectedMovieSize.width == 0) {
-        detectedMovieSize = CGSizeMake(width, height);
-        self.movieSize = detectedMovieSize;
-      } else {
-        NSAssert(CGSizeEqualToSize(detectedMovieSize, CGSizeMake(width, height)), @"size");
-      }
-      
-      // Calculate how many bytes make up the image via (bytesPerRow * height). The
-      // numBytes value may be padded out to fit to an OS page bound. If the buffer
-      // is padded in the case of an odd number of pixels, pass the buffer size
-      // including the padding pixels.
-      
-      int bufferSize = frameBuffer.numBytes;
-      void *pixelsPtr = frameBuffer.pixels;
-      
-      // write entire buffer of raw 32bit pixels to the file.
-      // bitmap info is native (kCGImageAlphaNoneSkipFirst|kCGBitmapByteOrder32Little)
-      
-      worked = [self writeKeyframe:pixelsPtr bufferSize:bufferSize];
+      worked = [self blockingDecodeEmitFrame:frameBuffer];
       
       if (worked == FALSE) {
         writeFailed = TRUE;
       }
-            
-      CFRelease(sampleBuffer);
+      
     } else if ([aVAssetReader status] == AVAssetReaderStatusReading) {
       AVAssetReaderStatus status = aVAssetReader.status;
       NSError *error = aVAssetReader.error;
@@ -357,6 +372,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
       NSLog(@"error = %@", [error description]);
     }
     
+end_inner_loop:
     [inner_pool drain];
   }
 

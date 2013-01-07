@@ -10,6 +10,11 @@
 //  types could be supported by iOS, but currently H264 is the only one that
 //  actually works. A Frame decoder interface will load and decompress a
 //  specific frame of video using the H264 decoder handware included in iOS.
+//  Note that this frame decoder is currently limited such that it only support
+//  sequential access to frame, so frames cannot be skipped or repeated and
+//  a specific video can only be decode into frames once. This assets frame
+//  decoder should not be used with a AVAnimatorMedia object, it should only
+//  be used to read frames from an asset is a non-realtime blocking usage.
 
 #import <Foundation/Foundation.h>
 
@@ -31,6 +36,8 @@
   
   NSTimeInterval m_frameDuration;
   NSUInteger     m_numFrames;
+  
+  float prevFrameDisplayTime;
 }
 
 @property (nonatomic, retain) NSURL         *assetURL;
