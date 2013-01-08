@@ -44,7 +44,11 @@ typedef enum
   // Reading a frame was successful, but the indicated display time is so early
   // that is too early to be decoded as the "next" frame. Ignore an odd frame
   // like this and continue to decode the next frame.
-  FrameReadStatusTooEarly
+  FrameReadStatusTooEarly,
+  
+  // Done reading frames from the asset. Note that it is possible that frames
+  // could have all been read but the final frame has a long "implicit" duration.
+  FrameReadStatusDone
 } FrameReadStatus;
 
 NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetReaderConvertMaxvidCompletedNotification";
@@ -265,6 +269,21 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
 #ifdef LOGGING
   NSLog(@"READING frame %d", self.frameNum);
 #endif // LOGGING
+
+  // This logic supports "reading" nop frames that appear after an actual frame.
+  
+  if (numTrailingNopFrames) {
+    numTrailingNopFrames--;
+    return FrameReadStatusDup;
+  }
+
+  // This logic used to be stop the frame reading loop as soon as the asset
+  // was no longer in a reading state. Commented out because it no longer
+  // appears to be needed, but left here just in case.
+  
+  //if ([aVAssetReader status] != AVAssetReaderStatusReading) {
+  //  return FrameReadStatusDone;
+  //}
   
   CMSampleBufferRef sampleBuffer = NULL;
   sampleBuffer = [self.aVAssetReaderOutput copyNextSampleBuffer];
@@ -328,16 +347,16 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
     float delta = frameDisplayTime - prevFrameDisplayTime;
     
     prevFrameDisplayTime = frameDisplayTime;
+
+    // Store the number of trailing frames that appear after this frame
     
-    // FIXME: if there are trailing nop frame, then this interface needs to return
-    // a dup nop frame somehow ?
-    
-    //[self writeTrailingNopFrames:delta];
-    
-    int numNopFrames = [self countTrailingNopFrames:delta];
-    for (; numNopFrames; numNopFrames--) {
-      [self writeNopFrame];
+    numTrailingNopFrames = [self countTrailingNopFrames:delta];
+
+#ifdef LOGGING
+    if (numTrailingNopFrames > 0) {
+      NSLog(@"Found %d trailing NOP frames after frame %d", numTrailingNopFrames, (self.frameNum - 1));
     }
+#endif // LOGGING
     
 #ifdef LOGGING
     NSLog(@"DONE READING frame %d", self.frameNum);
@@ -356,6 +375,28 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
     NSLog(@"AVAssetReaderStatusReading");
     NSLog(@"status = %d", status);
     NSLog(@"error = %@", [error description]);
+  } else {
+    // The copyNextSampleBuffer returned nil, so we seem to be done reading from
+    // the asset. Check for the special case where a previous frame was displayed
+    // at a specific time, but now there are no more frames after that frame.
+    // Need to detect the case where 1 to N trailing nop frames appear after
+    // the last frame we decoded. There does not apear to be a way to detect the
+    // duration of a frame until the next one is decoded, so this is needed
+    // to properly handle assets that end with nop frames. Also, it is unclear how
+    // a H264 video that include a dup frame like this can be generated, so
+    // this code appears to be untested.
+    
+    float finalFrameExpectedTime = self.totalNumFrames * self.frameDuration;    
+    float delta = finalFrameExpectedTime - prevFrameDisplayTime;
+    
+    // Store the number of trailing frames that appear after this frame
+    
+    numTrailingNopFrames = [self countTrailingNopFrames:delta];
+    if (numTrailingNopFrames > 0) {
+      return FrameReadStatusDup;
+    }
+    
+    return FrameReadStatusDone;
   }
   
   return FrameReadStatusNotReady;
@@ -397,6 +438,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   detectedMovieSize = CGSizeMake(0, 0);
   
   BOOL writeFailed = FALSE;
+  BOOL doneReadingFrames = FALSE;
   
   // This framebuffer object will be the destination of a render operation
   // for a given frame. Multiple frames must always be the same size,
@@ -406,7 +448,8 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   
   prevFrameDisplayTime = 0.0;
   
-  while ((writeFailed == FALSE) && ([aVAssetReader status] == AVAssetReaderStatusReading))
+  while ((writeFailed == FALSE) &&
+         (doneReadingFrames == FALSE))
   {
     NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
     
@@ -418,7 +461,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
       // Read the next frame of data, now write the frame
       
 #ifdef LOGGING
-      NSLog(@"WRITTING frame %d", self.frameNum);
+      NSLog(@"WRITING frame %d", self.frameNum);
 #endif // LOGGING
       
       worked = [self blockingDecodeEmitFrame:frameBuffer];
@@ -426,6 +469,12 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
       if (worked == FALSE) {
         writeFailed = TRUE;
       }
+    } else if (frameReadStatus == FrameReadStatusDup) {      
+#ifdef LOGGING
+      NSLog(@"FrameReadStatusDup");
+#endif // LOGGING
+      
+      [self writeNopFrame];
     } else if (frameReadStatus == FrameReadStatusTooEarly) {
       // Skip writing of frame that would be displayed too early
       
@@ -438,6 +487,14 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
 #ifdef LOGGING
       NSLog(@"FrameReadStatusNotReady");
 #endif // LOGGING
+    } else if (frameReadStatus == FrameReadStatusDone) {
+      // Reader has returned a status code indicating that no more
+      // frames are available.
+#ifdef LOGGING
+      NSLog(@"FrameReadStatusDone");
+#endif // LOGGING
+      
+      doneReadingFrames = TRUE;
     }
     
     [inner_pool drain];

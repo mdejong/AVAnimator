@@ -32,6 +32,7 @@ extern NSString * const AVAssetReaderConvertMaxvidCompletedNotification;
   AVAssetReaderOutput *m_aVAssetReaderOutput;
   CGSize detectedMovieSize;
   float prevFrameDisplayTime;
+  int numTrailingNopFrames;
   BOOL m_wasSuccessful;
 }
 

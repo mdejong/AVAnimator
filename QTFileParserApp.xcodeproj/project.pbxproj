@@ -211,6 +211,7 @@
 		CDA2BADB12F0AA4000F299B4 /* Silence3S.wav in Resources */ = {isa = PBXBuildFile; fileRef = CDA2BADA12F0AA4000F299B4 /* Silence3S.wav */; };
 		CDA9E751169B6EF200A49AA3 /* AVAssetReaderConvertMaxvid.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83278E14E0FB7F0064A633 /* AVAssetReaderConvertMaxvid.m */; };
 		CDA9E752169B6EF300A49AA3 /* AVAssetReaderConvertMaxvid.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83278E14E0FB7F0064A633 /* AVAssetReaderConvertMaxvid.m */; };
+		CDA9E756169B8C5000A49AA3 /* 64x64_nop_3frames_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDA9E755169B8C5000A49AA3 /* 64x64_nop_3frames_h264.mov */; };
 		CDAAB16114DFAA9800F43810 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDAAB16014DFAA9800F43810 /* CoreMedia.framework */; };
 		CDAAB16214DFAABF00F43810 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDAAB16014DFAA9800F43810 /* CoreMedia.framework */; };
 		CDAAB16414DFAAF100F43810 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDAAB16314DFAAF100F43810 /* CoreVideo.framework */; };
@@ -455,6 +456,7 @@
 		CDA2BADA12F0AA4000F299B4 /* Silence3S.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = Silence3S.wav; sourceTree = "<group>"; };
 		CDA9E74B1697554A00A49AA3 /* AVAssetFrameDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAssetFrameDecoder.h; sourceTree = "<group>"; };
 		CDA9E74C1697554A00A49AA3 /* AVAssetFrameDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAssetFrameDecoder.m; sourceTree = "<group>"; };
+		CDA9E755169B8C5000A49AA3 /* 64x64_nop_3frames_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = 64x64_nop_3frames_h264.mov; sourceTree = "<group>"; };
 		CDAAB16014DFAA9800F43810 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
 		CDAAB16314DFAAF100F43810 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		CDAD8C191527965B0089206E /* AVOfflineComposition.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVOfflineComposition.h; sourceTree = "<group>"; };
@@ -732,6 +734,7 @@
 				CDE660A9136F8A7E00F4E8E6 /* 2x2_black_blue_24BPP.apng */,
 				CD0ACFA7136F999100A203DF /* 2x2_black_blue_24BPP_opt_nc.apng.7z */,
 				CDF7F95C13733C6B00E1A57B /* 2x2_nop.apng */,
+				CDA9E755169B8C5000A49AA3 /* 64x64_nop_3frames_h264.mov */,
 				CDD641491686853E00492B80 /* 2x2_16BPP_1FPS_3Frames_nop.mvid */,
 				CDF7F87F1373322C00E1A57B /* 2x2_alpha_reveal_32BPP.apng */,
 				CDF7F8DC137334FD00E1A57B /* 2x2_alpha_reveal_palette.apng */,
@@ -1201,6 +1204,7 @@
 				CD288F151694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */,
 				CD288F181694DEF200A5CDAD /* AlphaGhost_alpha_CRF_30_24BPP.m4v in Resources */,
 				CD288F191694DEF200A5CDAD /* AlphaGhost_rgb_CRF_30_24BPP.m4v in Resources */,
+				CDA9E756169B8C5000A49AA3 /* 64x64_nop_3frames_h264.mov in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

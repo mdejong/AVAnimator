@@ -319,6 +319,9 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   mvHeader->frameDuration = self.frameDuration;
   assert(mvHeader->frameDuration > 0.0);
   
+  // The number of frames must always be at least 2 frames.
+  
+  NSAssert(self.totalNumFrames > 1, @"animation must have at least 2 frames, not %d", self.totalNumFrames);  
   mvHeader->numFrames = self.totalNumFrames;
   
   // This file writer always emits a file with version set to 1, since

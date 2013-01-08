@@ -747,6 +747,59 @@
   return;
 }
 
+// The test case reads H264 encoded data with 3 all black frames at 64x64. This is intended to test
+// decoder logic so that repeated identical frames are handled as special case "nop" frames.
+// This optimization is very important for performance reasons, but it is quite tricky to test.
+
+// FIXME: note that after more testing, the Quicktime H264 encoder seems to emit flat frames
+// that are 1 second long even though the input files are exactly the same. So this test does
+// not actually hit the nop logic in the frame reader.
+
++ (void) testDecode3FrameNop
+{
+  NSString *resourceName = @"64x64_nop_3frames_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+  
+  NSString *tmpFilename = @"64x64_nop_3frames.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  AVAsset2MvidResourceLoader *loader = [AVAsset2MvidResourceLoader aVAsset2MvidResourceLoader];
+  loader.movieFilename = [fileURL path];
+  loader.outPath = tmpPath;
+  
+  [loader load];
+  
+#define MAX_WAIT_TIME 20.0
+  
+  BOOL worked = [RegressionTests waitUntilTrue:loader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:MAX_WAIT_TIME];
+  NSAssert(worked, @"worked");
+  
+  BOOL decodeFrames = TRUE;
+  
+  if (decodeFrames) {
+    // Should be 3 frames, though this file does not actually make use of the nop optimizations
+    
+    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+    
+    BOOL worked = [frameDecoder openForReading:tmpPath];
+    NSAssert(worked, @"worked");
+    
+    int numFrames = [frameDecoder numFrames];
+    
+    NSAssert(numFrames == 3, @"numFrames");
+  }
+  
+  return;
+}
+
 // encode .mvid to .h264 as a blocking operation
 
 + (void) util_encodeMvidAsH264:(NSString*)mvidTmpPath
