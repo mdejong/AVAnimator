@@ -5,10 +5,11 @@
 //
 //  License terms defined in License.txt.
 //
-//  This module implements a H264 to MVID decoder that can be used to
-//  save the raw bits of a H264 video into a file. For videos without
-//  an alpha channel, lossy H264 video encoding could save quite a lot
-//  of space as compared to lossless video.
+//  This module implements a h264 to MVID decoder that can be used to
+//  save the raw bits of a h264 video into a file. The h264 format supports
+//  only 24 BPP mode, so no alpha channel can appear in a h264 video.
+//  But, the compression available in h264 saves a whole lot of space
+//  as compared to lossless compression.
 
 #include "AVAssetConvertCommon.h"
 
@@ -22,17 +23,12 @@
 
 extern NSString * const AVAssetReaderConvertMaxvidCompletedNotification;
 
-@class AVAssetReader;
-@class AVAssetReaderOutput;
+@class AVAssetFrameDecoder;
 
 @interface AVAssetReaderConvertMaxvid : AVMvidFileWriter {
 @private
   NSURL *m_assetURL;
-  AVAssetReader *m_aVAssetReader;
-  AVAssetReaderOutput *m_aVAssetReaderOutput;
-  CGSize detectedMovieSize;
-  float prevFrameDisplayTime;
-  int numTrailingNopFrames;
+  AVAssetFrameDecoder *m_frameDecoder;
   BOOL m_wasSuccessful;
 }
 

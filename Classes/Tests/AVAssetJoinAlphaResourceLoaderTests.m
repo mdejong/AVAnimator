@@ -181,10 +181,8 @@
 // so H264 split encoding is actually about 2 times larger and takes longer to load.
 // Thsi is only useful to test the decoder logic.
 
-+ (void) DISABLED_testJoinAlphaGhost
++ (void) testJoinAlphaGhost
 {
-  //NSString *resPath;
-  //NSURL *fileURL;
   NSString *tmpFilename;
   NSString *tmpPath;
   

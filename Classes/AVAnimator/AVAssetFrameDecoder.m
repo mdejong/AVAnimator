@@ -399,6 +399,8 @@ typedef enum
     if (numTrailingNopFrames > 0) {
       return FrameReadStatusDup;
     }
+   
+    // FIXME: should [self close] be called in this case ? Or can we at least mark the asset reader with cancelReading ?
     
     return FrameReadStatusDone;
   }
@@ -573,6 +575,10 @@ typedef enum
 
 - (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex
 {
+#ifdef LOGGING
+  NSLog(@"advanceToFrame : from %d to %d", frameIndex, newFrameIndex);
+#endif // LOGGING
+  
   AVAssetReader *aVAssetReader = self.aVAssetReader;
   NSAssert(aVAssetReader, @"asset should be open already");
 
@@ -589,10 +595,8 @@ typedef enum
              @"can't advance to frame before current frameIndex",
              frameIndex,
              newFrameIndex);
-  } else if (frameIndex == -1) {
-    NSAssert(newFrameIndex == 0, @"advanceToFrame can only advance to the next frame : not %d", newFrameIndex);
-  } else if ((frameIndex != -1) && (newFrameIndex != (frameIndex + 1))) {
-    NSAssert(FALSE, @"advanceToFrame can only advance to the next frame : not %d", newFrameIndex);
+  } else if ((frameIndex + 1) != newFrameIndex) {
+    NSAssert(FALSE, @"advanceToFrame can only advance to the next frame (%d) : not %d", (frameIndex + 1), newFrameIndex);
   }
   
   // Make sure we do not advance past the last frame
@@ -674,6 +678,8 @@ typedef enum
 #endif // LOGGING
       
       doneReadingFrames = TRUE;
+    } else {
+      NSAssert(FALSE, @"unmatched frame status %d", frameReadStatus);
     }
     
     [inner_pool drain];
