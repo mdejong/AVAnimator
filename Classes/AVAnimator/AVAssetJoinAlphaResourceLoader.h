@@ -6,9 +6,10 @@
 //  License terms defined in License.txt.
 //
 // This loader will decompress a video with a full alpha channel stored
-// as a pair of H264 encoded videos. The first video contains the RGB
+// as a pair of h264 encoded videos. The first video contains the RGB
 // values while the second video contains just the alpha channel
-// stored as grayscale.
+// stored as grayscale. Typically, the h264 video should be encoded with
+// ffmpeg+x264 and it would be stored in a .m4v file.
 
 @class AVAsset2MvidResourceLoader;
 
