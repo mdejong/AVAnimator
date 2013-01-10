@@ -19,7 +19,36 @@
 
 #import <CoreMedia/CMSampleBuffer.h>
 
+#import "AVMvidFileWriter.h" // for countTrailingNopFrames
+
 #if defined(HAS_AVASSET_CONVERT_MAXVID)
+
+#define LOGGING
+
+typedef enum
+{
+  // Attempted to read from asset, but data was not available, retry. Note that this
+  // code could be returned in the case where a sample buffer is read a nil. The
+  // caller is expected to check that status flags on the asset reader in order
+  // to determine if the asset reader is finished reading frames.
+  FrameReadStatusNotReady,
+  
+  // Read the next frame from the asset successfully
+  FrameReadStatusNextFrame,
+  
+  // Did not read the next frame because the previous frame data is duplicated
+  // as a "nop frame"
+  FrameReadStatusDup,
+  
+  // Reading a frame was successful, but the indicated display time is so early
+  // that is too early to be decoded as the "next" frame. Ignore an odd frame
+  // like this and continue to decode the next frame.
+  FrameReadStatusTooEarly,
+  
+  // Done reading frames from the asset. Note that it is possible that frames
+  // could have all been read but the final frame has a long "implicit" duration.
+  FrameReadStatusDone
+} FrameReadStatus;
 
 // Private API
 
@@ -171,9 +200,226 @@
   return TRUE;
 }
 
+// Return TRUE if starting to read from the asset file is successful, FALSE otherwise.
+// Normally, reading from a H264 asset is successful as long as the file exists and it
+// contains properly formatted H264 data.
+
+- (BOOL) startReadingAsset
+{
+  BOOL worked;
+  AVAssetReader *aVAssetReader = self.aVAssetReader;
+  
+  worked = [aVAssetReader startReading];
+  
+  if (worked == FALSE) {
+    AVAssetReaderStatus status = aVAssetReader.status;
+    NSError *error = aVAssetReader.error;
+    
+    NSLog(@"status = %d", status);
+    NSLog(@"error = %@", [error description]);
+    
+    return FALSE;
+  } else {
+    return TRUE;
+  }
+}
+
+// Verify width/height of frame being read from asset
+
+- (void) blockingDecodeVerifySize:(CGFrameBuffer*)frameBuffer
+{
+  size_t width = frameBuffer.width;
+  size_t height = frameBuffer.height;
+  
+  NSAssert(width > 0, @"width");
+  NSAssert(height > 0, @"height");
+  
+  if (detectedMovieSize.width == 0) {
+    detectedMovieSize = CGSizeMake(width, height);
+    //self.movieSize = detectedMovieSize;
+  } else {
+    NSAssert(CGSizeEqualToSize(detectedMovieSize, CGSizeMake(width, height)), @"size");
+  }
+}
+
+// Emit frame of data
+
+- (BOOL) blockingDecodeEmitFrame:(CGFrameBuffer*)frameBuffer
+{
+  BOOL worked;
+  
+  NSAssert(frameBuffer, @"frameBuffer");
+  
+  // Calculate how many bytes make up the image via (bytesPerRow * height). The
+  // numBytes value may be padded out to fit to an OS page bound. If the buffer
+  // is padded in the case of an odd number of pixels, pass the buffer size
+  // including the padding pixels.
+  
+  int bufferSize = frameBuffer.numBytes;
+  void *pixelsPtr = frameBuffer.pixels;
+  
+  // write entire buffer of raw 32bit pixels to the file.
+  // bitmap info is native (kCGImageAlphaNoneSkipFirst|kCGBitmapByteOrder32Little)
+  
+  worked = [self writeKeyframe:pixelsPtr bufferSize:bufferSize];
+  
+  return worked;
+}
+
+// Attempt to read next frame and return a status code to inidcate what
+// happened.
+
+- (FrameReadStatus) blockingDecodeReadFrame:(CGFrameBuffer**)frameBufferPtr
+{
+  BOOL worked;
+  
+  AVAssetReader *aVAssetReader = self.aVAssetReader;
+  
+  float frameDurationTooEarly = (self.frameDuration * 0.90);
+  
+#ifdef LOGGING
+  NSLog(@"READING frame %d", self.frameNum);
+#endif // LOGGING
+  
+  // This logic supports "reading" nop frames that appear after an actual frame.
+  
+  if (numTrailingNopFrames) {
+    numTrailingNopFrames--;
+    return FrameReadStatusDup;
+  }
+  
+  // This logic used to be stop the frame reading loop as soon as the asset
+  // was no longer in a reading state. Commented out because it no longer
+  // appears to be needed, but left here just in case.
+  
+  //if ([aVAssetReader status] != AVAssetReaderStatusReading) {
+  //  return FrameReadStatusDone;
+  //}
+  
+  CMSampleBufferRef sampleBuffer = NULL;
+  sampleBuffer = [self.aVAssetReaderOutput copyNextSampleBuffer];
+  
+  if (sampleBuffer) {
+    worked = [self renderIntoFramebuffer:sampleBuffer frameBuffer:frameBufferPtr];
+    NSAssert(worked, @"renderIntoFramebuffer worked");
+    
+    // If the delay between the previous frame and the current frame is more
+    // than would be needed for one frame, then emit nop frames.
+    
+    // If a sample would be displayed for one frame, then the next one should
+    // be displayed right away. But, in the case where a sample duration is
+    // longer than one frame, emit repeated frames as no-op frames.
+    
+    CMTime presentationTimeStamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
+    
+    CFRelease(sampleBuffer);
+    
+    float frameDisplayTime = (float) CMTimeGetSeconds(presentationTimeStamp);
+    
+    float expectedFrameDisplayTime = self.frameNum * self.frameDuration;
+    
+#ifdef LOGGING
+    NSLog(@"frame presentation time = %0.4f", frameDisplayTime);
+    NSLog(@"expected frame presentation time = %0.4f", expectedFrameDisplayTime);
+    NSLog(@"prev frame presentation time = %0.4f", prevFrameDisplayTime);
+#endif // LOGGING
+    
+    // Check for display time clock drift. This is caused by a frame that has
+    // a frame display time that is so early that it is almost a whole frame
+    // early. The decoder can't deal with this case because we have to maintain
+    // an absolute display delta between frames. To fix the problem, we have
+    // to drop a frame to let actual display time catch up to the expected
+    // frame display time. We have already calculated the total number of frames
+    // based on the reported duration of the whole movie, so this logic has the
+    // effect of keeping the total duration consistent once the data is stored
+    // in equally spaced frames.
+    
+    float frameDisplayEarly = 0.0;
+    if (frameDisplayTime < expectedFrameDisplayTime) {
+      frameDisplayEarly = expectedFrameDisplayTime - frameDisplayTime;
+    }
+    if (frameDisplayEarly > frameDurationTooEarly) {
+      // The actual presentation time has drifted too far from the expected presentation time
+      
+#ifdef LOGGING
+      NSLog(@"frame presentation drifted too early = %0.4f", frameDisplayEarly);
+#endif // LOGGING
+      
+      // Drop the frame, meaning we do not write it to the .mvid file. Instead, let
+      // processing continue with the next frame which will display at about the
+      // right expected time. The frame number stays the same since no output
+      // buffer was written. Note that we need to reset the prevFrameDisplayTime so
+      // that no trailing nop frame is emitted in the normal case.
+      
+      prevFrameDisplayTime = expectedFrameDisplayTime;
+      return FrameReadStatusTooEarly;
+    }
+    
+    float delta = frameDisplayTime - prevFrameDisplayTime;
+    
+    prevFrameDisplayTime = frameDisplayTime;
+    
+    // Store the number of trailing frames that appear after this frame
+    
+    numTrailingNopFrames = [AVMvidFileWriter.class countTrailingNopFrames:delta frameDuration:self.frameDuration];
+    
+#ifdef LOGGING
+    if (numTrailingNopFrames > 0) {
+      NSLog(@"Found %d trailing NOP frames after frame %d", numTrailingNopFrames, (self.frameNum - 1));
+    }
+#endif // LOGGING
+    
+#ifdef LOGGING
+    NSLog(@"DONE READING frame %d", self.frameNum);
+#endif // LOGGING
+    
+    // Note that the frameBuffer object is explicitly retained so that it can
+    // be used in each loop iteration.
+    
+    [self blockingDecodeVerifySize:*frameBufferPtr];
+    
+    return FrameReadStatusNextFrame;
+  } else if ([aVAssetReader status] == AVAssetReaderStatusReading) {
+    AVAssetReaderStatus status = aVAssetReader.status;
+    NSError *error = aVAssetReader.error;
+    
+    NSLog(@"AVAssetReaderStatusReading");
+    NSLog(@"status = %d", status);
+    NSLog(@"error = %@", [error description]);
+  } else {
+    // The copyNextSampleBuffer returned nil, so we seem to be done reading from
+    // the asset. Check for the special case where a previous frame was displayed
+    // at a specific time, but now there are no more frames after that frame.
+    // Need to detect the case where 1 to N trailing nop frames appear after
+    // the last frame we decoded. There does not apear to be a way to detect the
+    // duration of a frame until the next one is decoded, so this is needed
+    // to properly handle assets that end with nop frames. Also, it is unclear how
+    // a H264 video that include a dup frame like this can be generated, so
+    // this code appears to be untested.
+    
+    float finalFrameExpectedTime = self.numFrames * self.frameDuration;
+    float delta = finalFrameExpectedTime - prevFrameDisplayTime;
+    
+    // Store the number of trailing frames that appear after this frame
+    
+    numTrailingNopFrames = [AVMvidFileWriter.class countTrailingNopFrames:delta frameDuration:self.frameDuration];
+
+    if (numTrailingNopFrames > 0) {
+      return FrameReadStatusDup;
+    }
+    
+    return FrameReadStatusDone;
+  }
+  
+  return FrameReadStatusNotReady;
+}
+
+// FIXME : this API needs to be rewritten in terms of advancing to numbered frames,
+// at first we can force the advance to be 1 frame at a time.
+
 // Read video data from a single track (only one video track is supported anyway)
 
-- (BOOL) setupAssetReader
+- (BOOL) blockingDecode
 {
   BOOL worked;
   BOOL retstatus = FALSE;
@@ -187,10 +433,10 @@
     goto retcode;
   }
   
-  CMSampleBufferRef sampleBuffer = NULL;
-  
   //self.bpp = 24;
+  
   //worked = [self open];
+  
   //if (worked == FALSE) {
   //  goto retcode;
   //}
@@ -199,22 +445,15 @@
   
   aVAssetReader = self.aVAssetReader;
   
-  worked = [self.aVAssetReader startReading];
-  
-  if (!worked) {
-    AVAssetReaderStatus status = aVAssetReader.status;
-    NSError *error = aVAssetReader.error;
-    
-    NSLog(@"status = %d", status);
-    NSLog(@"error = %@", [error description]);
-    
+  worked = [self startReadingAsset];
+  if (worked == FALSE) {
     goto retcode;
   }
   
-  size_t movieWidth = 0;
-  size_t movieHeight = 0;
+  detectedMovieSize = CGSizeMake(0, 0);
   
   BOOL writeFailed = FALSE;
+  BOOL doneReadingFrames = FALSE;
   
   // This framebuffer object will be the destination of a render operation
   // for a given frame. Multiple frames must always be the same size,
@@ -222,131 +461,55 @@
   
   CGFrameBuffer *frameBuffer = nil;
   
-  float prevFrameDisplayTime = 0.0;
+  prevFrameDisplayTime = 0.0;
   
-  float frameDurationTooEarly = (self.frameDuration * 0.90);
-  
-  while ((writeFailed == FALSE) && ([aVAssetReader status] == AVAssetReaderStatusReading))
+  while ((writeFailed == FALSE) &&
+         (doneReadingFrames == FALSE))
   {
     NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
     
-#ifdef LOGGING
-    NSLog(@"READING frame %d", self.frameNum);
-#endif // LOGGING
+    FrameReadStatus frameReadStatus;
     
-    sampleBuffer = [self.aVAssetReaderOutput copyNextSampleBuffer];
+    frameReadStatus = [self blockingDecodeReadFrame:&frameBuffer];
     
-    if (sampleBuffer) {
-      worked = [self renderIntoFramebuffer:sampleBuffer frameBuffer:&frameBuffer];
-      NSAssert(worked, @"worked");
-      
-      // If the delay between the previous frame and the current frame is more
-      // than would be needed for one frame, then emit nop frames.
-      
-      // If a sample would be displayed for one frame, then the next one should
-      // be displayed right away. But, in the case where a sample duration is
-      // longer than one frame, emit repeated frames as no-op frames.
-      
-      CMTime presentationTimeStamp = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
-      
-      float frameDisplayTime = (float) CMTimeGetSeconds(presentationTimeStamp);
-      
-      float expectedFrameDisplayTime = self.frameNum * self.frameDuration;
+    if (frameReadStatus == FrameReadStatusNextFrame) {
+      // Read the next frame of data, now write the frame
       
 #ifdef LOGGING
-      NSLog(@"frame presentation time = %0.4f", frameDisplayTime);
-      NSLog(@"expected frame presentation time = %0.4f", expectedFrameDisplayTime);
-      NSLog(@"prev frame presentation time = %0.4f", prevFrameDisplayTime);
+      NSLog(@"WRITING frame %d", self.frameNum);
 #endif // LOGGING
       
-      // Check for display time clock drift. This is caused by a frame that has
-      // a frame display time that is so early that it is almost a whole frame
-      // early. The decoder can't deal with this case because we have to maintain
-      // an absolute display delta between frames. To fix the problem, we have
-      // to drop a frame to let actual display time catch up to the expected
-      // frame display time. We have already calculated the total number of frames
-      // based on the reported duration of the whole movie, so this logic has the
-      // effect of keeping the total duration consistent once the data is stored
-      // in equally spaced frames.
-      
-      float frameDisplayEarly = 0.0;
-      if (frameDisplayTime < expectedFrameDisplayTime) {
-        frameDisplayEarly = expectedFrameDisplayTime - frameDisplayTime;
-      }
-      if (frameDisplayEarly > frameDurationTooEarly) {
-        // The actual presentation time has drifted from the expected presentation time
-        
-#ifdef LOGGING
-        NSLog(@"frame presentation drifted too early = %0.4f", frameDisplayEarly);
-#endif // LOGGING
-        
-        // Drop the frame, meaning we do not write it to the .mvid file. Instead, let
-        // processing continue with the next frame which will display at about the
-        // right expected time. The frame number stays the same since no output
-        // buffer was written. Note that we need to reset the prevFrameDisplayTime so
-        // that no trailing nop frame is emitted in the normal case.
-        
-        prevFrameDisplayTime = expectedFrameDisplayTime;
-        CFRelease(sampleBuffer);
-        [inner_pool drain];
-        continue;
-      }
-      
-      float delta = frameDisplayTime - prevFrameDisplayTime;
-      
-      prevFrameDisplayTime = frameDisplayTime;
-      
-      [self writeTrailingNopFrames:delta];
-      
-#ifdef LOGGING
-      NSLog(@"WRITTING frame %d", self.frameNum);
-#endif // LOGGING
-      
-      // Note that the frameBuffer object is explicitly retained so that it can
-      // be used in each loop iteration.
-      
-      // Get and verify buffer width and height.
-      
-      size_t width = frameBuffer.width;
-      size_t height = frameBuffer.height;
-      
-      NSAssert(width > 0, @"width");
-      NSAssert(height > 0, @"height");
-      
-      if (movieWidth == 0) {
-        movieWidth = width;
-        movieHeight = height;
-        
-        self.movieSize = CGSizeMake(movieWidth, movieHeight);
-      } else {
-        NSAssert(movieWidth == width, @"movieWidth");
-        NSAssert(movieHeight == height, @"movieHeight");
-      }
-      
-      // Calculate how many bytes make up the image via (bytesPerRow * height). The
-      // numBytes value may be padded out to fit to an OS page bound. If the buffer
-      // is padded in the case of an odd number of pixels, pass the buffer size
-      // including the padding pixels.
-      
-      int bufferSize = frameBuffer.numBytes;
-      void *pixelsPtr = frameBuffer.pixels;
-      
-      // write entire buffer of raw 32bit pixels to the file.
-      // bitmap info is native (kCGImageAlphaNoneSkipFirst|kCGBitmapByteOrder32Little)
-      
-      worked = [self writeKeyframe:pixelsPtr bufferSize:bufferSize];
+      worked = [self blockingDecodeEmitFrame:frameBuffer];
       
       if (worked == FALSE) {
         writeFailed = TRUE;
       }
+    } else if (frameReadStatus == FrameReadStatusDup) {
+#ifdef LOGGING
+      NSLog(@"FrameReadStatusDup");
+#endif // LOGGING
       
-      CFRelease(sampleBuffer);
-    } else if ([aVAssetReader status] == AVAssetReaderStatusReading) {
-      AVAssetReaderStatus status = aVAssetReader.status;
-      NSError *error = aVAssetReader.error;
+      [self writeNopFrame];
+    } else if (frameReadStatus == FrameReadStatusTooEarly) {
+      // Skip writing of frame that would be displayed too early
       
-      NSLog(@"status = %d", status);
-      NSLog(@"error = %@", [error description]);
+#ifdef LOGGING
+      NSLog(@"FrameReadStatusTooEarly");
+#endif // LOGGING
+    } else if (frameReadStatus == FrameReadStatusNotReady) {
+      // Input was not ready at this point, continue to read
+      
+#ifdef LOGGING
+      NSLog(@"FrameReadStatusNotReady");
+#endif // LOGGING
+    } else if (frameReadStatus == FrameReadStatusDone) {
+      // Reader has returned a status code indicating that no more
+      // frames are available.
+#ifdef LOGGING
+      NSLog(@"FrameReadStatusDone");
+#endif // LOGGING
+      
+      doneReadingFrames = TRUE;
     }
     
     [inner_pool drain];
@@ -354,19 +517,19 @@
   
   // Double check that we did not write too few frames.
   
-  NSAssert(self.frameNum == self.totalNumFrames, @"frameNum == totalNumFrames");
+  NSAssert(self.frameNum == self.numFrames, @"frameNum == numFrames");
   
   // Explicitly release the retained frameBuffer
   
   [frameBuffer release];
   
-  worked = [self rewriteHeader];
+  //worked = [self rewriteHeader];
   
-  [self close];
+  //[self close];
   
-  if (worked == FALSE) {
-    goto retcode;
-  }
+  //if (worked == FALSE) {
+  //  goto retcode;
+  //}
   
   retstatus = TRUE;
   
@@ -374,21 +537,21 @@ retcode:
   
   [aVAssetReader cancelReading];
   
-  if (retstatus) {
-#ifdef LOGGING
-    NSLog(@"wrote %@", self.mvidPath);
-#endif // LOGGING
-  } else {
-#ifdef LOGGING
-    NSLog(@"failed to write %@", self.mvidPath);
-#endif // LOGGING
-  }
+//  if (retstatus) {
+//#ifdef LOGGING
+//    NSLog(@"wrote %@", self.mvidPath);
+//#endif // LOGGING
+//  } else {
+//#ifdef LOGGING
+//    NSLog(@"failed to write %@", self.mvidPath);
+//#endif // LOGGING
+//  }
   
-  if (retstatus) {
-    self.wasSuccessful = TRUE;
-  } else {
-    self.wasSuccessful = FALSE;
-  }
+//  if (retstatus) {
+//    self.wasSuccessful = TRUE;
+//  } else {
+//    self.wasSuccessful = FALSE;
+//  }
   return retstatus;
 }
 

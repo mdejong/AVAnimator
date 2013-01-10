@@ -350,7 +350,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
 
     // Store the number of trailing frames that appear after this frame
     
-    numTrailingNopFrames = [self countTrailingNopFrames:delta];
+    numTrailingNopFrames = [self.class countTrailingNopFrames:delta frameDuration:self.frameDuration];
 
 #ifdef LOGGING
     if (numTrailingNopFrames > 0) {
@@ -391,7 +391,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
     
     // Store the number of trailing frames that appear after this frame
     
-    numTrailingNopFrames = [self countTrailingNopFrames:delta];
+    numTrailingNopFrames = [self.class countTrailingNopFrames:delta frameDuration:self.frameDuration];
     if (numTrailingNopFrames > 0) {
       return FrameReadStatusDup;
     }

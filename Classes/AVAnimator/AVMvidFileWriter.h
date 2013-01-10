@@ -63,9 +63,12 @@
 - (void) writeNopFrame;
 
 // Count up the number of nop frames that would appear after the indicated
-// frame display time.
+// frame display time. The currentFrameDuration is the duration that
+// a frame would be displayed, it could be longer than the expected FPS
+// duration indicated by the frameDuration argument.
 
-- (int) countTrailingNopFrames:(float)currentFrameDuration;
++ (int) countTrailingNopFrames:(float)currentFrameDuration
+                 frameDuration:(float)frameDuration;
 
 // Write 0 to N trailing nop frames, pass in total frame display time
 

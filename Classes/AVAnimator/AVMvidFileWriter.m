@@ -214,9 +214,10 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   frameNum++;
 }
 
-- (int) countTrailingNopFrames:(float)currentFrameDuration
++ (int) countTrailingNopFrames:(float)currentFrameDuration
+                 frameDuration:(float)frameDuration
 {
-  int numFramesDelay = round(currentFrameDuration / self.frameDuration);
+  int numFramesDelay = round(currentFrameDuration / frameDuration);
   
   if (numFramesDelay > 1) {
     return numFramesDelay - 1;
@@ -227,7 +228,7 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
 
 - (void) writeTrailingNopFrames:(float)currentFrameDuration
 {
-  int count = [self countTrailingNopFrames:currentFrameDuration];
+  int count = [self.class countTrailingNopFrames:currentFrameDuration frameDuration:self.frameDuration];
   
   if (count > 0) {
     for (; count; count--) {
