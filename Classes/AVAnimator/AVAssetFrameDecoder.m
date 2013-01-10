@@ -411,7 +411,8 @@ typedef enum
 // have some funky padding going on, likely "planar" data from YUV colorspace.
 // The caller of this method should provide a location where a single
 // frameBuffer can be stored so that multiple calls to this render function
-// will make use of the same buffer.
+// will make use of the same buffer. Note that the returned frameBuffer
+// object is placed in the autorelease pool implicitly.
 
 - (BOOL) renderIntoFramebuffer:(CMSampleBufferRef)sampleBuffer frameBuffer:(CGFrameBuffer**)frameBufferPtr
 {
@@ -469,9 +470,10 @@ typedef enum
   // not autoreleased, instead the caller must explicitly release the ref.
   
   if (frameBuffer == NULL) {
-    *frameBufferPtr = [[CGFrameBuffer alloc] initWithBppDimensions:24 width:width height:height];
-    frameBuffer = *frameBufferPtr;
+    frameBuffer = [[CGFrameBuffer alloc] initWithBppDimensions:24 width:width height:height];
+    frameBuffer = [frameBuffer autorelease];
     NSAssert(frameBuffer, @"frameBuffer");
+    *frameBufferPtr = frameBuffer;
 
     // Also save allocated framebuffer as a property in the object
     self.currentFrameBuffer = frameBuffer;
@@ -616,7 +618,7 @@ typedef enum
   // for a given frame. Multiple frames must always be the same size,
   // so a common render buffer will be allocated.
   
-  CGFrameBuffer *frameBuffer = nil;
+  CGFrameBuffer *frameBuffer = self.currentFrameBuffer;
   
   while (doneReadingFrames == FALSE)
   {

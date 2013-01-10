@@ -35,7 +35,10 @@
 // Note that while encoding a 32x32 .mov with H264 is not supported, it is perfectly
 // fine to decode a H264 that is smaller than 128x128.
 
-// Current iPad2 timing results with 2 mvid writes : 55 seconds
+// Current iPad2 timing results: (note that loggin statements are enabled in these test results)
+//
+// Old impl, that would write 2 mvid files and then read and write a 3rd: 55 seconds
+// New impl, reading frames directly from 2 asset files : 15 -> 22 seconds (big win)
 
 + (void) testJoinAlphaForExplosionVideo
 {
