@@ -197,6 +197,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
 {
   BOOL worked;
   AVAssetReader *aVAssetReader = self.aVAssetReader;
+  NSAssert(aVAssetReader, @"aVAssetReader");
   
   worked = [aVAssetReader startReading];
   
@@ -411,11 +412,13 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   
   self.wasSuccessful = FALSE;
   
-  AVAssetReader *aVAssetReader = nil;
-  
-  worked = [self setupAsset];
-  if (worked == FALSE) {
-    goto retcode;
+  AVAssetReader *aVAssetReader = self.aVAssetReader;
+
+  if (aVAssetReader == nil) {
+    worked = [self setupAsset];
+    if (worked == FALSE) {
+      goto retcode;
+    }
   }
   
   self.bpp = 24;
@@ -427,8 +430,6 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   }
   
   // Start reading from asset
-  
-  aVAssetReader = self.aVAssetReader;
   
   worked = [self startReadingAsset];
   if (worked == FALSE) {

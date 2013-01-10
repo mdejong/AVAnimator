@@ -226,6 +226,8 @@
 		CDBB005514F349B900AC6F5B /* AVMvidFileWriter.m in Sources */ = {isa = PBXBuildFile; fileRef = CDBB005314F349B800AC6F5B /* AVMvidFileWriter.m */; };
 		CDBDC10E12E0EA7500EF5BD4 /* LCD.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */; };
 		CDBDC10F12E0EA7500EF5BD4 /* LCD.jpg in Resources */ = {isa = PBXBuildFile; fileRef = CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */; };
+		CDBDFB1A169E57BF00B53613 /* AVAssetFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CDA9E74C1697554A00A49AA3 /* AVAssetFrameDecoder.m */; };
+		CDBDFB1B169E57C000B53613 /* AVAssetFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CDA9E74C1697554A00A49AA3 /* AVAssetFrameDecoder.m */; };
 		CDC1CE0E15B7DFEB003F61C1 /* 128x128_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDC1CE0C15B7DFEB003F61C1 /* 128x128_black_blue_h264.mov */; };
 		CDC1CE1115B7E19B003F61C1 /* 240x160_black_blue_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CDC1CE1015B7E19B003F61C1 /* 240x160_black_blue_h264.mov */; };
 		CDC38D5C12F1F06C00D55CE8 /* AVAnimatorLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = CDC38D5A12F1F06C00D55CE8 /* AVAnimatorLayer.m */; };
@@ -1267,6 +1269,7 @@
 				CD78DC8F15F50636007D3EFF /* maxvid_encode.m in Sources */,
 				CDC510E71692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m in Sources */,
 				CDA9E751169B6EF200A49AA3 /* AVAssetReaderConvertMaxvid.m in Sources */,
+				CDBDFB1A169E57BF00B53613 /* AVAssetFrameDecoder.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1339,6 +1342,7 @@
 				CDC510E81692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m in Sources */,
 				CDC510F01692C45D0069C891 /* AVAssetJoinAlphaResourceLoaderTests.m in Sources */,
 				CDA9E752169B6EF300A49AA3 /* AVAssetReaderConvertMaxvid.m in Sources */,
+				CDBDFB1B169E57C000B53613 /* AVAssetFrameDecoder.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

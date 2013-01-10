@@ -54,8 +54,17 @@ typedef enum
 
 @interface AVAssetFrameDecoder ()
 
+@property (nonatomic, retain) NSURL         *assetURL;
+
 @property (nonatomic, retain) AVAssetReader *aVAssetReader;
+
 @property (nonatomic, retain) AVAssetReaderOutput *aVAssetReaderOutput;
+
+@property (nonatomic, retain) CGFrameBuffer *currentFrameBuffer;
+
+// This is the last AVFrame object returned via a call to advanceToFrame
+
+@property (nonatomic, retain) AVFrame *lastFrame;
 
 - (BOOL) renderIntoFramebuffer:(CMSampleBufferRef)sampleBuffer frameBuffer:(CGFrameBuffer**)frameBufferPtr;
 
@@ -63,6 +72,11 @@ typedef enum
 
 
 @implementation AVAssetFrameDecoder
+
+@synthesize currentFrameBuffer = m_currentFrameBuffer;
+
+@synthesize lastFrame = m_lastFrame;
+
 
 - (void) dealloc
 {
@@ -73,28 +87,8 @@ typedef enum
 + (AVAssetFrameDecoder*) aVAssetFrameDecoder
 {
   AVAssetFrameDecoder *obj = [[AVAssetFrameDecoder alloc] init];
+  obj->frameIndex = -1;
   return [obj autorelease];
-}
-
-// Gettter for self.frameDuration property
-
-- (NSTimeInterval) frameDuration
-{
-  float frameDuration = self->m_frameDuration;
-  return frameDuration;
-}
-
-// Total frame count
-- (NSUInteger) numFrames
-{
-  return self->m_numFrames;
-}
-
-// Close resource opened earlier
-
-- (void) close
-{
-// FIXME: impl ?
 }
 
 // This utility method will setup the asset so that it is opened and ready
@@ -208,6 +202,7 @@ typedef enum
 {
   BOOL worked;
   AVAssetReader *aVAssetReader = self.aVAssetReader;
+  NSAssert(aVAssetReader, @"aVAssetReader");
   
   worked = [aVAssetReader startReading];
   
@@ -240,30 +235,6 @@ typedef enum
   } else {
     NSAssert(CGSizeEqualToSize(detectedMovieSize, CGSizeMake(width, height)), @"size");
   }
-}
-
-// Emit frame of data
-
-- (BOOL) blockingDecodeEmitFrame:(CGFrameBuffer*)frameBuffer
-{
-  BOOL worked;
-  
-  NSAssert(frameBuffer, @"frameBuffer");
-  
-  // Calculate how many bytes make up the image via (bytesPerRow * height). The
-  // numBytes value may be padded out to fit to an OS page bound. If the buffer
-  // is padded in the case of an odd number of pixels, pass the buffer size
-  // including the padding pixels.
-  
-  int bufferSize = frameBuffer.numBytes;
-  void *pixelsPtr = frameBuffer.pixels;
-  
-  // write entire buffer of raw 32bit pixels to the file.
-  // bitmap info is native (kCGImageAlphaNoneSkipFirst|kCGBitmapByteOrder32Little)
-  
-  worked = [self writeKeyframe:pixelsPtr bufferSize:bufferSize];
-  
-  return worked;
 }
 
 // Attempt to read next frame and return a status code to inidcate what
@@ -414,147 +385,6 @@ typedef enum
   return FrameReadStatusNotReady;
 }
 
-// FIXME : this API needs to be rewritten in terms of advancing to numbered frames,
-// at first we can force the advance to be 1 frame at a time.
-
-// Read video data from a single track (only one video track is supported anyway)
-
-- (BOOL) blockingDecode
-{
-  BOOL worked;
-  BOOL retstatus = FALSE;
-  
-  //self.wasSuccessful = FALSE;
-  
-  AVAssetReader *aVAssetReader = nil;
-  
-  worked = [self setupAsset];
-  if (worked == FALSE) {
-    goto retcode;
-  }
-  
-  //self.bpp = 24;
-  
-  //worked = [self open];
-  
-  //if (worked == FALSE) {
-  //  goto retcode;
-  //}
-  
-  // Start reading from asset
-  
-  aVAssetReader = self.aVAssetReader;
-  
-  worked = [self startReadingAsset];
-  if (worked == FALSE) {
-    goto retcode;
-  }
-  
-  detectedMovieSize = CGSizeMake(0, 0);
-  
-  BOOL writeFailed = FALSE;
-  BOOL doneReadingFrames = FALSE;
-  
-  // This framebuffer object will be the destination of a render operation
-  // for a given frame. Multiple frames must always be the same size,
-  // so a common render buffer will be allocated.
-  
-  CGFrameBuffer *frameBuffer = nil;
-  
-  prevFrameDisplayTime = 0.0;
-  
-  while ((writeFailed == FALSE) &&
-         (doneReadingFrames == FALSE))
-  {
-    NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
-    
-    FrameReadStatus frameReadStatus;
-    
-    frameReadStatus = [self blockingDecodeReadFrame:&frameBuffer];
-    
-    if (frameReadStatus == FrameReadStatusNextFrame) {
-      // Read the next frame of data, now write the frame
-      
-#ifdef LOGGING
-      NSLog(@"WRITING frame %d", self.frameNum);
-#endif // LOGGING
-      
-      worked = [self blockingDecodeEmitFrame:frameBuffer];
-      
-      if (worked == FALSE) {
-        writeFailed = TRUE;
-      }
-    } else if (frameReadStatus == FrameReadStatusDup) {
-#ifdef LOGGING
-      NSLog(@"FrameReadStatusDup");
-#endif // LOGGING
-      
-      [self writeNopFrame];
-    } else if (frameReadStatus == FrameReadStatusTooEarly) {
-      // Skip writing of frame that would be displayed too early
-      
-#ifdef LOGGING
-      NSLog(@"FrameReadStatusTooEarly");
-#endif // LOGGING
-    } else if (frameReadStatus == FrameReadStatusNotReady) {
-      // Input was not ready at this point, continue to read
-      
-#ifdef LOGGING
-      NSLog(@"FrameReadStatusNotReady");
-#endif // LOGGING
-    } else if (frameReadStatus == FrameReadStatusDone) {
-      // Reader has returned a status code indicating that no more
-      // frames are available.
-#ifdef LOGGING
-      NSLog(@"FrameReadStatusDone");
-#endif // LOGGING
-      
-      doneReadingFrames = TRUE;
-    }
-    
-    [inner_pool drain];
-  }
-  
-  // Double check that we did not write too few frames.
-  
-  NSAssert(self.frameNum == self.numFrames, @"frameNum == numFrames");
-  
-  // Explicitly release the retained frameBuffer
-  
-  [frameBuffer release];
-  
-  //worked = [self rewriteHeader];
-  
-  //[self close];
-  
-  //if (worked == FALSE) {
-  //  goto retcode;
-  //}
-  
-  retstatus = TRUE;
-  
-retcode:
-  
-  [aVAssetReader cancelReading];
-  
-//  if (retstatus) {
-//#ifdef LOGGING
-//    NSLog(@"wrote %@", self.mvidPath);
-//#endif // LOGGING
-//  } else {
-//#ifdef LOGGING
-//    NSLog(@"failed to write %@", self.mvidPath);
-//#endif // LOGGING
-//  }
-  
-//  if (retstatus) {
-//    self.wasSuccessful = TRUE;
-//  } else {
-//    self.wasSuccessful = FALSE;
-//  }
-  return retstatus;
-}
-
 // Render sample buffer into flat CGFrameBuffer. We can't read the samples
 // directly out of the CVImageBufferRef because the rows of the image
 // have some funky padding going on, likely "planar" data from YUV colorspace.
@@ -621,6 +451,9 @@ retcode:
     *frameBufferPtr = [[CGFrameBuffer alloc] initWithBppDimensions:24 width:width height:height];
     frameBuffer = *frameBufferPtr;
     NSAssert(frameBuffer, @"frameBuffer");
+
+    // Also save allocated framebuffer as a property in the object
+    self.currentFrameBuffer = frameBuffer;
     
     // Use sRGB by default on iOS. Explicitly set sRGB as colorspace on MacOSX.
     
@@ -641,6 +474,316 @@ retcode:
   CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
   
   return TRUE;
+}
+
+// Implementing the methods defined in AVFrameDecoder
+
+// This openForReading method provides a standard API for openeing an asset
+// given a file path.
+
+- (BOOL) openForReading:(NSString*)assetPath
+{
+  BOOL worked;
+  
+  if (self->m_isOpen) {
+    return FALSE;
+  }
+  
+  NSAssert(self.aVAssetReader == nil, @"aVAssetReader must be nil");
+  
+  self.assetURL = [NSURL fileURLWithPath:assetPath];
+    
+  worked = [self setupAsset];
+  if (worked == FALSE) {
+    return FALSE;
+  }
+  
+  // Start reading as soon as asset is opened.
+  NSAssert(m_isReading == FALSE, @"m_isReading");
+  
+  if (TRUE) {
+    // Start reading from asset, this is only done when the first frame is read.
+    // FIXME: it might be better to move this logic into the allocateDecodeResources method
+    
+    
+    worked = [self startReadingAsset];
+    if (worked == FALSE) {
+      return FALSE;
+    }
+    
+    detectedMovieSize = CGSizeMake(0, 0);
+    
+    m_isReading = TRUE;
+  }
+    
+  self->m_isOpen = TRUE;
+  return TRUE;
+}
+
+- (void) close
+{
+  AVAssetReader *aVAssetReader = self.aVAssetReader;
+  // Note that this aVAssetReader can be nil
+  [aVAssetReader cancelReading];
+  self.aVAssetReader = nil;
+  
+  self->frameIndex = -1;
+  self.currentFrameBuffer = nil;
+  self.lastFrame = nil;
+  
+  self->m_isOpen = FALSE;
+  self->m_isReading = FALSE;
+  
+	return;
+}
+
+- (void) rewind
+{
+  if (!self->m_isOpen) {
+    return;
+  }
+  
+  self->frameIndex = -1;
+  self.currentFrameBuffer = nil;
+  self.lastFrame = nil;
+}
+
+- (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex
+{
+  //BOOL worked;
+  //BOOL retstatus = FALSE;
+  
+  AVAssetReader *aVAssetReader = self.aVAssetReader;
+  NSAssert(aVAssetReader, @"asset should be open already");
+
+  NSAssert(m_isReading == TRUE, @"asset should be reading already");
+  
+  // Examine the frame number we should advance to. Currently, the implementation
+  // is limited to advancing to the next frame only.
+  
+  if ((frameIndex != -1) && (newFrameIndex == frameIndex)) {
+    NSAssert(FALSE, @"cannot advance to same frame");
+  } else if ((frameIndex != -1) && (newFrameIndex < frameIndex)) {
+    // movie frame index can only go forward via advanceToFrame
+    NSAssert(FALSE, @"%@: %d -> %d",
+             @"can't advance to frame before current frameIndex",
+             frameIndex,
+             newFrameIndex);
+  } else if (frameIndex == -1) {
+    NSAssert(newFrameIndex == 0, @"advanceToFrame can only advance to the next frame : not %d", newFrameIndex);
+  } else if ((frameIndex != -1) && (newFrameIndex != (frameIndex + 1))) {
+    NSAssert(FALSE, @"advanceToFrame can only advance to the next frame : not %d", newFrameIndex);
+  }
+  
+  // Make sure we do not advance past the last frame
+  
+  int numFrames = [self numFrames];
+  
+  if (newFrameIndex >= numFrames) {
+    NSString *msg = [NSString stringWithFormat:@"%@: %d",
+                     @"can't advance past last frame",
+                     newFrameIndex];
+    NSAssert(FALSE, msg);
+  }
+  
+  // Decode the frame into a framebuffer
+  
+  BOOL changeFrameData = FALSE;
+  //BOOL writeFailed = FALSE;
+  BOOL doneReadingFrames = FALSE;
+  
+  //const int newFrameIndexSigned = (int) newFrameIndex;
+  
+  // This framebuffer object will be the destination of a render operation
+  // for a given frame. Multiple frames must always be the same size,
+  // so a common render buffer will be allocated.
+  
+  CGFrameBuffer *frameBuffer = nil;
+  
+  prevFrameDisplayTime = 0.0;
+  
+  while (doneReadingFrames == FALSE)
+  {
+    NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
+    
+    FrameReadStatus frameReadStatus;
+    
+    frameReadStatus = [self blockingDecodeReadFrame:&frameBuffer];
+    
+    if (frameReadStatus == FrameReadStatusNextFrame) {
+      // Read the next frame of data, return as
+      
+#ifdef LOGGING
+      NSLog(@"FrameReadStatusNextFrame");
+#endif // LOGGING
+      
+      frameIndex++;
+      changeFrameData = TRUE;
+      doneReadingFrames = TRUE;
+    } else if (frameReadStatus == FrameReadStatusDup) {
+#ifdef LOGGING
+      NSLog(@"FrameReadStatusDup");
+#endif // LOGGING
+      
+      frameIndex++;
+      changeFrameData = FALSE;
+      doneReadingFrames = TRUE;
+    } else if (frameReadStatus == FrameReadStatusTooEarly) {
+      // Skip writing of frame that would be displayed too early
+      
+#ifdef LOGGING
+      NSLog(@"FrameReadStatusTooEarly");
+#endif // LOGGING
+    } else if (frameReadStatus == FrameReadStatusNotReady) {
+      // Input was not ready at this point, continue to read
+      
+#ifdef LOGGING
+      NSLog(@"FrameReadStatusNotReady");
+#endif // LOGGING
+    } else if (frameReadStatus == FrameReadStatusDone) {
+      // Reader has returned a status code indicating that no more
+      // frames are available.
+#ifdef LOGGING
+      NSLog(@"FrameReadStatusDone");
+#endif // LOGGING
+      
+      doneReadingFrames = TRUE;
+    }
+    
+    [inner_pool drain];
+  }
+  
+  NSAssert(frameIndex == newFrameIndex, @"frameIndex != newFrameIndex, %d != %d", frameIndex, newFrameIndex);
+  
+  // Note that we do not release the frameBuffer because it is held as
+  // the self.currentFrameBuffer property
+    
+  if (!changeFrameData) {
+    // When no change from previous frame is found, return a new AVFrame object
+    // but make sure to return the same image object as was returned in the last frame.
+    
+    AVFrame *frame = [AVFrame aVFrame];
+    NSAssert(frame, @"AVFrame is nil");
+    
+    // The image from the previous rendered frame is returned. Note that it is possible
+    // that memory resources could not be mapped and in that case the previous frame
+    // could be nil. Return either the last image or nil in this case.
+    
+    id lastFrameImage = self.lastFrame.image;
+    frame.image = lastFrameImage;
+    
+    CGFrameBuffer *cgFrameBuffer = self.currentFrameBuffer;
+    frame.cgFrameBuffer = cgFrameBuffer;
+    
+    frame.isDuplicate = TRUE;
+    
+    return frame;
+  } else {
+    // Delete ref to previous frame to be sure that image ref to framebuffer
+    // is dropped before a new one is created.
+    
+    self.lastFrame = nil;
+    
+    // Return a CGImage wrapped in a AVFrame
+    
+    AVFrame *frame = [AVFrame aVFrame];
+    NSAssert(frame, @"AVFrame is nil");
+    
+    CGFrameBuffer *cgFrameBuffer = self.currentFrameBuffer;
+    frame.cgFrameBuffer = cgFrameBuffer;
+    
+    [frame makeImageFromFramebuffer];
+    
+    self.lastFrame = frame;
+    
+    return frame;
+  }
+}
+
+// nop, since opening the asset allocates resources
+
+- (BOOL) allocateDecodeResources
+{
+	return TRUE;
+}
+
+// nop
+
+- (void) releaseDecodeResources
+{
+	return;
+}
+
+// Return FALSE to indicate that resources are not "limited"
+
+- (BOOL) isResourceUsageLimit
+{
+	return FALSE;
+}
+
+- (AVFrame*) duplicateCurrentFrame
+{
+  //AVFrame *frame = [AVFrame aVFrame];
+  //frame.image = self.currentFrameImage;
+  //return frame;
+  
+  // Currently, this frame decoder cannot be used in a media object
+  // so just assert here.
+  
+  NSAssert(FALSE, @"duplicateCurrentFrame should not be invoked for this frame decoder");
+  return nil;
+}
+
+// Properties
+
+- (NSUInteger) width
+{
+  return detectedMovieSize.width;
+}
+
+- (NSUInteger) height
+{
+  return detectedMovieSize.height;
+}
+
+- (BOOL) isOpen
+{
+  return self->m_isOpen;
+}
+
+// Total frame count
+
+- (NSUInteger) numFrames
+{
+  return self->m_numFrames;
+}
+
+- (NSInteger) frameIndex
+{
+  return self->frameIndex;
+}
+
+// Gettter for self.frameDuration property
+
+- (NSTimeInterval) frameDuration
+{
+  float frameDuration = self->m_frameDuration;
+  return frameDuration;
+}
+
+// Currently, no asset that can be decoded can support an alpha channel
+
+- (BOOL) hasAlphaChannel
+{
+	return FALSE;
+}
+
+// Asset decoding returns only keyframes, but note that currently only 1
+// frame can be loaded into memory at a time.
+
+- (BOOL) isAllKeyframes
+{
+	return TRUE;
 }
 
 @end

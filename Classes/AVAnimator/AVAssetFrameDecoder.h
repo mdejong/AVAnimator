@@ -36,13 +36,15 @@
   
   NSTimeInterval m_frameDuration;
   NSUInteger     m_numFrames;
+  int            frameIndex;
   
   CGSize detectedMovieSize;
   float prevFrameDisplayTime;
   int numTrailingNopFrames;
+  
+  BOOL m_isOpen;
+  BOOL m_isReading;
 }
-
-@property (nonatomic, retain) NSURL         *assetURL;
 
 @property (nonatomic, readonly) int         frameNum;
 

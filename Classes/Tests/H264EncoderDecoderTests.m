@@ -33,6 +33,8 @@
 
 #import "AVImageFrameDecoder.h"
 
+#import "AVAssetFrameDecoder.h"
+
 // Util class for use in testing decoder
 
 @interface AVAssetReaderConvertMaxvid_NotificationUtil : NSObject {
@@ -1655,6 +1657,96 @@
   return;
 }
 
+// Test H264 frame decoder in isolation
+
++ (void) testDecodeH264FramesAt64x64
+{
+  NSString *resourceName = @"64x64_nop_3frames_h264.mov";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  //NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+
+  // Create frame decoder that will read 1 frame at a time from an asset file.
+  // This type of frame decoder is constrained as compared to a MVID frame
+  // decoder. It can only decode 1 frame at a time as only 1 frame can be
+  // in memory at a time. Also, it only works for sequential frames, so
+  // this frame decoder cannot be used in a media object.
+  
+  AVAssetFrameDecoder *frameDecoder = [AVAssetFrameDecoder aVAssetFrameDecoder];
+  
+  BOOL worked = [frameDecoder openForReading:resPath];
+  NSAssert(worked, @"worked");
+  
+  NSAssert([frameDecoder numFrames] == 3, @"numFrames");
+  NSAssert([frameDecoder hasAlphaChannel] == FALSE, @"hasAlphaChannel");
+  
+  worked = [frameDecoder allocateDecodeResources];
+  NSAssert(worked, @"worked");
+  
+  BOOL emitFrames = TRUE;
+  
+  AVFrame *frame;
+  UIImage *img;
+  NSData *data;
+  NSString *path;
+  
+  CGSize expectedSize = CGSizeMake(64, 64);
+  CGSize imgSize;
+  
+  // Dump frame 1
+  
+  frame = [frameDecoder advanceToFrame:0];
+  NSAssert(frame, @"frame 0");
+  img = frame.image;
+  
+  imgSize = img.size;
+  NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+  
+  if (emitFrames) {
+    path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame0.png"];
+    data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+    [data writeToFile:path atomically:YES];
+    NSLog(@"wrote %@", path);
+  }
+  
+  // Dump frame 2
+  
+  frame = [frameDecoder advanceToFrame:1];
+  NSAssert(frame, @"frame 1");
+  img = frame.image;
+  
+  imgSize = img.size;
+  NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+  
+  if (emitFrames) {
+    path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame1.png"];
+    data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+    [data writeToFile:path atomically:YES];
+    NSLog(@"wrote %@", path);
+  }
+
+  // Dump frame 3
+  
+  frame = [frameDecoder advanceToFrame:2];
+  NSAssert(frame, @"frame 2");
+  img = frame.image;
+  
+  imgSize = img.size;
+  NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+  
+  if (emitFrames) {
+    path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame2.png"];
+    data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+    [data writeToFile:path atomically:YES];
+    NSLog(@"wrote %@", path);
+  }
+  
+  // Check "all keyframes" flag
+    
+  BOOL isAllKeyframes = [frameDecoder isAllKeyframes];
+  NSAssert(isAllKeyframes == TRUE, @"isAllKeyframes");
+  
+  return;
+}
 
 #endif // HAS_AVASSET_CONVERT_MAXVID
 
