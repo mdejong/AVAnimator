@@ -6,13 +6,15 @@
 //  License terms defined in License.txt.
 //
 //  This frame decoder interface will read video frames from an AVAsset which
-//  typically means an H264 video attached to the project file. Other file
-//  types could be supported by iOS, but currently H264 is the only one that
+//  typically means a h264 video attached to the project file. Other file
+//  types could be supported by iOS, but currently h264 is the only one that
 //  actually works. A Frame decoder interface will load and decompress a
-//  specific frame of video using the H264 decoder handware included in iOS.
-//  Note that this frame decoder is currently limited such that it only support
-//  sequential access to frame, so frames cannot be skipped or repeated and
-//  a specific video can only be decode into frames once. This assets frame
+//  specific frame of video using the h264 decoder handware included in iOS.
+//  Note that this frame decoder is currently limited in that only 1 frame
+//  can be in memory at any one time, the decoder only supports
+//  sequential access to frames, and frame can only be decoded once.
+//  This frame decoder does not support random access, frame cannot be skipped
+//  or repeated and one cannot loop or rewind the decode frame position. This
 //  decoder should not be used with a AVAnimatorMedia object, it should only
 //  be used to read frames from an asset is a non-realtime blocking usage.
 

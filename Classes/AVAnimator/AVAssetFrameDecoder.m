@@ -606,13 +606,21 @@ typedef enum
     NSAssert(FALSE, msg);
   }
   
-  // Decode the frame into a framebuffer
+  // Decode the frame into a framebuffer.
   
   BOOL changeFrameData = FALSE;
   //BOOL writeFailed = FALSE;
   BOOL doneReadingFrames = FALSE;
   
   //const int newFrameIndexSigned = (int) newFrameIndex;
+  
+  // Note that this asset frame decoder assumes that only one framebuffer
+  // will be in use at any one time, so this logic always drops the ref
+  // to the previous frame object which should drop the ref to the image.
+  
+  self.lastFrame.image = nil;
+  self.lastFrame.cgFrameBuffer = nil;
+  self.lastFrame = nil;
   
   // This framebuffer object will be the destination of a render operation
   // for a given frame. Multiple frames must always be the same size,
