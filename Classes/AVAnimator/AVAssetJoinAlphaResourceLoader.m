@@ -14,7 +14,9 @@
 
 #import "AVAssetReaderConvertMaxvid.h"
 
-#import "AVMvidFrameDecoder.h"
+//#import "AVMvidFrameDecoder.h"
+
+#import "AVAssetFrameDecoder.h"
 
 #import "CGFrameBuffer.h"
 
@@ -124,6 +126,8 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
   // Superclass load method asserts that self.movieFilename is not nil
   [super load];
   
+  // FIXME: remove phony decompress image filenames since we do not need temp files.
+  
   // Create a loader that will run as a detached secondary thread. It is critical
   // that we be able to execute all of the operation logic in the secondary thread.
   
@@ -155,11 +159,12 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
 + (BOOL) joinRGBAndAlpha:(NSString*)joinedMvidPath
                  rgbPath:(NSString*)rgbPath
                alphaPath:(NSString*)alphaPath
+                genAdler:(BOOL)genAdler
 {
   // Open both the rgb and alpha mvid files for reading
   
-  AVMvidFrameDecoder *frameDecoderRGB = [AVMvidFrameDecoder aVMvidFrameDecoder];
-  AVMvidFrameDecoder *frameDecoderAlpha = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  AVAssetFrameDecoder *frameDecoderRGB = [AVAssetFrameDecoder aVAssetFrameDecoder];
+  AVAssetFrameDecoder *frameDecoderAlpha = [AVAssetFrameDecoder aVAssetFrameDecoder];
   
   BOOL worked;
   worked = [frameDecoderRGB openForReading:rgbPath];
@@ -176,24 +181,35 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
     return FALSE;
   }
   
-  [frameDecoderRGB allocateDecodeResources];
-  [frameDecoderAlpha allocateDecodeResources];
-  
-  // BPP
-  
-  int foundBPP;
-  
-  foundBPP = [frameDecoderRGB header]->bpp;
-  if (foundBPP != 24) {
-    NSLog(@"error: RGB mvid file must be 24BPP, found %dBPP", foundBPP);
+  worked = [frameDecoderRGB allocateDecodeResources];
+
+  if (worked == FALSE) {
+    NSLog(@"error: cannot allocate RGB decode resources for filename \"%@\"", rgbPath);
     return FALSE;
   }
   
-  foundBPP = [frameDecoderAlpha header]->bpp;
-  if (foundBPP != 24) {
-    NSLog(@"error: ALPHA mvid file must be 24BPP, found %dBPP", foundBPP);
+  worked = [frameDecoderAlpha allocateDecodeResources];
+
+  if (worked == FALSE) {
+    NSLog(@"error: cannot allocate ALPHA decode resources for filename \"%@\"", alphaPath);
     return FALSE;
   }
+  
+  // BPP for asset decode is always 24 BPP
+  
+//  int foundBPP;
+//  
+//  foundBPP = [frameDecoderRGB header]->bpp;
+//  if (foundBPP != 24) {
+//    NSLog(@"error: RGB mvid file must be 24BPP, found %dBPP", foundBPP);
+//    return FALSE;
+//  }
+//  
+//  foundBPP = [frameDecoderAlpha header]->bpp;
+//  if (foundBPP != 24) {
+//    NSLog(@"error: ALPHA mvid file must be 24BPP, found %dBPP", foundBPP);
+//    return FALSE;
+//  }
 
   // framerate
   
@@ -218,6 +234,8 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
   
   int width = [frameDecoderRGB width];
   int height = [frameDecoderRGB height];
+  NSAssert(width > 0, @"width");
+  NSAssert(height > 0, @"height");
   CGSize size = CGSizeMake(width, height);
   
   // Size of Alpha movie must match size of RGB movie
@@ -244,7 +262,9 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
   fileWriter.frameDuration = frameRate;
   fileWriter.totalNumFrames = numFrames;
   
-  //fileWriter.genAdler = TRUE;
+  if (genAdler) {
+    fileWriter.genAdler = TRUE;
+  }
   
   worked = [fileWriter open];
   if (worked == FALSE) {
@@ -449,16 +469,18 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
   // Pass 8 arguments : RGB_ASSET_PATH RGB_TMP_PATH ALPHA_ASSET_PATH ALPHA_TMP_PATH PHONY_OUT_PATH REAL_OUT_PATH SERIAL ADLER
 
   NSString *rgbAssetPath = [arr objectAtIndex:0];
-  NSString *phonyRgbOutPath = [arr objectAtIndex:1];
+  //NSString *phonyRgbOutPath = [arr objectAtIndex:1];
 
   NSString *alphaAssetPath = [arr objectAtIndex:2];
-  NSString *phonyAlphaOutPath = [arr objectAtIndex:3];
+  //NSString *phonyAlphaOutPath = [arr objectAtIndex:3];
   
   NSString *phonyOutPath = [arr objectAtIndex:4];
   NSString *outPath = [arr objectAtIndex:5];
   
   NSNumber *serialLoadingNum = [arr objectAtIndex:6];
   NSNumber *alwaysGenerateAdler = [arr objectAtIndex:7];
+  
+  BOOL genAdler = ([alwaysGenerateAdler intValue] ? TRUE : FALSE);
   
   if ([serialLoadingNum boolValue]) {
     [self grabSerialResourceLoaderLock];
@@ -481,6 +503,7 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
     
     BOOL worked;
     
+    /*
     // RGB
     
     AVAssetReaderConvertMaxvid *rgbConverter = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
@@ -488,7 +511,7 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
     rgbConverter.assetURL = rgbAssetURL;
     rgbConverter.mvidPath = phonyRgbOutPath;
     
-    if ([alwaysGenerateAdler intValue]) {
+    if (genAdler) {
       rgbConverter.genAdler = TRUE;
     }
     
@@ -506,7 +529,7 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
     alphaConverter.assetURL = alphaAssetURL;
     alphaConverter.mvidPath = phonyAlphaOutPath;
     
-    if ([alwaysGenerateAdler intValue]) {
+    if (genAdler) {
       alphaConverter.genAdler = TRUE;
     }
     
@@ -517,17 +540,19 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
     NSLog(@"done alpha asset decompression %@", [alphaAssetPath lastPathComponent]);
 #endif // LOGGING
     
+    */
+     
     // Iterate over RGB and ALPHA for each frame in the two movies and join the pixel values
     
-    worked = [self joinRGBAndAlpha:phonyOutPath rgbPath:phonyRgbOutPath alphaPath:phonyAlphaOutPath];
+    worked = [self joinRGBAndAlpha:phonyOutPath rgbPath:rgbAssetPath alphaPath:alphaAssetPath genAdler:genAdler];
     NSAssert(worked, @"joinRGBAndAlpha");
     
     // Delete RGB and Alpha intermediate .mvid files since they are very large
     
-    worked = [[NSFileManager defaultManager] removeItemAtPath:phonyRgbOutPath error:NULL];
-    NSAssert(worked, @"rm %@", phonyRgbOutPath);
-    worked = [[NSFileManager defaultManager] removeItemAtPath:phonyAlphaOutPath error:NULL];
-    NSAssert(worked, @"rm %@", phonyAlphaOutPath);
+    //worked = [[NSFileManager defaultManager] removeItemAtPath:phonyRgbOutPath error:NULL];
+    //NSAssert(worked, @"rm %@", phonyRgbOutPath);
+    //worked = [[NSFileManager defaultManager] removeItemAtPath:phonyAlphaOutPath error:NULL];
+    //NSAssert(worked, @"rm %@", phonyAlphaOutPath);
     
     // Move phony tmp filename to the expected filename once writes are complete
     

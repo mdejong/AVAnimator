@@ -35,6 +35,8 @@
 // Note that while encoding a 32x32 .mov with H264 is not supported, it is perfectly
 // fine to decode a H264 that is smaller than 128x128.
 
+// Current iPad2 timing results with 2 mvid writes : 55 seconds
+
 + (void) testJoinAlphaForExplosionVideo
 {
   //NSString *resPath;
@@ -176,7 +178,7 @@
 // so H264 split encoding is actually about 2 times larger and takes longer to load.
 // Thsi is only useful to test the decoder logic.
 
-+ (void) testJoinAlphaGhost
++ (void) DISABLED_testJoinAlphaGhost
 {
   //NSString *resPath;
   //NSURL *fileURL;

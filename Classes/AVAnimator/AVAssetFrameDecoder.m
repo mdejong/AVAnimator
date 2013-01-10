@@ -147,6 +147,22 @@ typedef enum
   
   NSAssert(videoTrack.isSelfContained, @"isSelfContained");
   
+  // Query the width x height of the track now, otherwise this info would
+  // not be available until the first frame is decoded. But, that would
+  // be too late since it would mean we could not allocate an output
+  // buffer of a known width and height until the first frame had been
+  // decoded.
+  
+  CGSize naturalSize = videoTrack.naturalSize;
+  
+#ifdef LOGGING
+  float naturalWidth = naturalSize.width;
+  float naturalHeight = naturalSize.height;
+  NSLog(@"video track naturalSize w x h : %d x %d", (int)naturalWidth, (int)naturalHeight);
+#endif // LOGGING
+  
+  detectedMovieSize = naturalSize;
+  
   // playback framerate
   
   CMTimeRange timeRange = videoTrack.timeRange;
@@ -231,7 +247,6 @@ typedef enum
   
   if (detectedMovieSize.width == 0) {
     detectedMovieSize = CGSizeMake(width, height);
-    //self.movieSize = detectedMovieSize;
   } else {
     NSAssert(CGSizeEqualToSize(detectedMovieSize, CGSizeMake(width, height)), @"size");
   }
@@ -516,8 +531,6 @@ typedef enum
     if (worked == FALSE) {
       return FALSE;
     }
-    
-    detectedMovieSize = CGSizeMake(0, 0);
     
     prevFrameDisplayTime = 0.0;
     
