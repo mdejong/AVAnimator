@@ -46,8 +46,6 @@
   BOOL m_isReading;
 }
 
-@property (nonatomic, readonly) int         frameNum;
-
 @property (nonatomic, readonly) NSUInteger  numFrames;
 
 + (AVAssetFrameDecoder*) aVAssetFrameDecoder;

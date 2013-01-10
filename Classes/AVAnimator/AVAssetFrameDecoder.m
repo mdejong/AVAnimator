@@ -248,8 +248,10 @@ typedef enum
   
   float frameDurationTooEarly = (self.frameDuration * 0.90);
   
+  int frameNum = self.frameIndex + 1;
+  
 #ifdef LOGGING
-  NSLog(@"READING frame %d", self.frameNum);
+  NSLog(@"READING frame %d", frameNum);
 #endif // LOGGING
   
   // This logic supports "reading" nop frames that appear after an actual frame.
@@ -287,7 +289,7 @@ typedef enum
     
     float frameDisplayTime = (float) CMTimeGetSeconds(presentationTimeStamp);
     
-    float expectedFrameDisplayTime = self.frameNum * self.frameDuration;
+    float expectedFrameDisplayTime = frameNum * self.frameDuration;
     
 #ifdef LOGGING
     NSLog(@"frame presentation time = %0.4f", frameDisplayTime);
@@ -328,6 +330,10 @@ typedef enum
     
     float delta = frameDisplayTime - prevFrameDisplayTime;
     
+#ifdef LOGGING
+    NSLog(@"frame display delta %0.4f", delta);
+#endif // LOGGING
+    
     prevFrameDisplayTime = frameDisplayTime;
     
     // Store the number of trailing frames that appear after this frame
@@ -336,12 +342,12 @@ typedef enum
     
 #ifdef LOGGING
     if (numTrailingNopFrames > 0) {
-      NSLog(@"Found %d trailing NOP frames after frame %d", numTrailingNopFrames, (self.frameNum - 1));
+      NSLog(@"Found %d trailing NOP frames after frame %d", numTrailingNopFrames, (frameNum - 1));
     }
 #endif // LOGGING
     
 #ifdef LOGGING
-    NSLog(@"DONE READING frame %d", self.frameNum);
+    NSLog(@"DONE READING frame %d", frameNum);
 #endif // LOGGING
     
     // Note that the frameBuffer object is explicitly retained so that it can
@@ -513,6 +519,8 @@ typedef enum
     
     detectedMovieSize = CGSizeMake(0, 0);
     
+    prevFrameDisplayTime = 0.0;
+    
     m_isReading = TRUE;
   }
     
@@ -550,9 +558,6 @@ typedef enum
 
 - (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex
 {
-  //BOOL worked;
-  //BOOL retstatus = FALSE;
-  
   AVAssetReader *aVAssetReader = self.aVAssetReader;
   NSAssert(aVAssetReader, @"asset should be open already");
 
@@ -599,8 +604,6 @@ typedef enum
   // so a common render buffer will be allocated.
   
   CGFrameBuffer *frameBuffer = nil;
-  
-  prevFrameDisplayTime = 0.0;
   
   while (doneReadingFrames == FALSE)
   {

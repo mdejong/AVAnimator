@@ -1663,7 +1663,6 @@
 {
   NSString *resourceName = @"64x64_nop_3frames_h264.mov";
   NSString *resPath = [AVFileUtil getResourcePath:resourceName];
-  //NSURL *fileURL = [NSURL fileURLWithPath:resPath];
 
   // Create frame decoder that will read 1 frame at a time from an asset file.
   // This type of frame decoder is constrained as compared to a MVID frame
