@@ -1832,13 +1832,15 @@ result = (b1 << 16) | (b2 << 8) | b3; \
 // Each pixel needs to be multiplied by the alpha channel value.
 // Optimized premultiplication implementation using table lookups
 
-#define TABLEMAX 256
 //#define TABLEDUMP
 
 static
-uint8_t alphaTables[TABLEMAX*TABLEMAX];
+uint8_t alphaTables[PREMULT_TABLEMAX*PREMULT_TABLEMAX];
+
 static
 int alphaTablesInitialized = 0;
+
+uint8_t *extern_alphaTablesPtr = &alphaTables[0];
 
 #define READ_AND_PREMULTIPLY(result, ptr) \
 { \
@@ -1846,7 +1848,7 @@ uint8_t alpha = *ptr++; \
 uint8_t red = *ptr++; \
 uint8_t green = *ptr++; \
 uint8_t blue = *ptr++; \
-uint8_t * restrict alphaTable = &alphaTables[alpha * TABLEMAX]; \
+uint8_t * restrict alphaTable = &alphaTables[alpha * PREMULT_TABLEMAX]; \
 result = (alpha << 24) | (alphaTable[red] << 16) | (alphaTable[green] << 8) | alphaTable[blue]; \
 }
 
@@ -1876,13 +1878,6 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA)
   uint32_t result;
   READ_AND_PREMULTIPLY(result, bufferPtr);
   
-  // FIXME: should be able to remove this if block, since zero
-  // alpha case should be done in the lookup for RGB.
-  
-  if (alphaIn == 0) {
-    result = 0x0;
-  }
-  
   return result;
 }
 
@@ -1892,15 +1887,15 @@ void init_alphaTables() {
     return;
   }
   
-  for (int alpha = 0; alpha < TABLEMAX; alpha++) {
-    uint8_t *alphaTable = &alphaTables[alpha * TABLEMAX];
+  for (int alpha = 0; alpha < PREMULT_TABLEMAX; alpha++) {
+    uint8_t *alphaTable = &alphaTables[alpha * PREMULT_TABLEMAX];
     float alphaf = alpha / 255.0; // (TABLEMAX - 1)
 #ifdef TABLEDUMP
     fprintf(stdout, "alpha table for alpha %d = %f\n", alpha, alphaf);
 #endif
-    for (int i = 0; i < TABLEMAX; i++) {
+    for (int i = 0; i < PREMULT_TABLEMAX; i++) {
       int rounded = (int) round(i * alphaf);
-      if (rounded < 0 || rounded >= TABLEMAX) {
+      if (rounded < 0 || rounded >= PREMULT_TABLEMAX) {
         assert(0);
       }
       assert(rounded == (int) (i * alphaf + 0.5));
@@ -1915,20 +1910,20 @@ void init_alphaTables() {
   
   // alpha = 0.0
   
-  assert(alphaTables[(0 * TABLEMAX) + 0] == 0);
-  assert(alphaTables[(0 * TABLEMAX) + 255] == 0);
+  assert(alphaTables[(0 * PREMULT_TABLEMAX) + 0] == 0);
+  assert(alphaTables[(0 * PREMULT_TABLEMAX) + 255] == 0);
   
   // alpha = 1.0
   
-  assert(alphaTables[(255 * TABLEMAX) + 0] == 0);
-  assert(alphaTables[(255 * TABLEMAX) + 127] == 127);
-  assert(alphaTables[(255 * TABLEMAX) + 255] == 255);
+  assert(alphaTables[(255 * PREMULT_TABLEMAX) + 0] == 0);
+  assert(alphaTables[(255 * PREMULT_TABLEMAX) + 127] == 127);
+  assert(alphaTables[(255 * PREMULT_TABLEMAX) + 255] == 255);
   
   // Test all generated alpha values in table using
   // read_ARGB_and_premultiply()
   
-  for (int alphai = 0; alphai < TABLEMAX; alphai++) {
-    for (int i = 0; i < TABLEMAX; i++) {
+  for (int alphai = 0; alphai < PREMULT_TABLEMAX; alphai++) {
+    for (int i = 0; i < PREMULT_TABLEMAX; i++) {
       uint8_t in_alpha = (uint8_t) alphai;
       uint8_t in_red = 0;
       uint8_t in_green = (uint8_t) i;

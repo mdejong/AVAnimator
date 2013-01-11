@@ -22,6 +22,25 @@
 //#define DUMP_WHILE_PARSING
 //#define DUMP_WHILE_DECODING
 
+#define PREMULT_TABLEMAX 256
+
+extern uint8_t *extern_alphaTablesPtr;
+
+void premultiply_init();
+
+// Execute premultiply logic on RGBA components split into componenets.
+// For example, a pixel RGB (128, 0, 0) with A = 128
+// would return (255, 0, 0) with A = 128
+
+static
+inline
+uint32_t premultiply_bgra_inline(uint32_t red, uint32_t green, uint32_t blue, uint32_t alpha)
+{
+  uint8_t * restrict alphaTable = &extern_alphaTablesPtr[alpha * PREMULT_TABLEMAX];
+  uint32_t result = (alpha << 24) | (alphaTable[red] << 16) | (alphaTable[green] << 8) | alphaTable[blue];
+  return result;
+}
+
 // Contains specific data about a sample. A sample contains
 // info that tells the system how to decompress movie data
 // for a specific frame. But, multiple frames could map to

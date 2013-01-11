@@ -18,13 +18,9 @@
 
 #import "CGFrameBuffer.h"
 
+#import "movdata.h"
+
 //#define LOGGING
-
-// Defined in movdata.c since alpha table is in that module
-
-void premultiply_init();
-
-uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
 
 @interface AVAssetJoinAlphaResourceLoader ()
 
@@ -106,7 +102,7 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
     startedLoading = TRUE;
   }
   
-  premultiply_init(); // ensure thread safe init of premultiply logic
+  premultiply_init(); // ensure thread safe init of premultiply table
   
   NSAssert(self.movieRGBFilename, @"movieRGBFilename");
   NSAssert(self.movieAlphaFilename, @"movieAlphaFilename");
@@ -391,20 +387,13 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA);
       // RGB componenets are 24 BPP non pre multiplied values
       
       uint32_t pixelRGB = rgbPixels[pixeli];
-      
-      pixelRGB = pixelRGB & 0xFFFFFF;
+      uint32_t pixelRed = (pixelRGB >> 16) & 0xFF;
+      uint32_t pixelGreen = (pixelRGB >> 8) & 0xFF;
+      uint32_t pixelBlue = (pixelRGB >> 0) & 0xFF;
       
       // Create BGRA pixel that is not premultiplied
-      
-      uint32_t combinedPixel = (pixelAlpha << 24) | pixelRGB;
-      
-      // Now pre multiple the pixel values to ensure that alpha values
-      // are defined by the values in the alpha channel movie.
-      
-      // FIXME: additional optimizations possible in this premultiply op.
-      
-      combinedPixel = premultiply_bgra(combinedPixel);
-      
+
+      uint32_t combinedPixel = premultiply_bgra_inline(pixelRed, pixelGreen, pixelBlue, pixelAlpha);      
       combinedPixels[pixeli] = combinedPixel;
     }
     
