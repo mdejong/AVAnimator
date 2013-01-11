@@ -228,7 +228,7 @@
   // Once loading is completed, examine the generated .mvid to check that the expected
   // results match the actual results.
   
-  BOOL decodeFrames = TRUE;
+  BOOL decodeFrames = FALSE;
   BOOL emitFrames = TRUE;
   
   if (decodeFrames) {
@@ -268,7 +268,7 @@
       [data writeToFile:path atomically:YES];
       NSLog(@"wrote %@", path);
     }
-        
+    
     // Dump frame 2
     
     frame = [frameDecoder advanceToFrame:1];

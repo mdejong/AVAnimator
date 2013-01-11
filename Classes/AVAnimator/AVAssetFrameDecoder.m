@@ -492,6 +492,14 @@ typedef enum
 #endif // TARGET_OS_IPHONE
   }
   
+  // FIXME: This render operation to flatten the input framebuffer into a known
+  // framebuffer layout is 98% of the alpha frame decode time, so optimization
+  // would need to start here. Simply not having to copy the buffer or invoke
+  // a CG render rountine would likely save most of the execution time. Need
+  // to validate the input pixel layout vs the expected layout to determine
+  // if we could just memcopy directly and if that would be faster than
+  // addressing the data with CG render logic.
+  
   [frameBuffer renderCGImage:cgImageRef];
   
   CGImageRelease(cgImageRef);
