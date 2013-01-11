@@ -40,7 +40,7 @@
 // Old impl, that would write 2 mvid files and then read and write a 3rd: 55 seconds
 // New impl, reading frames directly from 2 asset files : 15 -> 22 seconds (big win)
 //
-// Optimized run : 11 seconds
+// Optimized run w no adler generation : 10 seconds
 
 + (void) testJoinAlphaForExplosionVideo
 {
@@ -70,7 +70,10 @@
   resLoader.movieRGBFilename = rgbResourceName;
   resLoader.movieAlphaFilename = alphaResourceName;
   resLoader.outPath = tmpPath;
-  resLoader.alwaysGenerateAdler = TRUE;
+  
+  // Do not generate adler since this operation computationally expensive and we want to
+  // test the execution time when emitting joined alpha frames.
+  //resLoader.alwaysGenerateAdler = TRUE;
 
   // Wait for resource loading to be completed.
   
