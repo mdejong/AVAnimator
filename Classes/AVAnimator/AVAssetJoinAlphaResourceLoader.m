@@ -18,6 +18,8 @@
 
 #import "CGFrameBuffer.h"
 
+//#define LOGGING
+
 // Defined in movdata.c since alpha table is in that module
 
 void premultiply_init();

@@ -39,11 +39,11 @@
 //
 // Old impl, that would write 2 mvid files and then read and write a 3rd: 55 seconds
 // New impl, reading frames directly from 2 asset files : 15 -> 22 seconds (big win)
+//
+// Optimized run : 11 seconds
 
 + (void) testJoinAlphaForExplosionVideo
 {
-  //NSString *resPath;
-  //NSURL *fileURL;
   NSString *tmpFilename;
   NSString *tmpPath;
   
@@ -181,7 +181,7 @@
 // so H264 split encoding is actually about 2 times larger and takes longer to load.
 // Thsi is only useful to test the decoder logic.
 
-+ (void) testJoinAlphaGhost
++ (void) DISABLED_testJoinAlphaGhost
 {
   NSString *tmpFilename;
   NSString *tmpPath;
@@ -296,6 +296,15 @@
   }
   
   return;
+}
+
++ (void) DISABLED_testJoinAlphaForExplosionVideo2
+{
+  [self testJoinAlphaForExplosionVideo];
+  [self testJoinAlphaForExplosionVideo];
+  [self testJoinAlphaForExplosionVideo];
+  [self testJoinAlphaForExplosionVideo];
+  [self testJoinAlphaForExplosionVideo];
 }
 
 #endif // HAS_AVASSET_CONVERT_MAXVID

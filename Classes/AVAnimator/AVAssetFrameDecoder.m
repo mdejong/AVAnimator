@@ -23,7 +23,7 @@
 
 #if defined(HAS_AVASSET_CONVERT_MAXVID)
 
-#define LOGGING
+//#define LOGGING
 
 typedef enum
 {
