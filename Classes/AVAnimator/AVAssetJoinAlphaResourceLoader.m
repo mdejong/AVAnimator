@@ -302,6 +302,9 @@
       combinedFrameBuffer.colorspace = cgFrameBufferRGB.colorspace;
     }
     
+    //fprintf(fp, "Frame %d\n", frameIndex);
+    //NSLog(@"Frame %d\n", frameIndex);
+    
     // Join RGB and ALPHA
     
     NSUInteger numPixels = width * height;
@@ -309,106 +312,17 @@
     uint32_t *rgbPixels = (uint32_t*)cgFrameBufferRGB.pixels;
     uint32_t *alphaPixels = (uint32_t*)cgFrameBufferAlpha.pixels;
     
-    //fprintf(fp, "Frame %d\n", frameIndex);
-    //NSLog(@"Frame %d\n", frameIndex);
-    
-    for (NSUInteger pixeli = 0; pixeli < numPixels; pixeli++) {
-      uint32_t pixelAlpha = alphaPixels[pixeli];
-      
-      // All 3 components of the ALPHA pixel should be the same in grayscale mode.
-      // If these are not exactly the same, this is likely caused by limited precision
-      // ranges in the hardware color conversion logic.
-      
-      uint32_t pixelAlphaRed = (pixelAlpha >> 16) & 0xFF;
-      uint32_t pixelAlphaGreen = (pixelAlpha >> 8) & 0xFF;
-      uint32_t pixelAlphaBlue = (pixelAlpha >> 0) & 0xFF;
-      
-      if (pixelAlphaRed != pixelAlphaGreen || pixelAlphaRed != pixelAlphaBlue) {
-        //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
-        //return FALSE;
-        
-        uint32_t sum = pixelAlphaRed + pixelAlphaGreen + pixelAlphaBlue;
-        if (sum == 1) {
-          // If two values are 0 and the other is 1, then assume the alpha value is zero. The iOS h264
-          // decoding hardware seems to emit (R=0 G=0 B=1) even when the input is a grayscale black pixel.
-          pixelAlpha = 0;
-        } else if (pixelAlphaRed == pixelAlphaBlue) {
-          // The R and B pixel values are equal but these two values are not the same as the G pixel.
-          // This indicates that the grayscale conversion should have resulted in value between the
-          // two numbers.
-          //
-          // R G B components
-          //
-          // (3 1 3)       -> 2   <- (2, 2, 2) (sim)
-          // (2 0 2)       -> 1   <- (1, 1, 1) (sim)
-          // (18 16 18)    -> 17  <- (17, 17, 17) (sim)
-          // (219 218 219) -> 218 <- (218, 218, 218) (sim)
-          //
-          // Note that in some cases the original values (5, 5, 5) get decoded as (5, 4, 5) and that results in 4 as the
-          // alpha value. These cases are few and we just ignore them because the alpha is very close.
-
-          pixelAlpha = pixelAlphaRed - 1;
-
-          //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
-          //NSLog(@"Using RED/BLUE Alpha level %d at pixel %d in frame %d", pixelAlpha, pixeli, frameIndex);
-        } else if ((pixelAlphaRed == (pixelAlphaGreen + 1)) && (pixelAlphaRed == (pixelAlphaBlue - 1))) {
-          // Common case seen in hardware decoder output, average is the middle value.
-          //
-          // R G B components
-          // (62, 61, 63)    -> 62  <- (62, 62, 62) (sim)
-          // (111, 110, 112) -> 111 <- (111, 111, 111) (sim)
-          
-          pixelAlpha = pixelAlphaRed;
-          
-          //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
-          //NSLog(@"Using RED (easy ave) Alpha level %d at pixel %d in frame %d", pixelAlpha, pixeli, frameIndex);
-        } else {
-          // Output did not match one of the common patterns seen coming from iOS H264 decoder hardware.
-          // This divide operation is not optimal, but it should also not be needed since the above special
-          // case blocks seem to catch all the funky output edge cases.
-          
-          pixelAlpha = sum / 3;
-          
-          //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
-          //NSLog(@"Using AVE Alpha level %d at pixel %d in frame %d", pixelAlpha, pixeli, frameIndex);
-        }
-      } else {
-        // All values are equal, does not matter which channel we use as the alpha value
-        
-        pixelAlpha = pixelAlphaRed;
-      }
-
-      // Automatially filter out zero pixel values, because there are just so many
-      //if (pixelAlpha != 0) {
-      //fprintf(fp, "A[%d][%d] = %d\n", frameIndex, pixeli, pixelAlpha);
-      //fprintf(fp, "A[%d][%d] = %d <- (%d, %d, %d)\n", frameIndex, pixeli, pixelAlpha, pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue);
-      //}
-      
-      // RGB componenets are 24 BPP non pre multiplied values
-      
-      uint32_t pixelRGB = rgbPixels[pixeli];
-      uint32_t pixelRed = (pixelRGB >> 16) & 0xFF;
-      uint32_t pixelGreen = (pixelRGB >> 8) & 0xFF;
-      uint32_t pixelBlue = (pixelRGB >> 0) & 0xFF;
-      
-      // Create BGRA pixel that is not premultiplied
-
-      uint32_t combinedPixel = premultiply_bgra_inline(pixelRed, pixelGreen, pixelBlue, pixelAlpha);      
-      combinedPixels[pixeli] = combinedPixel;
-    }
+    [self combineRGBAndAlphaPixels:numPixels
+                    combinedPixels:combinedPixels
+                         rgbPixels:rgbPixels
+                       alphaPixels:alphaPixels];
     
     // Write combined RGBA pixles as a keyframe, we do not attempt to calculate
     // frame diffs when processing on the device as that takes too long.
     
-    char *buffer = combinedFrameBuffer.pixels;
     int numBytesInBuffer = combinedFrameBuffer.numBytes;
-    
-    // FIXME: it may be possible to write to the filesystem in another thread that will
-    // simply block, if this thread can continue and start decoding the two h264 video
-    // frames while the existing results are written from memory to disk, then it may
-    // take less time to do the whole operation.
-    
-    worked = [fileWriter writeKeyframe:buffer bufferSize:numBytesInBuffer];
+        
+    worked = [fileWriter writeKeyframe:(char*)combinedPixels bufferSize:numBytesInBuffer];
     
     if (worked == FALSE) {
       NSLog(@"cannot write keyframe data to mvid file \"%@\"", joinedMvidPath);
@@ -426,6 +340,103 @@
   NSLog(@"Wrote %@", fileWriter.mvidPath);
   
   return TRUE;
+}
+
+// Join the RGB and Alpha components of two input framebuffers
+// so that the final output result contains native premultiplied
+// 32 BPP pixels.
+
++ (void) combineRGBAndAlphaPixels:(NSUInteger)numPixels
+                   combinedPixels:(uint32_t*)combinedPixels
+                   rgbPixels:(uint32_t*)rgbPixels
+                   alphaPixels:(uint32_t*)alphaPixels
+{  
+  for (NSUInteger pixeli = 0; pixeli < numPixels; pixeli++) {
+    uint32_t pixelAlpha = alphaPixels[pixeli];
+    
+    // All 3 components of the ALPHA pixel should be the same in grayscale mode.
+    // If these are not exactly the same, this is likely caused by limited precision
+    // ranges in the hardware color conversion logic.
+    
+    uint32_t pixelAlphaRed = (pixelAlpha >> 16) & 0xFF;
+    uint32_t pixelAlphaGreen = (pixelAlpha >> 8) & 0xFF;
+    uint32_t pixelAlphaBlue = (pixelAlpha >> 0) & 0xFF;
+    
+    if (pixelAlphaRed != pixelAlphaGreen || pixelAlphaRed != pixelAlphaBlue) {
+      //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
+      //return FALSE;
+      
+      uint32_t sum = pixelAlphaRed + pixelAlphaGreen + pixelAlphaBlue;
+      if (sum == 1) {
+        // If two values are 0 and the other is 1, then assume the alpha value is zero. The iOS h264
+        // decoding hardware seems to emit (R=0 G=0 B=1) even when the input is a grayscale black pixel.
+        pixelAlpha = 0;
+      } else if (pixelAlphaRed == pixelAlphaBlue) {
+        // The R and B pixel values are equal but these two values are not the same as the G pixel.
+        // This indicates that the grayscale conversion should have resulted in value between the
+        // two numbers.
+        //
+        // R G B components
+        //
+        // (3 1 3)       -> 2   <- (2, 2, 2) (sim)
+        // (2 0 2)       -> 1   <- (1, 1, 1) (sim)
+        // (18 16 18)    -> 17  <- (17, 17, 17) (sim)
+        // (219 218 219) -> 218 <- (218, 218, 218) (sim)
+        //
+        // Note that in some cases the original values (5, 5, 5) get decoded as (5, 4, 5) and that results in 4 as the
+        // alpha value. These cases are few and we just ignore them because the alpha is very close.
+        
+        pixelAlpha = pixelAlphaRed - 1;
+        
+        //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
+        //NSLog(@"Using RED/BLUE Alpha level %d at pixel %d in frame %d", pixelAlpha, pixeli, frameIndex);
+      } else if ((pixelAlphaRed == (pixelAlphaGreen + 1)) && (pixelAlphaRed == (pixelAlphaBlue - 1))) {
+        // Common case seen in hardware decoder output, average is the middle value.
+        //
+        // R G B components
+        // (62, 61, 63)    -> 62  <- (62, 62, 62) (sim)
+        // (111, 110, 112) -> 111 <- (111, 111, 111) (sim)
+        
+        pixelAlpha = pixelAlphaRed;
+        
+        //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
+        //NSLog(@"Using RED (easy ave) Alpha level %d at pixel %d in frame %d", pixelAlpha, pixeli, frameIndex);
+      } else {
+        // Output did not match one of the common patterns seen coming from iOS H264 decoder hardware.
+        // This divide operation is not optimal, but it should also not be needed since the above special
+        // case blocks seem to catch all the funky output edge cases.
+        
+        pixelAlpha = sum / 3;
+        
+        //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
+        //NSLog(@"Using AVE Alpha level %d at pixel %d in frame %d", pixelAlpha, pixeli, frameIndex);
+      }
+    } else {
+      // All values are equal, does not matter which channel we use as the alpha value
+      
+      pixelAlpha = pixelAlphaRed;
+    }
+    
+    // Automatially filter out zero pixel values, because there are just so many
+    //if (pixelAlpha != 0) {
+    //fprintf(fp, "A[%d][%d] = %d\n", frameIndex, pixeli, pixelAlpha);
+    //fprintf(fp, "A[%d][%d] = %d <- (%d, %d, %d)\n", frameIndex, pixeli, pixelAlpha, pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue);
+    //}
+    
+    // RGB componenets are 24 BPP non pre multiplied values
+    
+    uint32_t pixelRGB = rgbPixels[pixeli];
+    uint32_t pixelRed = (pixelRGB >> 16) & 0xFF;
+    uint32_t pixelGreen = (pixelRGB >> 8) & 0xFF;
+    uint32_t pixelBlue = (pixelRGB >> 0) & 0xFF;
+    
+    // Create BGRA pixel that is not premultiplied
+    
+    uint32_t combinedPixel = premultiply_bgra_inline(pixelRed, pixelGreen, pixelBlue, pixelAlpha);
+    combinedPixels[pixeli] = combinedPixel;
+  }
+  
+  return;
 }
 
 // This method is invoked in the secondary thread to decode the contents of the
