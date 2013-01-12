@@ -629,6 +629,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   BOOL emitKeyframeAnyway = FALSE;
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 4, 1, &emitKeyframeAnyway);
   NSAssert(emitKeyframeAnyway == TRUE, @"emitKeyframeAnyway");
+  NSAssert(codes == nil, @"codes");
   
   return;
 }
@@ -646,6 +647,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   BOOL emitKeyframeAnyway = FALSE;
   codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 4, 1, &emitKeyframeAnyway);
   NSAssert(emitKeyframeAnyway == TRUE, @"emitKeyframeAnyway");
+  NSAssert(codes == nil, @"codes");
   
   return;
 }

@@ -73,10 +73,15 @@ typedef enum
 
 @implementation AVAssetFrameDecoder
 
+@synthesize assetURL = m_assetURL;
+
+@synthesize aVAssetReader = m_aVAssetReader;
+
+@synthesize aVAssetReaderOutput = m_aVAssetReaderOutput;
+
 @synthesize currentFrameBuffer = m_currentFrameBuffer;
 
 @synthesize lastFrame = m_lastFrame;
-
 
 - (void) dealloc
 {
