@@ -307,7 +307,7 @@
     
     // Join RGB and ALPHA
     
-    NSUInteger numPixels = width * height;
+    uint32_t numPixels = width * height;
     uint32_t *combinedPixels = (uint32_t*)combinedFrameBuffer.pixels;
     uint32_t *rgbPixels = (uint32_t*)cgFrameBufferRGB.pixels;
     uint32_t *alphaPixels = (uint32_t*)cgFrameBufferAlpha.pixels;
@@ -346,13 +346,14 @@
 // so that the final output result contains native premultiplied
 // 32 BPP pixels.
 
-+ (void) combineRGBAndAlphaPixels:(NSUInteger)numPixels
++ (void) combineRGBAndAlphaPixels:(uint32_t)numPixels
                    combinedPixels:(uint32_t*)combinedPixels
                    rgbPixels:(uint32_t*)rgbPixels
                    alphaPixels:(uint32_t*)alphaPixels
 {  
-  for (NSUInteger pixeli = 0; pixeli < numPixels; pixeli++) {
+  for (uint32_t pixeli = 0; pixeli < numPixels; pixeli++) {
     uint32_t pixelAlpha = alphaPixels[pixeli];
+    uint32_t pixelRGB = rgbPixels[pixeli];
     
     // All 3 components of the ALPHA pixel should be the same in grayscale mode.
     // If these are not exactly the same, this is likely caused by limited precision
@@ -425,7 +426,6 @@
     
     // RGB componenets are 24 BPP non pre multiplied values
     
-    uint32_t pixelRGB = rgbPixels[pixeli];
     uint32_t pixelRed = (pixelRGB >> 16) & 0xFF;
     uint32_t pixelGreen = (pixelRGB >> 8) & 0xFF;
     uint32_t pixelBlue = (pixelRGB >> 0) & 0xFF;
