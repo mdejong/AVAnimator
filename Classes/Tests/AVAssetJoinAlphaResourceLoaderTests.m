@@ -89,7 +89,7 @@
   // Once loading is completed, examine the generated .mvid to check that the expected
   // results match the actual results.
   
-  BOOL decodeFrames = TRUE;
+  BOOL decodeFrames = FALSE;
   BOOL emitFrames = FALSE;
   
   if (decodeFrames) {
