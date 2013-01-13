@@ -305,6 +305,101 @@
   return;
 }
 
+// Test logic to premultiply pixels and then revese the process. This
+// basically makes sure that the lookup tables are mathmatically
+// inverses of each other in a lossless way.
+
++ (void) testPremultiplyAndThenReverse
+{
+  int width = 256;
+  int height = 256;
+  
+  CGFrameBuffer *nonPremultBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:32 width:width height:height];
+  
+  uint32_t *nonPremultBufferPtr = (uint32_t*)nonPremultBuffer.pixels;
+  
+  for (uint32_t rowi = 0; rowi < height; rowi++) {
+    for (uint32_t coli = 0; coli < width; coli++) {
+      uint32_t alpha = rowi;
+      uint32_t gray = coli;
+      
+      uint32_t pixel = (alpha << 24) | (gray << 16) | (gray << 8) | gray;
+      
+      // Premultiply pixel
+      pixel = premultiply_bgra_inline(alpha, gray, gray, gray);
+      *nonPremultBufferPtr++ = pixel;
+    }
+  }
+  
+  // Now premultiply each pixel and store in another buffer
+  
+  CGFrameBuffer *premultBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:32 width:width height:height];
+
+  nonPremultBufferPtr = (uint32_t*)nonPremultBuffer.pixels;
+  uint32_t *premultBufferPtr = (uint32_t*)premultBuffer.pixels;
+  
+  for (uint32_t rowi = 0; rowi < height; rowi++) {
+    for (uint32_t coli = 0; coli < width; coli++) {
+      uint32_t pixel = *nonPremultBufferPtr++;
+      
+      uint32_t pixelAlpha = (pixel >> 24) & 0xFF;
+      uint32_t pixelRed = (pixel >> 16) & 0xFF;
+      uint32_t pixelGreen = (pixel >> 8) & 0xFF;
+      uint32_t pixelBlue = (pixel >> 0) & 0xFF;
+      
+      // Premultiply pixel
+      pixel = premultiply_bgra_inline(pixelAlpha, pixelRed, pixelGreen, pixelBlue);
+      
+      *premultBufferPtr++ = pixel;
+    }
+  }
+
+  // Now reverse the premultiplication step and verify that the reverse operation
+  // generates the same result as the original input.
+
+  nonPremultBufferPtr = (uint32_t*)nonPremultBuffer.pixels;
+  premultBufferPtr = (uint32_t*)premultBuffer.pixels;
+  
+  for (uint32_t rowi = 0; rowi < height; rowi++) {
+    for (uint32_t coli = 0; coli < width; coli++) {
+      uint32_t pixel = *premultBufferPtr++;
+
+      uint32_t premultPixelAlpha = (pixel >> 24) & 0xFF;
+      uint32_t premultPixelRed = (pixel >> 16) & 0xFF;
+      uint32_t premultPixelGreen = (pixel >> 8) & 0xFF;
+      uint32_t premultPixelBlue = (pixel >> 0) & 0xFF;
+      assert(premultPixelAlpha == premultPixelAlpha);
+      assert(premultPixelRed == premultPixelGreen && premultPixelGreen == premultPixelBlue);
+      
+      // Undo the premultiply step
+      
+      uint32_t unPixel = unpremultiply_bgra(pixel);
+      
+      uint32_t unpremultPixelAlpha = (unPixel >> 24) & 0xFF;
+      uint32_t unpremultPixelRed = (unPixel >> 16) & 0xFF;
+      uint32_t unpremultPixelGreen = (unPixel >> 8) & 0xFF;
+      uint32_t unpremultPixelBlue = (unPixel >> 0) & 0xFF;
+      assert(unpremultPixelAlpha == unpremultPixelAlpha);
+      assert(unpremultPixelRed == unpremultPixelGreen && unpremultPixelGreen == unpremultPixelBlue);
+      
+      // Compare to original unpremultiplied pixel
+      
+      uint32_t originalUnPixel = *nonPremultBufferPtr++;
+      
+      uint32_t originalUnpremultPixelAlpha = (originalUnPixel >> 24) & 0xFF;
+      uint32_t originalUnpremultPixelRed = (originalUnPixel >> 16) & 0xFF;
+      uint32_t originalUnpremultPixelGreen = (originalUnPixel >> 8) & 0xFF;
+      uint32_t originalUnpremultPixelBlue = (originalUnPixel >> 0) & 0xFF;
+      assert(originalUnpremultPixelAlpha == originalUnpremultPixelAlpha);
+      assert(originalUnpremultPixelRed == originalUnpremultPixelGreen && originalUnpremultPixelGreen == originalUnpremultPixelBlue);
+      
+      assert(unPixel == originalUnPixel);
+    }
+  }
+
+  return;
+}
+
 
 /*
  
