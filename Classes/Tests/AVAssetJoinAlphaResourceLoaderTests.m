@@ -17,7 +17,27 @@
 
 #import "CGFrameBuffer.h"
 
+#import <QuartzCore/QuartzCore.h>
+
+#import "AVAssetFrameDecoder.h"
+
 #define MAX_WAIT 600
+
+// Private API
+
+@interface AVAssetJoinAlphaResourceLoader ()
+
+@property (nonatomic, retain) AVAsset2MvidResourceLoader *rgbLoader;
+@property (nonatomic, retain) AVAsset2MvidResourceLoader *alphaLoader;
+
++ (void) combineRGBAndAlphaPixels:(uint32_t)numPixels
+                   combinedPixels:(uint32_t*)combinedPixels
+                        rgbPixels:(uint32_t*)rgbPixels
+                      alphaPixels:(uint32_t*)alphaPixels;
+
+@end
+
+// class AVAssetJoinAlphaResourceLoaderTests
 
 @interface AVAssetJoinAlphaResourceLoaderTests : NSObject {}
 @end
@@ -30,6 +50,156 @@
 // Available in iOS 4.1 and later.
 
 #if defined(HAS_AVASSET_CONVERT_MAXVID)
+
+// This test method generates a PNG image that contains an alpha gradient
+// that is 256x256. The alpha gradient is a grayscale with the values
+// going from 0 to 255 vertically down.
+
++ (void) DISABLED_testEmitAlphaGrayscale
+{
+  int width = 256;
+  int height = 256;
+  
+  CGFrameBuffer *framebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+  
+  uint32_t *pixelPtr = (uint32_t*)framebuffer.pixels;
+  
+  for (uint32_t rowi = 0; rowi < height; rowi++) {
+    for (uint32_t coli = 0; coli < width; coli++) {
+      uint32_t pixel = (0xFF << 24) | (rowi << 16) | (rowi << 8) | rowi;
+      *pixelPtr++ = pixel;
+    }
+  }
+  
+  CGImageRef imageRef = [framebuffer createCGImageRef];
+  
+  UIImage *uiImageRef = [UIImage imageWithCGImage:imageRef];
+  
+  assert(uiImageRef);
+  
+  CGImageRelease(imageRef);
+  
+  NSString *tmpDir = NSTemporaryDirectory();
+  
+  NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"Grayscale256x256.png"];
+  
+  NSData *data = [NSData dataWithData:UIImagePNGRepresentation(uiImageRef)];
+  [data writeToFile:tmpPNGPath atomically:YES];
+  NSLog(@"wrote %@", tmpPNGPath);
+  
+  return;
+}
+
++ (NSString *) util_pixelToRGBAStr:(uint32_t)pixel
+{
+  uint32_t alpha = (pixel >> 24) & 0xFF;
+  uint32_t red = (pixel >> 16) & 0xFF;
+  uint32_t green = (pixel >> 8) & 0xFF;
+  uint32_t blue = (pixel >> 0) & 0xFF;
+  return [NSString stringWithFormat:@"(%d, %d, %d, %d)", red, green, blue, alpha];
+}
+
+// FIXME: basic premultiply logic is failing, need to determine from known
+// lossless input what the exact premultiplied values would be when an alpha
+// png image is written by CoreGraphics. It seems the float divide logic is
+// does not match mathematical expectations.
+
+
+// Test alpha channel decode logic in combineRGBAndAlphaPixels. This logic needs to
+// convert oddly decoded alpha values and decode to known results.
+
++ (void) DISABLED_testDecodeAlphaGradient
+{
+  NSString *resourceName = @"Grayscale256x256.m4v";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  
+  // Create frame decoder that will read 1 frame at a time from an asset file.
+  // This type of frame decoder is constrained as compared to a MVID frame
+  // decoder. It can only decode 1 frame at a time as only 1 frame can be
+  // in memory at a time. Also, it only works for sequential frames, so
+  // this frame decoder cannot be used in a media object.
+  
+  AVAssetFrameDecoder *frameDecoder = [AVAssetFrameDecoder aVAssetFrameDecoder];
+  
+  BOOL worked = [frameDecoder openForReading:resPath];
+  NSAssert(worked, @"worked");
+  
+  NSAssert([frameDecoder numFrames] == 2, @"numFrames");
+  NSAssert([frameDecoder hasAlphaChannel] == FALSE, @"hasAlphaChannel");
+  
+  worked = [frameDecoder allocateDecodeResources];
+  NSAssert(worked, @"worked");
+    
+  AVFrame *frame;
+  UIImage *img;
+  
+  int width = 256;
+  int height = 256;
+  CGSize expectedSize = CGSizeMake(width, height);
+  int numPixels = width * height;
+  
+  // Decode frame 1
+  
+  frame = [frameDecoder advanceToFrame:0];
+  NSAssert(frame, @"frame 0");
+  img = frame.image;
+    
+  NSAssert(CGSizeEqualToSize(img.size, expectedSize), @"expectedSize");
+  
+  BOOL emitFrames = FALSE;
+  
+  if (emitFrames) {
+    NSString *path;
+    NSData *data;
+    path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame0.png"];
+    data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+    [data writeToFile:path atomically:YES];
+    NSLog(@"wrote %@", path);
+  }
+  
+  // Allocate output buffer and phony RGB buffer with all white pixels
+  
+  uint32_t *rgbPixels = malloc(numPixels * sizeof(uint32_t));
+  memset(rgbPixels, 0xff, numPixels * sizeof(uint32_t));
+
+  uint32_t *combinedPixels = malloc(numPixels * sizeof(uint32_t));
+  memset(combinedPixels, 0x0, numPixels * sizeof(uint32_t));
+  
+  uint32_t *alphaPixels = (uint32_t*) frame.cgFrameBuffer.pixels;
+  assert(frame.cgFrameBuffer.numBytes == (numPixels * sizeof(uint32_t)));
+  
+  [AVAssetJoinAlphaResourceLoader combineRGBAndAlphaPixels:numPixels
+                                            combinedPixels:combinedPixels
+                                                 rgbPixels:rgbPixels
+                                               alphaPixels:alphaPixels];
+
+  // Pixels in row 0, should be combined as RGBA (0, 0, 0, 0)
+  // Pixels in row 1, should be combined as RGBA (1, 1, 1, 1)
+  // Pixels in row 255 should be (255, 255, 255, 255)
+  
+  uint32_t pixel;
+  NSString *result;
+  
+  // Alpha = 0
+
+  pixel = combinedPixels[width * 0];
+  result = [self util_pixelToRGBAStr:pixel];
+  NSAssert([result isEqualToString:@"(0, 0, 0, 0)"], @"pixel");
+  
+  // Alpha = 1 -> (1, 1, 1, 1)
+  
+  //pixel = combinedPixels[width * 1];
+  //result = [self util_pixelToRGBAStr:pixel];
+  //NSAssert([result isEqualToString:@"(1, 1, 1, 1)"], @"pixel");
+
+  // Alpha = 255 -> (255, 255, 255, 255)
+  
+  pixel = combinedPixels[width * 255];
+  result = [self util_pixelToRGBAStr:pixel];
+  NSAssert([result isEqualToString:@"(255, 255, 255, 255)"], @"pixel");
+  
+  return;
+}
 
 // Read video data from a single track (only one video track is supported anyway)
 // Note that while encoding a 32x32 .mov with H264 is not supported, it is perfectly
@@ -184,7 +354,7 @@
 // so H264 split encoding is actually about 2 times larger and takes longer to load.
 // Thsi is only useful to test the decoder logic.
 
-+ (void) DISABLED_testJoinAlphaGhost
++ (void) testJoinAlphaGhost
 {
   NSString *tmpFilename;
   NSString *tmpPath;
@@ -301,14 +471,14 @@
   return;
 }
 
-+ (void) DISABLED_testJoinAlphaForExplosionVideo2
-{
-  [self testJoinAlphaForExplosionVideo];
-  [self testJoinAlphaForExplosionVideo];
-  [self testJoinAlphaForExplosionVideo];
-  [self testJoinAlphaForExplosionVideo];
-  [self testJoinAlphaForExplosionVideo];
-}
+//+ (void) DISABLED_testJoinAlphaForExplosionVideo2
+//{
+//  [self testJoinAlphaForExplosionVideo];
+//  [self testJoinAlphaForExplosionVideo];
+//  [self testJoinAlphaForExplosionVideo];
+//  [self testJoinAlphaForExplosionVideo];
+//  [self testJoinAlphaForExplosionVideo];
+//}
 
 #endif // HAS_AVASSET_CONVERT_MAXVID
 

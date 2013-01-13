@@ -359,7 +359,7 @@
                    combinedPixels:(uint32_t*)combinedPixels
                    rgbPixels:(uint32_t*)rgbPixels
                    alphaPixels:(uint32_t*)alphaPixels
-{  
+{
   for (uint32_t pixeli = 0; pixeli < numPixels; pixeli++) {
     uint32_t pixelAlpha = alphaPixels[pixeli];
     uint32_t pixelRGB = rgbPixels[pixeli];

@@ -236,6 +236,7 @@
 		CDC510E71692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDC510E61692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m */; };
 		CDC510E81692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDC510E61692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m */; };
 		CDC510F01692C45D0069C891 /* AVAssetJoinAlphaResourceLoaderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CDC510EF1692C45D0069C891 /* AVAssetJoinAlphaResourceLoaderTests.m */; };
+		CDD39E8216A27318006989EB /* Grayscale256x256.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CDD39E8116A27318006989EB /* Grayscale256x256.m4v */; };
 		CDD6413F1686525300492B80 /* JigsawPuzzle_205_99_10FPS_16BPP.mvid in Resources */ = {isa = PBXBuildFile; fileRef = CDD6413E1686525300492B80 /* JigsawPuzzle_205_99_10FPS_16BPP.mvid */; };
 		CDD641411686569800492B80 /* 2x2_black_blue_16BPP.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CDD641401686569800492B80 /* 2x2_black_blue_16BPP.mvid.7z */; };
 		CDD6414316865A0800492B80 /* 480x320_black_blue_16BPP.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CDD6414216865A0800492B80 /* 480x320_black_blue_16BPP.mvid.7z */; };
@@ -478,6 +479,7 @@
 		CDC510E51692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAssetJoinAlphaResourceLoader.h; sourceTree = "<group>"; };
 		CDC510E61692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAssetJoinAlphaResourceLoader.m; sourceTree = "<group>"; };
 		CDC510EF1692C45D0069C891 /* AVAssetJoinAlphaResourceLoaderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAssetJoinAlphaResourceLoaderTests.m; sourceTree = "<group>"; };
+		CDD39E8116A27318006989EB /* Grayscale256x256.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = Grayscale256x256.m4v; sourceTree = "<group>"; };
 		CDD6413E1686525300492B80 /* JigsawPuzzle_205_99_10FPS_16BPP.mvid */ = {isa = PBXFileReference; lastKnownFileType = file; path = JigsawPuzzle_205_99_10FPS_16BPP.mvid; sourceTree = "<group>"; };
 		CDD641401686569800492B80 /* 2x2_black_blue_16BPP.mvid.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = 2x2_black_blue_16BPP.mvid.7z; sourceTree = "<group>"; };
 		CDD6414216865A0800492B80 /* 480x320_black_blue_16BPP.mvid.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = 480x320_black_blue_16BPP.mvid.7z; sourceTree = "<group>"; };
@@ -765,6 +767,7 @@
 				CD288F111694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */,
 				CD288F161694DEF200A5CDAD /* AlphaGhost_alpha_CRF_30_24BPP.m4v */,
 				CD288F171694DEF200A5CDAD /* AlphaGhost_rgb_CRF_30_24BPP.m4v */,
+				CDD39E8116A27318006989EB /* Grayscale256x256.m4v */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -1207,6 +1210,7 @@
 				CD288F181694DEF200A5CDAD /* AlphaGhost_alpha_CRF_30_24BPP.m4v in Resources */,
 				CD288F191694DEF200A5CDAD /* AlphaGhost_rgb_CRF_30_24BPP.m4v in Resources */,
 				CDA9E756169B8C5000A49AA3 /* 64x64_nop_3frames_h264.mov in Resources */,
+				CDD39E8216A27318006989EB /* Grayscale256x256.m4v in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

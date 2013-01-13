@@ -41,6 +41,10 @@ uint32_t premultiply_bgra_inline(uint32_t red, uint32_t green, uint32_t blue, ui
   return result;
 }
 
+// undo a "premultiply" operation
+
+uint32_t unpremultiply_bgra(uint32_t premultPixelBGRA);
+
 // Contains specific data about a sample. A sample contains
 // info that tells the system how to decompress movie data
 // for a specific frame. But, multiple frames could map to

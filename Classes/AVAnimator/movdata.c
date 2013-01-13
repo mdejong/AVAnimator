@@ -1881,6 +1881,44 @@ uint32_t premultiply_bgra(uint32_t unpremultPixelBGRA)
   return result;
 }
 
+static inline
+int unpremultiply(int rgb, float alphaMult)
+{
+  int rgbValue = (int)round(rgb * alphaMult);
+  assert(rgbValue >= 0);
+  if (rgbValue > 255) {
+    rgbValue = 255;
+  }
+  return rgbValue;
+}
+
+// Execute the unpremultiply logic on a BGRA "ios native" pixel.
+// For example, a pixel RGB (128, 0, 0) with A = 128
+// would return (255, 0, 0) with A = 128
+
+uint32_t unpremultiply_bgra(uint32_t premultPixelBGRA)
+{
+  uint32_t alpha = (premultPixelBGRA >> 24) & 0xFF;
+  uint32_t red = (premultPixelBGRA >> 16) & 0xFF;
+  uint32_t green = (premultPixelBGRA >> 8) & 0xFF;
+  uint32_t blue = (premultPixelBGRA >> 0) & 0xFF;
+  
+  if (alpha == 0) {
+    red = green = blue = 0;
+  } else if (alpha == 0xFF) {
+    // Nop
+  } else {
+    float alphaMult = 1.0 / (alpha / 255.0);
+    
+    red = unpremultiply(red, alphaMult);
+    green = unpremultiply(green, alphaMult);
+    blue = unpremultiply(blue, alphaMult);
+  }
+  
+  uint32_t result = (alpha << 24) | (red << 16) | (green << 8) | blue;
+  return result;
+}
+
 static
 void init_alphaTables() {
   if (alphaTablesInitialized) {
