@@ -27,6 +27,11 @@
 @property (nonatomic, retain) AVAsset2MvidResourceLoader *rgbLoader;
 @property (nonatomic, retain) AVAsset2MvidResourceLoader *alphaLoader;
 
++ (void) combineRGBAndAlphaPixels:(uint32_t)numPixels
+                   combinedPixels:(uint32_t*)combinedPixels
+                        rgbPixels:(uint32_t*)rgbPixels
+                      alphaPixels:(uint32_t*)alphaPixels;
+
 @end
 
 @implementation AVAssetJoinAlphaResourceLoader
@@ -260,6 +265,10 @@
   for (NSUInteger frameIndex = 0; frameIndex < numFrames; frameIndex++) {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     
+#ifdef LOGGING
+    NSLog(@"reading frame %d", frameIndex);
+#endif // LOGGING
+    
     AVFrame *frameRGB = [frameDecoderRGB advanceToFrame:frameIndex];
     assert(frameRGB);
     
@@ -472,11 +481,11 @@
   
   if (fileExists) {
 #ifdef LOGGING
-    NSLog(@"no asset decompression needed for %@", [assetPath lastPathComponent]);
+    NSLog(@"no asset decompression needed for %@", [outPath lastPathComponent]);
 #endif // LOGGING
   } else {
 #ifdef LOGGING
-    NSLog(@"start asset decompression %@", [assetPath lastPathComponent]);
+    NSLog(@"start asset decompression %@", [outPath lastPathComponent]);
 #endif // LOGGING
     
     BOOL worked;
