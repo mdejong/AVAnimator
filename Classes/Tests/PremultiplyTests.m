@@ -314,6 +314,8 @@
   int width = 256;
   int height = 256;
   
+  premultiply_init();
+  
   CGFrameBuffer *nonPremultBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:32 width:width height:height];
   
   uint32_t *nonPremultBufferPtr = (uint32_t*)nonPremultBuffer.pixels;
@@ -327,7 +329,7 @@
       
       *nonPremultBufferPtr++ = pixel;
       
-      if (rowi == 0 && (coli == 0 || coli == 1)) {
+      if (FALSE) {
         NSLog(@"nonPremultBuffer[%d][%d] = 0x%X from ALPHA = %d, GRAY = %d", rowi, coli, pixel, alpha, gray);
       }
     }
@@ -342,34 +344,42 @@
   
   for (uint32_t rowi = 0; rowi < height; rowi++) {
     for (uint32_t coli = 0; coli < width; coli++) {
-      uint32_t pixel = *nonPremultBufferPtr++;
+      uint32_t unpremultPixel = *nonPremultBufferPtr++;
       
-      uint32_t pixelAlpha = (pixel >> 24) & 0xFF;
-      uint32_t pixelRed = (pixel >> 16) & 0xFF;
-      uint32_t pixelGreen = (pixel >> 8) & 0xFF;
-      uint32_t pixelBlue = (pixel >> 0) & 0xFF;
+      uint32_t unpremultPixelAlpha = (unpremultPixel >> 24) & 0xFF;
+      uint32_t unpremultPixelRed = (unpremultPixel >> 16) & 0xFF;
+      uint32_t unpremultPixelGreen = (unpremultPixel >> 8) & 0xFF;
+      uint32_t unpremultPixelBlue = (unpremultPixel >> 0) & 0xFF;
+      
+//      if (rowi != 0 && unpremultPixelRed == 255) {
+//        *nonPremultBufferPtr = *nonPremultBufferPtr;
+//      }
+      
+      if (FALSE) {
+        NSLog(@"unpremultBufferPtr[%d][%d] = 0x%X from ALPHA = %d, GRAY = %d", rowi, coli, unpremultPixel, unpremultPixelAlpha, unpremultPixelRed);
+      }
       
       // Premultiply pixel
-      pixel = premultiply_bgra_inline(pixelRed, pixelGreen, pixelBlue, pixelAlpha);
+      uint32_t premultPixel = premultiply_bgra_inline(unpremultPixelRed, unpremultPixelGreen, unpremultPixelBlue, unpremultPixelAlpha);
       
-      uint32_t pixelAlphaAfter = (pixel >> 24) & 0xFF;
+      uint32_t premultPixelAlpha = (premultPixel >> 24) & 0xFF;
       // If the input alpha was zero, then the premultiplied alpha must be zero too.
-      if (pixelAlpha == 0) {
-        assert(pixelAlphaAfter == 0);
-      } else if (pixelAlpha == 255) {
-        assert(pixelAlphaAfter == 255);
+      if (unpremultPixelAlpha == 0) {
+        assert(premultPixelAlpha == 0);
+      } else if (unpremultPixelAlpha == 255) {
+        assert(premultPixelAlpha == 255);
       }
       
-      uint32_t pixelRedAfter = (pixel >> 16) & 0xFF;
-      uint32_t pixelGreenAfter = (pixel >> 8) & 0xFF;
-      uint32_t pixelBlueAfter = (pixel >> 0) & 0xFF;
-      assert(pixelRedAfter == pixelGreenAfter || pixelRedAfter == pixelBlueAfter);
+      uint32_t premultPixelRed = (premultPixel >> 16) & 0xFF;
+      uint32_t premultPixelGreen = (premultPixel >> 8) & 0xFF;
+      uint32_t premultPixelBlue = (premultPixel >> 0) & 0xFF;
+      assert(premultPixelRed == premultPixelGreen || premultPixelGreen == premultPixelBlue);
       
-      if (rowi == 0 && (coli == 0 || coli == 1)) {
-        NSLog(@"premultBufferPtr[%d][%d] = 0x%X from ALPHA = %d, GRAY = %d", rowi, coli, pixel, pixelAlphaAfter, pixelRedAfter);
+      if (FALSE) {
+        NSLog(@"premultBufferPtr[%d][%d] = 0x%X from ALPHA = %d, GRAY = %d", rowi, coli, premultPixel, premultPixelAlpha, premultPixelRed);
       }
       
-      *premultBufferPtr++ = pixel;
+      *premultBufferPtr++ = premultPixel;
     }
   }
 
@@ -382,7 +392,7 @@
   for (uint32_t rowi = 0; rowi < height; rowi++) {
     for (uint32_t coli = 0; coli < width; coli++) {
       uint32_t pixel = *premultBufferPtr++;
-
+      
       uint32_t premultPixelAlpha = (pixel >> 24) & 0xFF;
       uint32_t premultPixelRed = (pixel >> 16) & 0xFF;
       uint32_t premultPixelGreen = (pixel >> 8) & 0xFF;
@@ -390,9 +400,18 @@
       assert(premultPixelAlpha == premultPixelAlpha);
       assert(premultPixelRed == premultPixelGreen && premultPixelGreen == premultPixelBlue);
       
+      if (FALSE) {
+        NSLog(@"premult[%d][%d] = 0x%X from ALPHA = %d, GRAY = %d", rowi, coli, pixel, premultPixelAlpha, premultPixelRed);
+      }
+      
       // Undo the premultiply step
       
       uint32_t unPixel = unpremultiply_bgra(pixel);
+      
+      // Now premultiply again to verify that the premultiplied pixel is the same
+      // as the premultiplied pixel generated from the original unpremultiplied input.
+      // We cannot generate the exact same unpremultiplied input because if the
+      // input values are multiplied by zero then original data is zeroed out.
       
       uint32_t unpremultPixelAlpha = (unPixel >> 24) & 0xFF;
       uint32_t unpremultPixelRed = (unPixel >> 16) & 0xFF;
@@ -400,30 +419,38 @@
       uint32_t unpremultPixelBlue = (unPixel >> 0) & 0xFF;
       assert(unpremultPixelAlpha == unpremultPixelAlpha);
       assert(unpremultPixelRed == unpremultPixelGreen && unpremultPixelGreen == unpremultPixelBlue);
-      
-      if (rowi == 0 && (coli == 0 || coli == 1)) {
+
+      if (FALSE) {
         NSLog(@"unPremult[%d][%d] = 0x%X from ALPHA = %d, GRAY = %d", rowi, coli, unPixel, unpremultPixelAlpha, unpremultPixelRed);
       }
       
-      // Compare to original unpremultiplied pixel
+      if (rowi == 1 && coli == 0) {
+        *premultBufferPtr = *premultBufferPtr;
+      }
       
-      uint32_t originalUnPixel = *nonPremultBufferPtr++;
+      uint32_t resultPixel = premultiply_bgra_inline(unpremultPixelRed, unpremultPixelGreen, unpremultPixelBlue, unpremultPixelAlpha);
+
+      if (FALSE) {
+        uint32_t resultPixelAlpha = (resultPixel >> 24) & 0xFF;
+        uint32_t resultPixelRed = (resultPixel >> 16) & 0xFF;
+        NSLog(@"rePremult[%d][%d] = 0x%X from ALPHA = %d, GRAY = %d", rowi, coli, resultPixel, resultPixelAlpha, resultPixelRed);
+      }
       
-      uint32_t originalUnpremultPixelAlpha = (originalUnPixel >> 24) & 0xFF;
-      uint32_t originalUnpremultPixelRed = (originalUnPixel >> 16) & 0xFF;
-      uint32_t originalUnpremultPixelGreen = (originalUnPixel >> 8) & 0xFF;
-      uint32_t originalUnpremultPixelBlue = (originalUnPixel >> 0) & 0xFF;
-      assert(originalUnpremultPixelAlpha == originalUnpremultPixelAlpha);
-      assert(originalUnpremultPixelRed == originalUnpremultPixelGreen && originalUnpremultPixelGreen == originalUnpremultPixelBlue);
-     
-      // Special case where alpha is zero, since this loses information as compared to the original because the RGB values
-      // are converted to zero. But, once the input is then converted back to premultiplied pixels, then the result
-      // is the same pixel values.
-      
-      if (originalUnpremultPixelAlpha == 0) {
-        assert(unPixel == 0);
-      } else {
-        assert(unPixel == originalUnPixel);
+      if (pixel != resultPixel) {
+        uint32_t resultPixelAlpha = (resultPixel >> 24) & 0xFF;
+        uint32_t resultPixelRed = (resultPixel >> 16) & 0xFF;
+        uint32_t resultPixelGreen = (resultPixel >> 8) & 0xFF;
+        uint32_t resultPixelBlue = (resultPixel >> 0) & 0xFF;
+        assert(resultPixelAlpha == resultPixelAlpha);
+        assert(resultPixelRed == resultPixelGreen && resultPixelGreen == resultPixelBlue);
+        
+        if (FALSE) {
+          NSLog(@"rePremult[%d][%d] = 0x%X from ALPHA = %d, GRAY = %d", rowi, coli, resultPixel, resultPixelAlpha, resultPixelRed);
+        }
+        
+        assert(premultPixelAlpha == resultPixelAlpha);
+        assert(premultPixelRed == resultPixelRed);        
+        assert(pixel == resultPixel);
       }
     }
   }
