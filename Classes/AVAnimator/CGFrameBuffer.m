@@ -280,15 +280,13 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 	size_t h = CGImageGetHeight(cgImageRef);
 	
 	BOOL isRotated = FALSE;
-	
-	if ((self.width == w) && (self.height == h)) {
-		// pixels will render as expected
-	} else if ((self.width == h) || (self.height != w)) {
-		// image should be rotated before rendering
+
+	if ((w != h) && (h == self.width) && (w == self.height)) {
+    // Assume image is rotated to portrait, so rotate and then render
 		isRotated = TRUE;
-	} else {
-		return FALSE;
-	}
+  } else {
+    // If sizes do not match, then resize input image to fit into this framebuffer
+  }
 	
   size_t bitsPerComponent;
   size_t numComponents;

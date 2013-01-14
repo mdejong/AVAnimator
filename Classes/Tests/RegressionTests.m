@@ -13,7 +13,7 @@
 // indicated module will be executed.
 
 //#define RegressionTestsJustThisModule @"H264EncoderDecoderTests"
-#define RegressionTestsJustThisModule @"AVAssetJoinAlphaResourceLoaderTests"
+//#define RegressionTestsJustThisModule @"AVAssetJoinAlphaResourceLoaderTests"
 //#define RegressionTestsJustThisModule @"PremultiplyTests"
 
 @implementation RegressionTests
