@@ -15,6 +15,7 @@
 #import "AVFileUtil.h"
 
 #import "movdata.h"
+#import "maxvid_file.h"
 
 @interface PremultiplyTests : NSObject {
 }
@@ -286,6 +287,8 @@
   
   [buffer appendString:@"\n}\n"];
 
+  // Emit the premultiply table
+  
   if (FALSE) {
     NSLog(@"%@", [buffer description]);
   }
@@ -300,6 +303,19 @@
     CGImageRelease(imageRef);
     
     [self writePNG:@"Black_2_White_Gradient_256x256_FadeIn.png" uiImageRef:combinedImage];
+  }
+  
+  // Generate an adler checksum for the entire buffer, this checksum is used
+  // to verify that the CoreGraphics alpha map operation returns the exact
+  // same results as using the premult table statically defined in this library.
+  
+  if (TRUE) {
+    uint32_t expectedAdler = 2895601221;
+    uint32_t adler;
+    
+    adler = maxvid_adler32(0L, (const unsigned char*)combinedBuffer.pixels, combinedBuffer.numBytes);
+    
+    NSAssert(adler == expectedAdler, @"adler");
   }
   
   return;
@@ -404,6 +420,10 @@
         NSLog(@"premult[%d][%d] = 0x%X from ALPHA = %d, GRAY = %d", rowi, coli, pixel, premultPixelAlpha, premultPixelRed);
       }
       
+//      if (rowi == 4 && coli == 192) {
+//        *premultBufferPtr = *premultBufferPtr;
+//      }
+      
       // Undo the premultiply step
       
       uint32_t unPixel = unpremultiply_bgra(pixel);
@@ -423,11 +443,7 @@
       if (FALSE) {
         NSLog(@"unPremult[%d][%d] = 0x%X from ALPHA = %d, GRAY = %d", rowi, coli, unPixel, unpremultPixelAlpha, unpremultPixelRed);
       }
-      
-//      if (rowi == 1 && coli == 0) {
-//        *premultBufferPtr = *premultBufferPtr;
-//      }
-      
+            
       // Make sure special case of 255 255 is not zero (table not initialized error)
       
       if (rowi == 255 && coli == 255) {
@@ -461,19 +477,21 @@
     }
   }
 
+  // Final verification step is to make sure that the premultiplied output
+  // is exactly the same as the CoreGraphics generated output from the
+  // testPremultiplyAllValuesWithCG test case. The expectedAdler value
+  // from these two tests needs to match exactly.
+  
+  if (TRUE) {
+    uint32_t expectedAdler = 2895601221;
+    uint32_t adler;
+    
+    adler = maxvid_adler32(0L, (const unsigned char*)premultBuffer.pixels, premultBuffer.numBytes);
+    
+    NSAssert(adler == expectedAdler, @"adler");
+  }
+  
   return;
 }
-
-
-/*
- 
- uint32_t expectedAdler = 3784927541;
- uint32_t adler;
- 
- adler = maxvid_adler32(0L, (const unsigned char*)framebuffer.pixels, numBytes);
- 
- NSAssert(adler == expectedAdler, @"adler");
-
- */
 
 @end

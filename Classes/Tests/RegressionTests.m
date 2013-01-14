@@ -14,7 +14,7 @@
 
 //#define RegressionTestsJustThisModule @"H264EncoderDecoderTests"
 //#define RegressionTestsJustThisModule @"AVAssetJoinAlphaResourceLoaderTests"
-#define RegressionTestsJustThisModule @"PremultiplyTests"
+//#define RegressionTestsJustThisModule @"PremultiplyTests"
 
 @implementation RegressionTests
 

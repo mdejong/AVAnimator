@@ -24,7 +24,7 @@
 
 #define PREMULT_TABLEMAX 256
 
-extern uint8_t *extern_alphaTablesPtr;
+extern const uint8_t* const extern_alphaTablesPtr;
 
 void premultiply_init();
 
@@ -36,7 +36,7 @@ static
 inline
 uint32_t premultiply_bgra_inline(uint32_t red, uint32_t green, uint32_t blue, uint32_t alpha)
 {
-  uint8_t * restrict alphaTable = &extern_alphaTablesPtr[alpha * PREMULT_TABLEMAX];
+  const uint8_t* const restrict alphaTable = &extern_alphaTablesPtr[alpha * PREMULT_TABLEMAX];
   uint32_t result = (alpha << 24) | (alphaTable[red] << 16) | (alphaTable[green] << 8) | alphaTable[blue];
   return result;
 }
