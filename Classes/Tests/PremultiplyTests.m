@@ -424,8 +424,14 @@
         NSLog(@"unPremult[%d][%d] = 0x%X from ALPHA = %d, GRAY = %d", rowi, coli, unPixel, unpremultPixelAlpha, unpremultPixelRed);
       }
       
-      if (rowi == 1 && coli == 0) {
-        *premultBufferPtr = *premultBufferPtr;
+//      if (rowi == 1 && coli == 0) {
+//        *premultBufferPtr = *premultBufferPtr;
+//      }
+      
+      // Make sure special case of 255 255 is not zero (table not initialized error)
+      
+      if (rowi == 255 && coli == 255) {
+        assert(unpremultPixelRed == 255);
       }
       
       uint32_t resultPixel = premultiply_bgra_inline(unpremultPixelRed, unpremultPixelGreen, unpremultPixelBlue, unpremultPixelAlpha);
