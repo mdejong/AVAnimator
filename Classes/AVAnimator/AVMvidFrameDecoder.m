@@ -574,9 +574,11 @@
       void *frameBuffer = (void*)nextFrameBuffer.pixels;
 #ifdef EXTRA_CHECKS
       NSAssert(frameBuffer, @"frameBuffer");
+# if TARGET_OS_IPHONE
       if (isDeltaFrame) {
       NSAssert(frameBuffer != nextFrameBuffer.zeroCopyPixels, @"frameBuffer is zeroCopyPixels buffer");
       }
+# endif // TARGET_OS_IPHONE
 #endif // EXTRA_CHECKS
 
 #if defined(USE_SEGMENTED_MMAP)
