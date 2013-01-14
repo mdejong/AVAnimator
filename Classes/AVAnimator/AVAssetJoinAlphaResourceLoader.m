@@ -421,11 +421,12 @@
         //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
         //NSLog(@"Using RED (easy ave) Alpha level %d at pixel %d in frame %d", pixelAlpha, pixeli, frameIndex);
       } else {
-        // Output did not match one of the common patterns seen coming from iOS H264 decoder hardware.
-        // This divide operation is not optimal, but it should also not be needed since the above special
-        // case blocks seem to catch all the funky output edge cases.
+        // Output did not match one of the know common patterns seen coming from iOS H264 decoder hardware.
+        // Since this branch does not seem to ever be executed, just use the red component which is
+        // basically the same as the branch above.
         
-        pixelAlpha = sum / 3;
+        //pixelAlpha = sum / 3;
+        pixelAlpha = pixelAlphaRed;
         
         //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
         //NSLog(@"Using AVE Alpha level %d at pixel %d in frame %d", pixelAlpha, pixeli, frameIndex);
@@ -442,22 +443,11 @@
     //fprintf(fp, "A[%d][%d] = %d <- (%d, %d, %d)\n", frameIndex, pixeli, pixelAlpha, pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue);
     //}
     
-    // RGB componenets are 24 BPP non pre multiplied values
+    // RGB componenets are 24 BPP non pre-multiplied values
     
     uint32_t pixelRed = (pixelRGB >> 16) & 0xFF;
     uint32_t pixelGreen = (pixelRGB >> 8) & 0xFF;
     uint32_t pixelBlue = (pixelRGB >> 0) & 0xFF;
-    
-//    if ((pixeli >= (255 * 256)) && (pixeli < (256 * 256))) {
-//      // Last row
-//      combinedPixels[pixeli] = combinedPixels[pixeli];
-//    }
-    
-    // Create BGRA pixel that is not premultiplied
-    
-//    if ((pixeli % 256) == 0) {
-//      NSLog(@"processing row %d : pixelAlpha %d", (pixeli / 256), pixelAlpha);
-//    }
     
     uint32_t combinedPixel = premultiply_bgra_inline(pixelRed, pixelGreen, pixelBlue, pixelAlpha);
     combinedPixels[pixeli] = combinedPixel;

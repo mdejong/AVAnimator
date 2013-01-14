@@ -602,6 +602,74 @@
 //  [self testJoinAlphaForExplosionVideo];
 //}
 
+// This test does many iterations of the "alpha combine" operation using
+// predefined alpha values that are not all the same.
+
++ (void) testExecutionTimeForManyCombineOperations
+{
+  int width = 256;
+  int height = 256;
+  int numPixels = width * height;
+
+  // Alpha
+  
+  uint32_t *alphaPixels = malloc(numPixels * sizeof(uint32_t));
+  uint32_t *alphaPixelsWritePtr = alphaPixels;
+  
+  for (int rowi = 0; rowi < height; rowi++) {
+    for (int coli = 0; coli < width; coli++) {
+      uint32_t pixel;
+      
+      // 1: all 3 same (optimized)
+      // 2: (0, 0, 1)
+      // 3: (3 1 3) or (2 0 2) -> (2) or (1)
+      
+      int rem = (coli % 4);
+      
+      if (rem == 0 || rem == 1) {
+        // Twice as many of these
+        pixel = (0xFF << 24) | (coli << 16) | (coli << 8) | coli;
+      } else if (rem == 2) {
+        pixel = (0xFF << 24) | (0 << 16) | (0 << 8) | 1;
+      } else if (rem == 3) {
+        pixel = (0xFF << 24) | (3 << 16) | (1 << 8) | 3;
+      }
+
+      *alphaPixelsWritePtr++ = pixel;
+    }
+  }
+  
+  // RGB
+  
+  uint32_t *rgbPixels = malloc(numPixels * sizeof(uint32_t));
+  uint32_t *rgbPixelsWritePtr = rgbPixels;
+  
+  for (int rowi = 0; rowi < height; rowi++) {
+    for (int coli = 0; coli < width; coli++) {
+      uint32_t pixel = (0xFF << 24) | (coli << 16) | (coli << 8) | coli;
+      *rgbPixelsWritePtr++ = pixel;
+    }
+  }
+  
+  uint32_t *combinedPixels = malloc(numPixels * sizeof(uint32_t));
+  memset(combinedPixels, 0x0, numPixels * sizeof(uint32_t));
+
+  NSLog(@"combine loop");
+  
+  const int count = 5000;
+  for (int counti = 0; counti < count; counti++) {
+    [AVAssetJoinAlphaResourceLoader combineRGBAndAlphaPixels:numPixels
+                                              combinedPixels:combinedPixels
+                                                   rgbPixels:rgbPixels
+                                                 alphaPixels:alphaPixels];
+    
+  }
+  
+  NSLog(@"done combine loop");
+  
+  return;
+}
+
 #endif // HAS_AVASSET_CONVERT_MAXVID
 
 @end
