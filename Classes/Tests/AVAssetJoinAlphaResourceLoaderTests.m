@@ -21,6 +21,8 @@
 
 #import "AVAssetFrameDecoder.h"
 
+#import "movdata.h"
+
 #define MAX_WAIT 600
 
 // Private API
@@ -99,6 +101,124 @@
   return [NSString stringWithFormat:@"(%d, %d, %d, %d)", red, green, blue, alpha];
 }
 
+// Test alpha channel decode logic in combineRGBAndAlphaPixels using lossless
+// PNG input. The input data is known to be consistent with this input,
+// so testing of the joined results will work as expected.
+
++ (void) testDecodeAlphaGradientFromPNG
+{
+  UIImage *img = [UIImage imageNamed:@"Grayscale256x256"];
+  NSAssert(img, @"img");
+  
+  int width = 256;
+  int height = 256;
+  CGSize expectedSize = CGSizeMake(width, height);
+  int numPixels = width * height;
+    
+  NSAssert(CGSizeEqualToSize(img.size, expectedSize), @"expectedSize");
+  
+  // Allocate framebuffer and copy pixels from PNG into the framebuffer
+  
+  CGFrameBuffer *framebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+  
+  [framebuffer renderCGImage:img.CGImage];
+  
+  // Allocate output buffer and phony RGB buffer with all white pixels
+  
+  uint32_t *rgbPixels = malloc(numPixels * sizeof(uint32_t));
+  memset(rgbPixels, 0xff, numPixels * sizeof(uint32_t));
+  
+  uint32_t *combinedPixels = malloc(numPixels * sizeof(uint32_t));
+  memset(combinedPixels, 0x0, numPixels * sizeof(uint32_t));
+  
+  uint32_t *alphaPixels = (uint32_t*) framebuffer.pixels;
+  assert(framebuffer.numBytes == (numPixels * sizeof(uint32_t)));
+  
+  [AVAssetJoinAlphaResourceLoader combineRGBAndAlphaPixels:numPixels
+                                            combinedPixels:combinedPixels
+                                                 rgbPixels:rgbPixels
+                                               alphaPixels:alphaPixels];
+  
+  // Alpha = 0 -> (0, 0, 0, 0)
+  // Alpha = 1 -> (1, 1, 1, 1)
+  // Alpha = 255 -> (255, 255, 255, 255)
+  
+  for (int rowi = 0; rowi < height; rowi++) {
+    for (int coli = 0; coli < width; coli++) {
+      uint32_t pixel = combinedPixels[(rowi * width) + coli];
+      NSString *results = [self util_pixelToRGBAStr:pixel];
+      NSString *expectedResults = [NSString stringWithFormat:@"(%d, %d, %d, %d)", rowi, rowi, rowi, rowi];
+      NSAssert([results isEqualToString:expectedResults], @"pixel");
+    }
+  }
+  
+  return;
+}
+
+// This test is basically the same as the one above except that instead of all white
+// pixels in the RGB buffer, the values increase from 0 to 255 as the columns increase.
+// This results in a test pattern that will premultiply every possible value
+// in the grayscale range.
+
++ (void) testDecodeAlphaGradientFromPNGWithAllPremult
+{
+  UIImage *img = [UIImage imageNamed:@"Grayscale256x256"];
+  NSAssert(img, @"img");
+  
+  int width = 256;
+  int height = 256;
+  CGSize expectedSize = CGSizeMake(width, height);
+  int numPixels = width * height;
+  
+  NSAssert(CGSizeEqualToSize(img.size, expectedSize), @"expectedSize");
+  
+  // Allocate framebuffer and copy pixels from PNG into the framebuffer
+  
+  CGFrameBuffer *framebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:width height:height];
+  
+  [framebuffer renderCGImage:img.CGImage];
+  
+  // Allocate output buffer and phony RGB buffer with all white pixels
+  
+  uint32_t *rgbPixels = malloc(numPixels * sizeof(uint32_t));
+  uint32_t *rgbPixelsWritePtr = rgbPixels;
+  
+  for (int rowi = 0; rowi < height; rowi++) {
+    for (int coli = 0; coli < width; coli++) {
+      uint32_t pixel = (0xFF << 24) | (coli << 16) | (coli << 8) | coli;
+      *rgbPixelsWritePtr++ = pixel;
+    }
+  }
+  
+  uint32_t *combinedPixels = malloc(numPixels * sizeof(uint32_t));
+  memset(combinedPixels, 0x0, numPixels * sizeof(uint32_t));
+  
+  uint32_t *alphaPixels = (uint32_t*) framebuffer.pixels;
+  assert(framebuffer.numBytes == (numPixels * sizeof(uint32_t)));
+  
+  [AVAssetJoinAlphaResourceLoader combineRGBAndAlphaPixels:numPixels
+                                            combinedPixels:combinedPixels
+                                                 rgbPixels:rgbPixels
+                                               alphaPixels:alphaPixels];  
+  
+  for (int rowi = 0; rowi < height; rowi++) {
+    for (int coli = 0; coli < width; coli++) {
+      uint32_t pixel = combinedPixels[(rowi * width) + coli];
+      NSString *results = [self util_pixelToRGBAStr:pixel];
+      int alpha = rowi;
+      int gray = coli;
+      {
+        uint32_t premult = premultiply_bgra_inline(gray, gray, gray, alpha);
+        gray = premult & 0xFF;
+      }
+      NSString *expectedResults = [NSString stringWithFormat:@"(%d, %d, %d, %d)", gray, gray, gray, alpha];
+      NSAssert([results isEqualToString:expectedResults], @"pixel");
+    }
+  }
+  
+  return;
+}
+
 // FIXME: basic premultiply logic is failing, need to determine from known
 // lossless input what the exact premultiplied values would be when an alpha
 // png image is written by CoreGraphics. It seems the float divide logic is
@@ -108,7 +228,7 @@
 // Test alpha channel decode logic in combineRGBAndAlphaPixels. This logic needs to
 // convert oddly decoded alpha values and decode to known results.
 
-+ (void) DISABLED_testDecodeAlphaGradient
++ (void) DISABLED_testDecodeAlphaGradientFromH264Asset
 {
   NSString *resourceName = @"Grayscale256x256.m4v";
   NSString *resPath = [AVFileUtil getResourcePath:resourceName];
@@ -188,15 +308,26 @@
   
   // Alpha = 1 -> (1, 1, 1, 1)
   
-  //pixel = combinedPixels[width * 1];
-  //result = [self util_pixelToRGBAStr:pixel];
-  //NSAssert([result isEqualToString:@"(1, 1, 1, 1)"], @"pixel");
+  pixel = combinedPixels[width * 1];
+  result = [self util_pixelToRGBAStr:pixel];
+  NSAssert([result isEqualToString:@"(1, 1, 1, 1)"], @"pixel");
 
   // Alpha = 255 -> (255, 255, 255, 255)
   
-  pixel = combinedPixels[width * 255];
-  result = [self util_pixelToRGBAStr:pixel];
-  NSAssert([result isEqualToString:@"(255, 255, 255, 255)"], @"pixel");
+  //pixel = combinedPixels[width * 255];
+  //result = [self util_pixelToRGBAStr:pixel];
+  //NSAssert([result isEqualToString:@"(255, 255, 255, 255)"], @"pixel");
+  
+  // Seems to fail on row 3 ?
+  
+  for (int rowi = 0; rowi < height; rowi++) {
+    for (int coli = 0; coli < width; coli++) {
+      pixel = combinedPixels[(rowi * width) + coli];
+      result = [self util_pixelToRGBAStr:pixel];
+      NSString *expectedResults = [NSString stringWithFormat:@"(%d, %d, %d, %d)", rowi, rowi, rowi, rowi];
+      NSAssert([result isEqualToString:expectedResults], @"pixel");
+    }
+  }
   
   return;
 }
@@ -212,7 +343,7 @@
 //
 // Optimized run w no adler generation : 10 seconds
 
-+ (void) testJoinAlphaForExplosionVideo
++ (void) DISABLED_testJoinAlphaForExplosionVideo
 {
   NSString *tmpFilename;
   NSString *tmpPath;
@@ -354,7 +485,7 @@
 // so H264 split encoding is actually about 2 times larger and takes longer to load.
 // Thsi is only useful to test the decoder logic.
 
-+ (void) testJoinAlphaGhost
++ (void) DISABLED_testJoinAlphaGhost
 {
   NSString *tmpFilename;
   NSString *tmpPath;

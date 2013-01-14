@@ -372,6 +372,15 @@
     uint32_t pixelAlphaGreen = (pixelAlpha >> 8) & 0xFF;
     uint32_t pixelAlphaBlue = (pixelAlpha >> 0) & 0xFF;
     
+//    if ((pixeli % 256) == 0) {
+//      NSLog(@"processing row %d", (pixeli / 256));
+//    }
+    
+//    if ((pixeli >= (2 * 256)) && (pixeli < (3 * 256))) {
+//      // Third row
+//      combinedPixels[pixeli] = combinedPixels[pixeli];
+//    }
+    
     if (pixelAlphaRed != pixelAlphaGreen || pixelAlphaRed != pixelAlphaBlue) {
       //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
       //return FALSE;
@@ -439,7 +448,16 @@
     uint32_t pixelGreen = (pixelRGB >> 8) & 0xFF;
     uint32_t pixelBlue = (pixelRGB >> 0) & 0xFF;
     
+//    if ((pixeli >= (255 * 256)) && (pixeli < (256 * 256))) {
+//      // Last row
+//      combinedPixels[pixeli] = combinedPixels[pixeli];
+//    }
+    
     // Create BGRA pixel that is not premultiplied
+    
+//    if ((pixeli % 256) == 0) {
+//      NSLog(@"processing row %d : pixelAlpha %d", (pixeli / 256), pixelAlpha);
+//    }
     
     uint32_t combinedPixel = premultiply_bgra_inline(pixelRed, pixelGreen, pixelBlue, pixelAlpha);
     combinedPixels[pixeli] = combinedPixel;
