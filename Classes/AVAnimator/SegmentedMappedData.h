@@ -45,6 +45,7 @@
   RefCountedFD       *m_refCountedFD;
   
   BOOL isContainer;
+  BOOL writeMapping;
 }
 
 @property (nonatomic, readonly) off_t mappedOffset;
@@ -55,6 +56,13 @@
 
 
 + (SegmentedMappedData*) segmentedMappedData:(NSString*)filename;
+
+// Special purpose write only mapping over a specific range of whole pages
+
++ (SegmentedMappedData*) segmentedMappedDataWithWriteMapping:(NSString*)filePath
+                                                        file:(FILE*)file
+                                                      offset:(off_t)offset
+                                                         len:(size_t)len;
 
 // This API will create a mapped segment subrange. A segment can be mapped
 // and unmapped as needed and will automatically be unmapped when the last

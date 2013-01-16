@@ -19,6 +19,7 @@
 {
 @public
   int                 m_fd;
+  BOOL                m_closeFileFlag;
 }
 
 + (RefCountedFD*) refCountedFD:(int)fd;
@@ -33,13 +34,24 @@
 {
   RefCountedFD *obj = [[RefCountedFD alloc] init];
   obj->m_fd = fd;
+  obj->m_closeFileFlag = TRUE;
   return [obj autorelease];
+}
+
++ (RefCountedFD*) refCountedFDWithCloseFlag:(int)fd
+                                  closeFlag:(BOOL)closeFlag
+{
+  RefCountedFD *obj = [RefCountedFD refCountedFD:fd];
+  obj->m_closeFileFlag = closeFlag;
+  return obj;
 }
 
 - (void) dealloc
 {
-  int close_result = close(m_fd);
-  NSAssert(close_result == 0, @"close_result");
+  if (m_closeFileFlag) {
+    int close_result = close(m_fd);
+    NSAssert(close_result == 0, @"close_result");
+  }
   [super dealloc];
 }
 
@@ -162,6 +174,27 @@
   return [obj autorelease];
 }
 
+// Create a writeable mapped memory segment at the given offset and with the
+// given length.
+
++ (SegmentedMappedData*) segmentedMappedDataWithWriteMapping:(NSString*)filePath
+                                                        file:(FILE*)file
+                                                      offset:(off_t)offset
+                                                         len:(size_t)len
+{
+  NSAssert(file, @"file");
+  int fd = fileno(file);
+  RefCountedFD *rcFD = [RefCountedFD refCountedFDWithCloseFlag:fd closeFlag:FALSE];
+  
+  SegmentedMappedData *obj = [SegmentedMappedData segmentedMappedDataWithDeferredMapping:filePath
+                                                                            refCountedFD:rcFD
+                                                                                  offset:offset
+                                                                                     len:len];
+  obj->writeMapping = TRUE;
+  
+  return obj;
+}
+
 // The dealloc method is invoked to release each segment of mapped memory in a larger
 // file. This dealloc method avoids using AutoPropertyRelease since it is less optimal
 // than directly releasing the retained objects.
@@ -232,7 +265,22 @@
   NSAssert((offset % SM_PAGESIZE) == 0, @"offset");
   NSAssert((len % SM_PAGESIZE) == 0, @"len");
   
-  void *mappedData = mmap(NULL, len, PROT_READ, MAP_FILE | MAP_SHARED, fd, offset);
+  
+  int protection;
+  int flags;
+  
+  if (writeMapping == FALSE) {
+    // Normal read only shared mapping
+    protection = PROT_READ;
+    flags = MAP_FILE | MAP_SHARED;
+  } else {
+    // Special purpose write only mapping, shared indicates that
+    // another process can read the result of the mapped write.
+    protection = PROT_READ | PROT_WRITE;
+    flags = MAP_FILE | MAP_SHARED | MAP_NOCACHE;
+  }
+  
+  void *mappedData = mmap(NULL, len, protection, flags, fd, offset);
   
   if (mappedData == MAP_FAILED) {
     int errnoVal = errno;
@@ -240,17 +288,17 @@
     // Check for known fatal errors
     
     if (errnoVal == EACCES) {
-      NSAssert(FALSE, @"munmap result EACCES : file not opened for reading");
+      NSAssert(FALSE, @"mmap result EACCES : file not opened for reading or writing");
     } else if (errnoVal == EBADF) {
-      NSAssert(FALSE, @"munmap result EBADF : bad file descriptor");
+      NSAssert(FALSE, @"mmap result EBADF : bad file descriptor");
     } else if (errnoVal == EINVAL) {
-      NSAssert(FALSE, @"munmap result EINVAL");
+      NSAssert(FALSE, @"mmap result EINVAL");
     } else if (errnoVal == ENODEV) {
-      NSAssert(FALSE, @"munmap result ENODEV : page does not support mapping");
+      NSAssert(FALSE, @"mmap result ENODEV : page does not support mapping");
     } else if (errnoVal == ENXIO) {
-      NSAssert(FALSE, @"munmap result ENXIO : invalid addresses");
+      NSAssert(FALSE, @"mmap result ENXIO : invalid addresses");
     } else if (errnoVal == EOVERFLOW) {
-      NSAssert(FALSE, @"munmap result EOVERFLOW : addresses exceed the maximum offset");
+      NSAssert(FALSE, @"mmap result EOVERFLOW : addresses exceed the maximum offset");
     }
     
     // Note that ENOMEM is not checked here since it is actually likely to happen
