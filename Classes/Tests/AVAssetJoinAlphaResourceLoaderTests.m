@@ -25,6 +25,12 @@
 
 #define MAX_WAIT 600
 
+@interface AVMvidFrameDecoder ()
+
+@property (nonatomic, assign) MVFrame *mvFrames;
+
+@end
+
 // Private API
 
 @interface AVAssetJoinAlphaResourceLoader ()
@@ -334,7 +340,433 @@
 //
 // Optimized run w no adler generation : 10 seconds
 
-+ (void) testJoinAlphaForExplosionVideo
+int testJoinAlphaForExplosionVideoCheckAdler_simulator_expectedAdler[] = {
+	0xe5b36272,
+	0x37d6464,
+	0x4c74fa70,
+	0xd99ca62e,
+	0x9e872ce5,
+	0x4c7030f1,
+	0x560c962d,
+	0xc98a3482,
+	0x50a35f94,
+	0x19b7ce20,
+	0x27b8b6e5,
+	0x88cac28c,
+	0x6a072aaf,
+	0xc7058bbc,
+	0x90a90f10,
+	0x61db1263,
+	0x37f35f9b,
+	0xc450be95,
+	0xfc8664da,
+	0x2bbef514,
+	0x6894896b,
+	0xbdf7b7e0,
+	0xc1e44be,
+	0x7bba3d4a,
+	0xa71b52b6,
+	0x1150da10,
+	0xa2b4b69b,
+	0x76df7aad,
+	0x771832b8,
+	0x6da2cfa6,
+	0xa897a995,
+	0x3ab6b0f3,
+	0x1a6848fa,
+	0x788b6697,
+	0x618cc407,
+	0xb305e3a9,
+	0x99517929,
+	0x89e78016,
+	0x70613f59,
+	0xaa44d9ee,
+	0x3f577f9c,
+	0xfc97b818,
+	0x9744c892,
+	0xf39dc14,
+	0x95735ee0,
+	0x712f1894,
+	0x8bca576e,
+	0xfbef12b4,
+	0x6568bd53,
+	0x8c66003a,
+	0xea17fbaf,
+	0xfbd9c65d,
+	0x4d64505e,
+	0x46dac30,
+	0x86d1f373,
+	0xc6d70c3f,
+	0x85dc6a36,
+	0xb938c6af,
+	0x82f98f59,
+	0x23c2eab6,
+	0x960732ee,
+	0xeff8a765,
+	0x9cbf5294,
+	0x7facebc6,
+	0x999b70e6,
+	0xde387517,
+	0x2a1c54a3,
+	0x2449eda1,
+	0x808507ec,
+	0x8af3cdb1,
+	0x37da8c15,
+	0x3e07312b,
+	0x462cc92a,
+	0x32253e72,
+	0x59fbe6ea,
+	0xc2872d2b,
+	0x9889a542,
+	0x5bb3155f,
+	0x525bccb9,
+	0xecfa6c1e,
+	0x32519cdc,
+	0x2e132fa6,
+	0xac942779,
+	0xc6356da9,
+	0xb639a988,
+	0xfac74772,
+	0x6cbf4427,
+	0x64fa3858,
+	0x6a03120a,
+	0x943d3837,
+	0x65423435,
+	0x9d90dab2,
+	0x5837829b,
+	0xa5c35e67,
+	0x2b852cba,
+	0x84789f55,
+	0x7173c575,
+	0x6ec3cd37,
+	0xe1dae9da,
+	0x1230f049,
+	0x26550bc,
+	0x3ef70961,
+	0x184f121c,
+	0x776d3976,
+	0x1150fd23,
+	0x38a90692,
+	0xffb4d363,
+	0x3ce53660,
+	0xc0b73fc8,
+	0x596d4ff4,
+	0xa15236a2,
+	0xe2f9ca5f,
+	0x7c84a8f8,
+	0xe5fb0e89,
+	0xeb1024bc,
+	0xd274da98,
+	0x3da089b7,
+	0x6c13233,
+	0x8bf85fd0,
+	0xbf0c6f0d,
+	0xc942693c,
+	0x9746826c,
+	0xbbfec57a,
+	0x9493a770,
+	0x29fc8c3f,
+	0x661079f9,
+	0xcbe7ec13,
+	0xd31142cf,
+	0xea0fd378,
+	0x1abc6f3a,
+	0xa7bc1b2a,
+	0x5b778898,
+	0xe8241c43,
+	0x9ab03f44,
+	0x87b299e2,
+	0x3774829d,
+	0x74dcc179,
+	0x8e8743c,
+	0xb61c9c16,
+	0xeeb0bf73,
+	0x7580580e,
+	0x4decee16,
+	0x75805c2d,
+	0x4dd5ac0f,
+	0xee1ef03,
+	0x15e7d47f,
+	0xf99ca8be,
+	0x10656314,
+	0xc383f2ce,
+	0xbaa5aed0,
+	0xb2d56ca8,
+	0x6e575d8d
+};
+
+int testJoinAlphaForExplosionVideoCheckAdler_device_expectedAdler[] = {
+	0x3d2d6289,
+	0x34176478,
+	0x420bfa8b,
+	0xb0a4a658,
+	0xb3202cb7,
+	0x71f6303e,
+	0x79c796b4,
+	0x678c351e,
+	0x190361f3,
+	0xfe64d263,
+	0xf818bbed,
+	0x301c91a,
+	0x775c33d4,
+	0x9e7b9698,
+	0xef681d14,
+	0xa9762356,
+	0xf181725a,
+	0x21dfd2ff,
+	0xb10b7987,
+	0x29120c18,
+	0x2611a19f,
+	0x1483cdb0,
+	0x4cff590e,
+	0x62ac5210,
+	0x10726374,
+	0x52fceab2,
+	0xb000c716,
+	0x9ec886f5,
+	0x3ec33c52,
+	0x5abed84c,
+	0x86e0af26,
+	0x4e36b579,
+	0x90104a33,
+	0x100d656e,
+	0x385fbe7c,
+	0x525dd8cb,
+	0x4c8a6b9a,
+	0x26226e61,
+	0x9cc02a8f,
+	0x8225c221,
+	0xf17b6742,
+	0x8cf89fd4,
+	0xa313af44,
+	0xebf5c20f,
+	0x32f04341,
+	0x335ffaf2,
+	0x11ae3b19,
+	0xd736f5aa,
+	0x94479e3e,
+	0xfc11e201,
+	0x2a17db51,
+	0x6306a894,
+	0x9d4c339b,
+	0x6a36906d,
+	0x6daad6f7,
+	0x5133eaf6,
+	0xe45346c9,
+	0x6461a134,
+	0x87fc6558,
+	0x6c6abefd,
+	0xb9700749,
+	0x60cb7b78,
+	0x5091242f,
+	0x2994b98f,
+	0xd0793bf6,
+	0x4f5f4001,
+	0xc0bb2062,
+	0x482fb688,
+	0x74ced2e2,
+	0x67849624,
+	0xe16d52d0,
+	0x5810fa42,
+	0x25a997f4,
+	0x50dd0c4a,
+	0xc639b33e,
+	0x9029fc44,
+	0x6d767260,
+	0x7b79de58,
+	0x44729b55,
+	0x2d82384d,
+	0x90c670d,
+	0x8f4bf8a5,
+	0x5fbaf307,
+	0x91c73900,
+	0xe7a475f2,
+	0x6f991523,
+	0xe39b1609,
+	0xaefa0933,
+	0x196fe530,
+	0x5c0f07d6,
+	0x60010506,
+	0x8798a72a,
+	0xd74a4e29,
+	0xe5282a7e,
+	0xb2aef5ae,
+	0x22966b2c,
+	0xbe679354,
+	0x9c149a9e,
+	0x7eeebd8b,
+	0xdc6d4aa,
+	0x88083a59,
+	0xf355f4a7,
+	0xf1eeff0d,
+	0x105227b5,
+	0xca34e670,
+	0xff54f093,
+	0xaa5ac602,
+	0x380824a3,
+	0xfc0b2c2a,
+	0x719b42d8,
+	0xdd7b2ca3,
+	0x5202c19c,
+	0xa3c99ced,
+	0xaa490646,
+	0xea521d3e,
+	0x65a1cf99,
+	0x3d177ce,
+	0x2292a1d,
+	0x847257ba,
+	0x754f6691,
+	0x884f6021,
+	0xdc0c7669,
+	0x77d5be17,
+	0x10409b29,
+	0xe6038818,
+	0x64c97a7e,
+	0x6996ec21,
+	0x82ba3e60,
+	0xd0f9d4e8,
+	0x4e586bb3,
+	0xbc8a195f,
+	0xc3728ca0,
+	0xaf261e28,
+	0x27734032,
+	0xb1499f35,
+	0x11e185bb,
+	0xd093c45d,
+	0x1dc575f3,
+	0xa95f9eef,
+	0x67aac0c8,
+	0x1efa5a73,
+	0x7e77efc5,
+	0xc793630b,
+	0x9f4dae66,
+	0x8d28f2ab,
+	0xbb93d457,
+	0xc97da8c8,
+	0x14d4630f,
+	0xad4bf181,
+	0x3ac3acca,
+	0xb46ab8,
+	0x5b95cbd
+};
+
+// Note that the expected adlers differ just slightly on the device because the H264
+// decoder hardware does not decode losslessly, alpha pixel values can be off by 1.
+
++ (void) testJoinAlphaForExplosionVideoCheckAdler
+{
+  NSString *tmpFilename;
+  NSString *tmpPath;
+  
+  // Asset filenames
+  
+  NSString *rgbResourceName = @"ExplosionAdjusted_rgb_CRF_30_24BPP.m4v";
+  NSString *alphaResourceName = @"ExplosionAdjusted_alpha_CRF_30_24BPP.m4v";
+  
+  // Output filename
+  
+  tmpFilename = @"ExplosionAdjusted.mvid";
+  tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  // If the decode mov path exists currently, delete it so that this test case always
+  // decodes the .mov from the .7z compressed Resource.
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"could not remove file %@", tmpPath);
+  }
+  
+  AVAssetJoinAlphaResourceLoader *resLoader = [AVAssetJoinAlphaResourceLoader aVAssetJoinAlphaResourceLoader];
+  
+  resLoader.movieRGBFilename = rgbResourceName;
+  resLoader.movieAlphaFilename = alphaResourceName;
+  resLoader.outPath = tmpPath;
+  resLoader.alwaysGenerateAdler = TRUE;
+  
+  // Do not generate adler since this operation computationally expensive and we want to
+  // test the execution time when emitting joined alpha frames.
+  //resLoader.alwaysGenerateAdler = TRUE;
+  
+  // Wait for resource loading to be completed.
+  
+  [resLoader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:MAX_WAIT];
+  NSAssert(worked, @"worked");
+  
+  NSLog(@"Wrote : %@", tmpPath);
+    
+  if (TRUE) {
+    // Create MVID frame decoder and iterate over the frames in the mvid file.
+    // This will validate the emitted data via the adler checksum logic
+    // in the decoding process.
+    
+    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+    
+    BOOL worked = [frameDecoder openForReading:tmpPath];
+    NSAssert(worked, @"worked");
+    
+    NSAssert([frameDecoder numFrames] == 152, @"numFrames");
+    NSAssert([frameDecoder hasAlphaChannel] == TRUE, @"hasAlphaChannel");
+    
+    worked = [frameDecoder allocateDecodeResources];
+    NSAssert(worked, @"worked");
+    
+    // Decode and verify each frame adler
+    
+    MVFrame *frames = frameDecoder.mvFrames;
+    
+    BOOL emitArray = FALSE;
+    NSMutableString *emitStr = [NSMutableString string];
+    
+    [emitStr appendFormat:@"int expectedAdler[] = {\n"];
+    
+    for (int frameIndex = 0; frameIndex < [frameDecoder numFrames]; frameIndex++) {      
+      MVFrame *frame = maxvid_file_frame(frames, frameIndex);
+      int adler = frame->adler;
+      
+      if (emitArray) {
+        [emitStr appendFormat:@"\t0x%x,\n", adler];
+      } else {
+        // Check the statically defined array of adlers vs the one we just generated
+        
+        int expectedAdler;
+        if (TARGET_IPHONE_SIMULATOR) {
+          expectedAdler = testJoinAlphaForExplosionVideoCheckAdler_simulator_expectedAdler[frameIndex];
+        } else {
+          expectedAdler = testJoinAlphaForExplosionVideoCheckAdler_device_expectedAdler[frameIndex];
+        }
+        assert(adler == expectedAdler);
+      }
+      
+      //NSLog(@"adler[%d] = %d", frameIndex, adler);
+    }
+    
+    if (emitArray) {
+      NSRange range = NSMakeRange([emitStr length] - 2, 2);
+      [emitStr deleteCharactersInRange:range];
+      
+      [emitStr appendFormat:@"\n}\n"];
+      NSLog(@"emitStr:\n%@", emitStr);
+    }
+  }
+  
+  // remove large output file once done with test!
+  
+  if (TRUE) {
+    worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:NULL];
+    NSAssert(worked, @"rm %@", tmpPath);
+  }
+    
+  return;
+}
+
+// Same as above but do not generate and adler checksum, since this takes quite
+// a bit of CPU and memory access time.
+
++ (void) testJoinAlphaForExplosionVideoNoAdler
 {
   NSString *tmpFilename;
   NSString *tmpPath;
@@ -381,7 +813,7 @@
   // Once loading is completed, examine the generated .mvid to check that the expected
   // results match the actual results.
   
-  BOOL decodeFrames = FALSE;
+  BOOL decodeFrames = TRUE;
   BOOL emitFrames = FALSE;
   
   if (decodeFrames) {
