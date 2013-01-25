@@ -7,6 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <UIKit/UIKit.h>
+
 #import "AVFileUtil.h"
 
 #import "SegmentedMappedData.h"
@@ -783,7 +785,7 @@
     [tmpFilenames addObject:path];
   }
   
-  // Generate 100 meg data in each file
+  // Generate 100 megs of data in each file
   
   for (NSString *path in tmpFilenames) {
     // Page = 4K, Meg = 1000K, 100 Megs = 100000K
@@ -810,7 +812,7 @@
     
     // Wait a few seconds in event loop
     
-    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:20];
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:2];
     [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
   }
   
@@ -911,5 +913,211 @@
   
   return;
 }
+
+// This test pushes the system to the limits of mapped file size using
+// 10 meg files. The results of this test indicate that mapped memory
+// starts to fail at about 700 megs. So, shoot for about 680 megs to
+// provide some 20 megs of wiggle room so that other code will not just
+// fail because of a lack of available virtual memory while this 680
+// megs of memory is mapped.
+
++ (void) DISABLED_testMappingLargeFilesWithTenMegFiles
+{
+  {
+	id appDelegate = [[UIApplication sharedApplication] delegate];
+	UIWindow *window = [appDelegate window];
+	NSAssert(window, @"window");
+  window.backgroundColor = [UIColor redColor];
+    
+  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1];
+  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
+  
+  BOOL doWaits = FALSE;
+  
+//  int targetMegs = 700;
+  int targetMegs = 650; // should be safe to map 650 megs without possibility of failure
+  int largeSizeMegs = 10;
+  //int numFiles = 10 - 1;
+  int numFiles = targetMegs / largeSizeMegs;
+  
+  NSMutableArray *mArr = [NSMutableArray array];
+  
+  for (int i=0; i < numFiles; i++) {
+    NSString *filename = [NSString stringWithFormat:@"large%d", i];
+    [mArr addObject:filename];
+  }
+  
+  NSArray *filenames = [NSArray arrayWithArray:mArr];
+
+  NSMutableArray *tmpFilenames = [NSMutableArray array];
+  
+  NSMutableArray *mappedFileDatas = [NSMutableArray array];
+  
+  NSMutableArray *unmappedFileNames = [NSMutableArray array];
+  NSMutableArray *unmappedFileDatas = [NSMutableArray array];
+  
+  for (NSString *filename in filenames) {
+    NSString *path = [AVFileUtil getTmpDirPath:filename];
+    [tmpFilenames addObject:path];
+  }
+  
+  // Generate file that are 10 megabytes each. Note that the
+  // file size is in terms of actual bytes
+  
+  for (NSString *path in tmpFilenames) {
+    // 1 meg = 1024 (1K) * 1024
+    int numBytes = (1024 * 1024) * largeSizeMegs; // 10 megabytes
+    NSAssert((numBytes % 4096) == 0, @"numBytes not page sized");
+    
+    NSLog(@"Writing %@", [path lastPathComponent]);
+    [self writeLargeFile:path numBytes:numBytes];
+  }
+  
+  // Map large files into memory
+  
+  for (NSString *path in tmpFilenames) {
+    NSLog(@"Mapping %@, total %d megs", [path lastPathComponent], [mappedFileDatas count] * largeSizeMegs);
+    
+    NSData *data = [NSData dataWithContentsOfMappedFile:path];
+    if (data == nil) {
+      NSLog(@"Failed to map %@", [path lastPathComponent]);
+      [unmappedFileNames addObject:path];
+      //[unmappedFileDatas addObject:data];
+      continue;
+    }
+    [mappedFileDatas addObject:data];
+    
+    // Wait a few seconds in event loop
+    
+    if (doWaits) {
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:2];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+    }
+  }
+  
+  // Now walk over all the bytes in the mapping, one mapping at a time.
+  // This should bring all the pages into memory by swapping.
+  
+  int numMappedFiles = [mappedFileDatas count];
+  
+  for (int i=0; i < numMappedFiles; i++) {
+    NSString *filename = [tmpFilenames objectAtIndex:i];
+    NSData *data = [mappedFileDatas objectAtIndex:i];
+    
+    NSLog(@"Accessing : %@", [filename lastPathComponent]);
+    
+    char *ptr = (char*) [data bytes];
+    int len = [data length];
+    
+    int sum = 0;
+    
+    for (char *data = ptr; data < (ptr + len); data++) {
+      char c = *data;
+      sum += c;
+    }
+    
+    NSAssert(sum > 0, @"sum");
+    
+    // Wait a few seconds in event loop
+    
+    if (doWaits) {
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+    }
+  }
+  
+  // Now walk over all the bytes in the mapping, one mapping at a time.
+  // This should bring all the pages into memory by swapping.
+  
+  for (NSData *data in mappedFileDatas) {
+    NSLog(@"Processing2");
+    
+    char *ptr = (char*) [data bytes];
+    int len = [data length];
+    
+    int sum = 0;
+    
+    for (char *data = ptr; data < (ptr + len); data++) {
+      char c = *data;
+      sum += c;
+    }
+    
+    NSAssert(sum > 0, @"sum");
+    
+    // Wait a few seconds in event loop
+    
+    if (doWaits) {
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+    }
+  }
+  
+  // Attempt to map failed memory again
+  
+  for (NSString *path in unmappedFileNames) {
+    NSLog(@"Mapping %@", [path lastPathComponent]);
+    
+    NSData *data = [NSData dataWithContentsOfMappedFile:path];
+    if (data == nil) {
+      NSLog(@"Failed to map %@", [path lastPathComponent]);
+      continue;
+    }
+    [unmappedFileDatas addObject:data];
+    
+    // Wait a few seconds in event loop
+    
+    if (doWaits) {
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+    }
+  }
+  
+  // Now walk over all the bytes in the mapping, one mapping at a time.
+  // This should bring all the pages into memory by swapping out pages.
+  
+  for (NSData *data in mappedFileDatas) {
+    NSLog(@"Processing3");
+    
+    char *ptr = (char*) [data bytes];
+    int len = [data length];
+    
+    int sum = 0;
+    
+    for (char *data = ptr; data < (ptr + len); data++) {
+      char c = *data;
+      sum += c;
+    }
+    
+    NSAssert(sum > 0, @"sum");
+    
+    // Wait a few seconds in event loop
+    
+    if (doWaits) {
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+    }
+  }
+  
+  {
+    id appDelegate = [[UIApplication sharedApplication] delegate];
+    UIWindow *window = [appDelegate window];
+    NSAssert(window, @"window");
+    window.backgroundColor = [UIColor greenColor];
+    
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
+
+  // Wait for 5 minutes in event loop
+  
+  if (doWaits) {
+    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:(60 * 5)];
+    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
+  
+  return;
+}
+
 
 @end
