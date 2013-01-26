@@ -328,7 +328,14 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
   
   [videoWriterInput markAsFinished];
   
+  // Bug in finishWriting in iOS 6 simulator:
+  // http://stackoverflow.com/questions/12517760/avassetwriter-finishwriting-fails-on-ios-6-simulator
+  
+#if TARGET_IPHONE_SIMULATOR
+  [videoWriter performSelectorOnMainThread:@selector(finishWriting) withObject:nil waitUntilDone:TRUE];
+#else
   [videoWriter finishWriting];
+#endif
   
   // Note that [frameDecoder close] is implicitly invoked when the autorelease pool is drained.
   
