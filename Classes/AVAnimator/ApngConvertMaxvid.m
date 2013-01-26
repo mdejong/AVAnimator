@@ -6,6 +6,8 @@
 
 #import "ApngConvertMaxvid.h"
 
+#import "movdata.h"
+
 #include "maxvid_decode.h"
 #include "maxvid_encode.h"
 #include "maxvid_file.h"
@@ -24,16 +26,10 @@ typedef struct {
 // Each pixel needs to be multiplied by the alpha channel value.
 // Optimized premultiplication implementation using table lookups
 
-#define TABLEMAX 256
-//#define TABLEDUMP
-
-static
-uint8_t alphaTables[TABLEMAX*TABLEMAX];
-static
-int alphaTablesInitialized = 0;
-
 // Input is a ARGB (non-premultiplied) pixel.
 // Output is a ABGR (premultiplied) pixel for CoreGraphics bitmap.
+//
+// Note that extern_alphaTablesPtr is defined in movdata.h
 
 static inline
 uint32_t argb_to_abgr_and_premultiply(uint32_t pixel)
@@ -43,7 +39,7 @@ uint32_t argb_to_abgr_and_premultiply(uint32_t pixel)
   uint32_t green = (pixel >> 8) & 0xFF;
   uint32_t blue = (pixel >> 0) & 0xFF;
   
-  uint8_t * restrict alphaTable = &alphaTables[alpha * TABLEMAX];
+  const uint8_t* const restrict alphaTable = &extern_alphaTablesPtr[alpha * PREMULT_TABLEMAX];
   return (alpha << 24) | (alphaTable[blue] << 16) | (alphaTable[green] << 8) | alphaTable[red];
 }
 
@@ -64,93 +60,6 @@ uint32_t argb_to_abgr(uint32_t pixel)
 //#define TO_RGBA(red, green, blue, alpha) ((red << 24)|  (green << 16) | (blue << 8) | alpha)
 #define TO_ARGB(red, green, blue, alpha) ((alpha << 24)|  (red << 16) | (green << 8) | blue)
 #define TO_ABGR(red, green, blue, alpha) ((alpha << 24)|  (blue << 16) | (green << 8) | red)
-
-static
-void init_alphaTables() {
-  if (alphaTablesInitialized) {
-    return;
-  }
-  
-  for (int alpha = 0; alpha < TABLEMAX; alpha++) {
-    uint8_t *alphaTable = &alphaTables[alpha * TABLEMAX];
-    float alphaf = alpha / 255.0; // (TABLEMAX - 1)
-#ifdef TABLEDUMP
-    fprintf(stdout, "alpha table for alpha %d = %f\n", alpha, alphaf);
-#endif
-    for (int i = 0; i < TABLEMAX; i++) {
-      int rounded = (int) round(i * alphaf);
-      if (rounded < 0 || rounded >= TABLEMAX) {
-        assert(0);
-      }
-      assert(rounded == (int) (i * alphaf + 0.5));
-      alphaTable[i] = (uint8_t)rounded;
-#ifdef TABLEDUMP
-      if (i == 0 || i == 1 || i == 2 || i == 126 || i == 127 || i == 128 || i == 254 || i == 255) {
-        fprintf(stdout, "alphaTable[%d] = %d\n", i, alphaTable[i]);
-      }
-#endif
-    }
-  }
-  
-  // alpha = 0.0
-  
-  assert(alphaTables[(0 * TABLEMAX) + 0] == 0);
-  assert(alphaTables[(0 * TABLEMAX) + 255] == 0);
-  
-  // alpha = 1.0
-  
-  assert(alphaTables[(255 * TABLEMAX) + 0] == 0);
-  assert(alphaTables[(255 * TABLEMAX) + 127] == 127);
-  assert(alphaTables[(255 * TABLEMAX) + 255] == 255);
-  
-  // Test all generated alpha values in table using
-  // read_ARGB_and_premultiply()
-  
-  for (int alphai = 0; alphai < TABLEMAX; alphai++) {
-    for (int i = 0; i < TABLEMAX; i++) {
-      uint8_t in_alpha = (uint8_t) alphai;
-      uint8_t in_red = 0;
-      uint8_t in_green = (uint8_t) i;
-      uint8_t in_blue = (uint8_t) i;
-      //if (i == 1) {
-      //  assert(alphaTables[(255 * TABLEMAX) + 0] == 0);
-      //}
-
-      // RGBA input
-      //uint32_t in_pixel = TO_RGBA(in_red, in_green, in_blue, in_alpha);
-      
-      // ARGB input
-      uint32_t in_pixel = TO_ARGB(in_red, in_green, in_blue, in_alpha);
-      
-      //uint32_t in_pixel_be = htonl(in_pixel); // pixel in BE byte order
-      uint32_t pixel = in_pixel; // native byte order
-      uint32_t premult_pixel_le;
-      premult_pixel_le = argb_to_abgr_and_premultiply(pixel);
-      
-      // Compare read_ARGB_and_premultiply() result to known good value
-      
-      float alphaf = in_alpha / 255.0; // (TABLEMAX - 1)
-      int rounded = (int) round(i * alphaf);      
-      uint8_t round_alpha = in_alpha;
-      uint8_t round_red = 0;
-      uint8_t round_green = (uint8_t) rounded;
-      uint8_t round_blue = (uint8_t) rounded;
-      // Special case: If alpha is 0, then all 3 components are zero
-      if (round_alpha == 0) {
-        round_red = round_green = round_blue = 0;
-      }
-      uint32_t expected_pixel_le = TO_ABGR(round_red, round_green, round_blue, round_alpha);
-      
-      if (premult_pixel_le != expected_pixel_le) {
-        assert(0);
-      }
-    }
-  }
-  
-  // Everything worked
-  
-  alphaTablesInitialized = 1;
-}
 
 static inline
 uint32_t
@@ -682,7 +591,7 @@ goto retcode; \
   uint32_t status;
   float frameDuration;
   
-  init_alphaTables();
+  premultiply_init();
   
   // FIXME: test to check that filename ends with ".apng" wither here or in caller
   
