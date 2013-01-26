@@ -13,6 +13,8 @@
 #include <sys/mman.h>
 #include <assert.h>
 
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+
 Byte k7zSignature[k7zSignatureSize] = {'7', 'z', 0xBC, 0xAF, 0x27, 0x1C};
 
 #define RINOM(x) { if ((x) == 0) return SZ_ERROR_MEM; }

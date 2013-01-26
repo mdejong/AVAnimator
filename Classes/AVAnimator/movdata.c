@@ -21,6 +21,8 @@
 
 #include "movdata.h"
 
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+
 // Don't bother generating a compile time error if -mno-thumb is not specified for this
 // specific module. There is a performance improvement if -mno-thumb is set, but it
 // is not worth the trouble of setting target specific flags in newer versions of xcode.

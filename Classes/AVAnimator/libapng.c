@@ -52,6 +52,8 @@ unsigned int swap32(unsigned int data) {return((data & 0xFF) << 24) | ((data & 0
 
 #include "zlib.h"
 
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+
 #define PNG_ZBUF_SIZE  32768
 
 #define PNG_DISPOSE_OP_NONE        0x00

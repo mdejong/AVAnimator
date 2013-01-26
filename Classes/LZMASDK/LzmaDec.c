@@ -5,6 +5,8 @@
 
 #include <string.h>
 
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+
 #define kNumTopBits 24
 #define kTopValue ((UInt32)1 << kNumTopBits)
 

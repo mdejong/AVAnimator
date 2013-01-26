@@ -1,6 +1,8 @@
 /* 7zMain.c - Test application for 7z Decoder
 2010-03-12 : Igor Pavlov : Public domain */
 
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+
 #include <stdio.h>
 #include <string.h>
 

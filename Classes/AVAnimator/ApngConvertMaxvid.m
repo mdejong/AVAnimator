@@ -16,6 +16,8 @@
 
 #import "AVMvidFileWriter.h"
 
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+
 typedef struct {
   AVMvidFileWriter *avMvidFileWriter;
   uint32_t bpp;
