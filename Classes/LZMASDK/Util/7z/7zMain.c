@@ -30,6 +30,7 @@
 #endif
 
 #include <assert.h>
+#include <unistd.h>
 
 static ISzAlloc g_Alloc = { SzAlloc, SzFree };
 
@@ -259,6 +260,7 @@ static void ConvertFileTimeToString(const CNtfsFileTime *ft, char *s)
   s = UIntToStr(s, hour, 2); *s++ = ':';
   s = UIntToStr(s, min, 2);  *s++ = ':';
   s = UIntToStr(s, sec, 2);
+  s = s; // Avoids clang analyzer error about s value not being read
 }
 
 void PrintError(char *sz)
@@ -284,221 +286,221 @@ static void GetAttribString(UInt32 wa, Bool isDir, char *s)
 }
 #endif
 
-int MY_CDECL unused_main(int numargs, char *args[])
-{
-  CFileInStream archiveStream;
-  CLookToRead lookStream;
-  CSzArEx db;
-  SRes res;
-  ISzAlloc allocImp;
-  ISzAlloc allocTempImp;
-  UInt16 *temp = NULL;
-  size_t tempSize = 0;
-
-  printf("\n7z ANSI-C Decoder " MY_VERSION_COPYRIGHT_DATE "\n\n");
-  if (numargs == 1)
-  {
-    printf(
-      "Usage: 7zDec <command> <archive_name>\n\n"
-      "<Commands>\n"
-      "  e: Extract files from archive (without using directory names)\n"
-      "  l: List contents of archive\n"
-      "  t: Test integrity of archive\n"
-      "  x: eXtract files with full paths\n");
-    return 0;
-  }
-  if (numargs < 3)
-  {
-    PrintError("incorrect command");
-    return 1;
-  }
-
-  allocImp.Alloc = SzAlloc;
-  allocImp.Free = SzFree;
-
-  allocTempImp.Alloc = SzAllocTemp;
-  allocTempImp.Free = SzFreeTemp;
-
-  if (InFile_Open(&archiveStream.file, args[2]))
-  {
-    PrintError("can not open input file");
-    return 1;
-  }
-
-  FileInStream_CreateVTable(&archiveStream);
-  LookToRead_CreateVTable(&lookStream, False);
-  
-  lookStream.realStream = &archiveStream.s;
-  LookToRead_Init(&lookStream);
-
-#ifdef _7ZIP_CRC_SUPPORT
-  CrcGenerateTable();
-#endif
-
-  SzArEx_Init(&db);
-  res = SzArEx_Open(&db, &lookStream.s, &allocImp, &allocTempImp);
-  if (res == SZ_OK)
-  {
-    char *command = args[1];
-    int listCommand = 0, testCommand = 0, extractCommand = 0, fullPaths = 0;
-    if (strcmp(command, "l") == 0) listCommand = 1;
-    else if (strcmp(command, "t") == 0) testCommand = 1;
-    else if (strcmp(command, "e") == 0) extractCommand = 1;
-    else if (strcmp(command, "x") == 0) { extractCommand = 1; fullPaths = 1; }
-    else
-    {
-      PrintError("incorrect command");
-      res = SZ_ERROR_FAIL;
-    }
-
-    if (res == SZ_OK)
-    {
-      UInt32 i;
-
-      /*
-      if you need cache, use these 3 variables.
-      if you use external function, you can make these variable as static.
-      */
-      UInt32 blockIndex = 0xFFFFFFFF; /* it can have any value before first call (if outBuffer = 0) */
-      Byte *outBuffer = 0; /* it must be 0 before first call for each new archive. */
-      size_t outBufferSize = 0;  /* it can have any value before first call (if outBuffer = 0) */
-
-      for (i = 0; i < db.db.NumFiles; i++)
-      {
-        size_t offset = 0;
-        size_t outSizeProcessed = 0;
-        const CSzFileItem *f = db.db.Files + i;
-        size_t len;
-        if (listCommand == 0 && f->IsDir && !fullPaths)
-          continue;
-        len = SzArEx_GetFileNameUtf16(&db, i, NULL);
-
-        if (len > tempSize)
-        {
-          SzFree(NULL, temp);
-          tempSize = len;
-          temp = (UInt16 *)SzAlloc(NULL, tempSize * sizeof(temp[0]));
-          if (temp == 0)
-          {
-            res = SZ_ERROR_MEM;
-            break;
-          }
-        }
-
-        SzArEx_GetFileNameUtf16(&db, i, temp);
-        if (listCommand)
-        {
-          char attr[8], s[32], t[32];
-
-          GetAttribString(f->AttribDefined ? f->Attrib : 0, f->IsDir, attr);
-
-          UInt64ToStr(f->Size, s);
-          if (f->MTimeDefined)
-            ConvertFileTimeToString(&f->MTime, t);
-          else
-          {
-            size_t j;
-            for (j = 0; j < 19; j++)
-              t[j] = ' ';
-            t[j] = '\0';
-          }
-          
-          printf("%s %s %10s  ", t, attr, s);
-          PrintString(temp);
-          if (f->IsDir)
-            printf("/");
-          printf("\n");
-          continue;
-        }
-        printf(testCommand ?
-            "Testing    ":
-            "Extracting ");
-        PrintString(temp);
-        if (f->IsDir)
-          printf("/");
-        else
-        {
-          res = SzArEx_Extract(&db, &lookStream.s, i,
-              &blockIndex, &outBuffer, &outBufferSize,
-              &offset, &outSizeProcessed,
-              &allocImp, &allocTempImp);
-          if (res != SZ_OK)
-            break;
-        }
-        if (!testCommand)
-        {
-          CSzFile outFile;
-          size_t processedSize;
-          size_t j;
-          UInt16 *name = (UInt16 *)temp;
-          const UInt16 *destPath = (const UInt16 *)name;
-          for (j = 0; name[j] != 0; j++)
-            if (name[j] == '/')
-            {
-              if (fullPaths)
-              {
-                name[j] = 0;
-                MyCreateDir(name);
-                name[j] = CHAR_PATH_SEPARATOR;
-              }
-              else
-                destPath = name + j + 1;
-            }
-    
-          if (f->IsDir)
-          {
-            MyCreateDir(destPath);
-            printf("\n");
-            continue;
-          }
-          else if (OutFile_OpenUtf16(&outFile, destPath))
-          {
-            PrintError("can not open output file");
-            res = SZ_ERROR_FAIL;
-            break;
-          }
-          processedSize = outSizeProcessed;
-          if (File_Write(&outFile, outBuffer + offset, &processedSize) != 0 || processedSize != outSizeProcessed)
-          {
-            PrintError("can not write output file");
-            res = SZ_ERROR_FAIL;
-            break;
-          }
-          if (File_Close(&outFile))
-          {
-            PrintError("can not close output file");
-            res = SZ_ERROR_FAIL;
-            break;
-          }
-          #ifdef USE_WINDOWS_FILE
-          if (f->AttribDefined)
-            SetFileAttributesW(destPath, f->Attrib);
-          #endif
-        }
-        printf("\n");
-      }
-      IAlloc_Free(&allocImp, outBuffer);
-    }
-  }
-  SzArEx_Free(&db, &allocImp);
-  SzFree(NULL, temp);
-
-  File_Close(&archiveStream.file);
-  if (res == SZ_OK)
-  {
-    printf("\nEverything is Ok\n");
-    return 0;
-  }
-  if (res == SZ_ERROR_UNSUPPORTED)
-    PrintError("decoder doesn't support this archive");
-  else if (res == SZ_ERROR_MEM)
-    PrintError("can not allocate memory");
-  else if (res == SZ_ERROR_CRC)
-    PrintError("CRC error");
-  else
-    printf("\nERROR #%d\n", res);
-  return 1;
-}
+//int MY_CDECL unused_main(int numargs, char *args[])
+//{
+//  CFileInStream archiveStream;
+//  CLookToRead lookStream;
+//  CSzArEx db;
+//  SRes res;
+//  ISzAlloc allocImp;
+//  ISzAlloc allocTempImp;
+//  UInt16 *temp = NULL;
+//  size_t tempSize = 0;
+//
+//  printf("\n7z ANSI-C Decoder " MY_VERSION_COPYRIGHT_DATE "\n\n");
+//  if (numargs == 1)
+//  {
+//    printf(
+//      "Usage: 7zDec <command> <archive_name>\n\n"
+//      "<Commands>\n"
+//      "  e: Extract files from archive (without using directory names)\n"
+//      "  l: List contents of archive\n"
+//      "  t: Test integrity of archive\n"
+//      "  x: eXtract files with full paths\n");
+//    return 0;
+//  }
+//  if (numargs < 3)
+//  {
+//    PrintError("incorrect command");
+//    return 1;
+//  }
+//
+//  allocImp.Alloc = SzAlloc;
+//  allocImp.Free = SzFree;
+//
+//  allocTempImp.Alloc = SzAllocTemp;
+//  allocTempImp.Free = SzFreeTemp;
+//
+//  if (InFile_Open(&archiveStream.file, args[2]))
+//  {
+//    PrintError("can not open input file");
+//    return 1;
+//  }
+//
+//  FileInStream_CreateVTable(&archiveStream);
+//  LookToRead_CreateVTable(&lookStream, False);
+//  
+//  lookStream.realStream = &archiveStream.s;
+//  LookToRead_Init(&lookStream);
+//
+//#ifdef _7ZIP_CRC_SUPPORT
+//  CrcGenerateTable();
+//#endif
+//
+//  SzArEx_Init(&db);
+//  res = SzArEx_Open(&db, &lookStream.s, &allocImp, &allocTempImp);
+//  if (res == SZ_OK)
+//  {
+//    char *command = args[1];
+//    int listCommand = 0, testCommand = 0, /*extractCommand = 0,*/ fullPaths = 0;
+//    if (strcmp(command, "l") == 0) listCommand = 1;
+//    else if (strcmp(command, "t") == 0) testCommand = 1;
+//    else if (strcmp(command, "e") == 0) { /*extractCommand = 1;*/ }
+//    else if (strcmp(command, "x") == 0) { /*extractCommand = 1;*/ fullPaths = 1; }
+//    else
+//    {
+//      PrintError("incorrect command");
+//      res = SZ_ERROR_FAIL;
+//    }
+//
+//    if (res == SZ_OK)
+//    {
+//      UInt32 i;
+//
+//      /*
+//      if you need cache, use these 3 variables.
+//      if you use external function, you can make these variable as static.
+//      */
+//      UInt32 blockIndex = 0xFFFFFFFF; /* it can have any value before first call (if outBuffer = 0) */
+//      Byte *outBuffer = 0; /* it must be 0 before first call for each new archive. */
+//      size_t outBufferSize = 0;  /* it can have any value before first call (if outBuffer = 0) */
+//
+//      for (i = 0; i < db.db.NumFiles; i++)
+//      {
+//        size_t offset = 0;
+//        size_t outSizeProcessed = 0;
+//        const CSzFileItem *f = db.db.Files + i;
+//        size_t len;
+//        if (listCommand == 0 && f->IsDir && !fullPaths)
+//          continue;
+//        len = SzArEx_GetFileNameUtf16(&db, i, NULL);
+//
+//        if (len > tempSize)
+//        {
+//          SzFree(NULL, temp);
+//          tempSize = len;
+//          temp = (UInt16 *)SzAlloc(NULL, tempSize * sizeof(temp[0]));
+//          if (temp == 0)
+//          {
+//            res = SZ_ERROR_MEM;
+//            break;
+//          }
+//        }
+//
+//        SzArEx_GetFileNameUtf16(&db, i, temp);
+//        if (listCommand)
+//        {
+//          char attr[8], s[32], t[32];
+//
+//          GetAttribString(f->AttribDefined ? f->Attrib : 0, f->IsDir, attr);
+//
+//          UInt64ToStr(f->Size, s);
+//          if (f->MTimeDefined)
+//            ConvertFileTimeToString(&f->MTime, t);
+//          else
+//          {
+//            size_t j;
+//            for (j = 0; j < 19; j++)
+//              t[j] = ' ';
+//            t[j] = '\0';
+//          }
+//          
+//          printf("%s %s %10s  ", t, attr, s);
+//          PrintString(temp);
+//          if (f->IsDir)
+//            printf("/");
+//          printf("\n");
+//          continue;
+//        }
+//        printf(testCommand ?
+//            "Testing    ":
+//            "Extracting ");
+//        PrintString(temp);
+//        if (f->IsDir)
+//          printf("/");
+//        else
+//        {
+//          res = SzArEx_Extract(&db, &lookStream.s, i,
+//              &blockIndex, &outBuffer, &outBufferSize,
+//              &offset, &outSizeProcessed,
+//              &allocImp, &allocTempImp);
+//          if (res != SZ_OK)
+//            break;
+//        }
+//        if (!testCommand)
+//        {
+//          CSzFile outFile;
+//          size_t processedSize;
+//          size_t j;
+//          UInt16 *name = (UInt16 *)temp;
+//          const UInt16 *destPath = (const UInt16 *)name;
+//          for (j = 0; (name != NULL) && (name[j] != 0); j++)
+//            if (name[j] == '/')
+//            {
+//              if (fullPaths)
+//              {
+//                name[j] = 0;
+//                MyCreateDir(name);
+//                name[j] = CHAR_PATH_SEPARATOR;
+//              }
+//              else
+//                destPath = name + j + 1;
+//            }
+//    
+//          if (f->IsDir)
+//          {
+//            MyCreateDir(destPath);
+//            printf("\n");
+//            continue;
+//          }
+//          else if (OutFile_OpenUtf16(&outFile, destPath))
+//          {
+//            PrintError("can not open output file");
+//            res = SZ_ERROR_FAIL;
+//            break;
+//          }
+//          processedSize = outSizeProcessed;
+//          if (File_Write(&outFile, outBuffer + offset, &processedSize) != 0 || processedSize != outSizeProcessed)
+//          {
+//            PrintError("can not write output file");
+//            res = SZ_ERROR_FAIL;
+//            break;
+//          }
+//          if (File_Close(&outFile))
+//          {
+//            PrintError("can not close output file");
+//            res = SZ_ERROR_FAIL;
+//            break;
+//          }
+//          #ifdef USE_WINDOWS_FILE
+//          if (f->AttribDefined)
+//            SetFileAttributesW(destPath, f->Attrib);
+//          #endif
+//        }
+//        printf("\n");
+//      }
+//      IAlloc_Free(&allocImp, outBuffer);
+//    }
+//  }
+//  SzArEx_Free(&db, &allocImp);
+//  SzFree(NULL, temp);
+//
+//  File_Close(&archiveStream.file);
+//  if (res == SZ_OK)
+//  {
+//    printf("\nEverything is Ok\n");
+//    return 0;
+//  }
+//  if (res == SZ_ERROR_UNSUPPORTED)
+//    PrintError("decoder doesn't support this archive");
+//  else if (res == SZ_ERROR_MEM)
+//    PrintError("can not allocate memory");
+//  else if (res == SZ_ERROR_CRC)
+//    PrintError("CRC error");
+//  else
+//    printf("\nERROR #%d\n", res);
+//  return 1;
+//}
 
 // This entry point will extract all the contents of a .7z file
 // into the current directory when entryName is NULL. If
@@ -510,7 +512,7 @@ int MY_CDECL unused_main(int numargs, char *args[])
 
 //#define DEBUG_OUTPUT
 
-int do7z_extract_entry(char *archivePath, char *entryName, char *entryPath)
+int do7z_extract_entry(char *archivePath, char *archiveCachePath, char *entryName, char *entryPath)
 {
   CFileInStream archiveStream;
   CLookToRead lookStream;
@@ -571,20 +573,9 @@ int do7z_extract_entry(char *archivePath, char *entryName, char *entryPath)
   res = SzArEx_Open(&db, &lookStream.s, &allocImp, &allocTempImp);
   if (res == SZ_OK)
   {
-    int listCommand = 0, testCommand = 0, extractCommand = 1, fullPaths = 0;
-/*
-    char *command = args[1];
-    int listCommand = 0, testCommand = 0, extractCommand = 0, fullPaths = 0;
-    if (strcmp(command, "l") == 0) listCommand = 1;
-    else if (strcmp(command, "t") == 0) testCommand = 1;
-    else if (strcmp(command, "e") == 0) extractCommand = 1;
-    else if (strcmp(command, "x") == 0) { extractCommand = 1; fullPaths = 1; }
-    else
-    {
-      PrintError("incorrect command");
-      res = SZ_ERROR_FAIL;
-    }
-*/
+    const int extractCommand = 1, fullPaths = 0;
+    
+    assert(archiveCachePath);
     
     if (entryName == NULL) {
       extractAllFiles = 1;
@@ -598,21 +589,22 @@ int do7z_extract_entry(char *archivePath, char *entryName, char *entryPath)
     {
       UInt32 i;
       
-      /*
-       if you need cache, use these 3 variables.
-       if you use external function, you can make these variable as static.
-       */
-      UInt32 blockIndex = 0xFFFFFFFF; /* it can have any value before first call (if outBuffer = 0) */
-      Byte *outBuffer = 0; /* it must be 0 before first call for each new archive. */
-      size_t outBufferSize = 0;  /* it can have any value before first call (if outBuffer = 0) */
+      // The dictionary cache contains data decompressed from the archive. It is managed by
+      // the library and must be freed when done with processing of a specific archive.
+      // Note that the cache cannot be saved from one execution to the next, it must
+      // not exist after this function is done executing.
+      
+      SzArEx_DictCache dictCache;
+      SzArEx_DictCache_init(&dictCache, &allocImp);
+
+      // Enable mmap to file if the archive would be larger than 1/2 meg
+      dictCache.mapFilename = archiveCachePath;
       
       for (i = 0; i < db.db.NumFiles; i++)
       {
-        size_t offset = 0;
-        size_t outSizeProcessed = 0;
         const CSzFileItem *f = db.db.Files + i;
         size_t len;
-        if (listCommand == 0 && f->IsDir && !fullPaths)
+        if (f->IsDir && !fullPaths)
           continue;
         len = SzArEx_GetFileNameUtf16(&db, i, NULL);
         
@@ -629,32 +621,7 @@ int do7z_extract_entry(char *archivePath, char *entryName, char *entryPath)
         }
         
         SzArEx_GetFileNameUtf16(&db, i, temp);
-        if (listCommand)
-        {
-          char attr[8], s[32], t[32];
-          
-          GetAttribString(f->AttribDefined ? f->Attrib : 0, f->IsDir, attr);
-          
-          UInt64ToStr(f->Size, s);
-          if (f->MTimeDefined)
-            ConvertFileTimeToString(&f->MTime, t);
-          else
-          {
-            size_t j;
-            for (j = 0; j < 19; j++)
-              t[j] = ' ';
-            t[j] = '\0';
-          }
-          
-#ifdef DEBUG_OUTPUT
-          printf("%s %s %10s  ", t, attr, s);
-          PrintString(temp);
-          if (f->IsDir)
-            printf("/");
-          printf("\n");
-#endif
-          continue;
-        }
+
 #ifdef DEBUG_OUTPUT
         printf(testCommand ?
                "Testing    ":
@@ -674,7 +641,7 @@ int do7z_extract_entry(char *archivePath, char *entryName, char *entryPath)
           if (!extractAllFiles) {
             CBuf buf;
             Buf_Init(&buf);
-            if (Utf16_To_Char(&buf, temp, 0) == 0)
+            if (temp && (Utf16_To_Char(&buf, temp, 0) == 0))
             {
               if (strcmp((char*)buf.data, entryName) != 0) {
                 // This is not the entry we are interested in extracting
@@ -693,14 +660,15 @@ int do7z_extract_entry(char *archivePath, char *entryName, char *entryPath)
           
           foundMatchingEntryName = 1;
           
-          res = SzArEx_Extract(&db, &lookStream.s, i,
-                               &blockIndex, &outBuffer, &outBufferSize,
-                               &offset, &outSizeProcessed,
+          res = SzArEx_Extract(&db,
+                               &lookStream.s,
+                               i, // archive entry offset
+                               &dictCache,
                                &allocImp, &allocTempImp);
           if (res != SZ_OK)
             break;
         }
-        if (!testCommand)
+        
         {
           CSzFile outFile;
           size_t processedSize;
@@ -755,8 +723,9 @@ int do7z_extract_entry(char *archivePath, char *entryName, char *entryPath)
             res = SZ_ERROR_FAIL;
             break;
           }
-          processedSize = outSizeProcessed;
-          if (File_Write(&outFile, outBuffer + offset, &processedSize) != 0 || processedSize != outSizeProcessed)
+          processedSize = dictCache.outSizeProcessed;
+          void *entryPtr = dictCache.outBuffer + dictCache.entryOffset;
+          if (File_Write(&outFile, entryPtr, &processedSize) != 0 || processedSize != dictCache.outSizeProcessed)
           {
             PrintError("can not write output file");
             res = SZ_ERROR_FAIL;
@@ -768,16 +737,12 @@ int do7z_extract_entry(char *archivePath, char *entryName, char *entryPath)
             res = SZ_ERROR_FAIL;
             break;
           }
-#ifdef USE_WINDOWS_FILE
-          if (f->AttribDefined)
-            SetFileAttributesW(destPath, f->Attrib);
-#endif
         }
 #ifdef DEBUG_OUTPUT
         printf("\n");
 #endif
       }
-      IAlloc_Free(&allocImp, outBuffer);
+      SzArEx_DictCache_free(&dictCache);
     }
   }
   SzArEx_Free(&db, &allocImp);
@@ -790,6 +755,11 @@ int do7z_extract_entry(char *archivePath, char *entryName, char *entryPath)
     printf("\nCould not find matching entry in archive\n");
 #endif
     return 1;    
+  }
+  
+  if (archiveCachePath) {
+    // remove cache file if it exists
+    unlink(archiveCachePath);
   }
   
   if (res == SZ_OK)

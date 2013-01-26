@@ -343,8 +343,10 @@ static SRes SzFolder_Decode2(const CSzFolder *folder, const UInt64 *packSizes,
 {
   UInt32 ci;
   SizeT tempSizes[3] = { 0, 0, 0};
+#ifdef _7ZIP_BRANCH_SUPPORT
   SizeT tempSize3 = 0;
   Byte *tempBuf3 = 0;
+#endif
 
   RINOK(CheckSupportedFolder(folder));
 
@@ -380,8 +382,10 @@ static SRes SzFolder_Decode2(const CSzFolder *folder, const UInt64 *packSizes,
         {
           if (unpackSize > outSize) /* check it */
             return SZ_ERROR_PARAM;
+#ifdef _7ZIP_BRANCH_SUPPORT
           tempBuf3 = outBufCur = outBuffer + (outSize - (size_t)unpackSize);
           tempSize3 = outSizeCur = (SizeT)unpackSize;
+#endif
         }
         else
           return SZ_ERROR_UNSUPPORTED;

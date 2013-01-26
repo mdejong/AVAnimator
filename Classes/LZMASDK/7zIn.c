@@ -9,6 +9,10 @@
 #endif
 #include "CpuArch.h"
 
+#include <errno.h>
+#include <sys/mman.h>
+#include <assert.h>
+
 Byte k7zSignature[k7zSignatureSize] = {'7', 'z', 0xBC, 0xAF, 0x27, 0x1C};
 
 #define RINOM(x) { if ((x) == 0) return SZ_ERROR_MEM; }
@@ -1225,7 +1229,9 @@ static SRes SzArEx_Open2(
   Int64 startArcPos;
   UInt64 nextHeaderOffset, nextHeaderSize;
   size_t nextHeaderSizeT;
+#ifdef _7ZIP_CRC_SUPPORT
   UInt32 nextHeaderCRC;
+#endif
   CBuf buffer;
   SRes res;
 
@@ -1241,7 +1247,9 @@ static SRes SzArEx_Open2(
 
   nextHeaderOffset = GetUi64(header + 12);
   nextHeaderSize = GetUi64(header + 20);
+#ifdef _7ZIP_CRC_SUPPORT
   nextHeaderCRC = GetUi32(header + 28);
+#endif
 
   p->startPosAfterHeader = startArcPos + k7zStartHeaderSize;
   
@@ -1276,11 +1284,11 @@ static SRes SzArEx_Open2(
   res = LookInStream_Read(inStream, buffer.data, nextHeaderSizeT);
   if (res == SZ_OK)
   {
-    res = SZ_ERROR_ARCHIVE;
 #ifdef _7ZIP_CRC_SUPPORT
+    res = SZ_ERROR_ARCHIVE;
     if (CrcCalc(buffer.data, nextHeaderSizeT) == nextHeaderCRC)
 #else
-      if (1)
+    if (1)
 #endif
     {
       CSzData sd;
@@ -1333,28 +1341,22 @@ SRes SzArEx_Extract(
     const CSzArEx *p,
     ILookInStream *inStream,
     UInt32 fileIndex,
-    UInt32 *blockIndex,
-    Byte **outBuffer,
-    size_t *outBufferSize,
-    size_t *offset,
-    size_t *outSizeProcessed,
+    SzArEx_DictCache *dictCache,
     ISzAlloc *allocMain,
     ISzAlloc *allocTemp)
 {
   UInt32 folderIndex = p->FileIndexToFolderIndexMap[fileIndex];
   SRes res = SZ_OK;
-  *offset = 0;
-  *outSizeProcessed = 0;
+  dictCache->entryOffset = 0;
+  dictCache->outSizeProcessed = 0;
   if (folderIndex == (UInt32)-1)
   {
-    IAlloc_Free(allocMain, *outBuffer);
-    *blockIndex = folderIndex;
-    *outBuffer = 0;
-    *outBufferSize = 0;
+    SzArEx_DictCache_free(dictCache);
+    dictCache->blockIndex = folderIndex;
     return SZ_OK;
   }
 
-  if (*outBuffer == 0 || *blockIndex != folderIndex)
+  if (dictCache->outBuffer == 0 || dictCache->blockIndex != folderIndex)
   {
     CSzFolder *folder = p->db.Folders + folderIndex;
     UInt64 unpackSizeSpec = SzFolder_GetUnpackSize(folder);
@@ -1363,19 +1365,26 @@ SRes SzArEx_Extract(
 
     if (unpackSize != unpackSizeSpec)
       return SZ_ERROR_MEM;
-    *blockIndex = folderIndex;
-    IAlloc_Free(allocMain, *outBuffer);
-    *outBuffer = 0;
     
+    SzArEx_DictCache_free(dictCache);
+    dictCache->blockIndex = folderIndex;
+
     RINOK(LookInStream_SeekTo(inStream, startOffset));
     
     if (res == SZ_OK)
     {
-      *outBufferSize = unpackSize;
+      dictCache->outBufferSize = unpackSize;
       if (unpackSize != 0)
       {
-        *outBuffer = (Byte *)IAlloc_Alloc(allocMain, unpackSize);
-        if (*outBuffer == 0)
+        if (dictCache->mapFilename && (unpackSize >= k7zUnpackMapDictionaryInMemoryMaxNumBytes)) {
+          // map to disk is enabled and file is larger than 1 megabyte.
+          // note that an error condition is checked by seeing if
+          // dictCache->outBuffer after a map attempt
+          SzArEx_DictCache_mmap(dictCache);
+        } else {
+          dictCache->outBuffer = (Byte *)IAlloc_Alloc(allocMain, unpackSize);
+        }
+        if (dictCache->outBuffer == 0)
           res = SZ_ERROR_MEM;
       }
       if (res == SZ_OK)
@@ -1383,13 +1392,13 @@ SRes SzArEx_Extract(
         res = SzFolder_Decode(folder,
           p->db.PackSizes + p->FolderStartPackStreamIndex[folderIndex],
           inStream, startOffset,
-          *outBuffer, unpackSize, allocTemp);
+          dictCache->outBuffer, unpackSize, allocTemp);
         if (res == SZ_OK)
         {
           if (folder->UnpackCRCDefined)
           {
 #ifdef _7ZIP_CRC_SUPPORT
-            if (CrcCalc(*outBuffer, unpackSize) != folder->UnpackCRC)
+            if (CrcCalc(dictCache->outBuffer, unpackSize) != folder->UnpackCRC)
               res = SZ_ERROR_CRC;
 #endif
           }
@@ -1401,16 +1410,199 @@ SRes SzArEx_Extract(
   {
     UInt32 i;
     CSzFileItem *fileItem = p->db.Files + fileIndex;
-    *offset = 0;
+    dictCache->entryOffset = 0;
     for (i = p->FolderStartFileIndex[folderIndex]; i < fileIndex; i++)
-      *offset += (UInt32)p->db.Files[i].Size;
-    *outSizeProcessed = (size_t)fileItem->Size;
-    if (*offset + *outSizeProcessed > *outBufferSize)
+      dictCache->entryOffset += (UInt32)p->db.Files[i].Size;
+    dictCache->outSizeProcessed = (size_t)fileItem->Size;
+    if (dictCache->entryOffset + dictCache->outSizeProcessed > dictCache->outBufferSize)
       return SZ_ERROR_FAIL;
 #ifdef _7ZIP_CRC_SUPPORT
-    if (fileItem->CrcDefined && CrcCalc(*outBuffer + *offset, *outSizeProcessed) != fileItem->Crc)
+    if (fileItem->CrcDefined && CrcCalc(dictCache->outBuffer + dictCache->entryOffset, dictCache->outSizeProcessed) != fileItem->Crc)
       res = SZ_ERROR_CRC;
 #endif
   }
   return res;
+}
+
+void
+SzArEx_DictCache_init(SzArEx_DictCache *dictCache, ISzAlloc *allocMain)
+{
+  dictCache->allocMain = allocMain;
+  dictCache->blockIndex = 0xFFFFFFFF;
+  dictCache->outBuffer = 0;
+  dictCache->outBufferSize = 0;
+  dictCache->entryOffset = 0;
+  dictCache->outSizeProcessed = 0;
+  // Note that the mapFilename is not reset to NULL here
+  dictCache->mapFile = NULL;
+  dictCache->mapSize = 0;
+}
+
+void
+SzArEx_DictCache_free(SzArEx_DictCache *dictCache)
+{
+  if (dictCache->mapFile) {
+    // unmap memory
+    SzArEx_DictCache_munmap(dictCache);
+    // close file handle (it will be set to NULL in init method)
+    // FIXME: can we close the FILE* and just hold on to the mmap pointer? I think
+    // that will keep the fd open until the mapping is closed.
+    fclose(dictCache->mapFile);
+  } else if (dictCache->outBuffer != 0) {
+    // free memory that was allocated on the heap
+    IAlloc_Free(dictCache->allocMain, dictCache->outBuffer);
+  }
+  SzArEx_DictCache_init(dictCache, dictCache->allocMain);
+}
+
+#define SM_PAGESIZE 4096
+
+int
+SzArEx_DictCache_mmap(SzArEx_DictCache *dictCache)
+{
+  assert(dictCache->mapFilename);
+  assert(dictCache->mapFile == NULL);
+  
+  FILE *mapfile = fopen(dictCache->mapFilename, "wb+");
+  
+  if (mapfile == NULL) {
+    return 1;
+  }
+
+  // Extend the file size so that it is a known length before mapping.
+  size_t mapSize = dictCache->outBufferSize;
+  assert(mapSize > 0);
+  
+  // Make sure mapSize is in terms of whole pages
+  {
+    int numPages = mapSize / SM_PAGESIZE;
+    if ((mapSize % SM_PAGESIZE) > 0) {
+      numPages += 1;
+    }
+    mapSize = (numPages * SM_PAGESIZE);
+  }
+  
+  assert(mapSize >= SM_PAGESIZE);
+  assert((mapSize % SM_PAGESIZE) == 0);
+  dictCache->mapSize = mapSize;
+  
+  if (1) {
+    // Seek to the end of the file should create holes in file, but this
+    // does not seem to create a writable mapping as the access at the
+    // end of this function crashes.
+    
+    int seekResult = fseek(mapfile, mapSize - 1, SEEK_SET);
+    assert(seekResult == 0);
+    
+    off_t fileOffsetBeforeWrite = ftell(mapfile);
+    assert(fileOffsetBeforeWrite == (mapSize - 1));
+    
+    // Need to actually write a byte in order for the file
+    // to be extended to this length.
+    char oneByte = 0;
+    int writeResult = fwrite(&oneByte, 1, 1, mapfile);
+    assert(writeResult == 1);
+    
+    fflush(mapfile);
+
+    // If writing a byte did not actually work, then it seems
+    // that the device is out of space. This condition is
+    // not indicated by any of the calls above, but the
+    // ftell will not report that the end of file advanced.
+    
+    off_t fileOffsetAfterWrite = ftell(mapfile);
+    
+    if (fileOffsetAfterWrite == fileOffsetBeforeWrite) {
+      fclose(mapfile);
+      return 3;
+    }
+  } else {
+    // Instead of using seek to write a whole in the file, write
+    // empty zero pages until the file is the proper length
+    // but with nothing but zeros in it.
+    char page[SM_PAGESIZE];
+    bzero(page, SM_PAGESIZE);
+    for (int pageIndex = 0; pageIndex < (mapSize / SM_PAGESIZE); pageIndex++) {
+      int writeNum = fwrite(page, 1, SM_PAGESIZE, mapfile);
+      assert(writeNum == SM_PAGESIZE);
+    }
+  }
+  
+  off_t fileOffset = ftell(mapfile);
+  assert(fileOffset == mapSize);
+  
+  int fd = fileno(mapfile);
+  off_t offset = 0;
+    
+  int protection;
+  int flags;
+  
+  int readWriteMapping = 1;
+  
+  if (!readWriteMapping) {
+    // Normal read only shared mapping
+    protection = PROT_READ;
+    flags = MAP_FILE | MAP_SHARED;
+  } else {
+    // read + write mapping, pages are flushed to disk as needed
+    protection = PROT_READ | PROT_WRITE;
+    flags = MAP_FILE | MAP_SHARED;
+  }
+
+  char *mappedData = mmap(NULL, mapSize, protection, flags, fd, offset);
+  
+  if (mappedData == MAP_FAILED) {
+    int errnoVal = errno;
+    int retval = 0;
+    // Check for known fatal errors
+    
+    if (errnoVal == EACCES) {
+      // mmap result EACCES : file not opened for reading or writing
+      retval = 1;
+    } else if (errnoVal == EBADF) {
+      // mmap result EBADF : bad file descriptor
+      retval = 1;
+    } else if (errnoVal == EINVAL) {
+      // mmap result EINVAL
+      retval = 1;
+    } else if (errnoVal == ENODEV) {
+      // mmap result ENODEV : page does not support mapping
+      retval = 1;
+    } else if (errnoVal == ENXIO) {
+      // mmap result ENXIO : invalid addresses
+      retval = 1;
+    } else if (errnoVal == EOVERFLOW) {
+      // mmap result EOVERFLOW : addresses exceed the maximum offset
+      retval = 1;
+    } else if (errnoVal == ENOMEM) {
+      // Note that ENOMEM is checked here since it is actually likely to happen
+      // due to running out of memory that could be mapped. Return a special code.
+      retval = 2;
+    }
+    
+    fclose(mapfile);
+    return retval;
+  }
+  
+  // We always map at least 1 page of memory, so test basic writing of bytes by
+  // writing zero to the first and second bytes in the mapped memory.
+  
+  mappedData[0] = 0;
+  mappedData[1] = 0;
+
+  dictCache->mapFile = mapfile;
+  dictCache->outBuffer = (void*)mappedData;
+
+  return 0;
+}
+
+void
+SzArEx_DictCache_munmap(SzArEx_DictCache *dictCache)
+{
+  if (dictCache->mapFilename != NULL) {
+    int result = munmap(dictCache->outBuffer, dictCache->mapSize);
+    assert(result == 0);
+    dictCache->outBuffer = NULL;
+    dictCache->mapSize = 0;
+  }
 }
