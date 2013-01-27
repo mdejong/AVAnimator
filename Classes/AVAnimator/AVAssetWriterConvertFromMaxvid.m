@@ -231,7 +231,8 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
 #endif // LOGGING
     
     [videoWriterInput markAsFinished];
-    [videoWriter finishWriting];
+    
+    [self.class videoWriterFinishWriting:videoWriter];
     
     // Remove output file when H264 compressor is not working
     
@@ -328,6 +329,20 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
   
   [videoWriterInput markAsFinished];
   
+  [self.class videoWriterFinishWriting:videoWriter];
+  
+  // Note that [frameDecoder close] is implicitly invoked when the autorelease pool is drained.
+  
+  self.state = AVAssetWriterConvertFromMaxvidStateSuccess;
+  
+  [pool drain];
+  return;
+}
+
+// Util to invoke finishWriting method
+
++ (void) videoWriterFinishWriting:(AVAssetWriter*)videoWriter
+{
   // Bug in finishWriting in iOS 6 simulator:
   // http://stackoverflow.com/questions/12517760/avassetwriter-finishwriting-fails-on-ios-6-simulator
   
@@ -336,13 +351,6 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
 #else
   [videoWriter finishWriting];
 #endif
-  
-  // Note that [frameDecoder close] is implicitly invoked when the autorelease pool is drained.
-  
-  self.state = AVAssetWriterConvertFromMaxvidStateSuccess;
-  
-  [pool drain];
-  return;
 }
 
 #define EMIT_FRAMES 0
