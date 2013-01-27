@@ -1102,6 +1102,49 @@ int testJoinAlphaForExplosionVideoCheckAdler_device_expectedAdler[] = {
   return;
 }
 
+// Check logic related to the movie filename, the is ready logic
+// needs to be run before the load method can be invoked.
+
++ (void) testJoinAlphaForExplosionVideoIsReady
+{
+  NSString *tmpFilename;
+  NSString *tmpPath;
+  
+  // Asset filenames
+  
+  NSString *rgbResourceName = @"ExplosionAdjusted_rgb_CRF_30_24BPP.m4v";
+  NSString *alphaResourceName = @"ExplosionAdjusted_alpha_CRF_30_24BPP.m4v";
+  
+  // Output filename
+  
+  tmpFilename = @"ExplosionAdjusted.mvid";
+  tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  // If the decode mov path exists currently, delete it so that this test case always
+  // decodes the .mov from the .7z compressed Resource.
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"could not remove file %@", tmpPath);
+  }
+  
+  AVAssetJoinAlphaResourceLoader *resLoader = [AVAssetJoinAlphaResourceLoader aVAssetJoinAlphaResourceLoader];
+  
+  resLoader.movieRGBFilename = rgbResourceName;
+  resLoader.movieAlphaFilename = alphaResourceName;
+  resLoader.outPath = tmpPath;
+  
+  // Invoke isReady to make sure it does not assert due to movie filename being nil
+  
+  BOOL isReady = [resLoader isReady];
+
+  NSAssert(isReady == FALSE, @"isReady");
+  
+  NSAssert([resLoader.movieFilename isEqualToString:resLoader.movieRGBFilename], @"movieFilename");
+  
+  return;
+}
+
 #endif // HAS_AVASSET_CONVERT_MAXVID
 
 @end

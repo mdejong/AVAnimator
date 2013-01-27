@@ -59,6 +59,15 @@
   [super dealloc];
 }
 
+// Overload suerclass self.movieFilename getter so that standard loading
+// process so that the movieRGBFilename property can be set instead
+// of the self.movieFilename property.
+
+- (NSString*) movieFilename
+{
+  return self.movieRGBFilename;
+}
+
 // Output movie filename must be redefined
 
 - (NSString*) _getMoviePath
