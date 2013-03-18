@@ -47,6 +47,7 @@ typedef enum {
 #define MV_MAX_24_BITS 0xFFFFFF
 #define MV_MAX_27_BITS 0x7FFFFFF
 #define MV_MAX_30_BITS 0x3FFFFFFF
+#define MV_MAX_32_BITS 0xFFFFFFFF
 
 #define MV_PAGESIZE 4096
 #define MV16_NUM_PIXELS_ONE_PAGE (MV_PAGESIZE / sizeof(uint16_t))

@@ -104,6 +104,26 @@ uint32_t maxvid_frame_length(MVFrame *mvFrame) {
   return (mvFrame->lengthAndFlags >> 8);
 }
 
+// Return non-zero if the framebuffer is so large that it cannot be stored as a maxvid file.
+// This basically means that the number of bytes is so huge that a 24 bit value cannot hold it.
+
+static inline
+int maxvid_frame_check_max_size(uint32_t width, uint32_t height, int bpp) {
+  int numBytesInPixel;
+  if (bpp == 16) {
+    numBytesInPixel = 2;
+  } else {
+    // 24 or 32 BPP pixels are both stored in 32 bits
+    numBytesInPixel = 4;
+  }
+  int actualSize = numBytesInPixel * width * height;
+  if (actualSize > MV_MAX_24_BITS) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 // Emit a word that represents a nop frame, an empty delta.
 // A nop frame is never decoded, it simply acts as a placeholder
 // so that the next frame does not begin on the exact same
