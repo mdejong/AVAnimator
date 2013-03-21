@@ -2392,7 +2392,7 @@ int unpremultiply(const uint32_t premultRGBComponent, const float alphaMult, con
   // Pass the unpremultiplied estimated value through the
   // premultiply table again to verify that the result
   // maps back to the same rgb component value that was
-  // passed int. It is possible that the result of the
+  // passed in. It is possible that the result of the
   // multiplication is smaller or larger than the
   // original value, so this will either add or remove
   // one int value to the result rgb component to account
