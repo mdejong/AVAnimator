@@ -1412,6 +1412,12 @@ maxvid_encode_sample32_c4_encode_copycodes(FILE *fp, uint32_t encodeFlags,
   const uint32_t *inputBuffer32Max = inputBuffer32 + inputBuffer32NumWordsRead;
 #endif
   
+  // Note that reading pixels from one "segment" can happen across different
+  // emitted COPY codes since the output code size could be smaller than
+  // the size of a specific segment.
+  
+  uint32_t numPixelsThisSegment = 0;
+  
   // Break copies into chunks taking the copy "num" max into account.
     
   const uint32_t maxCopyPixelsNum = MV_MAX_22_BITS;
@@ -1448,7 +1454,6 @@ maxvid_encode_sample32_c4_encode_copycodes(FILE *fp, uint32_t encodeFlags,
     // Copy a total of copyCountThisLoop pixels from N code/pixel segments.
     
     uint32_t numPixels = copyCountThisLoop;
-    uint32_t numPixelsThisSegment = 0;
     
     do {
       if (numPixelsThisSegment == 0) {

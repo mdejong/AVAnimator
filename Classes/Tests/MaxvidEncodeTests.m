@@ -1429,8 +1429,6 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   return;
 }
-
-/*
  
 // FIXME: something is going wrong with buffering of the values after the COPY
 // op in this skip case. More work needed to apply the DUP fix here.
@@ -1505,10 +1503,14 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   [mStr setString:@""];
   
-  [mStr appendFormat:@"COPY %d ", 153600];
-  for (int i=0; i < 153600 / 3; i++) {
+  [mStr appendFormat:@"COPY %d ", 4194303];
+  for (int i=0; i < 4194303 / 3; i++) {
     [mStr appendString:@"0x1 0x2 0x3 "];
   }
+
+  // The trailing SKIP should be applied to the second emitted code
+  
+  [mStr appendFormat:@"COPY 1 0x1 (SKIP 1)"];
   
   [mStr appendString:@"DONE"];
   
@@ -1519,7 +1521,5 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   return;
 }
- 
-*/
 
 @end
