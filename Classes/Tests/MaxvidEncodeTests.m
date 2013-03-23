@@ -115,6 +115,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
       index++;
     } else if (opCode == COPY) {
       [mStr appendFormat:@"COPY %d ", num];
+      assert(skip == 0);
       
       index++;
       
@@ -126,6 +127,8 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
         index++;
       }
     } else if (opCode == DUP) {
+      assert(skip == 0);
+      
       // DUP is followed by a single word to indicate the dup pixel
       index++;
       inword = ptr[index];
@@ -134,6 +137,221 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
       [mStr appendFormat:@"DUP %d 0x%X ", num, inword];
     } else if (opCode == DONE) {
       [mStr appendFormat:@"DONE"];
+      index++;
+    } else {
+      assert(FALSE);
+    }
+  }
+  assert(index == end);
+  
+  return [NSString stringWithString:mStr];
+}
+
+// This method will convert generic 16BPP codes to m4 codes and print them.
+// m4 codes are more complex than generic codes because multiple
+// code elements can be condensed together.
+
++ (NSString*) util_convertAndPrintC4Codes16:(NSData*)codes
+                       frameBufferNumPixels:(NSUInteger)frameBufferNumPixels
+{
+  if (codes == nil) {
+    return @"IDENTICAL";
+  }
+  
+  // Convert generic codes to m4 codes at 16BPP
+  
+  FILE *tmpfp = tmpfile();
+  assert(tmpfp);
+  
+  uint32_t *maxvidCodeBuffer = (uint32_t*)codes.bytes;
+  uint32_t numMaxvidCodeWords = codes.length / sizeof(uint32_t);
+  
+  int retcode;
+  retcode = maxvid_encode_c4_sample16(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, NULL, tmpfp, 0);
+  assert(retcode == 0);
+  
+  fseek(tmpfp, 0, SEEK_END);
+  uint32_t numBytesInFile = ftell(tmpfp);
+  fseek(tmpfp, 0, SEEK_SET);
+  char *buffer = malloc(numBytesInFile);
+  retcode = fread(buffer, 1, numBytesInFile, tmpfp);
+  assert(retcode == numBytesInFile);
+  fclose(tmpfp);
+  
+  NSData *c4Codes = [NSData dataWithBytes:buffer length:numBytesInFile];
+  assert(c4Codes);
+  free(buffer);
+  
+  // Format c4 codes as string entries
+  
+  NSMutableString *mStr = [NSMutableString string];
+  
+  int index = 0;
+  int end = [c4Codes length] / sizeof(uint32_t);
+  uint32_t *ptr = (uint32_t *)c4Codes.bytes;
+  
+  int frameBufferNumPixelsWritten = 0;
+  
+  for ( ; index < end; ) {
+    uint32_t inword = ptr[index];
+    
+    MV16_READ_OP_VAL_NUM(inword, opCode, val, num);
+    
+    if (opCode == SKIP) {
+      // Note that SKIP has a special binary layout such that the
+      // entire skip value as a 30 bit unsigned number is exactly
+      // the same as treating the word code as a 32 bit number.
+      uint32_t skipNumPixels = inword;
+      assert(skipNumPixels > 0);
+      [mStr appendFormat:@"SKIP %d ", skipNumPixels];
+      index++;
+      frameBufferNumPixelsWritten += skipNumPixels;
+    } else if (opCode == COPY) {
+      [mStr appendFormat:@"COPY %d ", val];
+      index++;
+      
+      // The first pixel value is implicitly stored in the
+      // num slot in the COPY word when the 16BPP framebuffer
+      // is half word aligned. This logic is an optimization
+      // so that the next write can be in terms of a whole word.
+      
+      // FIXME: use frameBufferNumPixels to determine when num
+      // pixels is odd.
+      
+      // not :       if ((numPixels % 2) != 0)
+      
+      int numPixels = val;
+      
+      if (((frameBufferNumPixelsWritten % 2) != 0) || (val == 1)) {
+        assert(val > 0);
+        [mStr appendFormat:@"0x%X ", num];
+        numPixels -= 1;
+        frameBufferNumPixelsWritten += 1;
+      }
+      
+      // pixels are stored 2 in a word, padded to a
+      // whole number of words.
+      
+      int numWords = num_words_16bpp(numPixels);
+      
+      for ( int count = numWords; count ; count-- ) {
+        inword = ptr[index++];
+        numPixels--;
+        [mStr appendFormat:@"0x%X ", (inword & 0xFFFF)];
+        frameBufferNumPixelsWritten += 1;
+        if (numPixels > 0) {
+          numPixels--;
+          [mStr appendFormat:@"0x%X ", ((inword >> 16) & 0xFFFF)];
+          frameBufferNumPixelsWritten += 1;
+        }
+      }
+    } else if (opCode == DUP) {
+      // DUP val contains the number and num contains the pixel
+      index++;
+      uint16_t pixel16 = (uint16_t)num;
+      [mStr appendFormat:@"DUP %d 0x%X ", val, pixel16];
+      frameBufferNumPixelsWritten += val;
+    } else if (opCode == DONE) {
+      [mStr appendFormat:@"DONE"];
+      index++;
+    } else {
+      assert(FALSE);
+    }
+  }
+  assert(index == end);
+  assert(frameBufferNumPixelsWritten == frameBufferNumPixels);
+  
+  return [NSString stringWithString:mStr];
+}
+
+// This method will convert generic 32BPP codes to m4 codes and print them.
+// m4 codes are more complex than generic codes because multiple
+// code elements can be condensed together.
+
++ (NSString*) util_convertAndPrintC4Codes32:(NSData*)codes
+                       frameBufferNumPixels:(NSUInteger)frameBufferNumPixels
+{
+  if (codes == nil) {
+    return @"IDENTICAL";
+  }
+  
+  // Convert generic codes to m4 codes at 32BPP
+  
+  FILE *tmpfp = tmpfile();
+  assert(tmpfp);
+  
+  uint32_t *maxvidCodeBuffer = (uint32_t*)codes.bytes;
+  uint32_t numMaxvidCodeWords = codes.length / sizeof(uint32_t);
+  
+  int retcode;
+  retcode = maxvid_encode_c4_sample32(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, NULL, tmpfp, 0);
+  assert(retcode == 0);
+  
+  fseek(tmpfp, 0, SEEK_END);
+  uint32_t numBytesInFile = ftell(tmpfp);
+  fseek(tmpfp, 0, SEEK_SET);
+  char *buffer = malloc(numBytesInFile);
+  retcode = fread(buffer, 1, numBytesInFile, tmpfp);
+  assert(retcode == numBytesInFile);
+  fclose(tmpfp);
+  
+  NSData *c4Codes = [NSData dataWithBytes:buffer length:numBytesInFile];
+  assert(c4Codes);
+  free(buffer);
+  
+  // Format c4 codes as string entries
+  
+  NSMutableString *mStr = [NSMutableString string];
+  
+  int index = 0;
+  int end = [c4Codes length] / sizeof(uint32_t);
+  uint32_t *ptr = (uint32_t *)c4Codes.bytes;
+  
+  for ( ; index < end; ) {
+    uint32_t inword = ptr[index];
+    
+    MV32_PARSE_OP_NUM_SKIP(inword, opCode, num, skip);
+    
+    if (opCode == SKIP) {
+      // For the 32 bit SKIP encoding, the 22 bit num field is
+      // used to encode the num value. Note that the skip field
+      // is always zero in this case.
+      
+      assert(num > 0);
+      [mStr appendFormat:@"SKIP %d ", num];
+      index++;
+    } else if (opCode == COPY) {
+      [mStr appendFormat:@"COPY %d ", num];
+      
+      index++;
+      
+      // foreach word in copy, write as hex!
+      
+      for ( int count = num; count ; count-- ) {
+        inword = ptr[index];
+        [mStr appendFormat:@"0x%X ", inword];
+        index++;
+      }
+      
+      if (skip > 0) {
+        [mStr appendFormat:@"(SKIP %d) ", skip];
+      }
+    } else if (opCode == DUP) {
+      // DUP is followed by a single word to indicate the dup pixel
+      index++;
+      inword = ptr[index];
+      index++;
+      
+      [mStr appendFormat:@"DUP %d 0x%X ", num, inword];
+      
+      if (skip > 0) {
+        [mStr appendFormat:@"(SKIP %d) ", skip];
+      }
+    } else if (opCode == DONE) {
+      [mStr appendFormat:@"DONE"];
+      index++;
+      // Note that a c4 DONE code is always followed by a zero value, skip over it
+      assert(ptr[index] == 0);
       index++;
     } else {
       assert(FALSE);
@@ -157,6 +375,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 1, 1, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"IDENTICAL"], @"isEqualToString");
+
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
+  NSAssert([results isEqualToString:@"IDENTICAL"], @"isEqualToString");
   
   return;
 }
@@ -175,6 +396,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"IDENTICAL"], @"isEqualToString");
   
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"IDENTICAL"], @"isEqualToString");
+
   return;
 }
 
@@ -190,6 +414,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 1, 1, NULL);
   results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"COPY 1 0x2 DONE"], @"isEqualToString");
+
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
   NSAssert([results isEqualToString:@"COPY 1 0x2 DONE"], @"isEqualToString");
   
   return;
@@ -209,6 +436,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x2 DONE"], @"isEqualToString");
   
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"COPY 1 0x2 DONE"], @"isEqualToString");
+  
   return;
 }
 
@@ -224,6 +454,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 2, 1, NULL);
   results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"COPY 1 0x3 SKIP 1 DONE"], @"isEqualToString");
+ 
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
   NSAssert([results isEqualToString:@"COPY 1 0x3 SKIP 1 DONE"], @"isEqualToString");
   
   return;
@@ -243,6 +476,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x3 SKIP 1 DONE"], @"isEqualToString");
   
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"COPY 1 0x3 (SKIP 1) DONE"], @"isEqualToString");
+  
   return;
 }
 
@@ -258,6 +494,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 2, 1, NULL);
   results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 DONE"], @"isEqualToString");
+  
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
   NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 DONE"], @"isEqualToString");
   
   return;
@@ -277,6 +516,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 DONE"], @"isEqualToString");
   
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 DONE"], @"isEqualToString");
+  
   return;
 }
 
@@ -292,6 +534,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1, NULL);
   results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 SKIP 1 DONE"], @"isEqualToString");
+ 
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
   NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 SKIP 1 DONE"], @"isEqualToString");
   
   return;
@@ -310,6 +555,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 SKIP 1 DONE"], @"isEqualToString");
+
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 (SKIP 1) DONE"], @"isEqualToString");
   
   return;
 }
@@ -324,6 +572,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1, NULL);
   results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"COPY 1 0x4 SKIP 1 COPY 1 0x5 DONE"], @"isEqualToString");
+  
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
   NSAssert([results isEqualToString:@"COPY 1 0x4 SKIP 1 COPY 1 0x5 DONE"], @"isEqualToString");
   
   return;
@@ -341,6 +592,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x4 SKIP 1 COPY 1 0x5 DONE"], @"isEqualToString");
   
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"COPY 1 0x4 (SKIP 1) COPY 1 0x5 DONE"], @"isEqualToString");
+  
   return;
 }
 
@@ -356,6 +610,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 2, 1, NULL);
   results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"COPY 2 0x3 0x4 DONE"], @"isEqualToString");
+  
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
   NSAssert([results isEqualToString:@"COPY 2 0x3 0x4 DONE"], @"isEqualToString");
   
   return;
@@ -375,6 +632,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 2 0x3 0x4 DONE"], @"isEqualToString");
   
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"COPY 2 0x3 0x4 DONE"], @"isEqualToString");
+  
   return;
 }
 
@@ -390,6 +650,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1, NULL);
   results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"COPY 3 0x4 0x5 0x6 DONE"], @"isEqualToString");
+  
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
   NSAssert([results isEqualToString:@"COPY 3 0x4 0x5 0x6 DONE"], @"isEqualToString");
   
   return;
@@ -408,6 +671,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 3, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 3 0x4 0x5 0x6 DONE"], @"isEqualToString");
+
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"COPY 3 0x4 0x5 0x6 DONE"], @"isEqualToString");
   
   return;
 }
@@ -424,6 +690,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 2, 1, NULL);
   results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"DUP 2 0x3 DONE"], @"isEqualToString");
+ 
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
   NSAssert([results isEqualToString:@"DUP 2 0x3 DONE"], @"isEqualToString");
   
   return;
@@ -443,6 +712,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"DUP 2 0x3 DONE"], @"isEqualToString");
   
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"DUP 2 0x3 DONE"], @"isEqualToString");
+  
   return;
 }
 
@@ -458,6 +730,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1, NULL);
   results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"DUP 2 0x3 COPY 1 0x4 DONE"], @"isEqualToString");
+  
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
   NSAssert([results isEqualToString:@"DUP 2 0x3 COPY 1 0x4 DONE"], @"isEqualToString");
   
   return;
@@ -477,6 +752,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"DUP 2 0x3 COPY 1 0x4 DONE"], @"isEqualToString");
   
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"DUP 2 0x3 COPY 1 0x4 DONE"], @"isEqualToString");
+  
   return;
 }
 
@@ -492,6 +770,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 3, 1, NULL);
   results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"COPY 1 0x4 DUP 2 0x5 DONE"], @"isEqualToString");
+  
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
   NSAssert([results isEqualToString:@"COPY 1 0x4 DUP 2 0x5 DONE"], @"isEqualToString");
   
   return;
@@ -511,6 +792,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x4 DUP 2 0x5 DONE"], @"isEqualToString");
   
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"COPY 1 0x4 DUP 2 0x5 DONE"], @"isEqualToString");
+  
   return;
 }
 
@@ -526,6 +810,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 5, 1, NULL);
   results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"DUP 2 0x6 COPY 1 0x7 DUP 2 0x8 DONE"], @"isEqualToString");
+  
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
   NSAssert([results isEqualToString:@"DUP 2 0x6 COPY 1 0x7 DUP 2 0x8 DONE"], @"isEqualToString");
   
   return;
@@ -545,6 +832,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"DUP 2 0x6 COPY 1 0x7 DUP 2 0x8 DONE"], @"isEqualToString");
   
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"DUP 2 0x6 COPY 1 0x7 DUP 2 0x8 DONE"], @"isEqualToString");
+  
   return;
 }
 
@@ -560,6 +850,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 4, 1, NULL);
   results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"COPY 1 0x5 DUP 2 0x6 COPY 1 0x7 DONE"], @"isEqualToString");
+  
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
   NSAssert([results isEqualToString:@"COPY 1 0x5 DUP 2 0x6 COPY 1 0x7 DONE"], @"isEqualToString");
   
   return;
@@ -579,6 +872,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x5 DUP 2 0x6 COPY 1 0x7 DONE"], @"isEqualToString");
   
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"COPY 1 0x5 DUP 2 0x6 COPY 1 0x7 DONE"], @"isEqualToString");
+  
   return;
 }
 
@@ -594,6 +890,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), 4, 1, NULL);
   results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 SKIP 2 DONE"], @"isEqualToString");
+  
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint16_t)];
   NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 SKIP 2 DONE"], @"isEqualToString");
   
   return;
@@ -612,6 +911,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), 4, 1, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 SKIP 2 DONE"], @"isEqualToString");
+  
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:sizeof(curr)/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"SKIP 1 COPY 1 0x3 (SKIP 2) DONE"], @"isEqualToString");
   
   return;
 }
@@ -676,6 +978,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x2 SKIP 65535 SKIP 65535 SKIP 22529 DONE"], @"isEqualToString");
 
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:numBytes/sizeof(uint16_t)];
+  NSAssert([results isEqualToString:@"COPY 1 0x2 SKIP 153599 DONE"], @"isEqualToString");
+  
   free(prev);
   free(curr);
   
@@ -701,6 +1006,9 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height, NULL);
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"COPY 1 0x2 SKIP 65535 SKIP 65535 SKIP 22529 DONE"], @"isEqualToString");
+  
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:numBytes/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"COPY 1 0x2 (SKIP 255) SKIP 153344 DONE"], @"isEqualToString");
   
   free(prev);
   free(curr);
@@ -729,6 +1037,11 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), width, height, NULL);
   results = [self util_printMvidCodes16:codes];
   NSAssert([results isEqualToString:@"DUP 65535 0x1 DUP 65535 0x1 DUP 22530 0x1 DONE"], @"isEqualToString");
+
+  // 14 bit max = 16383, 16383 * 9 + 6153 = 153600
+  
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:numBytes/sizeof(uint16_t)];
+  NSAssert([results isEqualToString:@"DUP 16383 0x1 DUP 16383 0x1 DUP 16383 0x1 DUP 16383 0x1 DUP 16383 0x1 DUP 16383 0x1 DUP 16383 0x1 DUP 16383 0x1 DUP 16383 0x1 DUP 6153 0x1 DONE"], @"isEqualToString");
   
   free(prev);
   free(curr);
@@ -758,11 +1071,66 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_printMvidCodes32:codes];
   NSAssert([results isEqualToString:@"DUP 65535 0x1 DUP 65535 0x1 DUP 22530 0x1 DONE"], @"isEqualToString");
   
+  // A 32 bit c4 DUP code can contain a num up to a max of 22 bits
+  
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:numBytes/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"DUP 153600 0x1 DONE"], @"isEqualToString");
+  
   free(prev);
   free(curr);
   
   return;
 }
+
+/*
+ 
+// FIXME: likely better to not leave just 1 DUP for next loop in this tricky case.
+// Also examine this same issue for 16bpp DUP.
+
+// This test case will push the limits of a 32 bit DUP code by allocating a buffer that is
+// 1 pixel larger than the 22 bit dup count limit of 0x3FFFFF or 4194303 pixels.
+
++ (void) testEncodeReallyHugeDupAt32BPP
+{
+  int width = (MV_MAX_22_BITS + 1);
+  int height = 1;
+  int numBytes = width * height * sizeof(uint32_t);
+  uint32_t *prev = (uint32_t *) malloc( numBytes );
+  uint32_t *curr = (uint32_t *) malloc( numBytes );
+  
+  bzero(prev, numBytes);
+  for (int i=0; i < width * height; i++) {
+    curr[i] = 0x1;
+  }
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height, NULL);
+  results = [self util_printMvidCodes32:codes];
+  
+  assert(((64 * MV_MAX_16_BITS) + 64) == (width * height));
+  NSMutableString *expectedResult = [NSMutableString string];
+  for (int dupi = 0; dupi < 64; dupi++) {
+    [expectedResult appendFormat:@"DUP 65535 0x1 "];
+  }
+  [expectedResult appendFormat:@"DUP 64 0x1 "];
+  [expectedResult appendFormat:@"DONE"];
+
+  NSAssert([results isEqualToString:expectedResult], @"isEqualToString");
+  
+  // A 32 bit c4 DUP code can contain a num up to a max of 22 bits
+  
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:numBytes/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"DUP 4194301 0x1 DUP 1 0x1 DONE"], @"isEqualToString");
+  
+  free(prev);
+  free(curr);
+  
+  return;
+}
+
+*/
 
 // Delta a buffer where every single pixel is changed to some other pixel, aka a large COPY.
 
@@ -822,6 +1190,33 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSString *expected = [NSString stringWithString:mStr];
   
   NSAssert([results isEqualToString:expected], @"isEqualToString");
+  
+  // Generate c4 codes
+  
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:numBytes/sizeof(uint16_t)];
+  
+  // 9 instances of : COPY 16383 0x1 0x2 0x3 ...
+  // 1 instance of :  COPY 6153 0x1 0x2 0x3 ...
+  
+  assert((6153 + (16383 * 9)) == (width * height));
+  
+  [mStr setString:@""];
+  
+  for (int bigCopyi = 0; bigCopyi < 9; bigCopyi++) {
+    [mStr appendFormat:@"COPY %d ", 16383];
+    for (int i=0; i < 16383 / 3; i++) {
+      [mStr appendString:@"0x1 0x2 0x3 "];
+    }
+  }
+  
+  [mStr appendFormat:@"COPY %d ", 6153];
+  for (int i=0; i < 6153 / 3; i++) {
+    [mStr appendString:@"0x1 0x2 0x3 "];
+  }
+  
+  [mStr appendString:@"DONE"];
+  
+  NSAssert([results isEqualToString:mStr], @"isEqualToString");
   
   free(prev);
   free(curr);
@@ -886,6 +1281,21 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSString *expected = [NSString stringWithString:mStr];
   
   NSAssert([results isEqualToString:expected], @"isEqualToString");
+  
+  // generate c4 codes
+  
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:numBytes/sizeof(uint32_t)];
+  
+  [mStr setString:@""];
+    
+  [mStr appendFormat:@"COPY %d ", 153600];
+  for (int i=0; i < 153600 / 3; i++) {
+    [mStr appendString:@"0x1 0x2 0x3 "];
+  }
+  
+  [mStr appendString:@"DONE"];
+  
+  NSAssert([results isEqualToString:mStr], @"isEqualToString");
   
   free(prev);
   free(curr);

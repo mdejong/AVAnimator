@@ -82,7 +82,7 @@ static inline
 uint32_t
 maxvid16_c4_code(MV_GENERIC_CODE opCode, uint32_t numPart, uint16_t pixelPart) {
 #if defined(EXTRA_CHECKS)
-  if (numPart > 0xFFFF) {
+  if (numPart > MV_MAX_14_BITS) {
     assert(0);
   }
 #endif // EXTRA_CHECKS

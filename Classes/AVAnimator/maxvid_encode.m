@@ -1335,6 +1335,12 @@ maxvid_encode_sample32_c4_encode_dupcodes(FILE *fp, uint32_t encodeFlags,
       dupCountThisLoop = dupCountLeft;
     }
 
+    // FIXME: nasty special case here when multiple DUP codes are emitted. If
+    // the final DUP code only covers one pixel, then a DUP cannot be emitted
+    // since all DUP codes must dup at least 2 pixels. Could convert to a
+    // COPY 1 or could rework the loop logic so that a min of 2 is left over
+    // from the previous split logic in this special case.
+    
     uint32_t dupCode = maxvid32_internal_code(DUP, dupCountThisLoop, skipAfterThisLoop);
     if (skipAfterThisLoop != 0) {
       pixelsWritten += skipAfterThisLoop;
