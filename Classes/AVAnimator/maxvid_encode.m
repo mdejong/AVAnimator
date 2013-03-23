@@ -1329,17 +1329,18 @@ maxvid_encode_sample32_c4_encode_dupcodes(FILE *fp, uint32_t encodeFlags,
 #if defined(EXTRA_CHECKS)
   uint32_t originalPixelsWritten = pixelsWritten;
 #endif
-  uint32_t skipAfterThisLoop = skipAfter;
   
-  // each dup code can store a maximum of 22 bits worth of numPixels
+  // each c4 dup code can store a maximum of 22 bits worth of numPixels
   
   const uint32_t maxDupNumPixels = MV_MAX_22_BITS;
   
   uint32_t dupCountLeft = dupNumPixels;
   while (dupCountLeft > 0) {
     uint32_t dupCountThisLoop;
+    uint32_t splitMaxNumPixels = 0;
     
     if (dupCountLeft > maxDupNumPixels) {
+      splitMaxNumPixels = 1;
       dupCountThisLoop = maxDupNumPixels;
       
       if ((dupCountLeft - dupCountThisLoop) == 1) {
@@ -1355,10 +1356,14 @@ maxvid_encode_sample32_c4_encode_dupcodes(FILE *fp, uint32_t encodeFlags,
       dupCountThisLoop = dupCountLeft;
     }
     
+    uint32_t skipAfterThisLoop = 0;
+    if (!splitMaxNumPixels) {
+      skipAfterThisLoop = skipAfter;
+    }
+    
     uint32_t dupCode = maxvid32_internal_code(DUP, dupCountThisLoop, skipAfterThisLoop);
     if (skipAfterThisLoop != 0) {
       pixelsWritten += skipAfterThisLoop;
-      skipAfterThisLoop = 0;
     }
     
     int status = fwrite_word(fp, dupCode);
@@ -1682,7 +1687,7 @@ goto done; \
       inputBuffer32 += inputBuffer32NumWordsRead;
       
       // If the code following a COPY is a SKIP code, then condense 1 to N SKIP codes and select
-      // 8 bits worth of SKIP pixels to fold into the DUP code.
+      // 8 bits worth of SKIP pixels to fold into the COPY code.
       
       inword = *inputBuffer32;
       MV_GENERIC_CODE nextCode = maxvid_encode_sample32_generic_nextcode(inword);

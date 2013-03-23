@@ -1362,7 +1362,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:numBytes/sizeof(uint32_t)];
   
   [mStr setString:@""];
-    
+  
   [mStr appendFormat:@"COPY %d ", 153600];
   for (int i=0; i < 153600 / 3; i++) {
     [mStr appendString:@"0x1 0x2 0x3 "];
@@ -1377,5 +1377,149 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   return;
 }
+
+// In this test case, a large 32 bit c4 DUP code is generated with a trailing SKIP
+// pixel directly after the DUP code. The 32 bit c4 logic contains special logic
+// that can fold a trailing SKIP op code into the previous DUP code. But, the
+// DUP emitting logic must take care to only emit the skip at the end of a set of
+// split DUP codes.
+
++ (void) testEncodeHugeDupThenSkipAt32BPP
+{
+  int width = (MV_MAX_22_BITS + 2 + 1);
+  int height = 1;
+  int numBytes = width * height * sizeof(uint32_t);
+  uint32_t *prev = (uint32_t *) malloc( numBytes );
+  uint32_t *curr = (uint32_t *) malloc( numBytes );
+  
+  bzero(prev, numBytes);
+  for (int i=0; i < width * height; i++) {
+    curr[i] = 0x1;
+  }
+  
+  // Make the last pixel a SKIP
+  curr[width * height - 1] = 0;
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height, NULL);
+  results = [self util_printMvidCodes32:codes];
+  
+  assert(((64 * MV_MAX_16_BITS) + 65 + 1) == (width * height));
+  NSMutableString *expectedResult = [NSMutableString string];
+  for (int dupi = 0; dupi < 64; dupi++) {
+    [expectedResult appendFormat:@"DUP 65535 0x1 "];
+  }
+  [expectedResult appendFormat:@"DUP 65 0x1 "];
+  [expectedResult appendFormat:@"SKIP 1 "];
+  [expectedResult appendFormat:@"DONE"];
+  
+  NSAssert([results isEqualToString:expectedResult], @"isEqualToString");
+  
+  // A 32 bit c4 DUP code can contain a num up to a max of 22 bits. In this case, a normal
+  // DUP would split into max-1 and then 2. But, we expect the second DUP to contain the
+  // implicit skip, not the first on in the split.
+  
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:numBytes/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"DUP 4194303 0x1 DUP 2 0x1 (SKIP 1) DONE"], @"isEqualToString");
+  
+  free(prev);
+  free(curr);
+  
+  return;
+}
+
+/*
+ 
+// FIXME: something is going wrong with buffering of the values after the COPY
+// op in this skip case. More work needed to apply the DUP fix here.
+
+// In this test case a large COPY with a trailing SKIP code is generated. This test checks the same
+// implicit skip at the end of a set of split codes logic as the DUP test above. Basically, a split
+// COPY operation must emit the implicit skip with the last split COPY op code.
+
++ (void) testEncodeHugeCopyThenSkipAt32BPP
+{
+  int width = (MV_MAX_22_BITS + 1 + 1);
+  int height = 1;
+  int numBytes = width * height * sizeof(uint32_t);
+  uint32_t *prev = (uint32_t *) malloc( numBytes );
+  uint32_t *curr = (uint32_t *) malloc( numBytes );
+  
+  // All pixels is prev buffer are 0, so take care to note emit a pixel with the
+  // value zero in the curr buffer.
+  
+  bzero(prev, numBytes);
+  
+  for (int i=0; i < width * height; i++) {
+    uint32_t pixelValue;
+    if ((i % 3) == 0) {
+      pixelValue = 0x1;
+    } else if ((i % 3) == 1) {
+      pixelValue = 0x2;
+    } else if ((i % 3) == 2) {
+      pixelValue = 0x3;
+    } else {
+      assert(0);
+    }
+    curr[i] = pixelValue;
+  }
+  
+  // The last pixel is reset so that it becomes a trailing SKIP
+  curr[(width * height) - 1] = 0;
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height, NULL);
+  results = [self util_printMvidCodes32:codes];
+  
+  NSMutableString *mStr = [NSMutableString string];
+  
+  for (int copyi = 0; copyi < 64; copyi++) {
+    [mStr appendFormat:@"COPY %d ", 65535];
+    for (int i=0; i < 65535 / 3; i++) {
+      [mStr appendString:@"0x1 0x2 0x3 "];
+    }
+  }
+  
+  [mStr appendFormat:@"COPY %d ", 64];
+  for (int i=0; i < 64 / 3; i++) {
+    [mStr appendString:@"0x1 0x2 0x3 "];
+  }
+
+  [mStr appendString:@"0x1 "];
+  
+  [mStr appendString:@"SKIP 1 "];
+  
+  [mStr appendString:@"DONE"];
+  
+  NSString *expected = [NSString stringWithString:mStr];
+  
+  NSAssert([results isEqualToString:expected], @"isEqualToString");
+  
+  // generate c4 codes
+  
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:numBytes/sizeof(uint32_t)];
+  
+  [mStr setString:@""];
+  
+  [mStr appendFormat:@"COPY %d ", 153600];
+  for (int i=0; i < 153600 / 3; i++) {
+    [mStr appendString:@"0x1 0x2 0x3 "];
+  }
+  
+  [mStr appendString:@"DONE"];
+  
+  NSAssert([results isEqualToString:mStr], @"isEqualToString");
+ 
+  free(prev);
+  free(curr);
+  
+  return;
+}
+ 
+*/
 
 @end
