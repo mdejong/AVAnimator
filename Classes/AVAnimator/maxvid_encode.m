@@ -1406,7 +1406,6 @@ maxvid_encode_sample32_c4_encode_copycodes(FILE *fp, uint32_t encodeFlags,
 #if defined(EXTRA_CHECKS)
   uint32_t originalPixelsWritten = pixelsWritten;
 #endif
-  uint32_t skipAfterThisLoop = skipAfter;
   
 #ifdef EXTRA_CHECKS
   const uint32_t *inputBuffer32Max = inputBuffer32 + inputBuffer32NumWordsRead;
@@ -1424,8 +1423,10 @@ maxvid_encode_sample32_c4_encode_copycodes(FILE *fp, uint32_t encodeFlags,
   
   for (uint32_t copyCountLeft = copyNumPixels; copyCountLeft; ) {
     uint32_t copyCountThisLoop;
+    uint32_t splitMaxNumPixels = 0;
     
     if (copyCountLeft > maxCopyPixelsNum) {
+      splitMaxNumPixels = 1;
       copyCountThisLoop = maxCopyPixelsNum;
     } else {
       copyCountThisLoop = copyCountLeft;
@@ -1440,11 +1441,15 @@ maxvid_encode_sample32_c4_encode_copycodes(FILE *fp, uint32_t encodeFlags,
         
     copyCountLeft -= copyCountThisLoop;
     
+    uint32_t skipAfterThisLoop = 0;
+    if (!splitMaxNumPixels) {
+      skipAfterThisLoop = skipAfter;
+    }
+    
     uint32_t copyCode = maxvid32_internal_code(COPY, copyCountThisLoop, skipAfterThisLoop);
     if (skipAfterThisLoop != 0) {
       pixelsWritten += skipAfterThisLoop;
-      skipAfterThisLoop = 0;
-    }    
+    }
     
     int status;
     if ((status = fwrite_word(fp, copyCode))) {

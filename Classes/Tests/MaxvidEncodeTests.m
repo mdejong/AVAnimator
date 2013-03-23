@@ -1429,13 +1429,11 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   return;
 }
- 
-// FIXME: something is going wrong with buffering of the values after the COPY
-// op in this skip case. More work needed to apply the DUP fix here.
 
 // In this test case a large COPY with a trailing SKIP code is generated. This test checks the same
 // implicit skip at the end of a set of split codes logic as the DUP test above. Basically, a split
-// COPY operation must emit the implicit skip with the last split COPY op code.
+// COPY operation must emit the implicit skip with the last split COPY op code. This test also
+// checks that emitting two COPY codes based on the same input generic COPY code works as expected.
 
 + (void) testEncodeHugeCopyThenSkipAt32BPP
 {
@@ -1497,7 +1495,8 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   NSAssert([results isEqualToString:expected], @"isEqualToString");
   
-  // generate c4 codes
+  // generate c4 codes, note that the massive 22 bit size of the number of pixels to copy
+  // means that many generic codes are condensed down to 1 big one and then an extra one.
   
   results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:numBytes/sizeof(uint32_t)];
   
@@ -1510,7 +1509,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
   // The trailing SKIP should be applied to the second emitted code
   
-  [mStr appendFormat:@"COPY 1 0x1 (SKIP 1)"];
+  [mStr appendFormat:@"COPY 1 0x1 (SKIP 1) "];
   
   [mStr appendString:@"DONE"];
   
