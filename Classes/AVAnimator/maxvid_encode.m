@@ -902,6 +902,16 @@ maxvid_encode_sample16_c4_encode_dupcodes(FILE *fp, uint32_t encodeFlags,
     
     if (dupCountLeft > maxDupNumPixels) {
       dupCountThisLoop = maxDupNumPixels;
+      
+      if ((dupCountLeft - dupCountThisLoop) == 1) {
+        // Tricky special case where splitting a DUP would result in
+        // the next DUP only covering 1 pixel. That would not be
+        // value since a DUP must cover at least 2 pixels. Instead,
+        // just have this DUP cover one fewer pixels so that the next
+        // one covers 2 pixels.
+        
+        dupCountThisLoop -= 1;
+      }
     } else {
       dupCountThisLoop = dupCountLeft;
     }
@@ -1331,15 +1341,19 @@ maxvid_encode_sample32_c4_encode_dupcodes(FILE *fp, uint32_t encodeFlags,
     
     if (dupCountLeft > maxDupNumPixels) {
       dupCountThisLoop = maxDupNumPixels;
+      
+      if ((dupCountLeft - dupCountThisLoop) == 1) {
+        // Tricky special case where splitting a DUP would result in
+        // the next DUP only covering 1 pixel. That would not be
+        // value since a DUP must cover at least 2 pixels. Instead,
+        // just have this DUP cover one fewer pixels so that the next
+        // one covers 2 pixels.
+        
+        dupCountThisLoop -= 1;
+      }
     } else {
       dupCountThisLoop = dupCountLeft;
     }
-
-    // FIXME: nasty special case here when multiple DUP codes are emitted. If
-    // the final DUP code only covers one pixel, then a DUP cannot be emitted
-    // since all DUP codes must dup at least 2 pixels. Could convert to a
-    // COPY 1 or could rework the loop logic so that a min of 2 is left over
-    // from the previous split logic in this special case.
     
     uint32_t dupCode = maxvid32_internal_code(DUP, dupCountThisLoop, skipAfterThisLoop);
     if (skipAfterThisLoop != 0) {

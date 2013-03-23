@@ -85,6 +85,20 @@ maxvid16_c4_code(MV_GENERIC_CODE opCode, uint32_t numPart, uint16_t pixelPart) {
   if (numPart > MV_MAX_14_BITS) {
     assert(0);
   }
+  
+  if (opCode == SKIP) {
+    uint32_t numValue = (numPart << 16) | pixelPart;
+    assert(numValue > 0);
+  } else if (opCode == DUP) {
+    assert(numPart > 1);
+  } else if (opCode == COPY) {
+    assert(numPart > 0);
+  } else if (opCode == DONE) {
+    assert(numPart == 0);
+    assert(pixelPart == 0);
+  } else {
+    assert(0);
+  }
 #endif // EXTRA_CHECKS
   
   uint32_t opCodeWord = (uint32_t)opCode;

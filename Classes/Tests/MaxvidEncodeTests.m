@@ -1082,15 +1082,44 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   return;
 }
 
-/*
- 
-// FIXME: likely better to not leave just 1 DUP for next loop in this tricky case.
-// Also examine this same issue for 16bpp DUP.
+// This test case checks the odd situation where the DUP is larger than the 14 bit max
+// and the resulting next DUP would then be only 1 pixel (which is invalid).
+
++ (void) testEncodeReallyHugeDupTailingUnderTwoAt16BPP
+{
+  int width = 16383 + 1;
+  int height = 1;
+  int numBytes = width * height * sizeof(uint16_t);
+  uint16_t *prev = (uint16_t *) malloc( numBytes );
+  uint16_t *curr = (uint16_t *) malloc( numBytes );
+  
+  bzero(prev, numBytes);
+  for (int i=0; i < (width * height); i++) {
+    curr[i] = 0x1;
+  }
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, numBytes/sizeof(uint16_t), width, height, NULL);
+  results = [self util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"DUP 16384 0x1 DONE"], @"isEqualToString");
+  
+  // 14 bit max = 16383, so emit 16382 and then 2
+  
+  results = [self util_convertAndPrintC4Codes16:codes frameBufferNumPixels:numBytes/sizeof(uint16_t)];
+  NSAssert([results isEqualToString:@"DUP 16382 0x1 DUP 2 0x1 DONE"], @"isEqualToString");
+  
+  free(prev);
+  free(curr);
+  
+  return;
+}
 
 // This test case will push the limits of a 32 bit DUP code by allocating a buffer that is
 // 1 pixel larger than the 22 bit dup count limit of 0x3FFFFF or 4194303 pixels.
 
-+ (void) testEncodeReallyHugeDupAt32BPP
++ (void) testEncodeReallyHugeDupTailingUnderTwoAt32BPP
 {
   int width = (MV_MAX_22_BITS + 1);
   int height = 1;
@@ -1119,10 +1148,12 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
   NSAssert([results isEqualToString:expectedResult], @"isEqualToString");
   
-  // A 32 bit c4 DUP code can contain a num up to a max of 22 bits
+  // A 32 bit c4 DUP code can contain a num up to a max of 22 bits. In this specific case
+  // splitting a DUP on the max bound would result in the following DUP only having one
+  // pixel in the DUP. Instead, simply emit one fewer in the previous dup to avoid this issue.
   
   results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:numBytes/sizeof(uint32_t)];
-  NSAssert([results isEqualToString:@"DUP 4194301 0x1 DUP 1 0x1 DONE"], @"isEqualToString");
+  NSAssert([results isEqualToString:@"DUP 4194302 0x1 DUP 2 0x1 DONE"], @"isEqualToString");
   
   free(prev);
   free(curr);
@@ -1130,7 +1161,51 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   return;
 }
 
-*/
+// This test case will be over the 22 bit DUP limit by 2 pixels. This test is basically
+// the same as the one above, except that the special case of not emitting the full
+// 22 bits so that the trailing DUP is at least 2 is not hit by this test case.
+
++ (void) testEncodeReallyHugeDupTailingTwoAt32BPP
+{
+  int width = (MV_MAX_22_BITS + 1 + 1);
+  int height = 1;
+  int numBytes = width * height * sizeof(uint32_t);
+  uint32_t *prev = (uint32_t *) malloc( numBytes );
+  uint32_t *curr = (uint32_t *) malloc( numBytes );
+  
+  bzero(prev, numBytes);
+  for (int i=0; i < width * height; i++) {
+    curr[i] = 0x1;
+  }
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, numBytes/sizeof(uint32_t), width, height, NULL);
+  results = [self util_printMvidCodes32:codes];
+  
+  assert(((64 * MV_MAX_16_BITS) + 65) == (width * height));
+  NSMutableString *expectedResult = [NSMutableString string];
+  for (int dupi = 0; dupi < 64; dupi++) {
+    [expectedResult appendFormat:@"DUP 65535 0x1 "];
+  }
+  [expectedResult appendFormat:@"DUP 65 0x1 "];
+  [expectedResult appendFormat:@"DONE"];
+  
+  NSAssert([results isEqualToString:expectedResult], @"isEqualToString");
+  
+  // A 32 bit c4 DUP code can contain a num up to a max of 22 bits. In this specific case
+  // splitting a DUP on the max bound would result in the following DUP containing two
+  // pixels, which is just fine.
+  
+  results = [self util_convertAndPrintC4Codes32:codes frameBufferNumPixels:numBytes/sizeof(uint32_t)];
+  NSAssert([results isEqualToString:@"DUP 4194303 0x1 DUP 2 0x1 DONE"], @"isEqualToString");
+  
+  free(prev);
+  free(curr);
+  
+  return;
+}
 
 // Delta a buffer where every single pixel is changed to some other pixel, aka a large COPY.
 
