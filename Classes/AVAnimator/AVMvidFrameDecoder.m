@@ -20,7 +20,18 @@
 # define EXTRA_CHECKS
 #endif // DEBUG
 
+#if TARGET_OS_IPHONE
+// Adler checking not always enabled on iOS since it can slow down the decompression
+// process. Specifically, when keyframe memory has been mapped but it has not yet
+// been accessed, then we do not want to have to wait for all page faults by forcing
+// an adler check every time.
+
 //#define ALWAYS_CHECK_ADLER
+#else
+// Always check adler when executing in mvidmoviemaker on the desktop
+
+#define ALWAYS_CHECK_ADLER
+#endif // TARGET_OS_IPHONE
 
 // private properties declaration for class
 
@@ -675,7 +686,7 @@
         }
 
         [self assertSameAdler:frame->adler frameBuffer:frameBuffer frameBufferNumBytes:numBytesToIncludeInAdler];
-#endif // EXTRA_CHECKS
+#endif // EXTRA_CHECKS || ALWAYS_CHECK_ADLER
       } else {
         // Input buffer contains a complete keyframe, use zero copy optimization
         
