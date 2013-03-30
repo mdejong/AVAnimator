@@ -180,8 +180,7 @@ maxvid_encode_c4_sample16(
                           const uint32_t * restrict inputBuffer32,
                           const uint32_t inputBufferNumWords,
                           const uint32_t frameBufferNumPixels,
-                          const char * restrict filePath,
-                          FILE * restrict file,
+                          NSMutableData *mC4Data,
                           const uint32_t encodeFlags);
 
 int
@@ -189,8 +188,7 @@ maxvid_encode_c4_sample32(
                           const uint32_t * restrict inputBuffer32,
                           const uint32_t inputBufferNumWords,
                           const uint32_t frameBufferNumPixels,
-                          const char * restrict filePath,
-                          FILE * restrict file,
+                          NSMutableData *mC4Data,
                           const uint32_t encodeFlags);
 
 // These utility methods work for either a 16 bpp or 24/32 bpp buffer and

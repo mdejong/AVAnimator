@@ -158,37 +158,24 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
     return @"IDENTICAL";
   }
   
-  // Convert generic codes to m4 codes at 16BPP
+  NSMutableData *mC4Data = [NSMutableData dataWithCapacity:frameBufferNumPixels];
   
-  FILE *tmpfp = tmpfile();
-  assert(tmpfp);
+  // Convert generic codes to m4 codes at 16BPP
   
   uint32_t *maxvidCodeBuffer = (uint32_t*)codes.bytes;
   uint32_t numMaxvidCodeWords = codes.length / sizeof(uint32_t);
   
   int retcode;
-  retcode = maxvid_encode_c4_sample16(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, NULL, tmpfp, 0);
+  retcode = maxvid_encode_c4_sample16(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, mC4Data, 0);
   assert(retcode == 0);
-  
-  fseek(tmpfp, 0, SEEK_END);
-  uint32_t numBytesInFile = ftell(tmpfp);
-  fseek(tmpfp, 0, SEEK_SET);
-  char *buffer = malloc(numBytesInFile);
-  retcode = fread(buffer, 1, numBytesInFile, tmpfp);
-  assert(retcode == numBytesInFile);
-  fclose(tmpfp);
-  
-  NSData *c4Codes = [NSData dataWithBytes:buffer length:numBytesInFile];
-  assert(c4Codes);
-  free(buffer);
   
   // Format c4 codes as string entries
   
   NSMutableString *mStr = [NSMutableString string];
   
   int index = 0;
-  int end = [c4Codes length] / sizeof(uint32_t);
-  uint32_t *ptr = (uint32_t *)c4Codes.bytes;
+  int end = [mC4Data length] / sizeof(uint32_t);
+  uint32_t *ptr = (uint32_t *)mC4Data.bytes;
   
   int frameBufferNumPixelsWritten = 0;
   
@@ -277,35 +264,22 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   
   // Convert generic codes to m4 codes at 32BPP
   
-  FILE *tmpfp = tmpfile();
-  assert(tmpfp);
+  NSMutableData *mC4Data = [NSMutableData dataWithCapacity:frameBufferNumPixels];
   
   uint32_t *maxvidCodeBuffer = (uint32_t*)codes.bytes;
   uint32_t numMaxvidCodeWords = codes.length / sizeof(uint32_t);
   
   int retcode;
-  retcode = maxvid_encode_c4_sample32(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, NULL, tmpfp, 0);
+  retcode = maxvid_encode_c4_sample32(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, mC4Data, 0);
   assert(retcode == 0);
-  
-  fseek(tmpfp, 0, SEEK_END);
-  uint32_t numBytesInFile = ftell(tmpfp);
-  fseek(tmpfp, 0, SEEK_SET);
-  char *buffer = malloc(numBytesInFile);
-  retcode = fread(buffer, 1, numBytesInFile, tmpfp);
-  assert(retcode == numBytesInFile);
-  fclose(tmpfp);
-  
-  NSData *c4Codes = [NSData dataWithBytes:buffer length:numBytesInFile];
-  assert(c4Codes);
-  free(buffer);
   
   // Format c4 codes as string entries
   
   NSMutableString *mStr = [NSMutableString string];
   
   int index = 0;
-  int end = [c4Codes length] / sizeof(uint32_t);
-  uint32_t *ptr = (uint32_t *)c4Codes.bytes;
+  int end = [mC4Data length] / sizeof(uint32_t);
+  uint32_t *ptr = (uint32_t *)mC4Data.bytes;
   
   for ( ; index < end; ) {
     uint32_t inword = ptr[index];
