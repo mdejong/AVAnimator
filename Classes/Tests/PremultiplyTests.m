@@ -23,6 +23,103 @@
 
 @implementation PremultiplyTests
 
+// Util method to premultiply one pixel
+
++ (uint32_t) premultiply:(uint32_t)unpremultPixel
+{
+  uint32_t alpha = (unpremultPixel >> 24) & 0xFF;
+  uint32_t red = (unpremultPixel >> 16) & 0xFF;
+  uint32_t green = (unpremultPixel >> 8) & 0xFF;
+  uint32_t blue = (unpremultPixel >> 0) & 0xFF;
+  
+  uint32_t premultPixel = premultiply_bgra_inline(red, green, blue, alpha);
+  return premultPixel;
+}
+
+// Util method to premultiply, then unpremultiply and verify that the
+// original and unpremultiplied values match
+
++ (void) premultiplyExpected:(uint32_t)unpremultPixel
+             expectedPremult:(uint32_t)expectedPremult
+{
+  uint32_t prePixel;
+  
+  prePixel = [self premultiply:unpremultPixel];
+  
+  if (prePixel != expectedPremult) {
+    NSAssert(FALSE, @"prePixel != expected : 0x%8X != 0x%8X", prePixel, expectedPremult);
+    assert(0);
+  }
+  
+  // reverse
+  
+  uint32_t reversed;
+  
+  reversed = unpremultiply_bgra(prePixel);
+  expectedPremult = unpremultPixel;
+  if (reversed != expectedPremult) {
+    NSAssert(FALSE, @"reversed != expected : 0x%8X != 0x%8X", reversed, expectedPremult);
+    assert(0);
+  }
+
+  return;
+}
+
+
+// Test easily understood pixel values, pass them through a pre-multiply operation
+// and then reverse the operation and test the results.
+
++ (void) testPremultiplyBasicValues
+{
+  uint32_t unpremultPixel;
+  uint32_t expectedPremult;
+
+  // Transparent
+  
+  unpremultPixel  = 0x00000000;
+  expectedPremult = 0x00000000;
+  
+  [self premultiplyExpected:unpremultPixel expectedPremult:expectedPremult];
+  
+  // Opaque Black
+  
+  unpremultPixel  = 0xFF000000;
+  expectedPremult = 0xFF000000;
+  
+  [self premultiplyExpected:unpremultPixel expectedPremult:expectedPremult];
+
+  // Opaque White
+  
+  unpremultPixel  = 0xFFFFFFFF;
+  expectedPremult = 0xFFFFFFFF;
+  
+  [self premultiplyExpected:unpremultPixel expectedPremult:expectedPremult];
+  
+  // 50% White
+  
+  unpremultPixel  = 0x7FFFFFFF;
+  expectedPremult = 0x7F7F7F7F;
+  
+  [self premultiplyExpected:unpremultPixel expectedPremult:expectedPremult];
+  
+  // 50% Black
+  
+  unpremultPixel  = 0x7F000000;
+  expectedPremult = 0x7F000000;
+  
+  [self premultiplyExpected:unpremultPixel expectedPremult:expectedPremult];
+  
+  // 50% gray
+  
+  unpremultPixel  = 0x7F7F7F7F;
+  expectedPremult = 0x7F3f3f3f;
+  
+  [self premultiplyExpected:unpremultPixel expectedPremult:expectedPremult];
+  
+  return;
+}
+
+
 // Util to dump PNG to filesystem
 
 + (void) writePNG:(NSString*)filename
