@@ -41,7 +41,14 @@ uint32_t premultiply_bgra_inline(uint32_t red, uint32_t green, uint32_t blue, ui
   return result;
 }
 
-// undo a "premultiply" operation
+// undo a "premultiply" operation. Note that a premultiplication is not fully
+// reversable in the sense that the result of an unpremultiply call is
+// the original RGB+A data. A premultiply operation will round the result
+// of the (Component * (ALPHA/255)) calculation such that the premultiplied
+// pixel contains less actual information. But, since this rounding always
+// needs to be done before rendering, there is no functional loss of information
+// as long as the final render operation is executed with a graphics subsystem
+// that accepts only premultiplied values.
 
 uint32_t unpremultiply_bgra(uint32_t premultPixelBGRA);
 

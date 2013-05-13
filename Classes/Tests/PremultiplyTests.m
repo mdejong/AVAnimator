@@ -36,6 +36,14 @@
   return premultPixel;
 }
 
+// Util method to format a pixel value as a hex number with leading 0x
+// like 0x0 or 0x01FFFFFF.
+
++ (NSString*) pixelToString:(uint32_t)pixel
+{
+  return [NSString stringWithFormat:@"0x%08X", pixel];
+}
+
 // Util method to premultiply, then unpremultiply and verify that the
 // original and unpremultiplied values match
 
@@ -46,8 +54,12 @@
   
   prePixel = [self premultiply:unpremultPixel];
   
+  if (TRUE) {
+    NSLog(@"pixel %@ -> premult pixel %@", [self pixelToString:unpremultPixel], [self pixelToString:prePixel]);
+  }
+  
   if (prePixel != expectedPremult) {
-    NSAssert(FALSE, @"prePixel != expected : 0x%8X != 0x%8X", prePixel, expectedPremult);
+    NSAssert(FALSE, @"prePixel != expected : %@ != %@", [self pixelToString:prePixel], [self pixelToString:expectedPremult]);
     assert(0);
   }
   
@@ -56,12 +68,17 @@
   uint32_t reversed;
   
   reversed = unpremultiply_bgra(prePixel);
+  
+  if (TRUE) {
+    NSLog(@"premult pixel %@ -> unpre pixel %@", [self pixelToString:prePixel], [self pixelToString:reversed]);
+  }
+  
   expectedPremult = unpremultPixel;
   if (reversed != expectedPremult) {
-    NSAssert(FALSE, @"reversed != expected : 0x%8X != 0x%8X", reversed, expectedPremult);
+    NSAssert(FALSE, @"reversed != expected : %@ != %@", [self pixelToString:reversed], [self pixelToString:expectedPremult]);
     assert(0);
   }
-
+  
   return;
 }
 
@@ -114,11 +131,44 @@
   unpremultPixel  = 0x7F7F7F7F;
   expectedPremult = 0x7F3f3f3f;
   
+  // White with ALPHA 1/255
+  
+  unpremultPixel  = 0x01FFFFFF;
+  expectedPremult = 0x01010101;
+  
   [self premultiplyExpected:unpremultPixel expectedPremult:expectedPremult];
+  
+  // With the ALPHA value 0x01, the only input gray that maps to 1 is 255.
+  // Every other gray value gets rounded down to zero. This represents
+  // a loss of information in the sense that we cannot now reverse the
+  // premultiplied value and get back to the original.
+  
+  // (White - 1) with ALPHA 1/255
+  
+  unpremultPixel  = 0x01FEFEFE;
+  expectedPremult = 0x01000000;
+  
+  uint32_t prePixel;
+
+  prePixel = [self premultiply:unpremultPixel];
+  NSAssert(prePixel == expectedPremult, @"!expectedPremult");
+  
+  // Note that 0x01000000 will not map back to 0x01FEFEFE since this information
+  // is lost when the original pixel is premultiplied. But, since the premultiplication
+  // is always done before rendering, this does not represent an actual loss
+  // when the output is rendered on MacOSX or iOS.
+  
+  // For the same reason, any other value for ALPHA (like 127) will always
+  // be premultiplied to zero.
+  
+  unpremultPixel  = 0x017F7F7F;
+  expectedPremult = 0x01000000;
+  
+  prePixel = [self premultiply:unpremultPixel];
+  NSAssert(prePixel == expectedPremult, @"!expectedPremult");
   
   return;
 }
-
 
 // Util to dump PNG to filesystem
 
