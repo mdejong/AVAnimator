@@ -238,6 +238,10 @@
 		CDC510E71692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDC510E61692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m */; };
 		CDC510E81692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDC510E61692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m */; };
 		CDC510F01692C45D0069C891 /* AVAssetJoinAlphaResourceLoaderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CDC510EF1692C45D0069C891 /* AVAssetJoinAlphaResourceLoaderTests.m */; };
+		CDC7B6281760521C00B8E3FF /* AVGIF89A2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDC7B6271760521C00B8E3FF /* AVGIF89A2MvidResourceLoader.m */; };
+		CDCF845517610AFC005FE564 /* AVGIF89A2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CDC7B6271760521C00B8E3FF /* AVGIF89A2MvidResourceLoader.m */; };
+		CDCF845A17612947005FE564 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDCF845917612947005FE564 /* ImageIO.framework */; };
+		CDCF845B1761295E005FE564 /* ImageIO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDCF845917612947005FE564 /* ImageIO.framework */; };
 		CDD39E8216A27318006989EB /* Grayscale256x256.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CDD39E8116A27318006989EB /* Grayscale256x256.m4v */; };
 		CDD6413F1686525300492B80 /* JigsawPuzzle_205_99_10FPS_16BPP.mvid in Resources */ = {isa = PBXBuildFile; fileRef = CDD6413E1686525300492B80 /* JigsawPuzzle_205_99_10FPS_16BPP.mvid */; };
 		CDD641411686569800492B80 /* 2x2_black_blue_16BPP.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CDD641401686569800492B80 /* 2x2_black_blue_16BPP.mvid.7z */; };
@@ -483,6 +487,9 @@
 		CDC510E51692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAssetJoinAlphaResourceLoader.h; sourceTree = "<group>"; };
 		CDC510E61692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAssetJoinAlphaResourceLoader.m; sourceTree = "<group>"; };
 		CDC510EF1692C45D0069C891 /* AVAssetJoinAlphaResourceLoaderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAssetJoinAlphaResourceLoaderTests.m; sourceTree = "<group>"; };
+		CDC7B6261760521C00B8E3FF /* AVGIF89A2MvidResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVGIF89A2MvidResourceLoader.h; sourceTree = "<group>"; };
+		CDC7B6271760521C00B8E3FF /* AVGIF89A2MvidResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVGIF89A2MvidResourceLoader.m; sourceTree = "<group>"; };
+		CDCF845917612947005FE564 /* ImageIO.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ImageIO.framework; path = System/Library/Frameworks/ImageIO.framework; sourceTree = SDKROOT; };
 		CDD39E8116A27318006989EB /* Grayscale256x256.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = Grayscale256x256.m4v; sourceTree = "<group>"; };
 		CDD6413E1686525300492B80 /* JigsawPuzzle_205_99_10FPS_16BPP.mvid */ = {isa = PBXFileReference; lastKnownFileType = file; path = JigsawPuzzle_205_99_10FPS_16BPP.mvid; sourceTree = "<group>"; };
 		CDD641401686569800492B80 /* 2x2_black_blue_16BPP.mvid.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = 2x2_black_blue_16BPP.mvid.7z; sourceTree = "<group>"; };
@@ -573,6 +580,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CDCF845A17612947005FE564 /* ImageIO.framework in Frameworks */,
 				CDAAB16414DFAAF100F43810 /* CoreVideo.framework in Frameworks */,
 				CDAAB16114DFAA9800F43810 /* CoreMedia.framework in Frameworks */,
 				CD5AEE3112D8F32F00A50135 /* AVFoundation.framework in Frameworks */,
@@ -590,6 +598,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CDCF845B1761295E005FE564 /* ImageIO.framework in Frameworks */,
 				CD3F4E5112D8F4400067FDDF /* AVFoundation.framework in Frameworks */,
 				CD3F4E5212D8F4400067FDDF /* AudioToolbox.framework in Frameworks */,
 				CD3F4E5312D8F4400067FDDF /* QuartzCore.framework in Frameworks */,
@@ -688,6 +697,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				CDCF845917612947005FE564 /* ImageIO.framework */,
 				CDAAB16314DFAAF100F43810 /* CoreVideo.framework */,
 				CDAAB16014DFAA9800F43810 /* CoreMedia.framework */,
 				CDE66095136F884800F4E8E6 /* libz.dylib */,
@@ -873,6 +883,8 @@
 				CDE65F06136F7CF000F4E8E6 /* AVApng2MvidResourceLoader.m */,
 				CD0ACF27136F927300A203DF /* AV7zApng2MvidResourceLoader.h */,
 				CD0ACF28136F927300A203DF /* AV7zApng2MvidResourceLoader.m */,
+				CDC7B6261760521C00B8E3FF /* AVGIF89A2MvidResourceLoader.h */,
+				CDC7B6271760521C00B8E3FF /* AVGIF89A2MvidResourceLoader.m */,
 				CD70DF7914F77F3F0029A381 /* AVAsset2MvidResourceLoader.h */,
 				CD70DF7A14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m */,
 				CDC510E51692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.h */,
@@ -1281,6 +1293,7 @@
 				CDC510E71692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m in Sources */,
 				CDA9E751169B6EF200A49AA3 /* AVAssetReaderConvertMaxvid.m in Sources */,
 				CDBDFB1A169E57BF00B53613 /* AVAssetFrameDecoder.m in Sources */,
+				CDC7B6281760521C00B8E3FF /* AVGIF89A2MvidResourceLoader.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1355,6 +1368,7 @@
 				CDA9E752169B6EF300A49AA3 /* AVAssetReaderConvertMaxvid.m in Sources */,
 				CDBDFB1B169E57C000B53613 /* AVAssetFrameDecoder.m in Sources */,
 				CD02DDA416A32B11008EB661 /* PremultiplyTests.m in Sources */,
+				CDCF845517610AFC005FE564 /* AVGIF89A2MvidResourceLoader.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
