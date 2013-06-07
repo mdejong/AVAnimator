@@ -216,7 +216,7 @@ goto retcode; \
   uint32_t const numFrames = (uint32_t) CGImageSourceGetCount(srcRef);
   
   float minDelaySeconds = 10000.0;
-  uint32_t foundHasAlphaFlag = 0;
+  //uint32_t foundHasAlphaFlag = 0;
   
   uint32_t width = 0;
   uint32_t height = 0;
@@ -262,20 +262,22 @@ goto retcode; \
       height = [pixelHeightNum unsignedIntValue];
     }
     
-    // HasAlpha = 1 if 32BPP
     // Check "HasAlpha" property for each frame, if an earlier frame does not contain
-    // a transparent pixel but a later frame does, then all frames need to be treated
+    // a transparent pixel but a later frame does, then all frames need to be treated.
+    // This should work, but it actually does not work better than detection since it
+    // appears that images that really are 24BPP get detected as 32 BPP. Go with the
+    // scanning approach on actual rendered pixels since that works in all cases.
     
-    if (foundHasAlphaFlag == 0) {
-      CFNumberRef hasAlpha = CFDictionaryGetValue(imageFrameProperties, @"HasAlpha");
-      
-      NSNumber *hasAlphaNum = (NSNumber*)hasAlpha;
-      
-      uint32_t hasAlphaValue = [hasAlphaNum intValue];
-      if (hasAlphaValue == 1) {
-        foundHasAlphaFlag = 1;
-      }
-    }
+//    if (foundHasAlphaFlag == 0) {
+//      CFNumberRef hasAlpha = CFDictionaryGetValue(imageFrameProperties, @"HasAlpha");
+//      
+//      NSNumber *hasAlphaNum = (NSNumber*)hasAlpha;
+//      
+//      uint32_t hasAlphaValue = [hasAlphaNum intValue];
+//      if (hasAlphaValue == 1) {
+//        foundHasAlphaFlag = 1;
+//      }
+//    }
 
     CFRelease(imageFrameProperties);
   }
@@ -322,9 +324,9 @@ goto retcode; \
   
   cgFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:32 width:width height:height];
   uint32_t detectedBpp = 24;
-  if (foundHasAlphaFlag) {
-    detectedBpp = 32;
-  }
+  //if (foundHasAlphaFlag) {
+  //  detectedBpp = 32;
+  //}
   
   for (int i=0; i < numFrames; i++) {
     NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
