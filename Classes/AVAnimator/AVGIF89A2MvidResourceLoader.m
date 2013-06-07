@@ -203,8 +203,6 @@
   
   CGImageSourceRef srcRef = CGImageSourceCreateWithData((CFDataRef)inGIF89AData, NULL);
   assert(srcRef);
-  
-  //char *phonyOutPathCstr = (char*) [phonyOutPath UTF8String];
 
   AVMvidFileWriter *aVMvidFileWriter = nil;
   
@@ -215,15 +213,16 @@ retcode = status; \
 goto retcode; \
 }
   
-  float frameDuration;
-  
   // The initial step is to read the image metadata for each subimage and
   // determine the delay from the previous frame to the current one.
   // The shortest delay found will be used as the framerate.
   
   uint32_t const numFrames = (uint32_t) CGImageSourceGetCount(srcRef);
   
-  uint32_t minDelaySeconds = 0xFFFFFFFF;
+  float minDelaySeconds = 10000.0;
+  
+  uint32_t width = 0;
+  uint32_t height = 0;
   
   for (int i=0; i < numFrames; i++) {
     CFDictionaryRef imageFrameProperties = CGImageSourceCopyPropertiesAtIndex(srcRef, i, NULL);
@@ -231,23 +230,50 @@ goto retcode; \
     
     CFDictionaryRef gifProperties = CFDictionaryGetValue(imageFrameProperties, kCGImagePropertyGIFDictionary);
     assert(gifProperties);
-      
-    CFNumberRef delayTime = CFDictionaryGetValue(gifProperties, kCGImagePropertyGIFDelayTime);
+
+    // kCGImagePropertyGIFDelayTime is rounded up to 0.1 if smaller than 0.1.
+    // kCGImagePropertyGIFUnclampedDelayTime is the original value in the GIF file
+    
+    CFNumberRef delayTime = CFDictionaryGetValue(gifProperties, kCGImagePropertyGIFUnclampedDelayTime);
     assert(delayTime);
     
     NSNumber *delayTimeNum = (NSNumber*)delayTime;
     
     // ImageIO must return the delay time in seconds
-    float delayTimeFloat = (float) [delayTimeNum doubleValue];
-    assert(delayTimeFloat > 0.0f);
-
-    uint32_t delaySeconds = (uint32_t) (delayTimeFloat * 100);
     
-    if (delaySeconds < minDelaySeconds) {
-      minDelaySeconds = delaySeconds;
+    float delayTimeFloat = (float) [delayTimeNum doubleValue];
+
+    // Define a lower limit of about 30 FPS. The clamped value defined by kCGImagePropertyGIFDelayTime
+    // is too restrictive since a value of 0.04 corresponds to about 23 fps.
+    
+    if (delayTimeFloat <= (1.0f/30.0f)) {
+      delayTimeFloat = (1.0f/30.0f);
+    }
+    
+    if (delayTimeFloat < minDelaySeconds) {
+      minDelaySeconds = delayTimeFloat;
+    }
+    
+    if (width == 0) {
+      CFNumberRef pixelWidth = CFDictionaryGetValue(imageFrameProperties, @"PixelWidth");
+      CFNumberRef pixelHeight = CFDictionaryGetValue(imageFrameProperties, @"PixelHeight");
+      
+      NSNumber *pixelWidthNum = (NSNumber*)pixelWidth;
+      NSNumber *pixelHeightNum = (NSNumber*)pixelHeight;
+      
+      width = [pixelWidthNum unsignedIntValue];
+      height = [pixelHeightNum unsignedIntValue];
     }
 
     CFRelease(imageFrameProperties);
+  }
+  
+  float frameDuration = minDelaySeconds;
+  
+  // If width and height were not detected, unable to process the GIF file
+  
+  if (width == 0 || height == 0) {
+    RETCODE(UNSUPPORTED_FILE);
   }
   
   // FIXME: might want to just pick a default duration like 1 FPS for cases like
@@ -269,6 +295,7 @@ goto retcode; \
   aVMvidFileWriter.mvidPath = outMaxvidPath;
   aVMvidFileWriter.frameDuration = frameDuration;
   aVMvidFileWriter.totalNumFrames = numFrames;
+  aVMvidFileWriter.movieSize = CGSizeMake(width, height);
   aVMvidFileWriter.genAdler = genAdler;
   
   BOOL worked = [aVMvidFileWriter open];
@@ -281,8 +308,6 @@ goto retcode; \
   // to the mvid file. Make sure to cleanup the autorelease pool so
   // that not all the image frames are actually loaded into memory.
   
-  uint32_t width = 100;
-  uint32_t height = 100;
   cgFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:32 width:width height:height];
   uint32_t detectedBpp = 24;
   
@@ -324,6 +349,14 @@ goto retcode; \
     
     CGImageRelease(imgRef);
     
+    // Write the keyframe to the output file
+    
+    int numBytesInBuffer = cgFrameBuffer.numBytes;
+    
+    worked = [aVMvidFileWriter writeKeyframe:cgFrameBuffer.pixels bufferSize:numBytesInBuffer];
+    
+    assert(worked);
+     
     [inner_pool drain];
   }
   

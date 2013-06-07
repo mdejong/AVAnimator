@@ -26,6 +26,8 @@
 
 #import "AVAsset2MvidResourceLoader.h"
 
+#import "AVGIF89A2MvidResourceLoader.h"
+
 @interface AVResourceLoaderTests : NSObject {}
 @end
 
@@ -1632,5 +1634,52 @@
   
   return;
 }
+
+// Convert GIF89A animation to .mvid
+
+#ifdef AVANIMATOR_HAS_IMAGEIO_FRAMEWORK
+
++ (void) testDecodeBeakerGIF89A
+{
+  NSString *resFilename = @"Beaker.gif";
+  NSString *outFilename = @"Beaker.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  AVGIF89A2MvidResourceLoader *resLoader = [AVGIF89A2MvidResourceLoader aVGIF89A2MvidResourceLoader];
+  resLoader.movieFilename = resFilename;
+  resLoader.outPath = outPath;
+  
+  [resLoader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:1000.0];
+  NSAssert(worked, @"worked");
+  
+  if (1) {
+    // Verify that the emitted .mvid file has a valid magic number
+    // and check the parsed properties from the GIF header.
+    
+    NSArray *resourcePathsArr = [resLoader getResources];
+    NSAssert([resourcePathsArr count] == 1, @"expected 1 resource paths");
+    NSString *videoPath = [resourcePathsArr objectAtIndex:0];
+    
+    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:videoPath];
+    
+    char *mvidBytes = (char*) [wroteMvidData bytes];
+    
+    MVFileHeader *mvFileHeaderPtr = (MVFileHeader*) mvidBytes;
+    
+    assert(mvFileHeaderPtr->bpp == 24);
+    assert(mvFileHeaderPtr->numFrames == 10);
+    assert(mvFileHeaderPtr->width == 400);
+    assert(mvFileHeaderPtr->height == 225);
+    assert(((int)(1.0 / mvFileHeaderPtr->frameDuration)) == 25);
+  }
+  
+  return;
+}
+
+#endif // AVANIMATOR_HAS_IMAGEIO_FRAMEWORK
 
 @end
