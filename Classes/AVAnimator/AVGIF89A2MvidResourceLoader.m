@@ -216,6 +216,7 @@ goto retcode; \
   uint32_t const numFrames = (uint32_t) CGImageSourceGetCount(srcRef);
   
   float minDelaySeconds = 10000.0;
+  uint32_t foundHasAlphaFlag = 0;
   
   uint32_t width = 0;
   uint32_t height = 0;
@@ -259,6 +260,21 @@ goto retcode; \
       
       width = [pixelWidthNum unsignedIntValue];
       height = [pixelHeightNum unsignedIntValue];
+    }
+    
+    // HasAlpha = 1 if 32BPP
+    // Check "HasAlpha" property for each frame, if an earlier frame does not contain
+    // a transparent pixel but a later frame does, then all frames need to be treated
+    
+    if (foundHasAlphaFlag == 0) {
+      CFNumberRef hasAlpha = CFDictionaryGetValue(imageFrameProperties, @"HasAlpha");
+      
+      NSNumber *hasAlphaNum = (NSNumber*)hasAlpha;
+      
+      uint32_t hasAlphaValue = [hasAlphaNum intValue];
+      if (hasAlphaValue == 1) {
+        foundHasAlphaFlag = 1;
+      }
     }
 
     CFRelease(imageFrameProperties);
@@ -306,6 +322,9 @@ goto retcode; \
   
   cgFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:32 width:width height:height];
   uint32_t detectedBpp = 24;
+  if (foundHasAlphaFlag) {
+    detectedBpp = 32;
+  }
   
   for (int i=0; i < numFrames; i++) {
     NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
@@ -333,12 +352,15 @@ goto retcode; \
     
     uint32_t *pixels = (uint32_t*) cgFrameBuffer.pixels;
     
-    for (int rowi = 0; rowi < height; rowi++) {
-      for (int coli = 0; coli < width; coli++) {
-        uint32_t pixel = pixels[(rowi * width) + coli];
-        uint8_t alpha = (pixel >> 24) & 0xFF;
-        if (alpha != 0xFF) {
-          detectedBpp = 32;
+    if (detectedBpp == 24) {
+      for (int rowi = 0; rowi < height; rowi++) {
+        for (int coli = 0; coli < width; coli++) {
+          uint32_t pixel = pixels[(rowi * width) + coli];
+          uint8_t alpha = (pixel >> 24) & 0xFF;
+          if (alpha != 0xFF) {
+            detectedBpp = 32;
+            break;
+          }
         }
       }
     }
