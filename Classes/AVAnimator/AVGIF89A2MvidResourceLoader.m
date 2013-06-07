@@ -118,11 +118,7 @@
     // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
     
     [AVFileUtil renameFile:phonyOutPath toPath:outPath];
-    
-    if (imageData) {
-      CFRelease(imageData);
-    }
-    
+        
 #ifdef LOGGING
     NSLog(@"done converting .apng to .mvid \"%@\"", [outPath lastPathComponent]);
 #endif // LOGGING    
