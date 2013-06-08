@@ -31,6 +31,8 @@
 
 #import "AVAsset2MvidResourceLoader.h"
 
+#import "AVGIF89A2MvidResourceLoader.h"
+
 #import <QuartzCore/QuartzCore.h>
 
 #if defined(REGRESSION_TESTS)
@@ -970,7 +972,7 @@
   // in the center of this view.
   
   NSString *resFilename = @"superwalk_h264.mov";
-  NSString *tmpFilename = @"superwalk.mvid";
+  NSString *tmpFilename = @"superwalk_h264.mvid";
   
   CGRect frame = CGRectMake(0, 0, 320, 480);
   UIView *mainView = [[[UIView alloc] initWithFrame:frame] autorelease];
@@ -1060,6 +1062,104 @@
   [media startAnimator];
 }
 
+// GIF that contains 32BPP image data, a GIF can only contain
+// a fully transparent pixel.
+
+- (void) loadGIFSuperwalkAnimation:(float)frameDuration
+{
+  // Create a plain UIView in portrait orientation and add a CALayer
+  // in the center of this view.
+  
+  NSString *resFilename = @"superwalk.gif";
+  NSString *tmpFilename = @"superwalk_gif.mvid";
+  
+  CGRect frame = CGRectMake(0, 0, 320, 480);
+  UIView *mainView = [[[UIView alloc] initWithFrame:frame] autorelease];
+  [self.window addSubview:mainView];
+  
+  mainView.backgroundColor = [UIColor grayColor];
+  
+  // Get the main CALayer in the UIView
+  
+  CALayer *mainLayer = mainView.layer;
+  
+  // Create a CoreAnimation sublayer that the media will render into
+  
+  CALayer *renderLayer = [[[CALayer alloc] init] autorelease];
+  
+  // By default, the backgroundColor for a CALayer is nil, so
+  // no background is rendered before the image is painted.
+  renderLayer.backgroundColor = [UIColor greenColor].CGColor;
+  
+  renderLayer.borderColor = [UIColor blackColor].CGColor;
+  renderLayer.borderWidth = 1.0;
+  // Round the corners of the layer and clip to this bound
+  renderLayer.cornerRadius = 20.0;
+  renderLayer.masksToBounds = YES;
+  
+  // Aspect fit landscape image into this portrait window
+  
+  CGRect rendererFrame = CGRectMake(0, 0, frame.size.height*2/3, frame.size.width*2/3);
+  
+  renderLayer.frame = rendererFrame;
+  
+  CGPoint point = CGPointMake(frame.size.width/2.0, frame.size.height/2.0);
+  renderLayer.position = point;
+  
+  [mainLayer addSublayer:renderLayer];
+  
+  // Create AVAnimatorLayer and associate it with the
+  // existing CALayer that will be rendered into.
+  
+  AVAnimatorLayer *aVAnimatorLayer = [AVAnimatorLayer aVAnimatorLayer:renderLayer];
+  
+  // Create Media object
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Create loader that will load .mvid from H264 .mov
+  
+  AVGIF89A2MvidResourceLoader *resLoader = [AVGIF89A2MvidResourceLoader aVGIF89A2MvidResourceLoader];
+  
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  resLoader.movieFilename = resFilename;
+  resLoader.outPath = tmpPath;
+  
+  media.resourceLoader = resLoader;
+  
+  media.frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  
+  if (frameDuration != -1.0) {
+    media.animatorFrameDuration = frameDuration;
+  }
+  
+  //	media.animatorRepeatCount = 5;
+	media.animatorRepeatCount = 100;
+  
+  // Link media to render layer
+  
+  [aVAnimatorLayer attachMedia:media];
+  
+  //  media.animatorRepeatCount = 1000;
+  media.animatorRepeatCount = 10;
+  
+  // Setup callback that will be invoked when animation is done
+  
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(animatorDoneNotification:)
+                                               name:AVAnimatorDoneNotification
+                                             object:media];
+  
+  self.plainView = mainView;
+  
+  // A ref to the animator layer object needs to be held, not retained as
+  // part of the CALayer hierarchy.
+  
+  self.animatorLayer = aVAnimatorLayer;
+  
+  [media startAnimator];
+}
 
 // Given an example index, load a specific example with
 // an indicated FPS. The fps is -1 if not set, otherwise
@@ -1174,6 +1274,10 @@
     }
     case 19: {
       [self loadH264SuperwalkAnimation:frameDuration];
+      break;
+    }
+    case 20: {
+      [self loadGIFSuperwalkAnimation:frameDuration];
       break;
     }
   }

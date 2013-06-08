@@ -345,6 +345,7 @@ goto retcode; \
     assert(imageWidth == width);
     assert(imageHeight == height);
     
+    [cgFrameBuffer clear];
     [cgFrameBuffer renderCGImage:imgRef];
     
     // Scan the framebuffer to determine if any transparent pixels appear
