@@ -1112,12 +1112,8 @@
   // existing CALayer that will be rendered into.
   
   AVAnimatorLayer *aVAnimatorLayer = [AVAnimatorLayer aVAnimatorLayer:renderLayer];
-  
-  // Create Media object
-  
-  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
-  
-  // Create loader that will load .mvid from H264 .mov
+    
+  // Create loader that will load .mvid from .gif
   
   AVGIF89A2MvidResourceLoader *resLoader = [AVGIF89A2MvidResourceLoader aVGIF89A2MvidResourceLoader];
   
@@ -1126,8 +1122,11 @@
   resLoader.movieFilename = resFilename;
   resLoader.outPath = tmpPath;
   
-  media.resourceLoader = resLoader;
+  // Create Media object
   
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  media.resourceLoader = resLoader;
   media.frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
   
   if (frameDuration != -1.0) {
