@@ -358,7 +358,8 @@ typedef enum
     
     // Store the number of trailing frames that appear after this frame
     
-    numTrailingNopFrames = [AVMvidFileWriter.class countTrailingNopFrames:delta frameDuration:self.frameDuration];
+    Class cl = AVMvidFileWriter.class;
+    numTrailingNopFrames = [cl countTrailingNopFrames:delta frameDuration:self.frameDuration];
     
 #ifdef LOGGING
     if (numTrailingNopFrames > 0) {
@@ -399,7 +400,8 @@ typedef enum
     
     // Store the number of trailing frames that appear after this frame
     
-    numTrailingNopFrames = [AVMvidFileWriter.class countTrailingNopFrames:delta frameDuration:self.frameDuration];
+    Class cl = AVMvidFileWriter.class;
+    numTrailingNopFrames = [cl countTrailingNopFrames:delta frameDuration:self.frameDuration];
 
     if (numTrailingNopFrames > 0) {
       return FrameReadStatusDup;
@@ -617,10 +619,7 @@ typedef enum
   int numFrames = [self numFrames];
   
   if (newFrameIndex >= numFrames) {
-    NSString *msg = [NSString stringWithFormat:@"%@: %d",
-                     @"can't advance past last frame",
-                     newFrameIndex];
-    NSAssert(FALSE, msg);
+    NSAssert(FALSE, @"%@: %d", @"can't advance past last frame", newFrameIndex);
   }
   
   // Decode the frame into a framebuffer.

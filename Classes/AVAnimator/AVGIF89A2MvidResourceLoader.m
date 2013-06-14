@@ -30,6 +30,17 @@
 #define WRITE_ERROR 3
 #define MALLOC_ERROR 4
 
+// Private API
+
+@interface AVGIF89A2MvidResourceLoader ()
+
++ (uint32_t) convertToMaxvid:(NSData*)inGIF89AData
+               outMaxvidPath:(NSString*)outMaxvidPath
+                    genAdler:(BOOL)genAdler;
+
+@end
+
+
 @implementation AVGIF89A2MvidResourceLoader
 
 @synthesize outPath = m_outPath;

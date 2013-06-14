@@ -471,11 +471,10 @@
     return self.lastFrame;
   } else if ((frameIndex != -1) && (newFrameIndex < frameIndex)) {
     // movie frame index can only go forward via advanceToFrame
-    NSString *msg = [NSString stringWithFormat:@"%@: %d -> %d",
-                     @"can't advance to frame before current frameIndex",
-                     frameIndex,
-                     newFrameIndex];
-    NSAssert(FALSE, msg);
+    NSAssert(FALSE, @"%@: %d -> %d",
+             @"can't advance to frame before current frameIndex",
+             frameIndex,
+             newFrameIndex);
   }
   
   // Get the number of frames directly from the header
@@ -484,10 +483,7 @@
   int numFrames = [self numFrames];
   
   if (newFrameIndex >= numFrames) {
-    NSString *msg = [NSString stringWithFormat:@"%@: %d",
-                     @"can't advance past last frame",
-                     newFrameIndex];
-    NSAssert(FALSE, msg);
+    NSAssert(FALSE, @"%@: %d", @"can't advance past last frame", newFrameIndex);
   }
   
   BOOL changeFrameData = FALSE;
