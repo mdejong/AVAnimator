@@ -63,6 +63,17 @@
 #define USE_GENERATED_ARM_ASM 1
 #endif // SKIP __clang__ && ARM
 
+// GCC 4.2 and newer seems to allocate registers in a way that breaks the inline
+// arm asm in maxvid_decode.c, so use the ARM asm in this case.
+
+#if defined(__GNUC__) && !defined(__clang__) && defined(COMPILE_ARM)
+# define __GNUC_PREREQ(maj, min) \
+((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
+# if __GNUC_PREREQ(4,2)
+#  define USE_GENERATED_ARM_ASM 1
+# endif
+#endif
+
 #if defined(USE_GENERATED_ARM_ASM)
   // No-op, skip compilation of this entire module!
 #else // defined(USE_GENERATED_ARM_ASM)
