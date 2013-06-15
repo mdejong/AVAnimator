@@ -1321,7 +1321,11 @@
   
 	if (nextImage != currentImage) {
 		self.prevFrame = currentImage;
+#ifdef __GNUC__
+		[self.renderer setImage:nextImage];
+#else
 		self.renderer.image = nextImage;
+#endif
 	}
   
   // Test release of frame now, instead of in next decode callback. Seems
@@ -1505,13 +1509,18 @@
   // will be released while the app is in the background.
   // Note that duplicateCurrentFrame could return nil.
 
+  UIImage *resultImage = nil;
+  
   if (copyFinalFrame) {
     AVFrame *frame = [self.frameDecoder duplicateCurrentFrame];
     UIImage *finalFrameCopy = frame.image;
-    self.renderer.image = finalFrameCopy;
-  } else {
-    self.renderer.image = nil;
+    resultImage = finalFrameCopy;
   }
+#ifdef __GNUC__
+  [self.renderer setImage:resultImage];
+#else
+  self.renderer.image = resultImage;
+#endif
   
   self.renderer = nil;
   

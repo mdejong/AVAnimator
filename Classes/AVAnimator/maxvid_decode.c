@@ -382,7 +382,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
-  // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
+  // inputBuffer32 should be 1 word ahead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
 #endif  
@@ -557,7 +557,7 @@ DUPLABEL:
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
-  // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
+  // inputBuffer32 should be 1 word ahead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
 #endif
@@ -759,7 +759,7 @@ DECODE:
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
   MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");  
-  // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
+  // inputBuffer32 should be 1 word ahead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
 #endif
   
@@ -829,7 +829,7 @@ DECODE:
     MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
     MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
   MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
-    // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
+    // inputBuffer32 should be 1 word ahead of the previous read (ignored in COPY case)
     MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
     prevInputBuffer32 = inputBuffer32;
 #endif
@@ -873,7 +873,7 @@ DECODE:
     MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
     MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
     MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
-    // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
+    // inputBuffer32 should be 1 word ahead of the previous read (ignored in COPY case)
     MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
     prevInputBuffer32 = inputBuffer32;
 #endif
@@ -915,7 +915,7 @@ DECODE:
     MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
     MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
     MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
-    // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
+    // inputBuffer32 should be 1 word ahead of the previous read (ignored in COPY case)
     MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
     prevInputBuffer32 = inputBuffer32;
 #endif
@@ -1285,7 +1285,7 @@ COPYSMALL:
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
-  // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
+  // inputBuffer32 should be 1 word ahead of the previous read (ignored in COPY case)
   //MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
 #endif  
@@ -1690,7 +1690,7 @@ COPYBIG:
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
-  // inputBuffer32 should be 1 word aheead of the previous read (ignored in COPY case)
+  // inputBuffer32 should be 1 word ahead of the previous read (ignored in COPY case)
   //MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
 #endif  
@@ -2121,7 +2121,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
-  // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
+  // inputBuffer32 should be 2 words ahead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
 #endif
@@ -2262,7 +2262,7 @@ DUPLABEL:
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
-  // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
+  // inputBuffer32 should be 2 words ahead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
 #endif // EXTRA_CHECKS
@@ -2422,7 +2422,7 @@ DECODE:
   // These checks are done before the read, after the DECODE label
   
 #ifdef EXTRA_CHECKS
-  // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
+  // inputBuffer32 should be 2 words ahead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
   
   MAXVID_ASSERT(skipAfter == skipAfterSaved, "skipAfterSaved");
@@ -2547,7 +2547,7 @@ DECODE:
     MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
     MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
     MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
-    // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
+    // inputBuffer32 should be 2 words ahead of the previous read (ignored in COPY case)
     MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
     prevInputBuffer32 += 1;
 #endif
@@ -2590,7 +2590,7 @@ DECODE:
 #ifdef EXTRA_CHECKS
     MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
     MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
-    // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
+    // inputBuffer32 should be 2 words ahead of the previous read (ignored in COPY case)
     MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
     prevInputBuffer32 = inputBuffer32;
 #endif  
@@ -2637,7 +2637,7 @@ DECODE:
 #ifdef EXTRA_CHECKS
     MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
     MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
-    // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
+    // inputBuffer32 should be 2 words ahead of the previous read (ignored in COPY case)
     MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
     prevInputBuffer32 = inputBuffer32;
 #endif  
@@ -2913,7 +2913,7 @@ COPYSMALL:
   // Read in next inW1 and inW2
   
 #ifdef EXTRA_CHECKS
-  // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
+  // inputBuffer32 should be 2 words ahead of the previous read (ignored in COPY case)
   //MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
 #endif  
@@ -3202,7 +3202,7 @@ COPYBIG:
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 initial alignment");
-  // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
+  // inputBuffer32 should be 2 words ahead of the previous read (ignored in COPY case)
   //MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
   prevInputBuffer32 = inputBuffer32;
 #endif  
@@ -3403,7 +3403,7 @@ DUPBIG:
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
-  // inputBuffer32 should be 2 words aheead of the previous read (ignored in COPY case)
+  // inputBuffer32 should be 2 words ahead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 2), "inputBuffer32 != previous");
 #endif    
   
