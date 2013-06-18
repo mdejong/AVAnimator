@@ -453,7 +453,9 @@
 {
   // The movie data must have been mapped into memory by the time advanceToFrame is invoked
   
-  NSAssert(self.mappedData, @"file not mapped");
+  if (self.mappedData == nil) {
+    NSAssert(FALSE, @"file not mapped");
+  }
   
   // Get from queue of frame buffers!
   
@@ -896,6 +898,17 @@
   } else {
     return FALSE;
   }
+}
+
+- (NSString*) description
+{
+  return [NSString stringWithFormat:@"AVMvidFrameDecoder %p, file %@, isOpen %d, isMapped %d, w/h %d x %d, numFrames %d",
+          self,
+          [self.filePath lastPathComponent],
+          self.isOpen,
+          (self.mappedData == nil ? 0 : 1),
+          self.width, self.height,
+          self.numFrames];
 }
 
 @end

@@ -583,7 +583,7 @@
   // Implicitly rewind before playing, this basically just deallocates any previous
   // play resources in the frame decoder.
   
-  [self rewind];  
+  [self rewind];
   
 	// Can only transition from PAUSED to ANIMATING via unpause
   
@@ -1321,7 +1321,7 @@
   
 	if (nextImage != currentImage) {
 		self.prevFrame = currentImage;
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__clang__)
 		[self.renderer setImage:nextImage];
 #else
 		self.renderer.image = nextImage;
@@ -1516,7 +1516,7 @@
     UIImage *finalFrameCopy = frame.image;
     resultImage = finalFrameCopy;
   }
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(__clang__)
   [self.renderer setImage:resultImage];
 #else
   self.renderer.image = resultImage;
@@ -1534,6 +1534,46 @@
   // The view and the media objects should have dropped all references to frame buffer objects now.
   
   [self.frameDecoder releaseDecodeResources];
+}
+
+- (NSString*) description
+{
+  NSString *stateStr;
+  
+  AVAnimatorPlayerState state = self.state;
+  switch (state) {
+    case ALLOCATED:
+      stateStr = @"ALLOCATED";
+      break;
+    case LOADED:
+      stateStr = @"LOADED";
+      break;
+    case FAILED:
+      stateStr = @"FAILED";
+      break;
+    case PREPPING:
+      stateStr = @"PREPPING";
+      break;
+    case READY:
+      stateStr = @"READY";
+      break;
+    case ANIMATING:
+      stateStr = @"ANIMATING";
+      break;
+    case STOPPED:
+      stateStr = @"STOPPED";
+      break;
+    case PAUSED:
+      stateStr = @"PAUSED";
+      break;
+    default:
+      NSAssert(FALSE, @"unmatched state %d", state);
+  }
+  
+  return [NSString stringWithFormat:@"AVAnimatorMedia %p, state %@, loader %@, decoder %@",
+          self,
+          stateStr,
+          self.resourceLoader, self.frameDecoder];
 }
 
 @end
