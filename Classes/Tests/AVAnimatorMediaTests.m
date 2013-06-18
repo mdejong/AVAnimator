@@ -35,13 +35,18 @@
 
 @interface NotificationUtil : NSObject {
   BOOL m_wasLoadFailedDelivered;
+  BOOL m_wasStopDelivered;
 }
 
 @property (nonatomic, assign) BOOL wasLoadFailedDelivered;
 
+@property (nonatomic, assign) BOOL wasStopDelivered;
+
 + (NotificationUtil*) notificationUtil;
 
-- (void) setupNotification:(AVAnimatorMedia*)media;
+- (void) setupFailedToLoadNotification:(AVAnimatorMedia*)media;
+
+- (void) setupStopNotification:(AVAnimatorMedia*)media;
 
 @end
 
@@ -51,6 +56,7 @@
 @implementation NotificationUtil
 
 @synthesize wasLoadFailedDelivered = m_wasLoadFailedDelivered;
+@synthesize wasStopDelivered = m_wasStopDelivered;
 
 + (NotificationUtil*) notificationUtil
 {
@@ -63,7 +69,7 @@
   [super dealloc];
 }
 
-- (void) setupNotification:(AVAnimatorMedia*)media
+- (void) setupFailedToLoadNotification:(AVAnimatorMedia*)media
 {  
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(failedToLoadNotification:) 
@@ -71,12 +77,25 @@
                                              object:media];  
 }
 
+- (void) setupStopNotification:(AVAnimatorMedia*)media
+{
+  [[NSNotificationCenter defaultCenter] addObserver:self
+                                           selector:@selector(didStopNotification:)
+                                               name:AVAnimatorDidStopNotification
+                                             object:media];
+}
+
 - (void) failedToLoadNotification:(NSNotification*)notification
 {
   self.wasLoadFailedDelivered = TRUE;
 }
 
-@end // setupNotification
+- (void) didStopNotification:(NSNotification*)notification
+{
+  self.wasStopDelivered = TRUE;
+}
+
+@end // NotificationUtil
 
 // class AVAnimatorMediaTests
 
@@ -119,7 +138,7 @@
   // Attach object that will receive a notification if delivered
   
   NotificationUtil *nUtil = [NotificationUtil notificationUtil];
-  [nUtil setupNotification:media];
+  [nUtil setupFailedToLoadNotification:media];
   
   // Prepare to animate, this should fail in async callback
   
@@ -183,7 +202,7 @@
   // Attach object that will receive a notification if delivered
   
   NotificationUtil *nUtil = [NotificationUtil notificationUtil];
-  [nUtil setupNotification:media];
+  [nUtil setupFailedToLoadNotification:media];
   
   // Prepare to animate, this should fail in async callback
   
@@ -253,7 +272,7 @@
   // Attach object that will receive a notification if delivered
   
   NotificationUtil *nUtil = [NotificationUtil notificationUtil];
-  [nUtil setupNotification:media];
+  [nUtil setupFailedToLoadNotification:media];
   
   // Prepare to animate, this should fail in async callback
   
@@ -323,7 +342,7 @@
   // Attach object that will receive a notification if delivered
   
   NotificationUtil *nUtil = [NotificationUtil notificationUtil];
-  [nUtil setupNotification:media];
+  [nUtil setupFailedToLoadNotification:media];
   
   // Prepare to animate, this should fail in async callback
   
@@ -427,7 +446,7 @@
   // Attach object that will receive a notification if delivered
   
   NotificationUtil *nUtil = [NotificationUtil notificationUtil];
-  [nUtil setupNotification:media];
+  [nUtil setupFailedToLoadNotification:media];
   
   // Prepare to animate, this should fail in async callback
   
@@ -785,5 +804,73 @@
   
   return;
 }
+
+// Invoking startAnimator and check that AVAnimatorDidStopNotification
+// is not delivered as a result of calling startAnimator.
+
++ (void) testStopNotificationNotDeliveredOnStart
+{
+  id appDelegate = [[UIApplication sharedApplication] delegate];
+  UIWindow *window = [appDelegate window];
+  NSAssert(window, @"window");
+  
+  NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
+  
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:window.frame];
+  
+  [window addSubview:animatorView];
+  NSAssert(animatorView.window != nil, @"not added to window");
+  
+  // Create Media object
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Create loader that will load the mvid from the filesystem
+  
+  AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+  media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from mvid encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  // Attach object that will receive a notification if delivered
+  
+  NotificationUtil *nUtil = [NotificationUtil notificationUtil];
+  [nUtil setupStopNotification:media];
+  
+  // Prepare to animate, the event loop will need to be entered
+  // before animation is ready, so the attach will be deferred.
+  
+  NSAssert(media.isReadyToAnimate == FALSE, @"isReadyToAnimate");
+  
+  [media prepareToAnimate];
+  
+  [animatorView attachMedia:media];
+  
+  // Wait for a moment to see if media object is loaded successfully.
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:0.5];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(media.state == READY, @"media.state");
+
+  [media startAnimator];
+  
+  NSAssert(nUtil.wasStopDelivered == FALSE, @"wasStopDelivered");
+  
+  [media stopAnimator];
+
+  NSAssert(nUtil.wasStopDelivered == TRUE, @"wasStopDelivered");
+  
+  return;
+}
+
 
 @end // AVAnimatorMediaTests
