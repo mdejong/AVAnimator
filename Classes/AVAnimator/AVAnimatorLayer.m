@@ -81,7 +81,9 @@
 
 - (void) attachMedia:(AVAnimatorMedia*)inMedia
 {
-  if (self.mediaObj == inMedia) {
+  AVAnimatorMedia *currentMedia = self.mediaObj;
+  
+  if (currentMedia == inMedia) {
     // Detaching and the reattaching the same media is a no-op
     return;
   }
@@ -90,18 +92,19 @@
     // Detach case, not attaching another media object so copy
     // the last rendered frame.
     
-    [self.mediaObj detachFromRenderer:self copyFinalFrame:TRUE];
+    [currentMedia detachFromRenderer:self copyFinalFrame:TRUE];
     self.mediaObj = nil;
     self.imageObj = nil;
     self->mediaDidLoad = FALSE;
     return;
   }
   
-  [self.mediaObj detachFromRenderer:self copyFinalFrame:FALSE];
+  [currentMedia detachFromRenderer:self copyFinalFrame:FALSE];
   self.mediaObj = inMedia;
   self.imageObj = nil;
   self->mediaDidLoad = FALSE;
-  [self.mediaObj attachToRenderer:self];
+  [inMedia attachToRenderer:self];
+  return;
 }
 
 // Implement read-only property for use outside this class
