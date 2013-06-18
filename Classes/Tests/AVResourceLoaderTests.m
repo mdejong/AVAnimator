@@ -1686,8 +1686,8 @@
 
 + (void) testDecodeSuperwalkGIF89A
 {
-  NSString *resFilename = @"Superwalk.gif";
-  NSString *outFilename = @"Superwalk.mvid";
+  NSString *resFilename = @"superwalk.gif";
+  NSString *outFilename = @"superwalk.mvid";
   NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
   
   [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];

@@ -1411,6 +1411,11 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
 + (void) testEncodeHugeCopyThenSkipAt32BPP
 {
+  if (!TARGET_IPHONE_SIMULATOR) {
+    // This test consumes all memory on the device and results in the app getting killed.
+    return;
+  }
+  
   int width = (MV_MAX_22_BITS + 1 + 1);
   int height = 1;
   int numBytes = width * height * sizeof(uint32_t);
