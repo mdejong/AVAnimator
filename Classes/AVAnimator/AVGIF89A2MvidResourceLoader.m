@@ -23,7 +23,7 @@
 # define EXTRA_CHECKS
 #endif // DEBUG
 
-// Returned if the filename does not match *.apng or the data is not APNG data.
+// Returned if the filename does not match *.gif or the data is not APNG data.
 
 #define UNSUPPORTED_FILE 1
 #define READ_ERROR 2
@@ -117,7 +117,7 @@
     NSData *imageData = [NSData dataWithContentsOfFile:resPath];
     if (imageData == nil) {
       // Data could not be loaded
-      NSAssert(retcode == 0, @"image data could not be loaded from %@", resPath);
+      NSAssert(FALSE, @"image data could not be loaded from %@", resPath);
     }
 
     retcode = [self convertToMaxvid:imageData outMaxvidPath:phonyOutPath genAdler:genAdler];
@@ -131,7 +131,7 @@
     [AVFileUtil renameFile:phonyOutPath toPath:outPath];
         
 #ifdef LOGGING
-    NSLog(@"done converting .apng to .mvid \"%@\"", [outPath lastPathComponent]);
+    NSLog(@"done converting .gif to .mvid \"%@\"", [outPath lastPathComponent]);
 #endif // LOGGING    
   }
   
@@ -307,7 +307,7 @@ goto retcode; \
   
   // If fewer than 2 animation frames, then it will not be possible to animate.
   // This could happen when there is only a single frame in a PNG file, for example.
-  // It might also happen in a 2 frame .apng where the first frame is marked as hidden.
+  // It might also happen in a 2 frame .gif where the first frame is marked as hidden.
   
   if (numFrames < 2) {
     RETCODE(UNSUPPORTED_FILE);
