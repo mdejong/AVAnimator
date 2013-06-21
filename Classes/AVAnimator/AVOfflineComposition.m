@@ -31,7 +31,8 @@ NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineComposition
 typedef enum
 {
   AVOfflineCompositionClipTypeMvid = 0,
-  AVOfflineCompositionClipTypeH264  
+  AVOfflineCompositionClipTypeH264,
+  AVOfflineCompositionClipTypeImage
 } AVOfflineCompositionClipType;
 
 // Util object, one is created for each clip to be rendered in the composition
@@ -39,6 +40,7 @@ typedef enum
 @interface AVOfflineCompositionClip : NSObject
 {
   NSString   *m_clipSource;
+  UIImage    *m_image;
   AVMvidFrameDecoder *m_mvidFrameDecoder;
 @public
   AVOfflineCompositionClipType clipType;
@@ -53,6 +55,8 @@ typedef enum
 }
 
 @property (nonatomic, copy) NSString *clipSource;
+
+@property (nonatomic, retain) UIImage *image;
 
 @property (nonatomic, retain) AVMvidFrameDecoder *mvidFrameDecoder;
 
@@ -416,7 +420,29 @@ CF_RETURNS_RETAINED
     
     AVOfflineCompositionClip *compClip = [AVOfflineCompositionClip aVOfflineCompositionClip];
     
-    // ClipSource is a mvid or H264 movie that frames are loaded from
+    // ClipType is a string to indicate the type of movie clip
+    
+    NSString *clipTypeStr = [clipDict objectForKey:@"ClipType"];
+    
+    if (clipTypeStr == nil) {
+      return FALSE;
+    }
+    
+    AVOfflineCompositionClipType clipType;
+    UIImage *staticImage = nil;
+    
+    if ([clipTypeStr isEqualToString:@"mvid"]) {
+      clipType = AVOfflineCompositionClipTypeMvid;
+    } else if ([clipTypeStr isEqualToString:@"h264"]) {
+      clipType = AVOfflineCompositionClipTypeH264;
+    } else if ([clipTypeStr isEqualToString:@"image"]) {
+      clipType = AVOfflineCompositionClipTypeImage;
+    } else {
+      self.errorString = @"ClipType unsupported";
+      return FALSE;
+    }
+    
+    // ClipSource is a mvid or H264 movie that frames are loaded from, it could also be an image
     
     NSString *clipSource = [clipDict objectForKey:@"ClipSource"];
     
@@ -432,32 +458,21 @@ CF_RETURNS_RETAINED
     if (resPath != nil) {
       // ClipSource is the name of a resource file
       clipSource = resPath;
+      staticImage = [UIImage imageWithContentsOfFile:clipSource];
     } else {
       // If ClipSource is not a resource file, check for a file with that name in the tmp dir
       NSString *tmpDir = NSTemporaryDirectory();
       NSString *tmpPath = [tmpDir stringByAppendingPathComponent:clipSource];
       if ([[NSFileManager defaultManager] fileExistsAtPath:tmpPath]) {
         clipSource = tmpPath;
+        staticImage = [UIImage imageWithContentsOfFile:clipSource];
+      } else if (clipType == AVOfflineCompositionClipTypeImage) {
+        // If the image is not a filename found in the app resources or in the tmp dir, then
+        // try to load as a named image. For example, "Foo" could map to "Foo@2x.png" for
+        // example, it might also map to "Foo.jpg".
+        
+        staticImage = [UIImage imageNamed:clipSource];
       }
-    }
-    
-    // ClipType is a string to indicate the type of movie clip
-    
-    NSString *clipTypeStr = [clipDict objectForKey:@"ClipType"];
-    
-    if (clipTypeStr == nil) {
-      return FALSE;
-    }
-    
-    AVOfflineCompositionClipType clipType;
-
-    if ([clipTypeStr isEqualToString:@"mvid"]) {
-      clipType = AVOfflineCompositionClipTypeMvid;
-    } else if ([clipTypeStr isEqualToString:@"h264"]) {
-      clipType = AVOfflineCompositionClipTypeH264;
-    } else {
-      self.errorString = @"ClipType unsupported";
-      return FALSE;
     }
     
     // ClipX, ClipY : signed int
@@ -586,39 +601,44 @@ CF_RETURNS_RETAINED
       }
     }
     
-    // Decode frames from input .mvid
-    
-    AVMvidFrameDecoder *mvidFrameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
-    
-    worked = [mvidFrameDecoder openForReading:mvidPath];
-    if (worked == FALSE) {
-      self.errorString = [NSString stringWithFormat:@"open of ClipSource file failed: %@", compClip.clipSource];
-      return FALSE;
-    }
-    
-    // FIXME: print a log message saying that non-SRGB .mvid was found?
-    //NSAssert([mvidFrameDecoder isSRGB] == TRUE, @"isSRGB");
-  
-    compClip.mvidFrameDecoder = mvidFrameDecoder;
-    
-    // Grab the clip's frame duration out of the mvid header. This frame duration may
-    // not match the frame rate of the whole comp.
-    
-    compClip->clipFrameDuration = mvidFrameDecoder.frameDuration;
-    compClip->clipNumFrames = mvidFrameDecoder.numFrames;
-    
-    if (clipScaleFramePerSecond) {
-      // Calculate a new clipFrameDuration based on duration that this clip will
-      // be rendered for on the global timeline.
-
-      float totalClipTime = (compClip->clipEndSeconds - compClip->clipStartSeconds);
-      float clipFrameDuration = totalClipTime / compClip->clipNumFrames;
+    if (clipType == AVOfflineCompositionClipTypeImage) {
+      if (staticImage == nil) {
+        self.errorString = @"ClipSource does not correspond to a file in app resources, the tmp dir, or a named image";
+        return FALSE;
+      }
       
-      compClip->clipFrameDuration = clipFrameDuration;
+      compClip.image = staticImage;
+    } else {
+      // Decode frames from input .mvid
+      
+      AVMvidFrameDecoder *mvidFrameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+      
+      worked = [mvidFrameDecoder openForReading:mvidPath];
+      if (worked == FALSE) {
+        self.errorString = [NSString stringWithFormat:@"open of ClipSource file failed: %@", compClip.clipSource];
+        return FALSE;
+      }
+      
+      compClip.mvidFrameDecoder = mvidFrameDecoder;
+      
+      // Grab the clip's frame duration out of the mvid header. This frame duration may
+      // not match the frame rate of the whole comp.
+      
+      compClip->clipFrameDuration = mvidFrameDecoder.frameDuration;
+      compClip->clipNumFrames = mvidFrameDecoder.numFrames;
+      
+      if (clipScaleFramePerSecond) {
+        // Calculate a new clipFrameDuration based on duration that this clip will
+        // be rendered for on the global timeline.
+        
+        float totalClipTime = (compClip->clipEndSeconds - compClip->clipStartSeconds);
+        float clipFrameDuration = totalClipTime / compClip->clipNumFrames;
+        
+        compClip->clipFrameDuration = clipFrameDuration;
+      }
     }
     
     [mArr addObject:compClip];
-    
     clipOffset++;
   }
   
@@ -798,24 +818,29 @@ CF_RETURNS_RETAINED
       float clipTime = frameTime - clipStartSeconds;
       
       // chop to integer : for example a clip duration of 2.0 and a time offset of 1.0
-      // would chop to frame 0.
+      // would chop to frame 0. Note that clipFrame is not used for an "image" clip.
       
-      NSUInteger clipFrame = (NSUInteger) (clipTime / compClip->clipFrameDuration);
+      NSUInteger clipFrame = 0;
       
-#ifdef LOGGING
-      NSLog(@"clip time %0.2f maps to clip frame %d (duration %0.2f)", clipTime, clipFrame, compClip->clipFrameDuration);
-#endif // LOGGING
-      
-      if (clipFrame >= compClip->clipNumFrames) {
-        // If the calculate frame is larger than the last frame in the clip, continue
-        // to display the last frame. This can happen when a clip is shorter than
-        // the display lenght, so the final frame continues to display.
-        
-        clipFrame = (compClip->clipNumFrames - 1);
+      if (compClip->clipType != AVOfflineCompositionClipTypeImage) {
+        float clipFrameDuration = compClip->clipFrameDuration;
+        clipFrame = (NSUInteger) (clipTime / clipFrameDuration);
         
 #ifdef LOGGING
-        NSLog(@"clip frame bound to the final frame %d", clipFrame);
+        NSLog(@"clip time %0.2f maps to clip frame %d (duration %0.2f)", clipTime, clipFrame, compClip->clipFrameDuration);
 #endif // LOGGING
+        
+        if (clipFrame >= compClip->clipNumFrames) {
+          // If the calculate frame is larger than the last frame in the clip, continue
+          // to display the last frame. This can happen when a clip is shorter than
+          // the display lenght, so the final frame continues to display.
+          
+          clipFrame = (compClip->clipNumFrames - 1);
+          
+#ifdef LOGGING
+          NSLog(@"clip frame bound to the final frame %d", clipFrame);
+#endif // LOGGING
+        }
       }
       
       CGImageRef cgImageRef = NULL;
@@ -838,6 +863,10 @@ CF_RETURNS_RETAINED
         AVFrame *frame = [mvidFrameDecoder advanceToFrame:clipFrame];
         UIImage *image = frame.image;
         NSAssert(image, @"image");
+        cgImageRef = image.CGImage;
+      } else if (compClip->clipType == AVOfflineCompositionClipTypeImage) {
+        UIImage *image = compClip.image;
+        NSAssert(image, @"compClip.image is nil");
         cgImageRef = image.CGImage;
       } else {
         assert(0);
@@ -875,6 +904,8 @@ CF_RETURNS_RETAINED
 @implementation AVOfflineCompositionClip
 
 @synthesize clipSource = m_clipSource;
+
+@synthesize image = m_image;
 
 @synthesize mvidFrameDecoder = m_mvidFrameDecoder;
 

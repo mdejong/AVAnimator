@@ -325,6 +325,7 @@
 		CDFAD89A12D3D50F009DEAF3 /* Counting06.png in Resources */ = {isa = PBXBuildFile; fileRef = CDFAD89212D3D50F009DEAF3 /* Counting06.png */; };
 		CDFAD89B12D3D50F009DEAF3 /* Counting07.png in Resources */ = {isa = PBXBuildFile; fileRef = CDFAD89312D3D50F009DEAF3 /* Counting07.png */; };
 		CDFAD89C12D3D50F009DEAF3 /* Counting08.png in Resources */ = {isa = PBXBuildFile; fileRef = CDFAD89412D3D50F009DEAF3 /* Counting08.png */; };
+		CDFF390B1774F9B500563E51 /* AVOfflineCompositionTwoFrameStaticImageTest.plist in Resources */ = {isa = PBXBuildFile; fileRef = CDFF390A1774F9B400563E51 /* AVOfflineCompositionTwoFrameStaticImageTest.plist */; };
 		CDFF8A8614F97B2A00F3E816 /* ApngConvertMaxvid.m in Sources */ = {isa = PBXBuildFile; fileRef = CDFF8A8514F97B2A00F3E816 /* ApngConvertMaxvid.m */; };
 		CDFF8A8714F97B2A00F3E816 /* ApngConvertMaxvid.m in Sources */ = {isa = PBXBuildFile; fileRef = CDFF8A8514F97B2A00F3E816 /* ApngConvertMaxvid.m */; };
 /* End PBXBuildFile section */
@@ -577,6 +578,7 @@
 		CDFAD89212D3D50F009DEAF3 /* Counting06.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Counting06.png; sourceTree = "<group>"; };
 		CDFAD89312D3D50F009DEAF3 /* Counting07.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Counting07.png; sourceTree = "<group>"; };
 		CDFAD89412D3D50F009DEAF3 /* Counting08.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Counting08.png; sourceTree = "<group>"; };
+		CDFF390A1774F9B400563E51 /* AVOfflineCompositionTwoFrameStaticImageTest.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = AVOfflineCompositionTwoFrameStaticImageTest.plist; sourceTree = "<group>"; };
 		CDFF8A8414F97B2A00F3E816 /* ApngConvertMaxvid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApngConvertMaxvid.h; sourceTree = "<group>"; };
 		CDFF8A8514F97B2A00F3E816 /* ApngConvertMaxvid.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ApngConvertMaxvid.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -783,6 +785,7 @@
 				CDAD8C28152799850089206E /* AVOfflineCompositionTwoFrameBlueBackgroundTest.plist */,
 				CD92B0991528FD8B008FCC0E /* AVOfflineCompositionTwoFrameBlackBlueMovieTest.plist */,
 				CDF54BE21530D53E0050C393 /* AVOfflineCompositionTwoFrameBlackBlueScaleMovieTest.plist */,
+				CDFF390A1774F9B400563E51 /* AVOfflineCompositionTwoFrameStaticImageTest.plist */,
 				CDF15B96152A176A00D8AD2F /* AVOfflineComposition32x32BlackBlueTest.plist */,
 				CD3A341415E1080B008733C3 /* Waterfall_tiny_h264.mov */,
 				CD5E3C551623356F002D7374 /* Colorbands_sRGB.png */,
@@ -1242,6 +1245,7 @@
 				CDBB5AA416A3C3DF00232CE0 /* Grayscale256x256.png in Resources */,
 				CDD03E94176144410064EE55 /* Beaker.gif in Resources */,
 				CD54FB2C176288F40030BA0B /* superwalk.gif in Resources */,
+				CDFF390B1774F9B500563E51 /* AVOfflineCompositionTwoFrameStaticImageTest.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
