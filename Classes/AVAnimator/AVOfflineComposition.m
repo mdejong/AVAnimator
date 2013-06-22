@@ -6,7 +6,10 @@
 
 #import "AVOfflineComposition.h"
 
+#if __has_feature(objc_arc)
+#else
 #import "AutoPropertyRelease.h"
+#endif // objc_arc
 
 #import "CGFrameBuffer.h"
 
@@ -136,8 +139,12 @@ typedef enum
 
 + (AVOfflineComposition*) aVOfflineComposition
 {
-  AVOfflineComposition *obj = [[[AVOfflineComposition alloc] init] autorelease];
+  AVOfflineComposition *obj = [[AVOfflineComposition alloc] init];
+#if __has_feature(objc_arc)
   return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 - (void) dealloc
@@ -145,8 +152,11 @@ typedef enum
   if (self->m_backgroundColor) {
     CGColorRelease(self->m_backgroundColor);
   }
+#if __has_feature(objc_arc)
+#else
   [AutoPropertyRelease releaseProperties:self thisClass:AVOfflineComposition.class];
   [super dealloc];
+#endif // objc_arc
 }
 
 // Initiate a composition operation given info about the composition
@@ -163,7 +173,7 @@ typedef enum
 
 - (void) composeInSecondaryThread:(NSDictionary*)compDict
 {
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  @autoreleasepool {
   
   BOOL worked;
   
@@ -171,7 +181,9 @@ typedef enum
 
   NSAssert([NSThread isMainThread] == FALSE, @"isMainThread");
   
-  worked = [self parseToplevelProperties:compDict];
+  @autoreleasepool {
+    worked = [self parseToplevelProperties:compDict];
+  }
   
   if (worked) {
     worked = [self composeFrames];
@@ -184,7 +196,7 @@ typedef enum
     [self notifyCompositionFailed];
   }
   
-  [pool drain];
+  }
   return;
 }
 
@@ -825,8 +837,8 @@ CF_RETURNS_RETAINED
   }
   
   int clipOffset = 0;
-  for (AVOfflineCompositionClip *compClip in self.compClips) {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  for (AVOfflineCompositionClip *compClip in self.compClips)
+  @autoreleasepool {
     
     // ClipSource is a mvid or H264 movie that frames are loaded from
 
@@ -931,8 +943,6 @@ CF_RETURNS_RETAINED
     }
     
     clipOffset++;
-    
-    [pool drain];
   }
   
   return TRUE;
@@ -1016,13 +1026,20 @@ CF_RETURNS_RETAINED
 + (AVOfflineCompositionClip*) aVOfflineCompositionClip
 {
   AVOfflineCompositionClip *obj = [[AVOfflineCompositionClip alloc] init];
+#if __has_feature(objc_arc)
+  return obj;
+#else
   return [obj autorelease];
+#endif // objc_arc
 }
 
+#if __has_feature(objc_arc)
+#else
 - (void) dealloc
 {
   [AutoPropertyRelease releaseProperties:self thisClass:AVOfflineCompositionClip.class];
   [super dealloc];
 }
+#endif // objc_arc
 
 @end
