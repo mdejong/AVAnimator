@@ -42,9 +42,9 @@
 			<key>ClipType</key>
 			<string>text</string>
 			<key>ClipX</key>
-			<integer>100</integer>
+			<integer>25</integer>
 			<key>ClipY</key>
-			<integer>100</integer>
+			<integer>25</integer>
 			<key>ClipWidth</key>
 			<integer>100</integer>
 			<key>ClipHeight</key>

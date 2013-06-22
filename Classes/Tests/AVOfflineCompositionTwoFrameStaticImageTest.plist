@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>ABOUT</key>
-	<string>2 frames. Static background image with image in lower right corner</string>
+	<string>2 frames. Static background image with small image in upper left corner</string>
 	<key>Source</key>
 	<string>AVOfflineCompositionTwoFrameStaticImageTest.plist</string>
 	<key>Destination</key>
@@ -42,9 +42,9 @@
 			<key>ClipType</key>
 			<string>image</string>
 			<key>ClipX</key>
-			<integer>128</integer>
+			<integer>10</integer>
 			<key>ClipY</key>
-			<integer>128</integer>
+			<integer>10</integer>
 			<key>ClipWidth</key>
 			<integer>20</integer>
 			<key>ClipHeight</key>

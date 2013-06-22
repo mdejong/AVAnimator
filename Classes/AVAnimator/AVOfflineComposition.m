@@ -766,7 +766,12 @@ CF_RETURNS_RETAINED
     CGContextSetFillColorWithColor(bitmapContext, self->m_backgroundColor);
     CGContextFillRect(bitmapContext, CGRectMake(0, 0, width, height));
     
+    CGContextSaveGState(bitmapContext);
+    
     worked = [self composeClips:frame bitmapContext:bitmapContext];
+    
+    CGContextRestoreGState(bitmapContext);
+    
     if (worked == FALSE) {
       retcode = FALSE;
       break;
@@ -910,6 +915,7 @@ CF_RETURNS_RETAINED
         [mAttrString doneAppendingText];
         
         CGRect bounds = CGRectMake(compClip->clipX, compClip->clipY, compClip->clipWidth, compClip->clipHeight);
+        bounds = [self flipRect:bounds];
         [self renderAttrString:mAttrString bounds:bounds bitmapContext:bitmapContext];
       } else {
         assert(0);
@@ -919,6 +925,7 @@ CF_RETURNS_RETAINED
       
       if (cgImageRef) {
         CGRect bounds = CGRectMake(compClip->clipX, compClip->clipY, compClip->clipWidth, compClip->clipHeight);
+        bounds = [self flipRect:bounds];
         CGContextDrawImage(bitmapContext, bounds, cgImageRef);
       }
     }
@@ -942,6 +949,19 @@ CF_RETURNS_RETAINED
   self.compClips = nil;
 }
 
+// This utility method will translate a bounding box so that coordinates given in
+// terms of the upper left corner of the bounding box are flipped into offset
+// of the lower left corner from the bottom of the screen.
+
+- (CGRect) flipRect:(CGRect)rect
+{
+  CGRect flipped = rect;
+  float lowerLeftCornerYBelowZero = rect.origin.y + rect.size.height;
+  float lowerLeftCornerYAboveBottom = self.compSize.height - lowerLeftCornerYBelowZero;
+  flipped.origin.y = lowerLeftCornerYAboveBottom;
+  return flipped;
+}
+
 // Use CoreText to render rich text into a static bounding box
 
 - (void) renderAttrString:(MutableAttrString*)mAttrString
@@ -950,16 +970,15 @@ CF_RETURNS_RETAINED
 {
   CFMutableAttributedStringRef attrString = mAttrString.attrString;
   
-  CGContextSaveGState(bitmapContext);
+  if (FALSE) {
+    // Debug fill text bounds with red so that bounds can be checked.
+    // Note that these bounds have already been flipped by the time
+    // this method is invoked.
+    
+    CGContextSetFillColorWithColor(bitmapContext, [UIColor redColor].CGColor);
+    CGContextFillRect(bitmapContext, bounds);
+  }
   
-  // FIXME: Need to translate to x,y so that text appears at exact position
-  // instead of 0,0
-  
-  // Flip the context so that the text will appear in the correct orientation for iOS device
-  
-  CGAffineTransform flipTransform = CGAffineTransformMake(1, 0, 0, -1, 0, bounds.size.height);
-  CGContextConcatCTM(bitmapContext, flipTransform);
-
   CGMutablePathRef textBoundsPath = CGPathCreateMutable();
   CGRect textBounds = bounds;
   CGPathAddRect(textBoundsPath, NULL, textBounds);
@@ -978,7 +997,6 @@ CF_RETURNS_RETAINED
   
   CGPathRelease(textBoundsPath);
   
-  CGContextRestoreGState(bitmapContext);
   return;
 }
 
