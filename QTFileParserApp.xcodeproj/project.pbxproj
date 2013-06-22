@@ -145,6 +145,11 @@
 		CD5F5C4814CCD809005A2809 /* SegmentedMappedData.m in Sources */ = {isa = PBXBuildFile; fileRef = CD5F5C4614CCD809005A2809 /* SegmentedMappedData.m */; };
 		CD5F5C4B14CCDC97005A2809 /* SegmentedMappedDataTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD5F5C4A14CCDC97005A2809 /* SegmentedMappedDataTests.m */; };
 		CD6198BF12CCFC640003AEAA /* AVFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */; };
+		CD64780F17754827000FDD3A /* CoreText.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD64780E17754827000FDD3A /* CoreText.framework */; };
+		CD64781017754831000FDD3A /* CoreText.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD64780E17754827000FDD3A /* CoreText.framework */; };
+		CD64781317754882000FDD3A /* MutableAttrString.m in Sources */ = {isa = PBXBuildFile; fileRef = CD64781217754882000FDD3A /* MutableAttrString.m */; };
+		CD64781417754882000FDD3A /* MutableAttrString.m in Sources */ = {isa = PBXBuildFile; fileRef = CD64781217754882000FDD3A /* MutableAttrString.m */; };
+		CD647816177549EB000FDD3A /* AVOfflineCompositionTwoFrameStaticImageAndTextTest.plist in Resources */ = {isa = PBXBuildFile; fileRef = CD647815177549EB000FDD3A /* AVOfflineCompositionTwoFrameStaticImageAndTextTest.plist */; };
 		CD659D62136390C1008AF6F9 /* AVMvidFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD659D61136390C1008AF6F9 /* AVMvidFrameDecoder.m */; };
 		CD659D63136390C1008AF6F9 /* AVMvidFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = CD659D61136390C1008AF6F9 /* AVMvidFrameDecoder.m */; };
 		CD6EF5A812F0F7920045659F /* movdata.c in Sources */ = {isa = PBXBuildFile; fileRef = CD6EF5A612F0F7920045659F /* movdata.c */; };
@@ -403,6 +408,10 @@
 		CD5F5C4A14CCDC97005A2809 /* SegmentedMappedDataTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SegmentedMappedDataTests.m; sourceTree = "<group>"; };
 		CD6198BD12CCFC640003AEAA /* AVFrameDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVFrameDecoder.h; sourceTree = "<group>"; };
 		CD6198BE12CCFC640003AEAA /* AVFrameDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVFrameDecoder.m; sourceTree = "<group>"; };
+		CD64780E17754827000FDD3A /* CoreText.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreText.framework; path = System/Library/Frameworks/CoreText.framework; sourceTree = SDKROOT; };
+		CD64781117754882000FDD3A /* MutableAttrString.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MutableAttrString.h; sourceTree = "<group>"; };
+		CD64781217754882000FDD3A /* MutableAttrString.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MutableAttrString.m; sourceTree = "<group>"; };
+		CD647815177549EB000FDD3A /* AVOfflineCompositionTwoFrameStaticImageAndTextTest.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = AVOfflineCompositionTwoFrameStaticImageAndTextTest.plist; sourceTree = "<group>"; };
 		CD659D60136390C1008AF6F9 /* AVMvidFrameDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVMvidFrameDecoder.h; sourceTree = "<group>"; };
 		CD659D61136390C1008AF6F9 /* AVMvidFrameDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVMvidFrameDecoder.m; sourceTree = "<group>"; };
 		CD6EF5A612F0F7920045659F /* movdata.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = movdata.c; sourceTree = "<group>"; };
@@ -588,6 +597,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD64780F17754827000FDD3A /* CoreText.framework in Frameworks */,
 				CDCF845A17612947005FE564 /* ImageIO.framework in Frameworks */,
 				CDAAB16414DFAAF100F43810 /* CoreVideo.framework in Frameworks */,
 				CDAAB16114DFAA9800F43810 /* CoreMedia.framework in Frameworks */,
@@ -606,6 +616,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD64781017754831000FDD3A /* CoreText.framework in Frameworks */,
 				CDCF845B1761295E005FE564 /* ImageIO.framework in Frameworks */,
 				CD3F4E5112D8F4400067FDDF /* AVFoundation.framework in Frameworks */,
 				CD3F4E5212D8F4400067FDDF /* AudioToolbox.framework in Frameworks */,
@@ -707,6 +718,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				CD64780E17754827000FDD3A /* CoreText.framework */,
 				CDCF845917612947005FE564 /* ImageIO.framework */,
 				CDAAB16314DFAAF100F43810 /* CoreVideo.framework */,
 				CDAAB16014DFAA9800F43810 /* CoreMedia.framework */,
@@ -786,6 +798,7 @@
 				CD92B0991528FD8B008FCC0E /* AVOfflineCompositionTwoFrameBlackBlueMovieTest.plist */,
 				CDF54BE21530D53E0050C393 /* AVOfflineCompositionTwoFrameBlackBlueScaleMovieTest.plist */,
 				CDFF390A1774F9B400563E51 /* AVOfflineCompositionTwoFrameStaticImageTest.plist */,
+				CD647815177549EB000FDD3A /* AVOfflineCompositionTwoFrameStaticImageAndTextTest.plist */,
 				CDF15B96152A176A00D8AD2F /* AVOfflineComposition32x32BlackBlueTest.plist */,
 				CD3A341415E1080B008733C3 /* Waterfall_tiny_h264.mov */,
 				CD5E3C551623356F002D7374 /* Colorbands_sRGB.png */,
@@ -936,6 +949,8 @@
 				CD5F5C4614CCD809005A2809 /* SegmentedMappedData.m */,
 				CDAD8C191527965B0089206E /* AVOfflineComposition.h */,
 				CDAD8C1A1527965B0089206E /* AVOfflineComposition.m */,
+				CD64781117754882000FDD3A /* MutableAttrString.h */,
+				CD64781217754882000FDD3A /* MutableAttrString.m */,
 			);
 			path = AVAnimator;
 			sourceTree = "<group>";
@@ -1246,6 +1261,7 @@
 				CDD03E94176144410064EE55 /* Beaker.gif in Resources */,
 				CD54FB2C176288F40030BA0B /* superwalk.gif in Resources */,
 				CDFF390B1774F9B500563E51 /* AVOfflineCompositionTwoFrameStaticImageTest.plist in Resources */,
+				CD647816177549EB000FDD3A /* AVOfflineCompositionTwoFrameStaticImageAndTextTest.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1310,6 +1326,7 @@
 				CDA9E751169B6EF200A49AA3 /* AVAssetReaderConvertMaxvid.m in Sources */,
 				CDBDFB1A169E57BF00B53613 /* AVAssetFrameDecoder.m in Sources */,
 				CDC7B6281760521C00B8E3FF /* AVGIF89A2MvidResourceLoader.m in Sources */,
+				CD64781317754882000FDD3A /* MutableAttrString.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1385,6 +1402,7 @@
 				CDBDFB1B169E57C000B53613 /* AVAssetFrameDecoder.m in Sources */,
 				CD02DDA416A32B11008EB661 /* PremultiplyTests.m in Sources */,
 				CDCF845517610AFC005FE564 /* AVGIF89A2MvidResourceLoader.m in Sources */,
+				CD64781417754882000FDD3A /* MutableAttrString.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

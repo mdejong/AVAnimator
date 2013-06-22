@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ABOUT</key>
+	<string>2 frames. Static background image with image in lower right corner</string>
+	<key>Source</key>
+	<string>AVOfflineCompositionTwoFrameStaticImageAndTextTest.plist</string>
+	<key>Destination</key>
+	<string>AVOfflineCompositionTwoFrameStaticImageAndTextTest.mvid</string>
+	<key>CompDurationSeconds</key>
+	<integer>2</integer>
+	<key>CompFramesPerSecond</key>
+	<integer>1</integer>
+	<key>CompWidth</key>
+	<integer>256</integer>
+	<key>CompHeight</key>
+	<integer>256</integer>
+	<key>CompClips</key>
+	<array>
+		<dict>
+			<key>ClipSource</key>
+			<string>Grayscale256x256</string>
+			<key>ClipType</key>
+			<string>image</string>
+			<key>ClipX</key>
+			<integer>0</integer>
+			<key>ClipY</key>
+			<integer>0</integer>
+			<key>ClipWidth</key>
+			<integer>256</integer>
+			<key>ClipHeight</key>
+			<integer>256</integer>
+			<key>ClipStartSeconds</key>
+			<real>0</real>
+			<key>ClipEndSeconds</key>
+			<real>2</real>
+		</dict>
+		<dict>
+			<key>ClipText</key>
+			<string>Test String</string>
+			<key>ClipType</key>
+			<string>text</string>
+			<key>ClipX</key>
+			<integer>100</integer>
+			<key>ClipY</key>
+			<integer>100</integer>
+			<key>ClipWidth</key>
+			<integer>100</integer>
+			<key>ClipHeight</key>
+			<integer>50</integer>
+			<key>ClipStartSeconds</key>
+			<integer>1</integer>
+			<key>ClipEndSeconds</key>
+			<real>2</real>
+		</dict>
+	</array>
+</dict>
+</plist>

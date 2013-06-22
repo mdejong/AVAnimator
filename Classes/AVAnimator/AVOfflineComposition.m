@@ -20,6 +20,8 @@
 
 #import "AVFileUtil.h"
 
+#import "MutableAttrString.h"
+
 #define LOGGING
 
 // Notification name constants
@@ -32,7 +34,8 @@ typedef enum
 {
   AVOfflineCompositionClipTypeMvid = 0,
   AVOfflineCompositionClipTypeH264,
-  AVOfflineCompositionClipTypeImage
+  AVOfflineCompositionClipTypeImage,
+  AVOfflineCompositionClipTypeText,
 } AVOfflineCompositionClipType;
 
 // Util object, one is created for each clip to be rendered in the composition
@@ -437,42 +440,60 @@ CF_RETURNS_RETAINED
       clipType = AVOfflineCompositionClipTypeH264;
     } else if ([clipTypeStr isEqualToString:@"image"]) {
       clipType = AVOfflineCompositionClipTypeImage;
+    } else if ([clipTypeStr isEqualToString:@"text"]) {
+      clipType = AVOfflineCompositionClipTypeText;
     } else {
       self.errorString = @"ClipType unsupported";
       return FALSE;
     }
     
-    // ClipSource is a mvid or H264 movie that frames are loaded from, it could also be an image
+    // ClipSource is a mvid or H264 movie that frames are loaded from, it could also be an image.
+    // Note that for a "text" type, there is no source.
     
-    NSString *clipSource = [clipDict objectForKey:@"ClipSource"];
+    NSString *clipSource = nil;
     
-    if (clipSource == nil) {
-      self.errorString = @"ClipSource not found";
-      return FALSE;
-    }
-    
-    // ClipSource could indicate a resource file (the assumed default).
-    
-    NSString *resPath = [[NSBundle mainBundle] pathForResource:clipSource ofType:@""];
-    
-    if (resPath != nil) {
-      // ClipSource is the name of a resource file
-      clipSource = resPath;
-      staticImage = [UIImage imageWithContentsOfFile:clipSource];
-    } else {
-      // If ClipSource is not a resource file, check for a file with that name in the tmp dir
-      NSString *tmpDir = NSTemporaryDirectory();
-      NSString *tmpPath = [tmpDir stringByAppendingPathComponent:clipSource];
-      if ([[NSFileManager defaultManager] fileExistsAtPath:tmpPath]) {
-        clipSource = tmpPath;
-        staticImage = [UIImage imageWithContentsOfFile:clipSource];
-      } else if (clipType == AVOfflineCompositionClipTypeImage) {
-        // If the image is not a filename found in the app resources or in the tmp dir, then
-        // try to load as a named image. For example, "Foo" could map to "Foo@2x.png" for
-        // example, it might also map to "Foo.jpg".
-        
-        staticImage = [UIImage imageNamed:clipSource];
+    if (clipType == AVOfflineCompositionClipTypeText) {
+      // Store literal text in "clip source"
+      
+      clipSource = [clipDict objectForKey:@"ClipText"];
+      
+      if (clipSource == nil) {
+        self.errorString = @"ClipText not found";
+        return FALSE;
       }
+    } else {
+      // Movie or static image clip
+      
+      clipSource = [clipDict objectForKey:@"ClipSource"];
+      
+      if (clipSource == nil) {
+        self.errorString = @"ClipSource not found";
+        return FALSE;
+      }
+      
+      // ClipSource could indicate a resource file (the assumed default).
+      
+      NSString *resPath = [[NSBundle mainBundle] pathForResource:clipSource ofType:@""];
+      
+      if (resPath != nil) {
+        // ClipSource is the name of a resource file
+        clipSource = resPath;
+        staticImage = [UIImage imageWithContentsOfFile:clipSource];
+      } else {
+        // If ClipSource is not a resource file, check for a file with that name in the tmp dir
+        NSString *tmpDir = NSTemporaryDirectory();
+        NSString *tmpPath = [tmpDir stringByAppendingPathComponent:clipSource];
+        if ([[NSFileManager defaultManager] fileExistsAtPath:tmpPath]) {
+          clipSource = tmpPath;
+          staticImage = [UIImage imageWithContentsOfFile:clipSource];
+        } else if (clipType == AVOfflineCompositionClipTypeImage) {
+          // If the image is not a filename found in the app resources or in the tmp dir, then
+          // try to load as a named image. For example, "Foo" could map to "Foo@2x.png" for
+          // example, it might also map to "Foo.jpg".
+          
+          staticImage = [UIImage imageNamed:clipSource];
+        }
+      }      
     }
     
     // ClipX, ClipY : signed int
@@ -600,15 +621,17 @@ CF_RETURNS_RETAINED
         }
       }
     }
-    
-    if (clipType == AVOfflineCompositionClipTypeImage) {
+  
+    if (clipType == AVOfflineCompositionClipTypeText) {
+      // Nop
+    } else if (clipType == AVOfflineCompositionClipTypeImage) {
       if (staticImage == nil) {
         self.errorString = @"ClipSource does not correspond to a file in app resources, the tmp dir, or a named image";
         return FALSE;
       }
       
       compClip.image = staticImage;
-    } else {
+    } else if (clipType == AVOfflineCompositionClipTypeMvid || clipType == AVOfflineCompositionClipTypeH264) {
       // Decode frames from input .mvid
       
       AVMvidFrameDecoder *mvidFrameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
@@ -636,6 +659,8 @@ CF_RETURNS_RETAINED
         
         compClip->clipFrameDuration = clipFrameDuration;
       }
+    } else {
+      assert(0);
     }
     
     [mArr addObject:compClip];
@@ -818,11 +843,11 @@ CF_RETURNS_RETAINED
       float clipTime = frameTime - clipStartSeconds;
       
       // chop to integer : for example a clip duration of 2.0 and a time offset of 1.0
-      // would chop to frame 0. Note that clipFrame is not used for an "image" clip.
+      // would chop to frame 0. Note that clipFrame is not used for an "image" or "text" clip.
       
       NSUInteger clipFrame = 0;
       
-      if (compClip->clipType != AVOfflineCompositionClipTypeImage) {
+      if (compClip->clipType == AVOfflineCompositionClipTypeMvid || compClip->clipType == AVOfflineCompositionClipTypeH264) {
         float clipFrameDuration = compClip->clipFrameDuration;
         clipFrame = (NSUInteger) (clipTime / clipFrameDuration);
         
@@ -868,15 +893,34 @@ CF_RETURNS_RETAINED
         UIImage *image = compClip.image;
         NSAssert(image, @"compClip.image is nil");
         cgImageRef = image.CGImage;
+      } else if (compClip->clipType == AVOfflineCompositionClipTypeText) {
+        // Render text directly into bitmapContext in a secondary thread.
+        // The simplified NSString render methods like drawInRect cannot
+        // be used here because of thread safety issues.
+        
+        MutableAttrString *mAttrString = [MutableAttrString mutableAttrString];
+        
+        [mAttrString setDefaults:[UIColor greenColor].CGColor
+                  fontSize:16
+             plainFontName:@"Helvetica"
+              boldFontName:@"Helvetica-Bold"];
+        
+        NSString *text = compClip.clipSource;
+        [mAttrString appendText:text];
+        [mAttrString doneAppendingText];
+        
+        CGRect bounds = CGRectMake(compClip->clipX, compClip->clipY, compClip->clipWidth, compClip->clipHeight);
+        [self renderAttrString:mAttrString bounds:bounds bitmapContext:bitmapContext];
       } else {
         assert(0);
       }
-        
+      
       // Render frame by painting frame image into a specific rectangle in the framebuffer
       
-      CGRect bounds = CGRectMake(compClip->clipX, compClip->clipY, compClip->clipWidth, compClip->clipHeight);
-      
-      CGContextDrawImage(bitmapContext, bounds, cgImageRef);
+      if (cgImageRef) {
+        CGRect bounds = CGRectMake(compClip->clipX, compClip->clipY, compClip->clipWidth, compClip->clipHeight);
+        CGContextDrawImage(bitmapContext, bounds, cgImageRef);
+      }
     }
     
     clipOffset++;
@@ -887,6 +931,8 @@ CF_RETURNS_RETAINED
   return TRUE;
 }
 
+// This method will render into the given 
+
 // Close resources associated with each open clip
 
 - (void) closeClips
@@ -894,6 +940,46 @@ CF_RETURNS_RETAINED
   // Clips are automatically cleaned up when last ref is dropped
   
   self.compClips = nil;
+}
+
+// Use CoreText to render rich text into a static bounding box
+
+- (void) renderAttrString:(MutableAttrString*)mAttrString
+                   bounds:(CGRect)bounds
+            bitmapContext:(CGContextRef)bitmapContext
+{
+  CFMutableAttributedStringRef attrString = mAttrString.attrString;
+  
+  CGContextSaveGState(bitmapContext);
+  
+  // FIXME: Need to translate to x,y so that text appears at exact position
+  // instead of 0,0
+  
+  // Flip the context so that the text will appear in the correct orientation for iOS device
+  
+  CGAffineTransform flipTransform = CGAffineTransformMake(1, 0, 0, -1, 0, bounds.size.height);
+  CGContextConcatCTM(bitmapContext, flipTransform);
+
+  CGMutablePathRef textBoundsPath = CGPathCreateMutable();
+  CGRect textBounds = bounds;
+  CGPathAddRect(textBoundsPath, NULL, textBounds);
+
+  // Create the framesetter with the attributed string and then render into the graphics context.
+  
+  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString(attrString);
+
+  CTFrameRef textRenderFrame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), textBoundsPath, NULL);
+  
+  CTFrameDraw(textRenderFrame, bitmapContext);
+  
+  CFRelease(textRenderFrame);
+  
+  CFRelease(framesetter);
+  
+  CGPathRelease(textBoundsPath);
+  
+  CGContextRestoreGState(bitmapContext);
+  return;
 }
 
 @end // AVOfflineComposition
