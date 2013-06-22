@@ -923,12 +923,24 @@ CF_RETURNS_RETAINED
               boldFontName:@"Helvetica-Bold"];
         
         NSString *text = compClip.clipSource;
-        [mAttrString appendText:text];
-        [mAttrString doneAppendingText];
-        
-        CGRect bounds = CGRectMake(compClip->clipX, compClip->clipY, compClip->clipWidth, compClip->clipHeight);
-        bounds = [self flipRect:bounds];
-        [self renderAttrString:mAttrString bounds:bounds bitmapContext:bitmapContext];
+        if ([text length] > 0) {
+          [mAttrString appendText:text];
+          [mAttrString doneAppendingText];
+          
+          CGRect bounds = CGRectMake(compClip->clipX, compClip->clipY, compClip->clipWidth, compClip->clipHeight);
+          bounds = [self flipRect:bounds];
+          
+          if (FALSE) {
+            // Debug fill text bounds with red so that bounds can be checked.
+            // Note that these bounds have already been flipped by the time
+            // this method is invoked.
+            
+            CGContextSetFillColorWithColor(bitmapContext, [UIColor redColor].CGColor);
+            CGContextFillRect(bitmapContext, bounds);
+          }
+          
+          [mAttrString render:bitmapContext bounds:bounds];
+        }
       } else {
         assert(0);
       }
@@ -970,44 +982,6 @@ CF_RETURNS_RETAINED
   float lowerLeftCornerYAboveBottom = self.compSize.height - lowerLeftCornerYBelowZero;
   flipped.origin.y = lowerLeftCornerYAboveBottom;
   return flipped;
-}
-
-// Use CoreText to render rich text into a static bounding box
-
-- (void) renderAttrString:(MutableAttrString*)mAttrString
-                   bounds:(CGRect)bounds
-            bitmapContext:(CGContextRef)bitmapContext
-{
-  CFMutableAttributedStringRef attrString = mAttrString.attrString;
-  
-  if (FALSE) {
-    // Debug fill text bounds with red so that bounds can be checked.
-    // Note that these bounds have already been flipped by the time
-    // this method is invoked.
-    
-    CGContextSetFillColorWithColor(bitmapContext, [UIColor redColor].CGColor);
-    CGContextFillRect(bitmapContext, bounds);
-  }
-  
-  CGMutablePathRef textBoundsPath = CGPathCreateMutable();
-  CGRect textBounds = bounds;
-  CGPathAddRect(textBoundsPath, NULL, textBounds);
-
-  // Create the framesetter with the attributed string and then render into the graphics context.
-  
-  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString(attrString);
-
-  CTFrameRef textRenderFrame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), textBoundsPath, NULL);
-  
-  CTFrameDraw(textRenderFrame, bitmapContext);
-  
-  CFRelease(textRenderFrame);
-  
-  CFRelease(framesetter);
-  
-  CGPathRelease(textBoundsPath);
-  
-  return;
 }
 
 @end // AVOfflineComposition

@@ -74,10 +74,10 @@
   self.attrString = NULL;
   CFRelease(attrString);
   
-  CTFontRef font;
-  
   // setter will release the held ref
   self.font = NULL;
+
+  CTFontRef font;
   
   font = self.plainTextFont;
   self.plainTextFont = NULL;
@@ -139,15 +139,20 @@
   
   //CFAttributedStringSetAttribute(attrString, range, kCTFontAttributeName, font);
   
-  // NSDictionary is toll free bridged to CFDictionary
-  
-  NSDictionary *attrValues = [NSDictionary dictionaryWithObjectsAndKeys:
-                              (CFTypeRef)colorRef, kCTForegroundColorAttributeName,
-                              (CFTypeRef)font, kCTFontAttributeName,
-                              nil];
+  CFStringRef keys[] = { kCTForegroundColorAttributeName, kCTFontAttributeName };
+  CFTypeRef values[] = { colorRef, font };
+    
+  CFDictionaryRef attrValues = CFDictionaryCreate(kCFAllocatorDefault,
+                                                    (const void**)&keys,
+                                                    (const void**)&values,
+                                                    sizeof(keys) / sizeof(keys[0]),
+                                                    &kCFTypeDictionaryKeyCallBacks,
+                                                    &kCFTypeDictionaryValueCallBacks);
   BOOL clearOtherAttributes = TRUE;
-  CFAttributedStringSetAttributes(attrString, range, (CFDictionaryRef)attrValues, (Boolean)clearOtherAttributes);
-  
+    
+  CFAttributedStringSetAttributes(attrString, range, attrValues, (Boolean)clearOtherAttributes);
+  CFRelease(attrValues);
+    
   if (LOGGING) {
     NSString *description = [(NSObject*)attrString description];
     NSLog(@"post appendText (%d) : \"%@\"", [self length], description);
@@ -195,7 +200,22 @@
   
   CFRange textRange = CFRangeMake(0, [self length]);
   
-  CFAttributedStringSetAttribute(mAttributedString, textRange, kCTParagraphStyleAttributeName, paragraphStyle);
+  // possible memory leak with CFAttributedStringSetAttribute() 4th argument
+  //CFAttributedStringSetAttribute(mAttributedString, textRange, kCTParagraphStyleAttributeName, paragraphStyle);
+  
+  CFStringRef keys[] = { kCTParagraphStyleAttributeName };
+  CFTypeRef values[] = { paragraphStyle };
+  
+  CFDictionaryRef attrValues = CFDictionaryCreate(kCFAllocatorDefault,
+                                                  (const void**)&keys,
+                                                  (const void**)&values,
+                                                  sizeof(keys) / sizeof(keys[0]),
+                                                  &kCFTypeDictionaryKeyCallBacks,
+                                                  &kCFTypeDictionaryValueCallBacks);
+  
+  BOOL clearOtherAttributes = FALSE;
+  CFAttributedStringSetAttributes(mAttributedString, textRange, attrValues, (Boolean)clearOtherAttributes);
+  CFRelease(attrValues);
   
   CFRelease(paragraphStyle);
   
@@ -215,21 +235,29 @@
   
   CFMutableAttributedStringRef attrString = self.attrString;
   CFRange stringRange = self.stringRange;
-    
+  
+  CGFloat measuredHeight = 1.0f;
+  
   // Create the framesetter with the attributed string.
   
   CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString(attrString);
+  
+  if (framesetter) {
+    CFRange fitRange;
+    CGSize constraints = CGSizeMake(width, CGFLOAT_MAX); // width, height : CGFLOAT_MAX indicates unconstrained
     
-  CFRange fitRange;
-  CGSize constraints = CGSizeMake(width, CGFLOAT_MAX); // width, height : CGFLOAT_MAX indicates unconstrained
-  
-  CGSize fontMeasureFrameSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, stringRange, (CFDictionaryRef)NULL, constraints, &fitRange);
-
-  // Note that fitRange is ignored here, we only care about the measured height
-  
-  CGFloat measuredHeight = fontMeasureFrameSize.height;
-  
-  CFRelease(framesetter);
+    CGSize fontMeasureFrameSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter,
+                                                                               stringRange,
+                                                                               (CFDictionaryRef)NULL,
+                                                                               constraints,
+                                                                               &fitRange);
+    
+    // Note that fitRange is ignored here, we only care about the measured height
+    
+    measuredHeight = fontMeasureFrameSize.height;
+    
+    CFRelease(framesetter);
+  }
   
   return (NSUInteger) ceil(measuredHeight);
 }
@@ -314,6 +342,41 @@
   if (prev) {
     CFRelease(prev);
   }
+}
+
+// Use CoreText to render rich text into a static bounding box of the given context.
+
+- (void) render:(CGContextRef)bitmapContext
+         bounds:(CGRect)bounds
+{
+  CFMutableAttributedStringRef attrString = self.attrString;
+    
+  CGMutablePathRef textBoundsPath = CGPathCreateMutable();
+  CGRect textBounds = bounds;
+  CGPathAddRect(textBoundsPath, NULL, textBounds);
+  
+  // FIXME: drop shadow: http://stackoverflow.com/questions/4388384/adding-a-drop-shadow-to-nsstring-text-in-a-drawrect-method-without-using-uilabe
+  
+  // Create the framesetter with the attributed string and then render into the graphics context.
+  // Note the use of if blocks to deal with the weird case of memory running low and NULL being returned.
+  
+  CTFramesetterRef framesetter = CTFramesetterCreateWithAttributedString(attrString);
+  
+  if (framesetter) {
+    CTFrameRef textRenderFrame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), textBoundsPath, NULL);
+    
+    if (textRenderFrame) {
+      CTFrameDraw(textRenderFrame, bitmapContext);
+      
+      CFRelease(textRenderFrame);
+    }
+    
+    CFRelease(framesetter);
+  }
+  
+  CGPathRelease(textBoundsPath);
+  
+  return;
 }
 
 // Print the mutable attributed string as a single string with no attributes.

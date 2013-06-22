@@ -72,4 +72,10 @@
 
 - (NSUInteger) measureHeightForWidth:(NSUInteger)width;
 
+// Use CoreText to render rich text into a static bounding box
+// of the given context.
+
+- (void) render:(CGContextRef)bitmapContext
+         bounds:(CGRect)bounds;
+
 @end
