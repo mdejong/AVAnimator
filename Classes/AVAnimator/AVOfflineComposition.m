@@ -872,6 +872,15 @@ CF_RETURNS_RETAINED
   if (bitmapContext == NULL) {
     return FALSE;
   }
+
+  // Before starting to write a new tmp file, make sure the previous output file is deleted.
+  // If the system is low on disk space and a render is very large then this would
+  // reclaim a bunch of hard drive space from a previous render of this same comp.
+  
+  if ([AVFileUtil fileExists:self.destination]) {
+    worked = [[NSFileManager defaultManager] removeItemAtPath:self.destination error:nil];
+    NSAssert(worked, @"could not remove output file");
+  }
   
   // Create phony output file, this file will be renamed to XYZ.mvid when done writing
   
@@ -934,12 +943,21 @@ CF_RETURNS_RETAINED
   
   [fileWriter close];
   
-  // Rename tmp file to actual output filename
+  // Rename tmp file to actual output filename on success, otherwise
+  // nuke output since writing was unsuccessful and the tmp file
+  // for the comp could be quite large.
   
-  [AVFileUtil renameFile:phonyOutPath toPath:self.destination];
+  if (worked) {
+    [AVFileUtil renameFile:phonyOutPath toPath:self.destination];
+  } else {
+    worked = [[NSFileManager defaultManager] removeItemAtPath:phonyOutPath error:nil];
+    NSAssert(worked, @"could not remove output file");
+  }
   
 #ifdef LOGGING
-  NSLog(@"Wrote comp file %@", self.destination);
+  if (worked) {
+    NSLog(@"Wrote comp file %@", self.destination);
+  }
 #endif // LOGGING
   
   return retcode;
