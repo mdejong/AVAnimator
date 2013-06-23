@@ -58,6 +58,10 @@ typedef enum
   float     clipEndSeconds;
   float     clipFrameDuration;
   NSInteger clipNumFrames;
+  
+  NSString   *m_font;
+  NSUInteger m_fontSize;
+  CGColorRef m_fontColor;
 }
 
 @property (nonatomic, copy) NSString *clipSource;
@@ -65,6 +69,8 @@ typedef enum
 @property (nonatomic, retain) UIImage *image;
 
 @property (nonatomic, retain) AVMvidFrameDecoder *mvidFrameDecoder;
+
+@property (nonatomic, copy) NSString *font;
 
 + (AVOfflineCompositionClip*) aVOfflineCompositionClip;
 
@@ -111,6 +117,10 @@ typedef enum
 
 @property (nonatomic, assign) CGSize compSize;
 
+@property (nonatomic, copy) NSString *defaultFont;
+
+@property (nonatomic, assign) NSUInteger defaultFontSize;
+
 @end
 
 // Implementation of AVOfflineComposition
@@ -135,6 +145,10 @@ typedef enum
 
 @synthesize compSize = m_compSize;
 
+@synthesize defaultFont = m_defaultFont;
+
+@synthesize defaultFontSize = m_defaultFontSize;
+
 // Constructor
 
 + (AVOfflineComposition*) aVOfflineComposition
@@ -151,6 +165,9 @@ typedef enum
 {
   if (self->m_backgroundColor) {
     CGColorRelease(self->m_backgroundColor);
+  }
+  if (self->m_defaultFontColor) {
+    CGColorRelease(self->m_defaultFontColor);
   }
 #if __has_feature(objc_arc)
 #else
@@ -408,6 +425,62 @@ CF_RETURNS_RETAINED
   
   self.compSize = CGSizeMake(compWidth, compHeight);
 
+  // font specific options, these default settings apply to any clips
+  // in the comp with the "text" type.
+
+  // "Font"
+  
+  NSString *defaultFontName = [compDict objectForKey:@"Font"];
+  NSUInteger defaultFontSize = 14.0;
+  
+  if (defaultFontName == nil) {
+    UIFont *font = [UIFont systemFontOfSize:defaultFontSize];
+    defaultFontName = font.fontName;
+  } else {
+    // Double check that font can be loaded by name
+    
+    UIFont *font = [UIFont fontWithName:defaultFontName size:defaultFontSize];
+    
+    if (font == nil) {
+      self.errorString = @"default Font invalid";
+      return FALSE;
+    }
+    
+    // Use the system font name returned for user supplied name
+    
+    defaultFontName = font.fontName;
+  }
+  
+  // "FontSize"
+  
+  NSNumber *defaultFontSizeNum = [compDict objectForKey:@"FontSize"];
+  
+  if (defaultFontSizeNum != nil) {
+    defaultFontSize = [defaultFontSizeNum intValue];
+    if (defaultFontSize <= 0) {
+      self.errorString = @"FontSize invalid";
+      return FALSE;
+    }
+  }
+  
+  // "FontColor"
+  
+  NSString *defaultFontColorStr = [compDict objectForKey:@"FontColor"];
+  
+  if (defaultFontColorStr == nil) {
+    defaultFontColorStr = @"#000000";
+  }
+  
+  self->m_defaultFontColor = [self createParsedCGColor:defaultFontColorStr];
+  
+  if (self->m_defaultFontColor == NULL) {
+    self.errorString = @"FontColor invalid";
+    return FALSE;
+  }
+  
+  self.defaultFont = defaultFontName;
+  self.defaultFontSize = defaultFontSize;
+  
   // Parse CompClips, this array of dicttionary property is optional
 
   if ([self parseClipProperties:compDict] == FALSE) {
@@ -635,7 +708,56 @@ CF_RETURNS_RETAINED
     }
   
     if (clipType == AVOfflineCompositionClipTypeText) {
-      // Nop
+      // clip specific font options
+      
+      // "Font"
+      
+      NSString *fontName = [clipDict objectForKey:@"Font"];
+      NSUInteger fontSize = 0.0;
+      
+      if (fontName != nil) {
+        // Double check that font can be loaded by name
+        
+        UIFont *font = [UIFont fontWithName:fontName size:14];
+        
+        if (font == nil) {
+          self.errorString = @"clip Font invalid";
+          return FALSE;
+        }
+        
+        // Use the system font name returned for user supplied name
+        
+        fontName = font.fontName;
+        
+        compClip.font = fontName;
+      }
+      
+      // "FontSize"
+      
+      NSNumber *fontSizeNum = [clipDict objectForKey:@"FontSize"];
+      
+      if (fontSizeNum != nil) {
+        fontSize = [fontSizeNum intValue];
+        if (fontSize <= 0) {
+          self.errorString = @"clip FontSize invalid";
+          return FALSE;
+        }
+        
+        compClip->m_fontSize = fontSize;
+      }
+      
+      // "FontColor"
+      
+      NSString *fontColorStr = [clipDict objectForKey:@"FontColor"];
+      
+      if (fontColorStr != nil) {
+        compClip->m_fontColor = [self createParsedCGColor:fontColorStr];
+        
+        if (compClip->m_fontColor == NULL) {
+          self.errorString = @"clip FontColor invalid";
+          return FALSE;
+        }
+      }
     } else if (clipType == AVOfflineCompositionClipTypeImage) {
       if (staticImage == nil) {
         self.errorString = @"ClipSource does not correspond to a file in app resources, the tmp dir, or a named image";
@@ -917,10 +1039,24 @@ CF_RETURNS_RETAINED
         
         MutableAttrString *mAttrString = [MutableAttrString mutableAttrString];
         
-        [mAttrString setDefaults:[UIColor greenColor].CGColor
-                  fontSize:16
-             plainFontName:@"Helvetica"
-              boldFontName:@"Helvetica-Bold"];
+        NSString *fontName = self.defaultFont;
+        NSUInteger fontSize = self.defaultFontSize;
+        CGColorRef fontColorRef = self->m_defaultFontColor;
+        
+        if (compClip.font != nil) {
+          fontName = compClip.font;
+        }
+        if (compClip->m_fontSize > 0) {
+          fontSize = compClip->m_fontSize;
+        }
+        if (compClip->m_fontColor != NULL) {
+          fontColorRef = compClip->m_fontColor;
+        }
+        
+        [mAttrString setDefaults:fontColorRef
+                  fontSize:fontSize
+             plainFontName:fontName
+              boldFontName:fontName];
         
         NSString *text = compClip.clipSource;
         if ([text length] > 0) {
@@ -997,6 +1133,8 @@ CF_RETURNS_RETAINED
 
 @synthesize mvidFrameDecoder = m_mvidFrameDecoder;
 
+@synthesize font = m_font;
+
 + (AVOfflineCompositionClip*) aVOfflineCompositionClip
 {
   AVOfflineCompositionClip *obj = [[AVOfflineCompositionClip alloc] init];
@@ -1007,13 +1145,17 @@ CF_RETURNS_RETAINED
 #endif // objc_arc
 }
 
-#if __has_feature(objc_arc)
-#else
 - (void) dealloc
 {
+  if (self->m_fontColor) {
+    CGColorRelease(self->m_fontColor);
+  }
+  
+#if __has_feature(objc_arc)
+#else
   [AutoPropertyRelease releaseProperties:self thisClass:AVOfflineCompositionClip.class];
   [super dealloc];
-}
 #endif // objc_arc
+}
 
 @end

@@ -11,7 +11,38 @@
 // so that the alpha channel blends into the background. Input to this module
 // is a PLIST file that contains specific info to identify each clip.
 // The composition operation is executed in a background thread, a notification
-// is posted when the composition operation has completed.
+// is posted when the composition operation has completed. The output of a comp
+// is always 24BPP, any alpha pixels are blended over the background color.
+
+// COMP SETTINGS:
+//   "ABOUT" string description of the comp
+//   "Source" string name of plist file, used in error reporting
+//   "Destination" string name of output .mvid file
+//   "CompDurationSeconds" float length of comp
+//   "CompFramesPerSecond" float FPS
+//   "CompWidth" int width of the whole comp
+//   "CompHeight" int height of the whole comp
+//   "CompBackgroundColor" string #RRGGBB value indicating a color (defaults to black)
+//   "Font" optional string name of iOS font (defaults to system font)
+//   "FontSize" optional int font size (defaults to 14)
+//   "FontColor" optional string #RRGGBB value indicating a color (defaults to black)
+//
+// CLIP SETTINGS:
+//   "ClipSource" string name of H264 or MVID file, image name for "image", literal text for "text" type
+//   "ClipType" string type ("mvid", "h264", "image", "text")
+//   "ClipX" int X coordinate of clip where 0,0 is in upper left corner of comp
+//   "ClipY" int Y coordinate of clip where 0,0 is in upper left corner of comp
+//   "ClipWidth" int width of the rectangular bounding box for the clip
+//   "ClipHeight" int height of the rectangular bounding box for the clip
+//   "ClipStartSeconds" float time in seconds when clip starts
+//   "ClipEndSeconds" float time in second when clip ends
+//   "ClipScaleFramePerSecond" optional boolean indicates that clip FPS should be scaled
+//   "Font" optional string name of iOS font
+//   "FontSize" optional int font size
+//   "FontColor" optional string #RRGGBB value indicating a color
+
+// For a "Font", indicate the name of an iOS font from one of the support font names:
+// http://daringfireball.net/misc/2007/07/iphone-osx-fonts.pdf
 
 #import <Foundation/Foundation.h>
 #import <QuartzCore/QuartzCore.h>
@@ -32,6 +63,9 @@ extern NSString * const AVOfflineCompositionFailedNotification;
   NSUInteger m_numFrames;
   CGColorRef m_backgroundColor;
   CGSize     m_compSize;
+  NSString   *m_defaultFont;
+  NSUInteger m_defaultFontSize;
+  CGColorRef m_defaultFontColor;
 }
 
 @property (nonatomic, copy) NSString *destination;

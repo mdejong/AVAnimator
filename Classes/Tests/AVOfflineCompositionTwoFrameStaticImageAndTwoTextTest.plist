@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>ABOUT</key>
-	<string>2 frames. Static background image with image in lower right corner</string>
+	<string>2 frames. image with 2 text boxes with different fonts and font colors</string>
 	<key>Source</key>
-	<string>AVOfflineCompositionTwoFrameStaticImageAndTextTest.plist</string>
+	<string>AVOfflineCompositionTwoFrameStaticImageAndTwoTextTest.plist</string>
 	<key>Destination</key>
-	<string>AVOfflineCompositionTwoFrameStaticImageAndTextTest.mvid</string>
+	<string>AVOfflineCompositionTwoFrameStaticImageAndTwoTextTest.mvid</string>
 	<key>CompDurationSeconds</key>
 	<integer>2</integer>
 	<key>CompFramesPerSecond</key>
@@ -16,12 +16,8 @@
 	<integer>256</integer>
 	<key>CompHeight</key>
 	<integer>256</integer>
-	<key>Font</key>
-	<string>AmericanTypewriter</string>
-	<key>FontSize</key>
-	<integer>14</integer>
 	<key>FontColor</key>
-	<string>#00FF00</string>
+	<string>#0000FF</string>
 	<key>CompClips</key>
 	<array>
 		<dict>
@@ -44,13 +40,13 @@
 		</dict>
 		<dict>
 			<key>ClipText</key>
-			<string>Test String</string>
+			<string>DefaultFont</string>
 			<key>ClipType</key>
 			<string>text</string>
 			<key>ClipX</key>
-			<integer>25</integer>
+			<integer>50</integer>
 			<key>ClipY</key>
-			<integer>25</integer>
+			<integer>40</integer>
 			<key>ClipWidth</key>
 			<integer>100</integer>
 			<key>ClipHeight</key>
@@ -59,6 +55,30 @@
 			<integer>1</integer>
 			<key>ClipEndSeconds</key>
 			<real>2</real>
+		</dict>
+		<dict>
+			<key>ClipText</key>
+			<string>AnotherFont</string>
+			<key>ClipType</key>
+			<string>text</string>
+			<key>ClipX</key>
+			<integer>50</integer>
+			<key>ClipY</key>
+			<integer>90</integer>
+			<key>ClipWidth</key>
+			<integer>100</integer>
+			<key>ClipHeight</key>
+			<integer>50</integer>
+			<key>ClipStartSeconds</key>
+			<integer>1</integer>
+			<key>ClipEndSeconds</key>
+			<real>2</real>
+			<key>FontSize</key>
+			<integer>18</integer>
+			<key>Font</key>
+			<string>CourierNewPS-BoldMT</string>
+			<key>FontColor</key>
+			<string>#00FFFF</string>
 		</dict>
 	</array>
 </dict>

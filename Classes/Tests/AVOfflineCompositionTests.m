@@ -593,6 +593,69 @@
   return;
 }
 
+// This text case checks comp font settings and clip specific font settings.
+
++ (void) testCompose2FrameStaticImageAndTwoTextTest
+{
+  NSString *resFilename;
+  
+  resFilename = @"AVOfflineCompositionTwoFrameStaticImageAndTwoTextTest.plist";
+  
+  NSDictionary *plistDict = (NSDictionary*) [AVOfflineComposition readPlist:resFilename];
+  
+  AVOfflineComposition *comp = [AVOfflineComposition aVOfflineComposition];
+  
+  AVOfflineCompositionNotificationUtil *notificationUtil = [AVOfflineCompositionNotificationUtil aVOfflineCompositionNotificationUtil];
+  
+  [notificationUtil setupNotification:comp];
+  
+  [comp compose:plistDict];
+  
+  // Wait until comp operation either works or fails
+  
+  BOOL worked = [RegressionTests waitUntilTrue:notificationUtil
+                                      selector:@selector(wasSuccessNotificationDelivered)
+                                   maxWaitTime:MAX_WAIT_TIME];
+  NSAssert(worked, @"worked");
+  
+  // Verify that the correct properties were parsed from the plist
+  
+  NSAssert([comp.source isEqualToString:resFilename], @"source");
+  
+  NSString *tmpDir = NSTemporaryDirectory();
+  NSString *tmpPath = [tmpDir stringByAppendingString:@"AVOfflineCompositionTwoFrameStaticImageAndTwoTextTest.mvid"];
+  
+  NSAssert([comp.destination isEqualToString:tmpPath], @"source");
+  
+  NSAssert(comp.compDuration == 2.0f, @"compDuration");
+  
+  NSAssert(comp.compFPS == 1.0f, @"compFPS");
+  
+  NSAssert(comp.numFrames == 2, @"numFrames");
+  
+  // width x height
+  
+  NSAssert(CGSizeEqualToSize(comp.compSize, CGSizeMake(256,256)), @"size");
+  
+  // Open .mvid file and verify header info
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  
+  worked = [frameDecoder openForReading:comp.destination];
+	NSAssert(worked, @"frameDecoder openForReading failed");
+  
+  NSAssert(frameDecoder.frameDuration == 1, @"frameDuration");
+  NSAssert(frameDecoder.numFrames == 2, @"numFrames");
+  
+  // Dump each Frame
+  
+  if (FALSE) {
+    [self dumpEachFrameUtil:frameDecoder];
+  }
+  
+  return;
+}
+
 // FIXME: provide plist that does not have correct parameters and test for failed notification
 
 @end // AVOfflineCompositionTests

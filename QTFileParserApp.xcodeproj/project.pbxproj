@@ -170,6 +170,7 @@
 		CD8265DF1364D5EE00640B94 /* 2x2_black_blue_16BPP.mvid in Resources */ = {isa = PBXBuildFile; fileRef = CD8265DE1364D5EE00640B94 /* 2x2_black_blue_16BPP.mvid */; };
 		CD83D5EE12CA547300A88ABA /* MovieControlsAdaptor.m in Sources */ = {isa = PBXBuildFile; fileRef = CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */; };
 		CD83F0A214ED7CA200D0D257 /* stutterwalk_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD83F0A114ED7CA200D0D257 /* stutterwalk_h264.mov */; };
+		CD840DF9177673D7002ABF7F /* AVOfflineCompositionTwoFrameStaticImageAndTwoTextTest.plist in Resources */ = {isa = PBXBuildFile; fileRef = CD840DF8177673D7002ABF7F /* AVOfflineCompositionTwoFrameStaticImageAndTwoTextTest.plist */; };
 		CD84F51C14E268B20004C529 /* superwalk_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD84F51B14E268B20004C529 /* superwalk_h264.mov */; };
 		CD922D0E136206290024AFBB /* AVResourceLoaderTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD922D0D136206290024AFBB /* AVResourceLoaderTests.m */; };
 		CD922D72136209280024AFBB /* AV7zAppResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD922D71136209280024AFBB /* AV7zAppResourceLoader.m */; };
@@ -434,6 +435,7 @@
 		CD83D5ED12CA547300A88ABA /* MovieControlsAdaptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MovieControlsAdaptor.m; sourceTree = "<group>"; };
 		CD83D5F512CA549000A88ABA /* MovieControlsAdaptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MovieControlsAdaptor.h; sourceTree = "<group>"; };
 		CD83F0A114ED7CA200D0D257 /* stutterwalk_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = stutterwalk_h264.mov; sourceTree = "<group>"; };
+		CD840DF8177673D7002ABF7F /* AVOfflineCompositionTwoFrameStaticImageAndTwoTextTest.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = AVOfflineCompositionTwoFrameStaticImageAndTwoTextTest.plist; sourceTree = "<group>"; };
 		CD84F51B14E268B20004C529 /* superwalk_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; name = superwalk_h264.mov; path = Classes/Tests/superwalk_h264.mov; sourceTree = "<group>"; };
 		CD922D0D136206290024AFBB /* AVResourceLoaderTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVResourceLoaderTests.m; sourceTree = "<group>"; };
 		CD922D70136209280024AFBB /* AV7zAppResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AV7zAppResourceLoader.h; sourceTree = "<group>"; };
@@ -799,6 +801,7 @@
 				CDF54BE21530D53E0050C393 /* AVOfflineCompositionTwoFrameBlackBlueScaleMovieTest.plist */,
 				CDFF390A1774F9B400563E51 /* AVOfflineCompositionTwoFrameStaticImageTest.plist */,
 				CD647815177549EB000FDD3A /* AVOfflineCompositionTwoFrameStaticImageAndTextTest.plist */,
+				CD840DF8177673D7002ABF7F /* AVOfflineCompositionTwoFrameStaticImageAndTwoTextTest.plist */,
 				CDF15B96152A176A00D8AD2F /* AVOfflineComposition32x32BlackBlueTest.plist */,
 				CD3A341415E1080B008733C3 /* Waterfall_tiny_h264.mov */,
 				CD5E3C551623356F002D7374 /* Colorbands_sRGB.png */,
@@ -1262,6 +1265,7 @@
 				CD54FB2C176288F40030BA0B /* superwalk.gif in Resources */,
 				CDFF390B1774F9B500563E51 /* AVOfflineCompositionTwoFrameStaticImageTest.plist in Resources */,
 				CD647816177549EB000FDD3A /* AVOfflineCompositionTwoFrameStaticImageAndTextTest.plist in Resources */,
+				CD840DF9177673D7002ABF7F /* AVOfflineCompositionTwoFrameStaticImageAndTwoTextTest.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
