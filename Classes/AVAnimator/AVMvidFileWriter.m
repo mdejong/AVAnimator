@@ -46,7 +46,13 @@ uint32_t maxvid_file_padding_before_keyframe(FILE *outFile, uint32_t offset) {
     wordsToBound--;
   }
   
-  uint32_t offsetAfter = ftell(outFile);
+  off_t offsetAfterOff = ftello(outFile);
+  assert(offsetAfterOff != -1);
+  assert(offset < 0xFFFFFFFF);
+  // Note that in the case where offsetAfterOff is larger
+  // than the max 32 bit value, this will clamp to 32 bits
+  // and then only examine the low bits anyway.
+  uint32_t offsetAfter = (uint32_t)offsetAfterOff;
   
   assert(UINTMOD(offsetAfter, boundSize) == 0);
   
@@ -61,7 +67,6 @@ static inline
 uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   return maxvid_file_padding_before_keyframe(outFile, offset);
 }
-
 
 @interface AVMvidFileWriter ()
 
@@ -241,7 +246,9 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
 
 - (void) saveOffset
 {
-  offset = ftell(maxvidOutFile);
+  offset = ftello(maxvidOutFile);
+  NSAssert(offset != -1, @"ftello returned -1");
+  NSAssert(offset < 0xFFFFFFFF, @"ftello offset must fit into 32 bits, got %qd", offset);
 }
 
 // Advance the file offset to the start of the next page in memory.
@@ -250,7 +257,7 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
 
 - (void) skipToNextPageBound
 {
-  offset = maxvid_file_padding_before_keyframe(maxvidOutFile, offset);
+  offset = maxvid_file_padding_before_keyframe(maxvidOutFile, (uint32_t)offset);
  
   NSAssert(frameNum < self.totalNumFrames, @"totalNumFrames");
   
@@ -293,7 +300,7 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
     
     // zero pad to next page bound
     
-    offset = maxvid_file_padding_after_keyframe(maxvidOutFile, offset);
+    offset = maxvid_file_padding_after_keyframe(maxvidOutFile, (uint32_t)offset);
     assert(offset > 0); // silence compiler/analyzer warning
     
 #ifdef LOGGING
@@ -389,6 +396,12 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
     
     MVFrame *mvFrame = &mvFramesArray[frameNum];
     
+    // FIXME: currently, the file offset is limited to the max size of a 32 bit unsigned
+    // integer. This limits the total file size to abount 4 gigs, but that could be a
+    // problem for really large files with high FPS. But, fixing this by adjusting the
+    // offset to 64 bits would break backwards compat on the file offset in the frames
+    // structure.
+    
     // Note that offset must be saved before validateFileOffset is invoked
     
     maxvid_frame_setoffset(mvFrame, (uint32_t)offset);
@@ -411,11 +424,15 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
 
 - (uint32_t) validateFileOffset:(BOOL)isKeyFrame
 {
-  uint32_t offsetBefore = (uint32_t)self->offset;
-  offset = ftell(maxvidOutFile);
-  uint32_t length = ((uint32_t)offset) - offsetBefore;
+  off_t offsetBefore = self->offset;
+  offset = ftello(maxvidOutFile);
+  NSAssert(offset != -1, @"ftello returned -1");
+  NSAssert(offset < 0xFFFFFFFF, @"ftello offset must fit into 32 bits, got %qd", offset);
+  off_t lengthOff = offset - offsetBefore;
+  assert(lengthOff < 0xFFFFFFFF);
+  uint32_t length = (uint32_t) lengthOff;
   NSAssert(length > 0, @"length must be larger than");
-    
+  
   // Typically, the framebuffer is an even number of pixels.
   // There is an odd case though, when emitting 16 bit pixels
   // is is possible that the total number of pixels written
@@ -423,7 +440,7 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   // number of words.
   
   if (isKeyFrame) {
-    NSAssert((length % 2) == 0, @"offset length must be even");
+    NSAssert((length % 2) == 0, @"offset length must be even, not %d", length);
   }
   
   if (isKeyFrame && (self.bpp == 16)) {
@@ -432,10 +449,12 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
       uint16_t zeroHalfword = 0;
       size_t size = fwrite(&zeroHalfword, sizeof(zeroHalfword), 1, maxvidOutFile);
       assert(size == 1);
-      offset = ftell(maxvidOutFile);
+      offset = ftello(maxvidOutFile);
+      NSAssert(offset != -1, @"ftello returned -1");
+      NSAssert(offset < 0xFFFFFFFF, @"ftello offset must fit into 32 bits, got %qd", offset);
       // Note that length is not recalculated. If a delta frame appears after this
       // one, it must begin on a word bound. The frame length ignores the halfword padding.
-      //length = ((uint32_t)offset) - offsetBefore;
+      //length = ...;
     }
   } else {
     NSAssert((length % 4) == 0, @"byte length is not in terms of whole words");    

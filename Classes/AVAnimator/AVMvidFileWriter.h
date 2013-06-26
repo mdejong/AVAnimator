@@ -31,7 +31,7 @@
   
   FILE *maxvidOutFile;
 
-  long offset;
+  off_t offset;
   CGSize m_movieSize;
 
   BOOL  isOpen;
