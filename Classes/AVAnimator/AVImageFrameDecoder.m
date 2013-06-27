@@ -71,6 +71,11 @@
 	return newArray;
 }
 
++ (AVImageFrameDecoder*) aVImageFrameDecoder:(NSArray*)urls
+{
+  return [AVImageFrameDecoder aVImageFrameDecoder:urls cacheDecodedImages:FALSE];
+}
+
 + (AVImageFrameDecoder*) aVImageFrameDecoder:(NSArray*)urls cacheDecodedImages:(BOOL)cacheDecodedImages
 {
   AVImageFrameDecoder *obj = [[AVImageFrameDecoder alloc] init];

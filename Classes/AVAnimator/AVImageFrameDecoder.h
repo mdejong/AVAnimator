@@ -43,6 +43,15 @@
 
 + (NSArray*) arrayWithResourcePrefixedURLs:(NSArray*)inNumberedNames;
 
+// Create instance of AVImageFrameDecoder. Typically one would want to
+// use this constructor as opposed to the next one.
+
++ (AVImageFrameDecoder*) aVImageFrameDecoder:(NSArray*)urls;
+
+// This constructor provides an optional cacheDecodedImages that makes it possible
+// to cache the decoded image data in memory. But, this will use up a ton a memory
+// so it should only be used if you really know what you are doing!
+
 + (AVImageFrameDecoder*) aVImageFrameDecoder:(NSArray*)urls cacheDecodedImages:(BOOL)cacheDecodedImages;
 
 // Open resource identified by path
