@@ -89,6 +89,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   } else if (bitsPerPixel == 24 || bitsPerPixel == 32) {
     bytesPerPixel = 4;
   } else {
+    bytesPerPixel = 0;
     NSAssert(FALSE, @"bitsPerPixel is invalid");
   }
   
@@ -217,10 +218,10 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 		return FALSE;
 	}
   
-  size_t bitsPerComponent;
-  size_t numComponents;
-  size_t bitsPerPixel;
-  size_t bytesPerRow;
+  size_t bitsPerComponent = 0;
+  size_t numComponents = 0;
+  size_t bitsPerPixel = 0;
+  size_t bytesPerRow = 0;
   
   if (self.bitsPerPixel == 16) {
     bitsPerComponent = 5;
@@ -288,10 +289,10 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
     // If sizes do not match, then resize input image to fit into this framebuffer
   }
 	
-  size_t bitsPerComponent;
-  size_t numComponents;
-  size_t bitsPerPixel;
-  size_t bytesPerRow;
+  size_t bitsPerComponent = 0;
+  size_t numComponents = 0;
+  size_t bitsPerPixel = 0;
+  size_t bytesPerRow = 0;
   
   if (self.bitsPerPixel == 16) {
     bitsPerComponent = 5;
@@ -349,10 +350,10 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 {
   [self doneZeroCopyPixels];
 	
-  size_t bitsPerComponent;
-  size_t numComponents;
-  size_t bitsPerPixel;
-  size_t bytesPerRow;
+  size_t bitsPerComponent = 0;
+  size_t numComponents = 0;
+  size_t bitsPerPixel = 0;
+  size_t bytesPerRow = 0;
   
   if (self.bitsPerPixel == 16) {
     bitsPerComponent = 5;
@@ -398,10 +399,10 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 
   NSAssert(self.width > 0 && self.height > 0, @"width or height is zero");
 
-  size_t bitsPerComponent;
-  size_t numComponents;
-  size_t bitsPerPixel;
-  size_t bytesPerRow;
+  size_t bitsPerComponent = 0;
+  size_t numComponents = 0;
+  size_t bitsPerPixel = 0;
+  size_t bytesPerRow = 0;
   
   if (self.bitsPerPixel == 16) {
     bitsPerComponent = 5;
