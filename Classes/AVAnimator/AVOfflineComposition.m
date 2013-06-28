@@ -706,15 +706,32 @@ CF_RETURNS_RETAINED
         // tmp/XYZ.mvid does not exist, decode from H264 now
         
 #if defined(HAS_AVASSET_CONVERT_MAXVID)
+        // Decode from h.264 and block the secondary thread waiting on the possibly slow
+        // decode operation to finish. If the app were to crash during this decode we
+        // do not want to leave a half written .mvid file, so make sure to decode to
+        // an unnamed file and then rename the tmp file to XYZ.mvid when completed.
+        
+        NSString *phonyOutPath = [AVFileUtil generateUniqueTmpPath];
+        
         AVAssetReaderConvertMaxvid *converter = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
         converter.assetURL = [NSURL fileURLWithPath:movPath];
-        converter.mvidPath = mvidPath;
+        converter.mvidPath = phonyOutPath;
         
         //converter.genAdler = TRUE;
         
         worked = [converter blockingDecode];
         
-        // FIXME: Write to tmp file, then rename to final output file to avoid invalid file due to crash
+        if (worked) {
+          // Rename to XYZ.mvid
+          
+          [AVFileUtil renameFile:phonyOutPath toPath:mvidPath];
+        } else {
+          // Delete the tmp file, since it was not completed and is just taking up disk space now.
+          
+          worked = [[NSFileManager defaultManager] removeItemAtPath:phonyOutPath error:nil];
+          NSAssert(worked, @"could not remove tmp file");
+          worked = FALSE;
+        }
 #else
         worked = FALSE;
 #endif // HAS_AVASSET_CONVERT_MAXVID
