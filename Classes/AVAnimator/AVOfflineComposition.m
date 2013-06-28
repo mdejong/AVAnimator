@@ -99,8 +99,6 @@ typedef enum
 - (BOOL) composeClips:(NSUInteger)frame
         bitmapContext:(CGContextRef)bitmapContext;
 
-@property (nonatomic, copy) NSString *errorString;
-
 @property (nonatomic, copy) NSString *source;
 
 @property (nonatomic, copy) NSArray *compClips;
@@ -792,7 +790,12 @@ CF_RETURNS_RETAINED
       
       worked = [mvidFrameDecoder openForReading:mvidPath];
       if (worked == FALSE) {
-        self.errorString = [NSString stringWithFormat:@"open of ClipSource file failed: %@", compClip.clipSource];
+        if (clipType == AVOfflineCompositionClipTypeMvid) {
+          self.errorString = [NSString stringWithFormat:@"open of ClipSource file failed: %@", compClip.clipSource];
+        } else {
+          // Opening the decoded .mvid in the tmp dir is what failed
+          self.errorString = [NSString stringWithFormat:@"open of decoded ClipSource file failed: %@", mvidPath];          
+        }
         return FALSE;
       }
       

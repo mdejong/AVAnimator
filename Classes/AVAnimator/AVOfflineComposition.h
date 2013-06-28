@@ -72,6 +72,11 @@ extern NSString * const AVOfflineCompositionFailedNotification;
 
 @property (nonatomic, copy) NSString *destination;
 
+// The error string indicates additional information and is set in the case
+// where AVOfflineCompositionFailedNotification is delivered.
+
+@property (nonatomic, copy) NSString *errorString;
+
 + (AVOfflineComposition*) aVOfflineComposition;
 
 // Initiate a composition operation given info about the composition

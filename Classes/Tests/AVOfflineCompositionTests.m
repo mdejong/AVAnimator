@@ -49,8 +49,6 @@
 
 - (BOOL) composeFrames;
 
-@property (nonatomic, copy) NSString *errorString;
-
 @property (nonatomic, copy) NSString *source;
 
 @property (nonatomic, copy) NSArray *compClips;
