@@ -17,7 +17,7 @@
 // COMP SETTINGS:
 //   "ABOUT" string description of the comp
 //   "Source" string name of plist file, used in error reporting
-//   "Destination" string name of output .mvid file
+//   "Destination" string name of output .mvid file in tmp dir (if not fully qualified)
 //   "CompDurationSeconds" float length of comp
 //   "CompFramesPerSecond" float FPS
 //   "CompWidth" int width of the whole comp

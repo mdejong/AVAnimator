@@ -41,6 +41,7 @@
 		CD2C6A5D14F81CD500C3CDB7 /* superwalk_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD84F51B14E268B20004C529 /* superwalk_h264.mov */; };
 		CD2F6D4812F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
 		CD2F6D4912F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
+		CD341ECA177E2A5800AC6D7A /* AVOfflineCompositionManyTextFields.plist in Resources */ = {isa = PBXBuildFile; fileRef = CD341EC8177E281000AC6D7A /* AVOfflineCompositionManyTextFields.plist */; };
 		CD34638D12D79EA30072CC68 /* License.txt in Resources */ = {isa = PBXBuildFile; fileRef = CD34638C12D79EA30072CC68 /* License.txt */; };
 		CD3830A9136FA269007B9EBC /* AlphaGhost_opt_nc.apng.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD3830A8136FA269007B9EBC /* AlphaGhost_opt_nc.apng.7z */; };
 		CD3A341515E1080B008733C3 /* Waterfall_tiny_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD3A341415E1080B008733C3 /* Waterfall_tiny_h264.mov */; };
@@ -375,6 +376,7 @@
 		CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorMedia.m; sourceTree = "<group>"; };
 		CD2F6D4712F0B8AF0022413B /* AVAnimatorMediaPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorMediaPrivate.h; sourceTree = "<group>"; };
 		CD2F6E4512F0C2400022413B /* AVAnimatorMediaRendererProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorMediaRendererProtocol.h; sourceTree = "<group>"; };
+		CD341EC8177E281000AC6D7A /* AVOfflineCompositionManyTextFields.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = AVOfflineCompositionManyTextFields.plist; sourceTree = "<group>"; };
 		CD34638C12D79EA30072CC68 /* License.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = License.txt; sourceTree = "<group>"; };
 		CD3830A8136FA269007B9EBC /* AlphaGhost_opt_nc.apng.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = AlphaGhost_opt_nc.apng.7z; sourceTree = "<group>"; };
 		CD3A341415E1080B008733C3 /* Waterfall_tiny_h264.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = Waterfall_tiny_h264.mov; sourceTree = "<group>"; };
@@ -803,6 +805,7 @@
 				CD647815177549EB000FDD3A /* AVOfflineCompositionTwoFrameStaticImageAndTextTest.plist */,
 				CD840DF8177673D7002ABF7F /* AVOfflineCompositionTwoFrameStaticImageAndTwoTextTest.plist */,
 				CDF15B96152A176A00D8AD2F /* AVOfflineComposition32x32BlackBlueTest.plist */,
+				CD341EC8177E281000AC6D7A /* AVOfflineCompositionManyTextFields.plist */,
 				CD3A341415E1080B008733C3 /* Waterfall_tiny_h264.mov */,
 				CD5E3C551623356F002D7374 /* Colorbands_sRGB.png */,
 				CD288F101694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v */,
@@ -1266,6 +1269,7 @@
 				CDFF390B1774F9B500563E51 /* AVOfflineCompositionTwoFrameStaticImageTest.plist in Resources */,
 				CD647816177549EB000FDD3A /* AVOfflineCompositionTwoFrameStaticImageAndTextTest.plist in Resources */,
 				CD840DF9177673D7002ABF7F /* AVOfflineCompositionTwoFrameStaticImageAndTwoTextTest.plist in Resources */,
+				CD341ECA177E2A5800AC6D7A /* AVOfflineCompositionManyTextFields.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

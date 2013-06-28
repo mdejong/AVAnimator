@@ -654,6 +654,147 @@
   return;
 }
 
-// FIXME: provide plist that does not have correct parameters and test for failed notification
+// This test case the may text frames render logic with one single render operation.
+
++ (void) testManyTextFieldsOneRender
+{
+  NSString *resFilename;
+  
+  resFilename = @"AVOfflineCompositionManyTextFields.plist";
+  
+  NSDictionary *plistDict = (NSDictionary*) [AVOfflineComposition readPlist:resFilename];
+  
+  AVOfflineComposition *comp = [AVOfflineComposition aVOfflineComposition];
+  
+  AVOfflineCompositionNotificationUtil *notificationUtil = [AVOfflineCompositionNotificationUtil aVOfflineCompositionNotificationUtil];
+  
+  [notificationUtil setupNotification:comp];
+  
+  [comp compose:plistDict];
+  
+  // Wait until comp operation either works or fails
+  
+  BOOL worked = [RegressionTests waitUntilTrue:notificationUtil
+                                      selector:@selector(wasSuccessNotificationDelivered)
+                                   maxWaitTime:MAX_WAIT_TIME * 5];
+  NSAssert(worked, @"worked");
+  
+  // Verify that the correct properties were parsed from the plist
+  
+  NSAssert([comp.source isEqualToString:resFilename], @"source");
+  
+  NSString *tmpDir = NSTemporaryDirectory();
+  NSString *tmpPath = [tmpDir stringByAppendingString:@"AVOfflineCompositionManyTextFields.mvid"];
+  
+  NSAssert([comp.destination isEqualToString:tmpPath], @"source");
+  
+  NSAssert(comp.compDuration == 10.0f, @"compDuration");
+  
+  NSAssert(comp.compFPS == 30.0f, @"compFPS");
+  
+  NSAssert(comp.numFrames == 300, @"numFrames");
+  
+  // width x height
+  
+  NSAssert(CGSizeEqualToSize(comp.compSize, CGSizeMake(256,256)), @"size");
+  
+  // Open .mvid file and verify header info
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  
+  worked = [frameDecoder openForReading:comp.destination];
+	NSAssert(worked, @"frameDecoder openForReading failed");
+  
+  NSAssert(frameDecoder.frameDuration == 1.0f/30.0f, @"frameDuration");
+  NSAssert(frameDecoder.numFrames == 300, @"numFrames");
+  
+  // Dump each Frame
+  
+  if (FALSE) {
+    [self dumpEachFrameUtil:frameDecoder];
+  }
+  
+  // Delete output file
+
+  worked = [[NSFileManager defaultManager] removeItemAtPath:frameDecoder.filePath error:nil];
+  NSAssert(worked, @"could not remove tmp file");
+  
+  return;
+}
+
+// This test case attempts to reproduce a text render crash in CoreText
+// that could happen when text rendering is done on a secondary thread.
+// The workaround that renders CoreText with calls back into the main
+// thread should avoid this crash.
+
++ (void) testManyTextFieldsRenderedConcurrently
+{
+  for (int outerRenderLoops=0; outerRenderLoops < 1; outerRenderLoops++) {
+  
+  NSMutableArray *mNotificationUtilObjects = [NSMutableArray array];
+  NSMutableArray *mTmpPaths = [NSMutableArray array];
+  
+  for (int i=0; i < 10; i++) {
+    NSString *resFilename;
+    
+    resFilename = @"AVOfflineCompositionManyTextFields.plist";
+    
+    NSDictionary *original_plistDict = (NSDictionary*) [AVOfflineComposition readPlist:resFilename];
+    
+    // Each render operation runs in a secondary thread and each must render into
+    // a different output file to avoid writing over each other.
+    
+    NSMutableDictionary *mplistDict = [NSMutableDictionary dictionaryWithDictionary:original_plistDict];
+    
+    NSString *tmpPath = [AVFileUtil generateUniqueTmpPath];
+    
+    [mplistDict setObject:tmpPath forKey:@"Destination"];
+    
+    AVOfflineComposition *comp = [AVOfflineComposition aVOfflineComposition];
+    
+    AVOfflineCompositionNotificationUtil *notificationUtil = [AVOfflineCompositionNotificationUtil aVOfflineCompositionNotificationUtil];
+    
+    [notificationUtil setupNotification:comp];
+    
+    // Kick off secondary thread that does the text rendering and composition
+    [comp compose:mplistDict];
+    
+    [mNotificationUtilObjects addObject:notificationUtil];
+    [mTmpPaths addObject:tmpPath];
+  }
+  
+  NSLog(@"waiting until 10 render operations are completed");
+  
+  // Now wait for each operation to be done, 1 at a time
+  
+  for (int i=0; i < 10; i++) {
+    AVOfflineCompositionNotificationUtil *notificationUtil = [mNotificationUtilObjects objectAtIndex:i];
+    
+    // Wait until comp operation either works or fails
+    
+    BOOL worked = [RegressionTests waitUntilTrue:notificationUtil
+                                        selector:@selector(wasSuccessNotificationDelivered)
+                                     maxWaitTime:MAX_WAIT_TIME * 10];
+    NSAssert(worked, @"worked");
+  }
+  
+  NSLog(@"done 10 render operations");
+
+  // Now wait for each operation to be done, 1 at a time
+  
+  for (int i=0; i < 10; i++) {
+    NSString *tmpPath = [mTmpPaths objectAtIndex:i];
+    
+    // Delete rendered comp file
+    
+    BOOL worked;
+    worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"could not remove tmp file");
+  }
+ 
+  } // outer render loops
+    
+  return;
+}
 
 @end // AVOfflineCompositionTests

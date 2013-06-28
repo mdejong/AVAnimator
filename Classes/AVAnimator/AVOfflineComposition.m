@@ -335,9 +335,14 @@ CF_RETURNS_RETAINED
     return FALSE;
   }
   
-  NSString *tmpDir = NSTemporaryDirectory();
-  NSString *tmpPath = [tmpDir stringByAppendingString:destination];
-  self.destination = tmpPath;
+  if ([destination characterAtIndex:0] == '/') {
+    // Destination path is already fully qualified
+    self.destination = destination;
+  } else {
+    NSString *tmpDir = NSTemporaryDirectory();
+    NSString *tmpPath = [tmpDir stringByAppendingString:destination];
+    self.destination = tmpPath;
+  }
   
   // CompDurationSeconds indicates the total composition duration in floating point seconds
   
