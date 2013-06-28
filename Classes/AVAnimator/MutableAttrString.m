@@ -6,6 +6,8 @@
 //
 // A simple wrapper class that contains a CFMutableAttributedStringRef for use with CoreText.
 
+// FIXME: add support for HTML https://github.com/johnezang/NSAttributedString-Additions-for-HTML
+
 #import "MutableAttrString.h"
 
 #define LOGGING 0
@@ -225,7 +227,7 @@
 }
 
 // Measure the height required to display the attr string given a known width.
-// This logic returns a height without an upper bound.
+// This logic returns a height without an upper bound. Not thread safe!
 
 - (NSUInteger) measureHeightForWidth:(NSUInteger)width
 {
@@ -345,6 +347,7 @@
 }
 
 // Use CoreText to render rich text into a static bounding box of the given context.
+// Not thread safe!
 
 - (void) render:(CGContextRef)bitmapContext
          bounds:(CGRect)bounds

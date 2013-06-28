@@ -68,12 +68,18 @@
 
 // Measure the height required to display the attr string given a known width.
 // This logic returns a height without an upper bound. The measurement is always
-// in terms of whole pixels.
+// in terms of whole pixels. Be aware that this method cannot be
+// safely invoked on a secondary thread since this portion of
+// CoreText is not thread safe. This logic must be synced to
+// the main thread.
 
 - (NSUInteger) measureHeightForWidth:(NSUInteger)width;
 
 // Use CoreText to render rich text into a static bounding box
-// of the given context.
+// of the given context. Be aware that this method cannot be
+// safely invoked on a secondary thread since this portion of
+// CoreText is not thread safe. This logic must be synced to
+// the main thread.
 
 - (void) render:(CGContextRef)bitmapContext
          bounds:(CGRect)bounds;

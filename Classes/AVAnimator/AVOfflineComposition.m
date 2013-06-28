@@ -1134,7 +1134,24 @@ CF_RETURNS_RETAINED
             CGContextFillRect(bitmapContext, bounds);
           }
           
-          [mAttrString render:bitmapContext bounds:bounds];
+          if (TRUE) {
+            // This block attempts to work around thread safety issues in CoreText by doing
+            // an invocation of this one method on the main thread.
+            
+            self->m_mAttrString = mAttrString;
+            self->m_bitmapContext = bitmapContext;
+            self->m_renderBounds = bounds;
+            
+            [self performSelectorOnMainThread: @selector(threadSafeRender) withObject:nil waitUntilDone:YES];
+            
+            self->m_mAttrString = nil;
+            self->m_bitmapContext = NULL;
+            self->m_renderBounds = CGRectZero;
+          } else {
+            // Old (thread unsafe) approach where CoreText API is invoked in a non-main thread.
+            
+            [mAttrString render:bitmapContext bounds:bounds];
+          }
         }
       } else {
         assert(0);
@@ -1155,7 +1172,22 @@ CF_RETURNS_RETAINED
   return TRUE;
 }
 
-// This method will render into the given 
+// This method implements a thread safe text render operaiton using CoreText.
+// This method is invoked on the main thread, so that only the main thread
+// actually creates and releases CTFramesetter related objects. This will
+// block the main thread for a short time, but only in the idle processing when
+// UI tasks have been dealt with. This function call will allocate and deallocate
+// the CoreText framesetter elements in the main thread so crashes related to
+// http://stackoverflow.com/questions/3527877/sizewithfont-in-multithread-crash?lq=1
+// http://stackoverflow.com/questions/5642721/coretext-crashes-when-run-in-multiple-threads
+// should be avoided.
+
+- (void) threadSafeRender
+{
+  [m_mAttrString render:m_bitmapContext bounds:m_renderBounds];
+}
+
+// This method will render into the given
 
 // Close resources associated with each open clip and
 // possibly delete tmp files.

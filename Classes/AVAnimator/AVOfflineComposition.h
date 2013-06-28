@@ -51,6 +51,8 @@
 extern NSString * const AVOfflineCompositionCompletedNotification;
 extern NSString * const AVOfflineCompositionFailedNotification;
 
+@class MutableAttrString;
+
 @interface AVOfflineComposition : NSObject
 {
 @private
@@ -68,6 +70,11 @@ extern NSString * const AVOfflineCompositionFailedNotification;
   NSUInteger m_defaultFontSize;
   CGColorRef m_defaultFontColor;
   BOOL       m_deleteTmpFiles;
+  // These next members act only as pointers to objects, the lifetime of
+  // these two resources is not managed by holding ref counts.
+  MutableAttrString *m_mAttrString;
+  CGContextRef m_bitmapContext;
+  CGRect     m_renderBounds;
 }
 
 @property (nonatomic, copy) NSString *destination;
