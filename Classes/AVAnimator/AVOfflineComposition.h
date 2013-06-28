@@ -26,6 +26,7 @@
 //   "Font" optional string name of iOS font (defaults to system font)
 //   "FontSize" optional int font size (defaults to 14)
 //   "FontColor" optional string #RRGGBB value indicating a color (defaults to black)
+//   "DeleteTmpFiles" optional boolean to indicate if decode tmp files are deleted (defaults to TRUE)
 //
 // CLIP SETTINGS:
 //   "ClipSource" string name of H264 or MVID file, image name for "image", literal text for "text" type
@@ -66,6 +67,7 @@ extern NSString * const AVOfflineCompositionFailedNotification;
   NSString   *m_defaultFont;
   NSUInteger m_defaultFontSize;
   CGColorRef m_defaultFontColor;
+  BOOL       m_deleteTmpFiles;
 }
 
 @property (nonatomic, copy) NSString *destination;

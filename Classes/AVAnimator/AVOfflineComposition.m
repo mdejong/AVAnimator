@@ -99,8 +99,6 @@ typedef enum
 - (BOOL) composeClips:(NSUInteger)frame
         bitmapContext:(CGContextRef)bitmapContext;
 
-- (void) closeClips;
-
 @property (nonatomic, copy) NSString *errorString;
 
 @property (nonatomic, copy) NSString *source;
@@ -481,7 +479,29 @@ CF_RETURNS_RETAINED
   self.defaultFont = defaultFontName;
   self.defaultFontSize = defaultFontSize;
   
-  // Parse CompClips, this array of dicttionary property is optional
+  // "DeleteTmpFiles" boolean property that defaults to TRUE.
+  // If TRUE, then delete decompression tmp files once the
+  // comp is finished. If FALSE, then the decompressed tmp files
+  // are not deleted. If a specific comp needs to make use of
+  // the same input movies over and over again, it can speed up
+  // multiple comp operations to not delete the tmp files in between
+  // comps. This option should be used with care since it is not
+  // a good idea to leave lots of large tmp files sitting around
+  // as the decompressed tmp files can be very large.
+  
+  NSNumber *deleteTmpFilesNum = [compDict objectForKey:@"DeleteTmpFiles"];
+
+  BOOL deleteTmpFiles;
+  
+  if (deleteTmpFilesNum == nil) {
+    deleteTmpFiles = TRUE;
+  } else {
+    deleteTmpFiles = [deleteTmpFilesNum boolValue];
+  }
+  
+  self->m_deleteTmpFiles = deleteTmpFiles;
+  
+  // Parse CompClips, this array of dictionary property is optional
 
   if ([self parseClipProperties:compDict] == FALSE) {
     return FALSE;
@@ -930,7 +950,7 @@ CF_RETURNS_RETAINED
     }
   }
   
-  [self closeClips];
+  [self cleanupClips];
   
   CGContextRelease(bitmapContext);
   
@@ -952,6 +972,7 @@ CF_RETURNS_RETAINED
   } else {
     worked = [[NSFileManager defaultManager] removeItemAtPath:phonyOutPath error:nil];
     NSAssert(worked, @"could not remove output file");
+    worked = FALSE;
   }
   
 #ifdef LOGGING
@@ -1116,10 +1137,42 @@ CF_RETURNS_RETAINED
 
 // This method will render into the given 
 
-// Close resources associated with each open clip
+// Close resources associated with each open clip and
+// possibly delete tmp files.
 
-- (void) closeClips
+- (void) cleanupClips
 {
+  if (self->m_deleteTmpFiles) {
+    for (AVOfflineCompositionClip *compClip in self.compClips) {
+      AVOfflineCompositionClipType clipType = compClip->clipType;
+      
+      if (clipType == AVOfflineCompositionClipTypeText) {
+        // Nop
+      } else if (clipType == AVOfflineCompositionClipTypeImage) {
+        // Nop
+      } else if (clipType == AVOfflineCompositionClipTypeMvid) {
+        // When the input to the comp module is a MVID sitting on
+        // dist, the comp operation does not delete the MVID file
+        // once the comp is finished.
+      } else if (clipType == AVOfflineCompositionClipTypeH264) {
+        // A .mvid created when a .h264 video was decoded to
+        // the tmp dir can be cleaned up when the comp is complete.
+        // This tmp file could be quite large, so a cleanup will
+        // reclaim disk space. But, if multiple comps were going
+        // to decode the same movie then it would be more efficient
+        // to decode the h.264 once and set the "DeleteTmpFiles"
+        // property to FALSE so that only 1 decode from h.264
+        // needs to be done for N comp operations.
+        
+        NSString *tmpPath = compClip.mvidFrameDecoder.filePath;
+        BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+        NSAssert(worked, @"could not remove tmp file");
+      } else {
+        assert(0);
+      }
+    }
+  }
+  
   // Clips are automatically cleaned up when last ref is dropped
   
   self.compClips = nil;
