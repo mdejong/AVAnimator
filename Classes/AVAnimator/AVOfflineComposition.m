@@ -33,6 +33,9 @@ NSString * const AVOfflineCompositionCompletedNotification = @"AVOfflineComposit
 
 NSString * const AVOfflineCompositionFailedNotification = @"AVOfflineCompositionFailedNotification";
 
+static
+int screenScale = 0;
+
 typedef enum
 {
   AVOfflineCompositionClipTypeMvid = 0,
@@ -96,6 +99,8 @@ typedef enum
 
 - (BOOL) composeFrames;
 
+- (void) queryScreenScale;
+
 - (BOOL) composeClips:(NSUInteger)frame
         bitmapContext:(CGContextRef)bitmapContext;
 
@@ -116,6 +121,8 @@ typedef enum
 @property (nonatomic, copy) NSString *defaultFont;
 
 @property (nonatomic, assign) NSUInteger defaultFontSize;
+
+@property (nonatomic, assign) NSUInteger compScale;
 
 @end
 
@@ -144,6 +151,8 @@ typedef enum
 @synthesize defaultFont = m_defaultFont;
 
 @synthesize defaultFontSize = m_defaultFontSize;
+
+@synthesize compScale = m_compScale;
 
 // Constructor
 
@@ -177,6 +186,16 @@ typedef enum
 
 - (void) compose:(NSDictionary*)compDict
 {
+  if (screenScale == 0) {
+    // Init static variable the first time compose is invoke
+    
+    if ([NSThread isMainThread]) {
+      [self queryScreenScale];
+    } else {
+      [self performSelectorOnMainThread: @selector(queryScreenScale) withObject:nil waitUntilDone:YES];
+    }
+  }
+  
   NSAssert(compDict, @"compDict must not be nil");
   [NSThread detachNewThreadSelector:@selector(composeInSecondaryThread:) toTarget:self withObject:compDict];
 }
@@ -199,7 +218,13 @@ typedef enum
   }
   
   if (worked) {
+#ifdef LOGGING
+    NSLog(@"starting comp");
+#endif
     worked = [self composeFrames];
+#ifdef LOGGING
+    NSLog(@"finished comp");
+#endif
   }
 
   if (worked) {
@@ -394,6 +419,31 @@ CF_RETURNS_RETAINED
   self.compFrameDuration = frameDuration;
   int numFrames = (int) round(self.compDuration / frameDuration);
   self.numFrames = numFrames;
+  
+  // CompScale
+  // 1 indicates normal 1x scale, 1 to 1 ratio between points and pixels (default)
+  // 2 indicates 2x scale, 1 pt = 2 px
+  // 0 indicate that the screen scale will be queried
+  
+  NSNumber *compScaleNum = [compDict objectForKey:@"CompScale"];
+  
+  NSInteger compScale;
+  
+  if (compScaleNum == nil) {
+    compScale = 1;
+  } else {
+    compScale = [compScaleNum intValue];
+    if (compScale == 0) {
+      NSAssert(screenScale != 0, @"screenScale is zero");
+      compScale = screenScale;
+    } else if (compScale == 1 || compScale == 2) {
+      // Nop
+    } else {
+      self.errorString = @"CompScale invalid";
+      return FALSE;
+    }
+  }
+  self.compScale = compScale;
   
   // Parse CompWidth and CompHeight to define size of movie
   
@@ -600,6 +650,12 @@ CF_RETURNS_RETAINED
           // example, it might also map to "Foo.jpg".
           
           staticImage = [UIImage imageNamed:clipSource];
+        } else {
+          // Either a mvid or h264 video but the file cannot be found in the
+          // tmp dir or in the project resources.
+          
+          self.errorString = @"ClipSource file not found in tmp dir or resources";
+          return FALSE;
         }
       }      
     }
@@ -899,12 +955,22 @@ CF_RETURNS_RETAINED
 
   NSUInteger width = self.compSize.width;
   NSUInteger height = self.compSize.height;
-    
+  
+  NSUInteger scaledWidth = width;
+  NSUInteger scaledHeight = height;
+  
+  // If the comp scale is actually 2x the double the size of the framebuffer
+  
+  if (self.compScale == 2) {
+    scaledWidth *= 2;
+    scaledHeight *= 2;
+  }
+  
   // Allocate buffer that will contain the rendered frame for each time step
   
   CGFrameBuffer *cgFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24
-                                                                         width:width
-                                                                        height:height];
+                                                                         width:scaledWidth
+                                                                        height:scaledHeight];
   
   if (cgFrameBuffer == nil) {
     return FALSE;
@@ -917,6 +983,25 @@ CF_RETURNS_RETAINED
   if (bitmapContext == NULL) {
     return FALSE;
   }
+  
+  // If the comp scale is 2x then push a multiply matrix so that coordinates come
+  // out twice as large.
+  
+  if (self.compScale == 2) {
+    CGContextScaleCTM(bitmapContext, 2.0f, 2.0f);
+  }
+  
+  // FIXME: need to do more testing to determine if interpolation setting
+  // is slowing things down too much? It seems like no interpolation should
+  // be getting done as long as the video is the same size as the 2x one.
+  
+  // http://stackoverflow.com/questions/5685884/imagequality-with-cgcontextsetinterpolationquality
+  
+  // If there is any image rescaling to be done, use the high quality settings.
+  // This will help to avoid the jaggies and the render is really slow to begin
+  // with so better to keep quality high.
+
+  //CGContextSetInterpolationQuality(bitmapContext, kCGInterpolationHigh);
 
   // Before starting to write a new tmp file, make sure the previous output file is deleted.
   // If the system is low on disk space and a render is very large then this would
@@ -936,7 +1021,7 @@ CF_RETURNS_RETAINED
   
   fileWriter.mvidPath = phonyOutPath;
   fileWriter.bpp = 24;
-  fileWriter.movieSize = self.compSize;
+  fileWriter.movieSize = CGSizeMake(scaledWidth, scaledHeight);
 
   fileWriter.frameDuration = self.compFrameDuration;
   fileWriter.totalNumFrames = maxFrame;
@@ -1011,6 +1096,10 @@ CF_RETURNS_RETAINED
 
 // Iterate over each clip for a specific time and render clips that are visible.
 
+#ifdef LOGGING
+#define LOGGING_CLIP_ACTIVE
+#endif
+
 - (BOOL) composeClips:(NSUInteger)frame
         bitmapContext:(CGContextRef)bitmapContext
 {
@@ -1036,9 +1125,9 @@ CF_RETURNS_RETAINED
     if (frameTime >= clipStartSeconds && frameTime <= clipEndSeconds) {
       // Render specific frame from this clip
       
-#ifdef LOGGING
+#ifdef LOGGING_CLIP_ACTIVE
       NSLog(@"Found clip active for comp time %0.2f, clip %d [%0.2f, %0.2f]", frameTime, clipOffset, clipStartSeconds, clipEndSeconds);
-#endif // LOGGING
+#endif // LOGGING_CLIP_ACTIVE
       
       // clipTime is relative to the start of the clip. Calculate which frame
       // a specific time would map to based on the clip time and the clip frame duration.
@@ -1054,9 +1143,9 @@ CF_RETURNS_RETAINED
         float clipFrameDuration = compClip->clipFrameDuration;
         clipFrame = (NSUInteger) (clipTime / clipFrameDuration);
         
-#ifdef LOGGING
+#ifdef LOGGING_CLIP_ACTIVE
         NSLog(@"clip time %0.2f maps to clip frame %d (duration %0.2f)", clipTime, clipFrame, compClip->clipFrameDuration);
-#endif // LOGGING
+#endif // LOGGING_CLIP_ACTIVE
         
         if (clipFrame >= compClip->clipNumFrames) {
           // If the calculate frame is larger than the last frame in the clip, continue
@@ -1065,9 +1154,9 @@ CF_RETURNS_RETAINED
           
           clipFrame = (compClip->clipNumFrames - 1);
           
-#ifdef LOGGING
+#ifdef LOGGING_CLIP_ACTIVE
           NSLog(@"clip frame bound to the final frame %d", clipFrame);
-#endif // LOGGING
+#endif // LOGGING_CLIP_ACTIVE
         }
       }
       
@@ -1135,7 +1224,10 @@ CF_RETURNS_RETAINED
             // Note that these bounds have already been flipped by the time
             // this method is invoked.
             
-            CGContextSetFillColorWithColor(bitmapContext, [UIColor redColor].CGColor);
+            UIColor *textBackgroundColor;
+            //textBackgroundColor = [UIColor redColor];
+            textBackgroundColor = [UIColor greenColor];
+            CGContextSetFillColorWithColor(bitmapContext, textBackgroundColor.CGColor);
             CGContextFillRect(bitmapContext, bounds);
           }
           
@@ -1246,6 +1338,24 @@ CF_RETURNS_RETAINED
   float lowerLeftCornerYAboveBottom = self.compSize.height - lowerLeftCornerYBelowZero;
   flipped.origin.y = lowerLeftCornerYAboveBottom;
   return flipped;
+}
+
+// This util method will query the screen scale property from the UIScreen
+// class and save it as a static integer value so that it can be read
+// easily from secondary threads.
+
+- (void) queryScreenScale
+{
+  NSAssert([NSThread isMainThread], @"queryScreenScale must be invoked from main thread");
+  
+  if ([[UIScreen mainScreen] respondsToSelector:@selector(scale)]) {
+    screenScale = (int) [UIScreen mainScreen].scale;
+  } else {
+    // Would only get invoked on old iPad 1 with iOS 3.2
+    screenScale = 1;
+  }
+  
+  NSAssert(screenScale == 1 || screenScale == 2, @"bad screenScale %d", screenScale);
 }
 
 @end // AVOfflineComposition

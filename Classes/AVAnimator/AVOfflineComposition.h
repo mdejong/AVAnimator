@@ -23,6 +23,7 @@
 //   "CompWidth" int width of the whole comp
 //   "CompHeight" int height of the whole comp
 //   "CompBackgroundColor" string #RRGGBB value indicating a color (defaults to black)
+//   "CompScale" optional int to indicate scale, either 1, 2, or 0 for screen scale (defaults to 1)
 //   "Font" optional string name of iOS font (defaults to system font)
 //   "FontSize" optional int font size (defaults to 14)
 //   "FontColor" optional string #RRGGBB value indicating a color (defaults to black)
@@ -69,6 +70,7 @@ extern NSString * const AVOfflineCompositionFailedNotification;
   NSString   *m_defaultFont;
   NSUInteger m_defaultFontSize;
   CGColorRef m_defaultFontColor;
+  NSUInteger m_compScale;
   BOOL       m_deleteTmpFiles;
   // These next members act only as pointers to objects, the lifetime of
   // these two resources is not managed by holding ref counts.
