@@ -275,11 +275,21 @@
 {
   NSAssert(self.length == 0, @"setDefaults must be invoked on empty attr string");
   
-  CTFontRef plainFont = CTFontCreateWithName((CFStringRef)plainFontName, fontSize, nil);
+  CTFontRef plainFont;
+  CTFontRef boldFont;
+  
+  plainFont = CTFontCreateWithName((CFStringRef)plainFontName, fontSize, nil);
   NSAssert(plainFont, @"plainFont");
   self.plainTextFont = plainFont;
   
-  CTFontRef boldFont = CTFontCreateWithName((CFStringRef)boldFontName, fontSize, nil);
+  // If both plain and bold are the same font name, create just 1 font.
+  // This improves performance quite a bit.
+  
+  if ([boldFontName isEqualToString:plainFontName]) {
+    boldFont = CFRetain(plainFont);
+  } else {
+    boldFont = CTFontCreateWithName((CFStringRef)boldFontName, fontSize, nil);
+  }
   NSAssert(boldFont, @"boldFont");
   self.boldTextFont = boldFont;
   

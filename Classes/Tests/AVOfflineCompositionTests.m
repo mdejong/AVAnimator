@@ -729,12 +729,18 @@
 
 + (void) testManyTextFieldsRenderedConcurrently
 {
-  for (int outerRenderLoops=0; outerRenderLoops < 1; outerRenderLoops++) {
+#define NUM_TIMES 1
+//#define NUM_TIMES 10
+  
+  for (int outerRenderLoops=0; outerRenderLoops < NUM_TIMES; outerRenderLoops++) @autoreleasepool {
   
   NSMutableArray *mNotificationUtilObjects = [NSMutableArray array];
   NSMutableArray *mTmpPaths = [NSMutableArray array];
-  
-  for (int i=0; i < 10; i++) {
+
+//#define NUM_COMPS 2
+#define NUM_COMPS 10
+    
+  for (int i=0; i < NUM_COMPS; i++) {
     NSString *resFilename;
     
     resFilename = @"AVOfflineCompositionManyTextFields.plist";
@@ -763,36 +769,40 @@
     [mTmpPaths addObject:tmpPath];
   }
   
-  NSLog(@"waiting until 10 render operations are completed");
+  NSLog(@"waiting until render threads are completed");
   
   // Now wait for each operation to be done, 1 at a time
   
-  for (int i=0; i < 10; i++) {
+  for (int i=0; i < NUM_COMPS; i++) {
     AVOfflineCompositionNotificationUtil *notificationUtil = [mNotificationUtilObjects objectAtIndex:i];
     
     // Wait until comp operation either works or fails
     
     BOOL worked = [RegressionTests waitUntilTrue:notificationUtil
                                         selector:@selector(wasSuccessNotificationDelivered)
-                                     maxWaitTime:MAX_WAIT_TIME * 10];
+                                     maxWaitTime:MAX_WAIT_TIME * 20];
     NSAssert(worked, @"worked");
   }
   
-  NSLog(@"done 10 render operations");
+  NSLog(@"done render threads");
 
   // Now wait for each operation to be done, 1 at a time
   
-  for (int i=0; i < 10; i++) {
+  for (int i=0; i < NUM_COMPS; i++) {
     NSString *tmpPath = [mTmpPaths objectAtIndex:i];
     
     // Delete rendered comp file
     
     BOOL worked;
-    worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
-    NSAssert(worked, @"could not remove tmp file");
+    NSError *error;
+    NSError **errorPtr = &error;
+    worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:errorPtr];
+    if (!worked) {
+      NSAssert(worked, @"could not remove tmp file: %@", *errorPtr);
+    }
   }
  
-  } // outer render loops
+  } // outer render loops, pop autorelease pool
     
   return;
 }

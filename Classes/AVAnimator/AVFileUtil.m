@@ -82,8 +82,10 @@
     [[NSFileManager defaultManager] removeItemAtPath:toPath error:NULL];
   }
   
-  BOOL worked = [[NSFileManager defaultManager] moveItemAtPath:path toPath:toPath error:nil];
-  NSAssert(worked, @"moveItemAtPath failed for decode result");
+  NSError *error;
+  NSError **errorPtr = &error;
+  BOOL worked = [[NSFileManager defaultManager] moveItemAtPath:path toPath:toPath error:errorPtr];
+  NSAssert(worked, @"moveItemAtPath failed for decode result : %@", *errorPtr);
   
   return;
 }
