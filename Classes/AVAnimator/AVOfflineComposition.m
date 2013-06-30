@@ -554,6 +554,24 @@ CF_RETURNS_RETAINED
   
   self->m_deleteTmpFiles = deleteTmpFiles;
   
+  // HighQualityInterpolation : This setting will enable the higher quality
+  // but significantly slower interpolation mode. When an image is resized
+  // or scaled by CoreGraphics this mode will use a more complex and slower
+  // algo to generate the final pixel. The high quality mode may result in
+  // fewer jaggies for certain classes of image data.
+
+  NSNumber *highQualityInterpolationNum = [compDict objectForKey:@"HighQualityInterpolation"];
+  
+  BOOL highQualityInterpolation;
+  
+  if (highQualityInterpolationNum == nil) {
+    highQualityInterpolation = FALSE;
+  } else {
+    highQualityInterpolation = [highQualityInterpolationNum boolValue];
+  }
+  
+  self->m_highQualityInterpolation = highQualityInterpolation;
+  
   // Parse CompClips, this array of dictionary property is optional
 
   if ([self parseClipProperties:compDict] == FALSE) {
@@ -780,7 +798,15 @@ CF_RETURNS_RETAINED
         
         //converter.genAdler = TRUE;
         
+#ifdef LOGGING
+        NSLog(@"decoding h264 clip asset %@", [movPath lastPathComponent]);
+#endif // LOGGING
+
         worked = [converter blockingDecode];
+        
+#ifdef LOGGING
+        NSLog(@"done decoding h264 clip asset");
+#endif // LOGGING
         
         if (worked) {
           // Rename to XYZ.mvid
@@ -991,17 +1017,19 @@ CF_RETURNS_RETAINED
     CGContextScaleCTM(bitmapContext, 2.0f, 2.0f);
   }
   
-  // FIXME: need to do more testing to determine if interpolation setting
-  // is slowing things down too much? It seems like no interpolation should
-  // be getting done as long as the video is the same size as the 2x one.
+  // Testing on iPhone4 and iPad2 indicates that using Medium interpolation shows
+  // no real runtime difference as compared to the default mode. But, there
+  // can be an improvement in graphical results, so use medium unless the
+  // specific high quality flag is set. If the high quality flag is set, this
+  // could slow down resizing by 2x so it should only be used if needed.
   
   // http://stackoverflow.com/questions/5685884/imagequality-with-cgcontextsetinterpolationquality
-  
-  // If there is any image rescaling to be done, use the high quality settings.
-  // This will help to avoid the jaggies and the render is really slow to begin
-  // with so better to keep quality high.
 
-  //CGContextSetInterpolationQuality(bitmapContext, kCGInterpolationHigh);
+  if (self->m_highQualityInterpolation == FALSE) {
+    CGContextSetInterpolationQuality(bitmapContext, kCGInterpolationMedium);
+  } else {
+    CGContextSetInterpolationQuality(bitmapContext, kCGInterpolationHigh);
+  }
 
   // Before starting to write a new tmp file, make sure the previous output file is deleted.
   // If the system is low on disk space and a render is very large then this would

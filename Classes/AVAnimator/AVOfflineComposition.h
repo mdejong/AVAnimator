@@ -28,6 +28,8 @@
 //   "FontSize" optional int font size (defaults to 14)
 //   "FontColor" optional string #RRGGBB value indicating a color (defaults to black)
 //   "DeleteTmpFiles" optional boolean to indicate if decode tmp files are deleted (defaults to TRUE)
+//   "HighQualityInterpolation" optional boolean to indicate if a movie/image to be resized/scaled during
+//     a render operation should use the 2x slow high quality interpolation mode. (defaults to FALSE).
 //
 // CLIP SETTINGS:
 //   "ClipSource" string name of H264 or MVID file, image name for "image", literal text for "text" type
@@ -72,6 +74,7 @@ extern NSString * const AVOfflineCompositionFailedNotification;
   CGColorRef m_defaultFontColor;
   NSUInteger m_compScale;
   BOOL       m_deleteTmpFiles;
+  BOOL       m_highQualityInterpolation;
   // These next members act only as pointers to objects, the lifetime of
   // these two resources is not managed by holding ref counts.
   MutableAttrString *m_mAttrString;
