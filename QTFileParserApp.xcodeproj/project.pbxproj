@@ -38,6 +38,10 @@
 		CD288F151694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CD288F111694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */; };
 		CD288F181694DEF200A5CDAD /* AlphaGhost_alpha_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CD288F161694DEF200A5CDAD /* AlphaGhost_alpha_CRF_30_24BPP.m4v */; };
 		CD288F191694DEF200A5CDAD /* AlphaGhost_rgb_CRF_30_24BPP.m4v in Resources */ = {isa = PBXBuildFile; fileRef = CD288F171694DEF200A5CDAD /* AlphaGhost_rgb_CRF_30_24BPP.m4v */; };
+		CD2A2C3C178814E90097E06A /* RedSquare_16BPP.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD2A2C3B178814E90097E06A /* RedSquare_16BPP.mvid.7z */; };
+		CD2A2C3D178814E90097E06A /* RedSquare_16BPP.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD2A2C3B178814E90097E06A /* RedSquare_16BPP.mvid.7z */; };
+		CD2A2C3F17881ACD0097E06A /* CrewSub_200_16BPP.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD2A2C3E17881ACD0097E06A /* CrewSub_200_16BPP.mvid.7z */; };
+		CD2A2C4017881ACD0097E06A /* CrewSub_200_16BPP.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD2A2C3E17881ACD0097E06A /* CrewSub_200_16BPP.mvid.7z */; };
 		CD2C6A5D14F81CD500C3CDB7 /* superwalk_h264.mov in Resources */ = {isa = PBXBuildFile; fileRef = CD84F51B14E268B20004C529 /* superwalk_h264.mov */; };
 		CD2F6D4812F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
 		CD2F6D4912F0B8AF0022413B /* AVAnimatorMedia.m in Sources */ = {isa = PBXBuildFile; fileRef = CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */; };
@@ -373,6 +377,8 @@
 		CD288F111694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ExplosionAdjusted_rgb_CRF_30_24BPP.m4v; sourceTree = "<group>"; };
 		CD288F161694DEF200A5CDAD /* AlphaGhost_alpha_CRF_30_24BPP.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = AlphaGhost_alpha_CRF_30_24BPP.m4v; sourceTree = "<group>"; };
 		CD288F171694DEF200A5CDAD /* AlphaGhost_rgb_CRF_30_24BPP.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = AlphaGhost_rgb_CRF_30_24BPP.m4v; sourceTree = "<group>"; };
+		CD2A2C3B178814E90097E06A /* RedSquare_16BPP.mvid.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = RedSquare_16BPP.mvid.7z; sourceTree = "<group>"; };
+		CD2A2C3E17881ACD0097E06A /* CrewSub_200_16BPP.mvid.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = CrewSub_200_16BPP.mvid.7z; sourceTree = "<group>"; };
 		CD2F6D4512F0B8AF0022413B /* AVAnimatorMedia.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorMedia.h; sourceTree = "<group>"; };
 		CD2F6D4612F0B8AF0022413B /* AVAnimatorMedia.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorMedia.m; sourceTree = "<group>"; };
 		CD2F6D4712F0B8AF0022413B /* AVAnimatorMediaPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorMediaPrivate.h; sourceTree = "<group>"; };
@@ -699,6 +705,8 @@
 				CD5006D912E23B95007038D0 /* Sweep15FPS.m4a */,
 				CD7E12B112E373190077CB9C /* Sweep15FPS.caf */,
 				CD4AAB3513675B270010148E /* GradientColorWheel_2FPS_32BPP_Keyframes.mvid.7z */,
+				CD2A2C3B178814E90097E06A /* RedSquare_16BPP.mvid.7z */,
+				CD2A2C3E17881ACD0097E06A /* CrewSub_200_16BPP.mvid.7z */,
 				CDBDC10D12E0EA7500EF5BD4 /* LCD.jpg */,
 				CDD6413E1686525300492B80 /* JigsawPuzzle_205_99_10FPS_16BPP.mvid */,
 				CDD6416F168802F600492B80 /* Matrix_480_320_10FPS_16BPP.mvid.7z */,
@@ -1158,6 +1166,8 @@
 				CD288F141694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v in Resources */,
 				CDD03E9317612CDE0064EE55 /* Beaker.gif in Resources */,
 				CD54FB2B176288F40030BA0B /* superwalk.gif in Resources */,
+				CD2A2C3C178814E90097E06A /* RedSquare_16BPP.mvid.7z in Resources */,
+				CD2A2C3F17881ACD0097E06A /* CrewSub_200_16BPP.mvid.7z in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1274,6 +1284,8 @@
 				CD840DF9177673D7002ABF7F /* AVOfflineCompositionTwoFrameStaticImageAndTwoTextTest.plist in Resources */,
 				CD341ECA177E2A5800AC6D7A /* AVOfflineCompositionManyTextFields.plist in Resources */,
 				CD488980177F7352001ED251 /* AVOfflineComposition2xScale.plist in Resources */,
+				CD2A2C3D178814E90097E06A /* RedSquare_16BPP.mvid.7z in Resources */,
+				CD2A2C4017881ACD0097E06A /* CrewSub_200_16BPP.mvid.7z in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

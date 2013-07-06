@@ -34,6 +34,37 @@
 
 @implementation AVFrameDecoderTests
 
++ (void) seekAllFrames:(AVFrameDecoder*)frameDecoder
+{
+  NSAssert([frameDecoder frameIndex] == -1, @"frameIndex");
+  NSAssert([frameDecoder numFrames] >= 2, @"numFrames");
+  
+  // Explicitly allocate decode resources as media is not attached to a view
+  
+  BOOL worked = [frameDecoder allocateDecodeResources];
+  NSAssert(worked, @"worked");
+  
+  AVFrame *frame;
+  UIImage* img;
+  
+  // Run through all frames in order, to ensure that the
+  // frames can be decoded properly.
+  
+  for (int i=0; i < [frameDecoder numFrames]; i++)
+    @autoreleasepool {
+    
+    frame = [frameDecoder advanceToFrame:i];
+    img = frame.image;
+    NSAssert(img != nil, @"advanceToFrame");
+    
+    NSAssert([frameDecoder frameIndex] == i, @"frameIndex");
+  }
+  
+  return;
+}
+
+// Seek testing for specific video that contains 30 frames
+
 + (void) doSeekTests:(AVFrameDecoder*)frameDecoder
 {
   NSAssert([frameDecoder frameIndex] == -1, @"frameIndex");
@@ -167,13 +198,73 @@
 }
 
 // This test case will allocate a frame decoder and then invoke a generic test method that will skip around inside the
-// frames of the video.
+// frames of the 16BPP video.
+
++ (void) testBounce16SeekMvid
+{
+  id appDelegate = [[UIApplication sharedApplication] delegate];
+  UIWindow *window = [appDelegate window];
+  NSAssert(window, @"window");
+  
+  NSString *archiveFilename = @"Bounce_16BPP_15FPS.mvid.7z";
+  NSString *entryFilename = @"Bounce_16BPP_15FPS.mvid";
+  NSString *outFilename = @"Bounce_16BPP_15FPS.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+  
+  // Create Media object
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Create loader that will read a movie file from 7z app resources.
+  
+  AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  
+  media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  // Wait until initial keyframe of data is loaded.
+  
+  NSAssert(media.isReadyToAnimate == FALSE, @"isReadyToAnimate");
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(media.state == READY, @"isReadyToAnimate");
+  
+  // No frame is selected
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");
+  
+  // Invoke logic to seek around in the frames
+  
+  [self doSeekTests:frameDecoder];
+  
+  return;
+}
+
+// This test case will allocate a frame decoder and then invoke a generic test method that will skip around inside the
+// frames of the 32BPP video.
 
 + (void) testBounce32SeekMvid
 {
-	id appDelegate = [[UIApplication sharedApplication] delegate];	
-	UIWindow *window = [appDelegate window];
-	NSAssert(window, @"window");  
+  id appDelegate = [[UIApplication sharedApplication] delegate];
+  UIWindow *window = [appDelegate window];
+  NSAssert(window, @"window");
   
   NSString *archiveFilename = @"Bounce_32BPP_15FPS.mvid.7z";
   NSString *entryFilename = @"Bounce_32BPP_15FPS.mvid";
@@ -231,9 +322,9 @@
 
 + (void) testBounce32SeekMvid7z
 {
-	id appDelegate = [[UIApplication sharedApplication] delegate];	
-	UIWindow *window = [appDelegate window];
-	NSAssert(window, @"window");  
+  id appDelegate = [[UIApplication sharedApplication] delegate];
+  UIWindow *window = [appDelegate window];
+  NSAssert(window, @"window");
   
   NSString *archiveFilename = @"Bounce_32BPP_15FPS.mvid.7z";
   NSString *entryFilename = @"Bounce_32BPP_15FPS.mvid";
@@ -287,6 +378,126 @@
   // Invoke logic to seek around in the frames
   
   [self doSeekTests:frameDecoder];
+  
+  return;
+}
+
+// This test case uses a frame decoder to seek through all the frames of a video that
+// contains large DUP runs at 16BPP.
+
++ (void) testRedSquareSeekMvid
+{
+  id appDelegate = [[UIApplication sharedApplication] delegate];
+  UIWindow *window = [appDelegate window];
+  NSAssert(window, @"window");
+  
+  NSString *archiveFilename = @"RedSquare_16BPP.mvid.7z";
+  NSString *entryFilename = @"RedSquare_16BPP.mvid";
+  NSString *outFilename = @"RedSquare_16BPP.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+  
+  // Create Media object
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Create loader that will read a movie file from 7z app resources.
+  
+  AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  
+  media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  // Wait until initial keyframe of data is loaded.
+  
+  NSAssert(media.isReadyToAnimate == FALSE, @"isReadyToAnimate");
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(media.state == READY, @"isReadyToAnimate");
+  
+  // No frame is selected
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");
+  
+  // Invoke logic to seek around in the frames
+  
+  [self seekAllFrames:frameDecoder];
+  
+  return;
+}
+
+// This test case uses a frame decoder to seek through all the frames of a video that
+// contains large DUP runs at 16BPP.
+
++ (void) testCrewSeekMvid
+{
+  id appDelegate = [[UIApplication sharedApplication] delegate];
+  UIWindow *window = [appDelegate window];
+  NSAssert(window, @"window");
+  
+  NSString *archiveFilename = @"CrewSub_200_16BPP.mvid.7z";
+  NSString *entryFilename = @"CrewSub_200_16BPP.mvid";
+  NSString *outFilename = @"CrewSub_200_16BPP.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+  
+  // Create Media object
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Create loader that will read a movie file from 7z app resources.
+  
+  AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  
+  media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+	media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  // Wait until initial keyframe of data is loaded.
+  
+  NSAssert(media.isReadyToAnimate == FALSE, @"isReadyToAnimate");
+  
+  [media prepareToAnimate];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSAssert(media.state == READY, @"isReadyToAnimate");
+  
+  // No frame is selected
+  
+  NSAssert(media.currentFrame == -1, @"currentFrame");
+  
+  // Invoke logic to seek around in the frames
+  
+  [self seekAllFrames:frameDecoder];
   
   return;
 }
