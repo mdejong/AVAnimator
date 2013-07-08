@@ -69,11 +69,11 @@ _maxvid_decode_c4_sample16:
 	
 	ldr r8, [r9], #4
 	
-	@ goto DECODE
+	@ goto DECODE_16BPP
 	
 	b	L19
 L3:
-	@ DUP
+	@ DUP_16BPP
 	
 	tst r10, #3
 	pkhbt r0, r8, r8, lsl #16
@@ -84,7 +84,7 @@ L3:
 	
 	ldr r8, [r9], #4
 	
-	@ if (numWords > 6) goto DUPBIG
+	@ if (numWords > 6) goto DUPBIG_16BPP
 	
 	cmp	lr, #6
 	bhi	L4
@@ -101,10 +101,10 @@ L3:
 	tst ip, #1
 	strneh r0, [r10], #2
 	
-	@ fall through to DECODE
+	@ fall through to DECODE_16BPP
 	
 L19:
-	@ DECODE
+	@ DECODE_16BPP
 	2:
 	@ if ((opCode = (inW1 >> 30)) == SKIP) ...
 	movs r6, r8, lsr #30
@@ -127,22 +127,22 @@ L19:
 	
 	@ Phantom assign to opCode
 	
-	@ if (opCode == DUP) goto DUP
+	@ if (opCode == DUP) goto DUP_16BPP
 	
 	cmp	r6, #1
 	beq	L3
 	@ Phantom assign to opCode
 	
-	@ if (opCode == DONE) goto DONELABEL
+	@ if (opCode == DONE) goto DONE_16BPP
 	
 	cmp	r6, #3
 	beq	L7
-	@ if (numWords > 7) goto COPYBIG
+	@ if (numWords > 7) goto COPYBIG_16BPP
 	
 	cmp	ip, #15
 	bhi	L9
 L10:
-	@ COPYSMALL
+	@ COPYSMALL_16BPP
 	
 	tst r10, #3
 	subne ip, ip, #1
@@ -168,11 +168,11 @@ L10:
 	
 	ldr r8, [r9], #4
 	
-	@ goto DECODE
+	@ goto DECODE_16BPP
 	
 	b	L19
 L9:
-	@ COPYBIG
+	@ COPYBIG_16BPP
 	
 	tst r10, #3
 	subne ip, ip, #1
@@ -241,11 +241,11 @@ L13:
 	mvn r4, #0xC000
 	orr r5, r5, r11, lsr #1
 	
-	@ goto DECODE
+	@ goto DECODE_16BPP
 	
 	b	L19
 L4:
-	@ DUPBIG
+	@ DUPBIG_16BPP
 	
 	mov r1, r0
 	mov r2, r0
@@ -276,11 +276,11 @@ L4:
 	mvn r4, #0xC000
 	orr r5, r5, r11, lsr #1
 	
-	@ goto DECODE
+	@ goto DECODE_16BPP
 	
 	b	L19
 L7:
-	@ DONELABEL
+	@ DONE_16BPP
 	
 	mov	r0, #0
 	ldmfd	sp!, {r8, r10, r11}
@@ -312,11 +312,11 @@ _maxvid_decode_c4_sample32:
 	mov r5, #9
 	mov r6, #3
 	
-	@ goto DECODE
+	@ goto DECODE_32BPP
 	
 	b	L39
 L23:
-	@ DUP
+	@ DUP_32BPP
 	
 	mov ip, r8, lsr #10
 	
@@ -324,7 +324,7 @@ L23:
 	
 	ldmia r9!, {r8, lr}
 	
-	@ if (numWords > 6) goto DUPBIG
+	@ if (numWords > 6) goto DUPBIG_32BPP
 	
 	cmp	ip, #6
 	bhi	L24
@@ -338,10 +338,10 @@ L23:
 	tst ip, #0x1
 	strne r0, [r10], #4
 	
-	@ fall through to DECODE
+	@ fall through to DECODE_32BPP
 	
 L39:
-	@ DECODE
+	@ DECODE_32BPP
 	2:
 	add r10, r10, r11, lsl #2
 	and r11, r8, #0xFF
@@ -362,25 +362,25 @@ L39:
 	
 	@ Phantom assign to opCode
 	
-	@ if (opCode == DUP) goto DUP
+	@ if (opCode == DUP) goto DUP_32BPP
 	
 	cmp	ip, #1
 	beq	L23
 	@ Phantom assign to opCode
 	
-	@ if (opCode == DONE) goto DONELABEL
+	@ if (opCode == DONE) goto DONE_32BPP
 	
 	cmp	ip, #3
 	beq	L27
 	str lr, [r10], #4
 	rsb ip, r3, r8, lsr #10
 	
-	@ if (numWords > 7) goto COPYBIG
+	@ if (numWords > 7) goto COPYBIG_32BPP
 	
 	cmp	ip, #7
 	bhi	L29
 L30:
-	@ COPYSMALL
+	@ COPYSMALL_32BPP
 	
 	cmp ip, #3
 	ldmgtia r9!, {r0, r1, r2, r3}
@@ -398,11 +398,11 @@ L30:
 	
 	mov r3, #1
 	
-	@ goto DECODE
+	@ goto DECODE_32BPP
 	
 	b	L39
 L29:
-	@ COPYBIG
+	@ COPYBIG_32BPP
 	
 	@ Phantom assign to numPixels
 	
@@ -462,11 +462,11 @@ L33:
 	mov r5, #9
 	mov r6, #3
 	
-	@ goto DECODE
+	@ goto DECODE_32BPP
 	
 	b	L39
 L24:
-	@ DUPBIG
+	@ DUPBIG_32BPP
 	
 	mov lr, r8
 	
@@ -499,15 +499,16 @@ L24:
 	mov r5, #9
 	mov r6, #3
 	
-	@ goto DECODE
+	@ goto DECODE_32BPP
 	
 	b	L39
 L27:
-	@ DONELABEL
+	@ DONE_32BPP
 	
 	mov	r0, #0
 	ldmfd	sp!, {r8, r10, r11}
 	ldmfd	sp!, {r4, r5, r6, r7, pc}
+
 	.subsections_via_symbols
 
 #else
