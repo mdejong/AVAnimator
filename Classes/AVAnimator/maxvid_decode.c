@@ -330,7 +330,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
 #endif
   
 #else // COMPILE_ARM_ASM
-  register uint32_t * restrict inputBuffer32 = (uint32_t * restrict) inputBuffer32Arg;  
+  register uint32_t * restrict inputBuffer32 = (uint32_t * restrict) inputBuffer32Arg;
   register uint16_t * restrict frameBuffer16 = frameBuffer16Arg;
   register uint32_t inW1 = 0;
   uint32_t opCode;
@@ -1067,7 +1067,108 @@ DECODE_16BPP:
                         "@ COPY 16BPP\n\t"
                         );
 #endif // COMPILE_ARM_ASM
+
+  // Word align the framebuffer, if needed.
+  // Note that the special COPY case where numPixels = 1 was handled already.
   
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
+  MAXVID_ASSERT(numPixels != 0, "numPixels != 0");
+  MAXVID_ASSERT(numPixels != 1, "numPixels != 1");
+  MAXVID_ASSERT(numPixels >= 2, "numPixels >= 2");
+#endif
+  
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
+  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
+  MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT((((frameBuffer16 + numPixels - 1) - inframeBuffer16) < frameBufferSize), "MV16_CODE_COPY past end of framebuffer");
+#endif
+  
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
+#endif // EXTRA_CHECKS
+  
+  // START align32 block
+  
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(((frameBuffer16 - inframeBuffer16) < frameBufferSize), "word align: already past end of framebuffer");
+  MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
+#endif // EXTRA_CHECKS
+  
+#if defined(COMPILE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ align32\n\t"
+                        "tst %[frameBuffer16], #3\n\t"
+                        "subne %[numPixels], %[numPixels], #1\n\t"
+                        "strneh %[inW1], [%[frameBuffer16]], #2\n\t"
+                        :
+                        [frameBuffer16] "+l" (frameBuffer16),
+                        [numPixels] "+l" (numPixels)
+                        :
+                        [inW1] "l" (inW1)
+                        );
+#else // COMPILE_ARM_ASM
+  if (UINTMOD(frameBuffer16, 4) != 0) {
+    // Framebuffer is half word aligned, write 16 bit pixel in the low half word
+    *frameBuffer16++ = inW1;
+    numPixels--;
+  }
+#endif // COMPILE_ARM_ASM
+  
+#ifdef EXTRA_CHECKS
+  numPixelsSaved = numPixels;
+#endif // EXTRA_CHECKS
+  
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
+  MAXVID_ASSERT(opCode == opCodeSaved, "opCodeSaved");
+  
+  MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
+#endif // EXTRA_CHECKS
+  
+// END align32 block
+
+// START numWords block
+  
+  // numWords is numPixels/2, could count down to zero in a loop.
+  // num is a 14 bit number that indicates the number of pixels to copy.
+  // This logic must appear after the framebuffer has been aligned
+  // since that logic can decrement the numPixels by 1 in the
+  // unaligned case.
+  
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
+#endif
+  
+#ifdef COMPILE_ARM_ASM
+  __asm__ __volatile__ (
+                        "@ numWords\n\t"
+                        "mov %[numWords], %[numPixels], lsr #1\n\t"
+                        :
+                        [numWords] "+l" (numWords)
+                        :
+                        [numPixels] "l" (numPixels)
+                        );
+#else // COMPILE_ARM_ASM
+  // Note that the inline ASM above is needed to avoid stack use in conditional case
+  numWords = (numPixels >> 1);
+#endif // COMPILE_ARM_ASM
+  
+#ifdef EXTRA_CHECKS
+  numWordsSaved = numWords;
+  MAXVID_ASSERT(numWordsSaved == (numPixels >> 1), "numWordsSaved");
+  MAXVID_ASSERT(numPixels > numWords, "numPixels > numPixels");
+#endif
+  
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(numWords < 0x3FFFFFFF, "numWords");
+#endif
+
+// END numWords block
+
   // Branch to big copy handler if larger than cutoff size,
   // otherwise fall through to most optimal small copy instructions.
   
@@ -1105,67 +1206,7 @@ COPYSMALL_16BPP:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
-  MAXVID_ASSERT(numPixels != 0, "numPixels != 0");
-  MAXVID_ASSERT(numPixels != 1, "numPixels != 1");
-  MAXVID_ASSERT(numPixels >= 2, "numPixels >= 2");
 #endif
-  
-#ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
-  MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
-  MAXVID_ASSERT((((frameBuffer16 + numPixels - 1) - inframeBuffer16) < frameBufferSize), "MV16_CODE_COPY past end of framebuffer");
-#endif
-  
-#ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
-#endif // EXTRA_CHECKS
-  
-#if defined(COMPILE_ARM_ASM)
-  
-#ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(((frameBuffer16 - inframeBuffer16) < frameBufferSize), "word align: already past end of framebuffer");
-  MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
-#endif // EXTRA_CHECKS
-  
-  __asm__ __volatile__ (
-                        "tst %[frameBuffer16], #3\n\t"
-                        "subne %[numPixels], %[numPixels], #1\n\t"
-                        "strneh %[inW1], [%[frameBuffer16]], #2\n\t"
-                        :
-                        [frameBuffer16] "+l" (frameBuffer16),
-                        [numPixels] "+l" (numPixels)
-                        :
-                        [inW1] "l" (inW1)
-                        );
-  
-#ifdef EXTRA_CHECKS
-  numPixelsSaved = numPixels;
-#endif // EXTRA_CHECKS
-  
-#else // COMPILE_ARM_ASM
-  if (UINTMOD(frameBuffer16, 4) != 0) {
-#ifdef EXTRA_CHECKS
-    MAXVID_ASSERT(((frameBuffer16 - inframeBuffer16) < frameBufferSize), "word align: already past end of framebuffer");
-    MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
-#endif // EXTRA_CHECKS
-    // Framebuffer is half word aligned, write 16 bit pixel in the low half word
-    *frameBuffer16++ = inW1;
-    numPixels--;
-#ifdef EXTRA_CHECKS
-    numPixelsSaved = numPixels;
-#endif // EXTRA_CHECKS
-  }
-#endif // COMPILE_ARM_ASM
-  
-#ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
-  MAXVID_ASSERT(opCode == opCodeSaved, "opCodeSaved");
-  
-  MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
-#endif // EXTRA_CHECKS
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
@@ -1173,34 +1214,6 @@ COPYSMALL_16BPP:
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
   MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 word alignment");
   MAXVID_ASSERT((((frameBuffer16 + numPixels - 1) - inframeBuffer16) < frameBufferSize), "MV16_CODE_COPY past end of framebuffer");
-#endif
-  
-  // numWords is numPixels/2, counts down to zero in the word8 loop.
-  // num is a 14 bit number that indicates the number of pixels to copy.
-  // This logic must appear after the framebuffer has been aligned
-  // since that logic can decrement the numPixels by 1 in the
-  // unaligned case.
-  
-#ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
-#endif
-#ifdef COMPILE_ARM_ASM
-  __asm__ __volatile__ (
-                        "mov %[numWords], %[numPixels], lsr #1\n\t"
-                        :
-                        [numWords] "+l" (numWords)
-                        :
-                        [numPixels] "l" (numPixels)
-                        );
-#else // COMPILE_ARM_ASM
-  // Note that the inline ASM above is needed to avoid stack use in conditional case
-  numWords = (numPixels >> 1);
-#endif // COMPILE_ARM_ASM
-  
-#ifdef EXTRA_CHECKS
-  numWordsSaved = numWords;
-  MAXVID_ASSERT(numWordsSaved == (numPixels >> 1), "numWordsSaved");
-  MAXVID_ASSERT(numPixels > numWords, "numPixels > numPixels");
 #endif
   
 #ifdef EXTRA_CHECKS
@@ -1228,7 +1241,7 @@ COPYSMALL_16BPP:
                 ((uint16_t*)expectedCOPYSmallFinalFrameBuffer16 == expectedCOPYSmallPost8FrameBuffer16) || 
                 (expectedCOPYSmallFinalFrameBuffer16 == expectedCOPYSmallPost8FrameBuffer16+1), "expected pointers");
   
-  MAXVID_ASSERT(expectedCOPYSmallPost8InputBuffer32 == (((uint32_t *) inputBuffer32) + numWords), "expected pointers");  
+  MAXVID_ASSERT(expectedCOPYSmallPost8InputBuffer32 == (((uint32_t *) inputBuffer32) + numWords), "expected pointers");
   
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
   MAXVID_ASSERT(numWords == numWordsSaved, "numWordsSaved");
@@ -1385,73 +1398,10 @@ COPYBIG_16BPP:
                         );
 #endif //  COMPILE_ARM_ASM
   
-  // Word align the framebuffer, if needed.
-  // Note that the special case where COPY and numPixels = 1 was handled already.
-  
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
-  MAXVID_ASSERT(numPixels != 0, "numPixels != 0");
-  MAXVID_ASSERT(numPixels != 1, "numPixels != 1");
-  MAXVID_ASSERT(numPixels >= 2, "numPixels >= 2");
   MAXVID_ASSERT(numPixels >= (7*2), "numPixels");
 #endif
-  
-#ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
-  MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 alignment");
-  MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint16_t)) == 0, "frameBuffer16 alignment");
-  MAXVID_ASSERT((((frameBuffer16 + numPixels - 1) - inframeBuffer16) < frameBufferSize), "MV16_CODE_COPY past end of framebuffer");
-#endif
-  
-#ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
-#endif // EXTRA_CHECKS
-  
-#if defined(COMPILE_ARM_ASM)
-  
-#ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(((frameBuffer16 - inframeBuffer16) < frameBufferSize), "word align: already past end of framebuffer");
-  MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
-#endif // EXTRA_CHECKS
-  
-  __asm__ __volatile__ (
-                        "tst %[frameBuffer16], #3\n\t"
-                        "subne %[numPixels], %[numPixels], #1\n\t"
-                        "strneh %[inW1], [%[frameBuffer16]], #2\n\t"
-                        :
-                        [frameBuffer16] "+l" (frameBuffer16),
-                        [numPixels] "+l" (numPixels)
-                        :
-                        [inW1] "l" (inW1)
-                        );
-  
-#ifdef EXTRA_CHECKS
-  numPixelsSaved = numPixels;
-#endif // EXTRA_CHECKS
-  
-#else // COMPILE_ARM_ASM
-  if (UINTMOD(frameBuffer16, 4) != 0) {
-#ifdef EXTRA_CHECKS
-    MAXVID_ASSERT(((frameBuffer16 - inframeBuffer16) < frameBufferSize), "word align: already past end of framebuffer");
-    MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
-#endif // EXTRA_CHECKS
-    // Framebuffer is half word aligned, write 16 bit pixel in the low half word
-    *frameBuffer16++ = inW1;
-    numPixels--;
-#ifdef EXTRA_CHECKS
-    numPixelsSaved = numPixels;
-#endif // EXTRA_CHECKS
-  }
-#endif // COMPILE_ARM_ASM
-  
-#ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
-  MAXVID_ASSERT(opCode == opCodeSaved, "opCodeSaved");
-  
-  MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
-#endif // EXTRA_CHECKS
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
@@ -1461,32 +1411,7 @@ COPYBIG_16BPP:
   MAXVID_ASSERT((((frameBuffer16 + numPixels - 1) - inframeBuffer16) < frameBufferSize), "MV16_CODE_COPY past end of framebuffer");
 #endif
   
-  // numWords is numPixels/2, counts down to zero in the word8 loop.
-  // num is a 14 bit number that indicates the number of pixels to copy.
-  // This logic must appear after the framebuffer has been aligned
-  // since that logic can decrement the numPixels by 1 in the
-  // unaligned case.
-  
 #ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
-#endif
-#ifdef COMPILE_ARM_ASM
-  __asm__ __volatile__ (
-                        "mov %[numWords], %[numPixels], lsr #1\n\t"
-                        :
-                        [numWords] "+l" (numWords)
-                        :
-                        [numPixels] "l" (numPixels)
-                        );
-#else // COMPILE_ARM_ASM
-  // Note that the inline ASM above is needed to avoid stack use in conditional case
-  numWords = (numPixels >> 1);
-#endif // COMPILE_ARM_ASM
-  
-#ifdef EXTRA_CHECKS
-  numWordsSaved = numWords;
-  MAXVID_ASSERT(numWordsSaved == (numPixels >> 1), "numWordsSaved");
-  MAXVID_ASSERT(numPixels > numWords, "numPixels > numPixels");
   MAXVID_ASSERT(numWords >= 7, "numWords");
   MAXVID_ASSERT(numWords < 0x3FFFFFFF, "numWords");
 #endif
@@ -2904,7 +2829,12 @@ COPYSMALL_32BPP:
   MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
   
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
+
+  // Inlined COPY 1 takes care of a single pixel, but count could have been 2 and
+  // then 1 of those was copied to the framebuffer by the generic copy entry block.
+  // In this case, only 1 remains.
   
+  MAXVID_ASSERT(numPixels >= 1, "numPixels");
   MAXVID_ASSERT(numPixels < 8, "numPixels");
   
   uint32_t *expectedCOPYSmallPost8FrameBuffer32 = ((uint32_t *) frameBuffer32) + numPixels;

@@ -137,19 +137,24 @@ L19:
 	
 	cmp	r6, #3
 	beq	L7
+
+	@ COPY 16BPP
+
+	@ align32
+	tst r10, #3
+	subne ip, ip, #1
+	strneh r8, [r10], #2
+
+	@ numWords
+	mov lr, ip, lsr #1
+  
 	@ if (numWords > 7) goto COPYBIG_16BPP
 	
 	cmp	ip, #15
 	bhi	L9
 L10:
 	@ COPYSMALL_16BPP
-	
-	tst r10, #3
-	subne ip, ip, #1
-	strneh r8, [r10], #2
-	
-	mov lr, ip, lsr #1
-	
+
 	cmp lr, #3
 	ldmgtia r9!, {r0, r1, r2, r3}
 	subgt lr, lr, #4
@@ -173,13 +178,7 @@ L10:
 	b	L19
 L9:
 	@ COPYBIG_16BPP
-	
-	tst r10, #3
-	subne ip, ip, #1
-	strneh r8, [r10], #2
-	
-	mov lr, ip, lsr #1
-	
+
 	@ Phantom assign to numWords
 	
 	cmp	lr, #31
