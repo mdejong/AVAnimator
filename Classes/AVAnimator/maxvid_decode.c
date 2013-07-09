@@ -58,6 +58,8 @@
 #endif // defined(__clang__)
 
 // For CLANG build on ARM, skip this entire module and use custom ARM asm imp instead.
+// It is possible that clang is compiling in Thumb2 mode, just use the already generated
+// ARM code and do not generate an error in this case.
 
 #if defined(COMPILE_CLANG) && defined(COMPILE_ARM)
 #define USE_GENERATED_ARM_ASM 1
@@ -72,6 +74,22 @@
 # if __GNUC_PREREQ(4,2)
 #  define USE_GENERATED_ARM_ASM 1
 # endif
+#endif
+
+// This inline asm flag would only be used if USE_GENERATED_ARM_ASM was not defined
+
+#if defined(COMPILE_ARM)
+# define USE_INLINE_ARM_ASM 1
+#endif
+
+// It is possible one might want to actually compile the C code on an
+// ARM system and simply not use the inline ASM blocks and let the
+// compiler generate ARM code automatically. Set the argument
+// value for this if to 1 to enable build on ARM without inline ASM.
+
+#if 0 && defined(USE_GENERATED_ARM_ASM)
+#undef USE_GENERATED_ARM_ASM
+#undef USE_INLINE_ARM_ASM
 #endif
 
 #if defined(USE_GENERATED_ARM_ASM)
@@ -150,16 +168,16 @@
 // "No stack" safe assert macro, invokes inlined function call and restores
 // the registers. This macro is needed to use ASSERT logic in a function with no free registers.
 
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
 #ifdef EXTRA_CHECKS
 static uint32_t r0r1r2r3r4r5r6r8r10r11r12r14[12];
 #endif
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
 
 //__attribute__ ((noinline))
 static inline
 void maxvid_test_assert_util_c4(int cond) {
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
 #if 0 && defined(EXTRA_CHECKS)
   __asm__ __volatile__ (
                         "cmp r0, #0\n\t"
@@ -180,21 +198,21 @@ void maxvid_test_assert_util_c4(int cond) {
                         );
 #endif // EXTRA_CHECKS
   
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
 
   if (cond == 0) {
     // This is handy so that one can set a breakpoint on this assert call
     *((volatile uint32_t*)NULL) = 0;
   }
 
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   return;
 }
 
 #undef MAXVID_ASSERT
 
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
 
 # define MAXVID_ASSERT(cond, cstr) \
 __asm__ __volatile__ ( \
@@ -229,7 +247,7 @@ __asm__ __volatile__ ( \
 
 # define MAXVID_ASSERT(cond, cstr) maxvid_test_assert_util_c4(cond);
 
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
 
 // Create optimized impl
 
@@ -257,13 +275,13 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
   // r14 link register (gcc runs out of registers if you use this one)
   // r15 is the program counter (don't use)
   
-#if !defined(COMPILE_ARM_ASM) || defined(EXTRA_CHECKS)
+#if !defined(USE_INLINE_ARM_ASM) || defined(EXTRA_CHECKS)
   const uint32_t copyOnePixelHighHalfWord = (((uint32_t)COPY) << 14 | 0x1);
   const uint32_t dupTwoPixelsHighHalfWord = (((uint32_t)DUP) << 14 | 0x2);
   const uint32_t extractNumPixelsHighHalfWord = 0x3FFF;
-#endif // COMPILE_ARM_ASM
+#endif // !USE_INLINE_ARM_ASM || EXTRA_CHECKS
   
-#if 1 && defined(COMPILE_ARM_ASM)
+#if 1 && defined(USE_INLINE_ARM_ASM)
   register uint32_t * restrict inputBuffer32 __asm__ ("r9") = (uint32_t * restrict) inputBuffer32Arg;
   register uint16_t * restrict frameBuffer16 __asm__ ("r10") = frameBuffer16Arg;
   
@@ -290,7 +308,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
 #ifdef EXTRA_CHECKS
   // Frame and stack pointers needed in debug mode
   uint32_t copyOnePixelHighHalfWordConstRegister;
-#else
+#else // EXTRA_CHECKS
   register uint32_t copyOnePixelHighHalfWordConstRegister __asm__ ("r11");
 #endif // EXTRA_CHECKS
   
@@ -329,7 +347,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
   MAXVID_ASSERT(inW1 == 0, "inW1");
 #endif
   
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   register uint32_t * restrict inputBuffer32 = (uint32_t * restrict) inputBuffer32Arg;
   register uint16_t * restrict frameBuffer16 = frameBuffer16Arg;
   register uint32_t inW1 = 0;
@@ -341,7 +359,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
   register uint32_t WR3;
   register uint32_t WR4;
   register uint32_t WR5;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   // Init constants in registers
   
@@ -349,7 +367,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
   // to convert from COPY1 to DUP2. Could also do 0xC003 with an xor. But, all this
   // could be done in 1 immediate compare is ccode and numPixels were switchedin the word
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[constReg1], #1\n\t"
                         "mvn %[constReg2], #0xC000\n\t"
@@ -367,7 +385,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
   MAXVID_ASSERT(dupTwoPixelsHighHalfWordConstRegister == dupTwoPixelsHighHalfWord, "dupTwoPixelsHighHalfWordConstRegister");
   MAXVID_ASSERT(extractNumPixelsHighHalfWordConstRegister == ((0xFFFF << 16) | extractNumPixelsHighHalfWord), "extractNumPixelsHighHalfConstRegister");
 #endif // EXTRA_CHECKS
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(getpagesize() == MV_PAGESIZE, "pagesize");
@@ -411,7 +429,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
   prevInputBuffer32 = inputBuffer32;
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         // inW1 = *inputBuffer32++
                         "ldr %[inW1], [%[inputBuffer32]], #4\n\t"
@@ -421,19 +439,19 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
                         );
 #else
   inW1 = *inputBuffer32++;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   inW1Saved = inW1;
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ goto DECODE_16BPP\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   goto DECODE_16BPP;
   
 DUP_16BPP:
@@ -441,11 +459,11 @@ DUP_16BPP:
   {
   }
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   __asm__ __volatile__ (
                         "@ DUP\n\t"
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   // Word align the framebuffer, if needed.
   // Note that DUP2 was handled inline already.
@@ -477,7 +495,7 @@ DUP_16BPP:
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
 #endif // EXTRA_CHECKS
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   // Duplicate the 16 bit pixel as a pair of 32 bit pixels in the first write register.
   // This logic is mixed into the framebuffer align between the compare and the
   // conditional instruction in an attempt to get better pipeline results.
@@ -493,13 +511,13 @@ DUP_16BPP:
                         :
                         [inW1] "l" (inW1)
                         );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   if (UINTMOD(frameBuffer16, 4) != 0) {
     // Framebuffer is half word aligned, write 16 bit pixel in the low half word
     *frameBuffer16++ = inW1;
     numPixels--;
   }
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   numPixelsSaved = numPixels;
@@ -524,7 +542,7 @@ DUP_16BPP:
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
 #endif
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   __asm__ __volatile__ (
                         "mov %[numWords], %[numPixels], lsr #1\n\t"
                         :
@@ -532,10 +550,10 @@ DUP_16BPP:
                         :
                         [numPixels] "l" (numPixels)
                         );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   // Note that the inline ASM above is needed to avoid stack use in conditional case
   numWords = (numPixels >> 1);
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   numWordsSaved = numWords;
@@ -551,7 +569,7 @@ DUP_16BPP:
   MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
 #endif // EXTRA_CHECKS
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   // Copy the low half word into the high half with with 1 ASM instruction, instead of 2
   // PKHBT   r0, r3, r5, LSL #16 ; combine the bottom halfword of r3 with the bottom halfword of r5
   //  __asm__ __volatile__ (
@@ -561,7 +579,7 @@ DUP_16BPP:
   //                        :
   //                        [inW1] "l" (inW1)
   //                        );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   pixel32Alias = (uint16_t) inW1;
   pixel32Alias |= (inW1 << 16);
   
@@ -569,7 +587,7 @@ DUP_16BPP:
   pixel32Saved = pixel32Alias;
 #endif // EXTRA_CHECKS
   
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(pixel32Alias == pixel32Saved, "pixel32Saved");
@@ -586,7 +604,7 @@ DUP_16BPP:
   prevInputBuffer32 = inputBuffer32;
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         // inW1 = *inputBuffer32++
                         "ldr %[inW1], [%[inputBuffer32]], #4\n\t"
@@ -596,7 +614,7 @@ DUP_16BPP:
                         );
 #else
   inW1 = *inputBuffer32++;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   inW1Saved = inW1;
@@ -612,12 +630,12 @@ DUP_16BPP:
   MAXVID_ASSERT(numWords > 0, "numWords");
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ if (numWords > 6) goto DUPBIG_16BPP\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   if (numWords > 6) {
     goto DUPBIG_16BPP;
@@ -652,7 +670,7 @@ DUP_16BPP:
   }
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[wr2], %[wr1]\n\t"
                         "mov %[wr3], %[wr1]\n\t"
@@ -673,7 +691,7 @@ DUP_16BPP:
                         [wr2] "+l" (WR2),
                         [wr3] "+l" (WR3)
                         );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   {
     if (numWords >= 3) {
       *((uint32_t*)frameBuffer16) = pixel32Alias;
@@ -692,7 +710,7 @@ DUP_16BPP:
       frameBuffer16 += (1 * 2);
     }
   }
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
@@ -704,7 +722,7 @@ DUP_16BPP:
   
   // Emit trailing single pixel, if needed
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
@@ -721,7 +739,7 @@ DUP_16BPP:
                         [numPixels] "+l" (numPixels),
                         [pixel32] "+l" (pixel32Alias)
                         );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   // By default, gcc would emit a conditional branch backwards,
   // then the half word assign followed by an unconditional
   // branch backwards. Putting the NOP asm in makes gcc
@@ -734,7 +752,7 @@ DUP_16BPP:
     *frameBuffer16++ = pixel32Alias;
   }
   ASM_NOP
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
@@ -749,7 +767,7 @@ DUP_16BPP:
   
   // Regen constants in registers (not needed in small DUP case)
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
 //   __asm__ __volatile__ (
 //   "mov %[constReg3], #2\n\t"
 //   "mvn %[constReg2], #0xC000\n\t"
@@ -765,17 +783,17 @@ DUP_16BPP:
   MAXVID_ASSERT(dupTwoPixelsHighHalfWordConstRegister == dupTwoPixelsHighHalfWord, "dupTwoPixelsHighHalfWordConstRegister");
   MAXVID_ASSERT(extractNumPixelsHighHalfWordConstRegister == ((0xFFFF << 16) | extractNumPixelsHighHalfWord), "extractNumPixelsHighHalfConstRegister");
 #endif // EXTRA_CHECKS
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ fall through to DECODE\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 DECODE_16BPP:
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   // These checks are done before the read, after the DECODE_16BPP label
   
 #ifdef EXTRA_CHECKS
@@ -830,7 +848,7 @@ DECODE_16BPP:
   MAXVID_ASSERT(copyOnePixelHighHalfWordConstRegister == copyOnePixelHighHalfWord, "copyOnePixelHighHalfWordConstRegister");
 #endif // EXTRA_CHECKS
   
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
@@ -953,7 +971,7 @@ DECODE_16BPP:
     
     goto DECODE_16BPP;
   }
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
@@ -969,7 +987,7 @@ DECODE_16BPP:
     MAXVID_ASSERT((((inW1 >> 16) & extractNumPixelsHighHalfWord) != 1), "DUP2 numPixels");
     MAXVID_ASSERT((((inW1 >> 16) & extractNumPixelsHighHalfWord) != 2), "DUP2 numPixels");
   }  
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
@@ -982,7 +1000,7 @@ DECODE_16BPP:
   MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
 #endif // EXTRA_CHECKS
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   __asm__ __volatile__ (
                         "and %[numPixels], %[extractNumPixelsHighHalfWordConstRegister], %[inW1], lsr #16\n\t"
                         :
@@ -991,9 +1009,9 @@ DECODE_16BPP:
                         [inW1] "l" (inW1),
                         [extractNumPixelsHighHalfWordConstRegister] "l" (extractNumPixelsHighHalfWordConstRegister)
                         );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   numPixels = (inW1 >> 16) & extractNumPixelsHighHalfWord;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   numPixelsSaved = numPixels;
@@ -1004,7 +1022,7 @@ DECODE_16BPP:
   }
 #endif
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   // GCC emits a phantom assign to "r11" when compiling the C code.
   // This weird empty asm statement keeps GCC from doing that.
   
@@ -1013,14 +1031,14 @@ DECODE_16BPP:
                         : \
                         [opCode] "+l" (opCode)
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
 
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ if (opCode == DUP) goto DUP_16BPP\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   if (opCode == DUP) {
     // COPY
@@ -1035,7 +1053,7 @@ DECODE_16BPP:
   MAXVID_ASSERT(opCode == opCodeSaved, "opCodeSaved");
 #endif // EXTRA_CHECKS
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   // GCC emits a phantom assign to "r11" when compiling the C code.
   // This weird empty asm statement keeps GCC from doing that.
   
@@ -1044,13 +1062,13 @@ DECODE_16BPP:
                         : \
                         [opCode] "+l" (opCode)
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   __asm__ __volatile__ (
                         "@ if (opCode == DONE) goto DONE_16BPP\n\t"
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   if (opCode == DONE) {
 #ifdef EXTRA_CHECKS
@@ -1062,11 +1080,11 @@ DECODE_16BPP:
   
   // COPY operation, generic code for either big or small copy
 
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   __asm__ __volatile__ (
                         "@ COPY 16BPP\n\t"
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
 
   // Word align the framebuffer, if needed.
   // Note that the special COPY case where numPixels = 1 was handled already.
@@ -1097,7 +1115,7 @@ DECODE_16BPP:
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
 #endif // EXTRA_CHECKS
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ align32\n\t"
                         "tst %[frameBuffer16], #3\n\t"
@@ -1109,13 +1127,13 @@ DECODE_16BPP:
                         :
                         [inW1] "l" (inW1)
                         );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   if (UINTMOD(frameBuffer16, 4) != 0) {
     // Framebuffer is half word aligned, write 16 bit pixel in the low half word
     *frameBuffer16++ = inW1;
     numPixels--;
   }
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   numPixelsSaved = numPixels;
@@ -1143,7 +1161,7 @@ DECODE_16BPP:
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
 #endif
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   __asm__ __volatile__ (
                         "@ numWords\n\t"
                         "mov %[numWords], %[numPixels], lsr #1\n\t"
@@ -1152,10 +1170,10 @@ DECODE_16BPP:
                         :
                         [numPixels] "l" (numPixels)
                         );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   // Note that the inline ASM above is needed to avoid stack use in conditional case
   numWords = (numPixels >> 1);
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   numWordsSaved = numWords;
@@ -1172,11 +1190,11 @@ DECODE_16BPP:
   // Branch to big copy handler if larger than cutoff size,
   // otherwise fall through to most optimal small copy instructions.
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   __asm__ __volatile__ (
                         "@ if (numWords > 7) goto COPYBIG_16BPP\n\t"
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   if (numPixels >= (8*2)) {
 #ifdef EXTRA_CHECKS
@@ -1195,11 +1213,11 @@ DECODE_16BPP:
 COPYSMALL_16BPP:
   {}
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ COPYSMALL_16BPP\n\t"
                         );
-#endif //  COMPILE_ARM_ASM
+#endif //  USE_INLINE_ARM_ASM
   
   // Word align the framebuffer, if needed.
   // Note that the special case where COPY and numPixels = 1 was handled already.
@@ -1250,7 +1268,7 @@ COPYSMALL_16BPP:
 
   // Execute small copy logic for 7 words or less (14 pixels)
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "cmp %[numWords], #3\n\t"
                         "ldmgtia %[inWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4]}\n\t"
@@ -1273,11 +1291,11 @@ COPYSMALL_16BPP:
                         [wr4] "+l" (WR4)
                         );
 
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   memcpy(frameBuffer16, inputBuffer32, numWords << 2);
   frameBuffer16 += numWords << 1;
   inputBuffer32 += numWords;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 == expectedCOPYSmallPost8FrameBuffer16, "COPY post word8 framebuffer");
@@ -1295,7 +1313,7 @@ COPYSMALL_16BPP:
   // WTF? GCC bug is emitting a load but it misses the incr in debug mode.
   // This looks like a compiler bug in ARM mode that should be reported.
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         // if (numPixels & 0x1)
                         "tst %[numPixels], #0x1\n\t"
@@ -1314,7 +1332,7 @@ COPYSMALL_16BPP:
     WR4 = *inputBuffer32++;
     *frameBuffer16++ = WR4;
   }
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   if (numPixels & 0x1) {
@@ -1339,7 +1357,7 @@ COPYSMALL_16BPP:
   prevInputBuffer32 = inputBuffer32;
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         // inW1 = *inputBuffer32++
                         "ldr %[inW1], [%[inputBuffer32]], #4\n\t"
@@ -1349,7 +1367,7 @@ COPYSMALL_16BPP:
                         );
 #else
   inW1 = *inputBuffer32++;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   inW1Saved = inW1;
@@ -1358,7 +1376,7 @@ COPYSMALL_16BPP:
   
   // Regen constants in registers
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   /*
   __asm__ __volatile__ (
                         "mov %[constReg3], #2\n\t"
@@ -1376,14 +1394,14 @@ COPYSMALL_16BPP:
   MAXVID_ASSERT(dupTwoPixelsHighHalfWordConstRegister == dupTwoPixelsHighHalfWord, "dupTwoPixelsHighHalfWordConstRegister");
   MAXVID_ASSERT(extractNumPixelsHighHalfWordConstRegister == ((0xFFFF << 16) | extractNumPixelsHighHalfWord), "extractNumPixelsHighHalfConstRegister");
 #endif // EXTRA_CHECKS
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ goto DECODE_16BPP\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   goto DECODE_16BPP;
   
@@ -1392,11 +1410,11 @@ COPYBIG_16BPP:
   
   // COPYBIG_16BPP
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ COPYBIG_16BPP\n\t"
                         );
-#endif //  COMPILE_ARM_ASM
+#endif //  USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
@@ -1441,7 +1459,7 @@ COPYBIG_16BPP:
   MAXVID_ASSERT(expectedCOPYBigPost8InputBuffer32 == (((uint32_t *) inputBuffer32) + numWords), "expected pointers");
 #endif
 
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   // GCC emits a phantom assign to "r11" when compiling the C code.
   // This weird empty asm statement keeps GCC from doing that.
   
@@ -1450,7 +1468,7 @@ COPYBIG_16BPP:
                         : \
                         [numWords] "+l" (numWords)
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   if (numWords >= 32) {
     // 16 word copy loop will be run more than 1 time, so align to 8 word cache line
@@ -1479,7 +1497,7 @@ COPYBIG_16BPP:
     MAXVID_ASSERT(UINTMOD(expectedPostAlignInputBuffer32, BOUNDSIZE) == 0, "input ptr should be at bound");
 #endif
     
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
     __asm__ __volatile__ (
                           "sub %[numWords], %[numWords], %[TMP]\n\t"
                           "cmp %[TMP], #1\n\t"
@@ -1514,7 +1532,7 @@ COPYBIG_16BPP:
       *((uint32_t*)frameBuffer16) = WR3;
       frameBuffer16 += 1 * sizeof(uint16_t);
     }
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
     
 #ifdef EXTRA_CHECKS
     MAXVID_ASSERT(WR5 == 0 || WR5 == 1, "WR5");
@@ -1529,7 +1547,7 @@ COPYBIG_16BPP:
 
   // Big write loop, use stm to read and write 8 words at a time, 16 words in each loop
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
 
   if (numWords >= 16) {
     __asm__ __volatile__ (
@@ -1592,11 +1610,11 @@ COPYBIG_16BPP:
                         [wr7] "+l" (WR7),
                         [wr8] "+l" (WR8)
                         );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   memcpy(frameBuffer16, inputBuffer32, numWords << 2);
   frameBuffer16 += numWords << 1;
   inputBuffer32 += numWords;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
     
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 word alignment");
@@ -1615,7 +1633,7 @@ COPYBIG_16BPP:
   
   // Write 1 more pixel in the case where copyNumPixels is odd
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   // WTF? GCC bug is emitting a load but it misses the incr in debug mode.
   // This looks like a compiler bug in ARM mode that should be reported.
   
@@ -1637,7 +1655,7 @@ COPYBIG_16BPP:
     WR4 = *inputBuffer32++;
     *frameBuffer16++ = WR4;
   }
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   if (numPixels & 0x1) {
@@ -1662,7 +1680,7 @@ COPYBIG_16BPP:
   MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         // inW1 = *inputBuffer32++
                         "ldr %[inW1], [%[inputBuffer32]], #4\n\t"
@@ -1672,7 +1690,7 @@ COPYBIG_16BPP:
                         );
 #else
   inW1 = *inputBuffer32++;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   inW1Saved = inW1;
@@ -1681,7 +1699,7 @@ COPYBIG_16BPP:
   
   // Regen constants in registers
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[constReg3], #2\n\t"
                         "mvn %[constReg2], #0xC000\n\t"
@@ -1697,14 +1715,14 @@ COPYBIG_16BPP:
   MAXVID_ASSERT(dupTwoPixelsHighHalfWordConstRegister == dupTwoPixelsHighHalfWord, "dupTwoPixelsHighHalfWordConstRegister");
   MAXVID_ASSERT(extractNumPixelsHighHalfWordConstRegister == ((0xFFFF << 16) | extractNumPixelsHighHalfWord), "extractNumPixelsHighHalfConstRegister");
 #endif // EXTRA_CHECKS
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ goto DECODE_16BPP\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   goto DECODE_16BPP;
   
@@ -1713,11 +1731,11 @@ DUPBIG_16BPP:
   {
   }
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   __asm__ __volatile__ (
                         "@ DUPBIG_16BPP\n\t"
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   // DUPBIG_16BPP is jumped to when there are more than 6 words (12 pixels) in a DUP operation.
   // The optimal implementation is filling 8 words at a time. Note that the framebuffer
@@ -1784,7 +1802,7 @@ DUPBIG_16BPP:
   MAXVID_ASSERT(numWords == numWordsSaved, "numWordsSaved");
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[wr2], %[wr1]\n\t"
                         "mov %[wr3], %[wr1]\n\t"
@@ -1818,14 +1836,14 @@ DUPBIG_16BPP:
                         [wr7] "+l" (WR7),
                         [wr8] "+l" (WR8)
                         );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   {
     uint32_t inWordPtr = pixel32Alias;
     memset_pattern4(frameBuffer16, &inWordPtr, (numPixels >> 1) * sizeof(uint32_t));
     frameBuffer16 += (numPixels >> 1) * 2;
   }
   numWords -= (numPixels >> 1);
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
@@ -1837,7 +1855,7 @@ DUPBIG_16BPP:
   
   // Emit trailing single pixel, if needed
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
@@ -1855,7 +1873,7 @@ DUPBIG_16BPP:
                         [numPixels] "+l" (numPixels),
                         [pixel32] "+l" (pixel32Alias)
                         );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   // By default, gcc would emit a conditional branch backwards,
   // then the half word assign followed by an unconditional
   // branch backwards. Putting the NOP asm in makes gcc
@@ -1869,7 +1887,7 @@ DUPBIG_16BPP:
     *frameBuffer16++ = pixel32Alias;
   }
   ASM_NOP
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
@@ -1889,7 +1907,7 @@ DUPBIG_16BPP:
   
   // Regen constants in registers
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[constReg3], #2\n\t"
                         "mvn %[constReg2], #0xC000\n\t"
@@ -1905,25 +1923,25 @@ DUPBIG_16BPP:
   MAXVID_ASSERT(dupTwoPixelsHighHalfWordConstRegister == dupTwoPixelsHighHalfWord, "dupTwoPixelsHighHalfWordConstRegister");
   MAXVID_ASSERT(extractNumPixelsHighHalfWordConstRegister == ((0xFFFF << 16) | extractNumPixelsHighHalfWord), "extractNumPixelsHighHalfConstRegister");
 #endif // EXTRA_CHECKS
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #undef pixel32Alias
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ goto DECODE_16BPP\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   goto DECODE_16BPP;
   
 DONE_16BPP:
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ DONE_16BPP\n\t"
                         );
-#endif //  COMPILE_ARM_ASM
+#endif //  USE_INLINE_ARM_ASM
   
 #if defined(EXTRA_CHECKS)
   MAXVID_ASSERT(frameBuffer16 == frameBuffer16Max, "must be at end of framebuffer");
@@ -1958,7 +1976,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
 #define opCodeMask 0x3
 #define oneConstWord 0x1
   
-#if 1 && defined(COMPILE_ARM_ASM)
+#if 1 && defined(USE_INLINE_ARM_ASM)
   register uint32_t * restrict inputBuffer32 __asm__ ("r9") = (uint32_t * restrict) inputBuffer32Arg;
   register uint32_t * restrict frameBuffer32 __asm__ ("r10") = frameBuffer32Arg;
   
@@ -2032,7 +2050,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
   MAXVID_ASSERT(inW2 == 0, "inW2");
 #endif
   
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   register uint32_t * restrict inputBuffer32 = (uint32_t * restrict) inputBuffer32Arg;
   register uint32_t * restrict frameBuffer32 = frameBuffer32Arg;
   register uint32_t inW1 = 0;
@@ -2047,7 +2065,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
   register uint32_t WR5;
   uint32_t oneConstRegister = 1;
   if (0) { oneConstRegister += 0; } // silence warning
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(getpagesize() == MV_PAGESIZE, "pagesize");
@@ -2098,7 +2116,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
   MAXVID_ASSERT((inputBuffer32 + 1) < inputBuffer32Max, "inputBuffer32Max");
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         // inW1 = *inputBuffer32++
                         // inW2 = *inputBuffer32++
@@ -2111,7 +2129,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
 #else
   inW1 = *inputBuffer32++;
   inW2 = *inputBuffer32++;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   inW1Saved = inW1;
@@ -2121,7 +2139,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
   
   // Init constants in registers
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[oneReg], %[oneConst]\n\t"
                         "mov %[copyOneReg], %[copyOneConst]\n\t"
@@ -2145,14 +2163,14 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
   MAXVID_ASSERT(dupTwoConstRegister == dupTwoPixelsWord, "dupTwoConstRegister");
   MAXVID_ASSERT(opCodeMaskConstRegister == opCodeMask, "opCodeMaskConstRegister");
 #endif // EXTRA_CHECKS
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ goto DECODE_32BPP\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   goto DECODE_32BPP;
   
@@ -2161,13 +2179,13 @@ DUP_32BPP:
   {
   }
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   __asm__ __volatile__ (
                         "@ DUP\n\t"
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   // Set numPixels in DUP case, it was defered from DECODE_32BPP logic
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
@@ -2182,7 +2200,7 @@ DUP_32BPP:
   numPixelsSaved = numPixels;
   MAXVID_ASSERT(numPixels >= 1, "COPY numPixels");
 #endif // EXTRA_CHECKS
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
@@ -2209,16 +2227,16 @@ DUP_32BPP:
   MAXVID_ASSERT(inW2 == inW2Saved, "inW2Saved");
 #endif // EXTRA_CHECKS
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[wr1], %[inW2]\n\t"
                         :
                         [wr1] "+l" (WR1),
                         [inW2] "+l" (inW2)
                         );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   WR1 = inW2;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   WR1Saved = WR1;
@@ -2239,7 +2257,7 @@ DUP_32BPP:
   MAXVID_ASSERT((inputBuffer32 + 1) < inputBuffer32Max, "inputBuffer32Max");
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         // inW1 = *inputBuffer32++
                         // inW2 = *inputBuffer32++
@@ -2252,7 +2270,7 @@ DUP_32BPP:
 #else
   inW1 = *inputBuffer32++;
   inW2 = *inputBuffer32++;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   inW1Saved = inW1;
@@ -2268,12 +2286,12 @@ DUP_32BPP:
   MAXVID_ASSERT(numPixels > 0, "numPixels");
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ if (numWords > 6) goto DUPBIG_32BPP\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   if (numPixels > 6) {
     goto DUPBIG_32BPP;
@@ -2298,7 +2316,7 @@ DUP_32BPP:
   MAXVID_ASSERT(WR1 == WR1Saved, "WR1Saved");
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[wr2], %[wr1]\n\t"
                         "mov %[wr3], %[wr1]\n\t"
@@ -2319,7 +2337,7 @@ DUP_32BPP:
                         [wr2] "+l" (WR2),
                         [wr3] "+l" (WR3)
                         );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   {
     if (numPixels >= 3) {
       *(frameBuffer32 + 0) = WR1;
@@ -2338,7 +2356,7 @@ DUP_32BPP:
       frameBuffer32 += 1;
     }
   }
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
@@ -2361,21 +2379,21 @@ DUP_32BPP:
   MAXVID_ASSERT(inW2 == inW2Saved, "inW2Saved");
 #endif // EXTRA_CHECKS
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(oneConstRegister == oneConstWord, "oneConstRegister");
   MAXVID_ASSERT(copyOneConstRegister == copyOnePixelWord, "copyOneConstRegister");
   MAXVID_ASSERT(dupTwoConstRegister == dupTwoPixelsWord, "dupTwoConstRegister");
   MAXVID_ASSERT(opCodeMaskConstRegister == opCodeMask, "opCodeMaskConstRegister");
 #endif // EXTRA_CHECKS
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ fall through to DECODE\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 DECODE_32BPP:
 #ifdef EXTRA_CHECKS
@@ -2385,7 +2403,7 @@ DECODE_32BPP:
   MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
 #endif
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   // These checks are done before the read, after the DECODE label
   
 #ifdef EXTRA_CHECKS
@@ -2459,7 +2477,7 @@ DECODE_32BPP:
   MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
 #endif // EXTRA_CHECKS
   
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   
   // SKIP after (advances the framebuffer if non-zero, no-op when skipAfter is zero)
   
@@ -2634,7 +2652,7 @@ DECODE_32BPP:
   numPixelsSaved = numPixels;
 #endif // EXTRA_CHECKS
   
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
@@ -2648,7 +2666,7 @@ DECODE_32BPP:
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
   MAXVID_ASSERT(inW2 == inW2Saved, "inW2Saved");
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
@@ -2657,7 +2675,7 @@ DECODE_32BPP:
   MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
 #endif
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   // GCC emits a phantom assign to "r11" when compiling the C code.
   // This weird empty asm statement keeps GCC from doing that.
   
@@ -2666,14 +2684,14 @@ DECODE_32BPP:
                         : \
                         [opCode] "+l" (opCode)
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ if (opCode == DUP) goto DUP_32BPP\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   if (opCode == DUP) {
     // DUP
@@ -2696,7 +2714,7 @@ DECODE_32BPP:
   MAXVID_ASSERT(opCode == opCodeSaved, "opCodeSaved");
 #endif // EXTRA_CHECKS
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   // GCC emits a phantom assign to "r11" when compiling the C code.
   // This weird empty asm statement keeps GCC from doing that.
   
@@ -2705,13 +2723,13 @@ DECODE_32BPP:
                         : \
                         [opCode] "+l" (opCode)
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   __asm__ __volatile__ (
                         "@ if (opCode == DONE) goto DONE_32BPP\n\t"
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   if (opCode == DONE) {
 #ifdef EXTRA_CHECKS
@@ -2726,11 +2744,11 @@ DECODE_32BPP:
   
   // COPY operation, generic code for either big or small copy
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   __asm__ __volatile__ (
                         "@ COPY 32BPP\n\t"
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   // Either a COPYBIG or COPYSMALL. In either case, inW2 contains
   // a pixel that needs to be copied to the framebuffer.
@@ -2750,7 +2768,7 @@ DECODE_32BPP:
   MAXVID_ASSERT(oneConstRegister == 1, "oneConstRegister");
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         // *frameBuffer32++ = inW2;
                         "str %[inW2], [%[frameBuffer32]], #4\n\t"
@@ -2774,7 +2792,7 @@ DECODE_32BPP:
   MAXVID_ASSERT(numPixels == (inW1 >> 10), "numPixels");
 #endif
   numPixels--;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   numPixelsSaved = numPixels;
@@ -2784,11 +2802,11 @@ DECODE_32BPP:
   // A COPYBIG loop must has more than 7 words to write
   // A COPYSMALL loops has 7 or fewer
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   __asm__ __volatile__ (
                         "@ if (numWords > 7) goto COPYBIG_32BPP\n\t"
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   if (numPixels > 7) {
     goto COPYBIG_32BPP;
@@ -2803,11 +2821,11 @@ DECODE_32BPP:
 COPYSMALL_32BPP:
   {}
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ COPYSMALL_32BPP\n\t"
                         );
-#endif //  COMPILE_ARM_ASM
+#endif //  USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
@@ -2847,7 +2865,7 @@ COPYSMALL_32BPP:
   MAXVID_ASSERT(numPixels < MV_MAX_22_BITS, "numPixels");
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   
   __asm__ __volatile__ (
                         "cmp %[numWords], #3\n\t"
@@ -2871,11 +2889,11 @@ COPYSMALL_32BPP:
                         [wr4] "+l" (WR4)
                         );
   
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   memcpy(frameBuffer32, inputBuffer32, numPixels << 2);
   frameBuffer32 += numPixels;
   inputBuffer32 += numPixels;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer32 == expectedCOPYSmallPost8FrameBuffer32, "COPY post word8 framebuffer");
@@ -2906,7 +2924,7 @@ COPYSMALL_32BPP:
   MAXVID_ASSERT((inputBuffer32 + 1) < inputBuffer32Max, "inputBuffer32Max");
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         // inW1 = *inputBuffer32++
                         // inW2 = *inputBuffer32++
@@ -2919,7 +2937,7 @@ COPYSMALL_32BPP:
 #else
   inW1 = *inputBuffer32++;
   inW2 = *inputBuffer32++;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   inW1Saved = inW1;
@@ -2929,7 +2947,7 @@ COPYSMALL_32BPP:
   
   // Regen constants in registers
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[oneReg], %[oneConst]\n\t"
                         //"mov %[copyOneReg], %[copyOneConst]\n\t"
@@ -2953,14 +2971,14 @@ COPYSMALL_32BPP:
   MAXVID_ASSERT(dupTwoConstRegister == dupTwoPixelsWord, "dupTwoConstRegister");
   MAXVID_ASSERT(opCodeMaskConstRegister == opCodeMask, "opCodeMaskConstRegister");
 #endif // EXTRA_CHECKS
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ goto DECODE_32BPP\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   goto DECODE_32BPP;
   
@@ -2969,11 +2987,11 @@ COPYBIG_32BPP:
   
   // COPYBIG_32BPP
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ COPYBIG_32BPP\n\t"
                         );
-#endif //  COMPILE_ARM_ASM
+#endif //  USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
@@ -3012,7 +3030,7 @@ COPYBIG_32BPP:
   MAXVID_ASSERT(inputBuffer32 < inputBuffer32Max, "inputBuffer32Max");
 #endif
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   // GCC emits a phantom assign to "r11" when compiling the C code.
   // This weird empty asm statement keeps GCC from doing that.
   
@@ -3021,7 +3039,7 @@ COPYBIG_32BPP:
                         : \
                         [numPixels] "+l" (numPixels)
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   if (numPixels >= 32) {
     // 16 word copy loop will be run more than 1 time, so align to 8 word cache line
@@ -3049,7 +3067,7 @@ COPYBIG_32BPP:
     uint32_t *expectedPostAlignInputBuffer32 = inputBuffer32 + WR5;
 #endif
     
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
     __asm__ __volatile__ (
                           "sub %[numPixels], %[numPixels], %[TMP]\n\t"
                           "cmp %[TMP], #1\n\t"
@@ -3083,7 +3101,7 @@ COPYBIG_32BPP:
       WR3 = *inputBuffer32++;
       *frameBuffer32++ = WR3;
     }
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
     
 #ifdef EXTRA_CHECKS
     MAXVID_ASSERT(WR5 == 0 || WR5 == 1, "WR5");
@@ -3098,7 +3116,7 @@ COPYBIG_32BPP:
   
   // Big write loop, use stm to read and write 8 words at a time, 16 words in each loop
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   if (numPixels >= 16) {
     __asm__ __volatile__ (
                           "1:\n\t"
@@ -3167,11 +3185,11 @@ COPYBIG_32BPP:
                         [wr8] "+l" (WR8)
                         );
   
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   memcpy(frameBuffer32, inputBuffer32, numPixels << 2);
   frameBuffer32 += numPixels;
   inputBuffer32 += numPixels;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer32 == expectedCOPYBigPost8FrameBuffer32, "COPY post word8 framebuffer");
@@ -3197,7 +3215,7 @@ COPYBIG_32BPP:
   MAXVID_ASSERT((inputBuffer32 + 1) < inputBuffer32Max, "inputBuffer32Max");
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         // inW1 = *inputBuffer32++
                         // inW2 = *inputBuffer32++
@@ -3210,7 +3228,7 @@ COPYBIG_32BPP:
 #else
   inW1 = *inputBuffer32++;
   inW2 = *inputBuffer32++;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   inW1Saved = inW1;
@@ -3220,7 +3238,7 @@ COPYBIG_32BPP:
   
   // Regen constants in registers
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[oneReg], %[oneConst]\n\t"
                         "mov %[copyOneReg], %[copyOneConst]\n\t"
@@ -3244,14 +3262,14 @@ COPYBIG_32BPP:
   MAXVID_ASSERT(dupTwoConstRegister == dupTwoPixelsWord, "dupTwoConstRegister");
   MAXVID_ASSERT(opCodeMaskConstRegister == opCodeMask, "opCodeMaskConstRegister");
 #endif // EXTRA_CHECKS
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ goto DECODE_32BPP\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   goto DECODE_32BPP;
   
@@ -3260,11 +3278,11 @@ DUPBIG_32BPP:
   {
   }
   
-#ifdef COMPILE_ARM_ASM
+#ifdef USE_INLINE_ARM_ASM
   __asm__ __volatile__ (
                         "@ DUPBIG_32BPP\n\t"
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   // DUPBIG is jumped to when there are more than 6 words/pixels in a DUP operation.
   // The optimal implementation is filling 8 words at a time. DUP2 was already handled.
@@ -3296,7 +3314,7 @@ DUPBIG_32BPP:
   // Save inW1 as inW2 since inW2 is not clobbered by the word8 loop. Later, reset inW1 and reread inW2.
   // This should be slightly faster since reads will not get out of order.
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[inW2], %[inW1]\n\t"
                         :
@@ -3326,7 +3344,7 @@ DUPBIG_32BPP:
   MAXVID_ASSERT(WR1 == WR1Saved, "WR1Saved");
 #endif
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[wr2], %[wr1]\n\t"
                         "mov %[wr3], %[wr1]\n\t"
@@ -3360,14 +3378,14 @@ DUPBIG_32BPP:
                         [wr7] "+l" (WR7),
                         [wr8] "+l" (WR8)
                         );
-#else // COMPILE_ARM_ASM
+#else // USE_INLINE_ARM_ASM
   {
     uint32_t inWordPtr = WR1;
     memset_pattern4(frameBuffer32, &inWordPtr, numPixels * sizeof(uint32_t));
     frameBuffer32 += numPixels;
   }
   numPixels -= numPixels;
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
@@ -3398,7 +3416,7 @@ DUPBIG_32BPP:
   // Reset inW1 and reread the previous inW2 value after the word8 loop is finished. This logic
   // ensures that reads are not getting out of order.
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         // inW1 = inW2;
                         // inW2 = *(inputBuffer32 - 1);
@@ -3412,7 +3430,7 @@ DUPBIG_32BPP:
 #else
   inW1 = inW2;
   inW2 = *(inputBuffer32 - 1);
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
@@ -3427,7 +3445,7 @@ DUPBIG_32BPP:
   
   // Regen constants in registers
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[oneReg], %[oneConst]\n\t"
                         "mov %[copyOneReg], %[copyOneConst]\n\t"
@@ -3451,23 +3469,23 @@ DUPBIG_32BPP:
   MAXVID_ASSERT(dupTwoConstRegister == dupTwoPixelsWord, "dupTwoConstRegister");
   MAXVID_ASSERT(opCodeMaskConstRegister == opCodeMask, "opCodeMaskConstRegister");
 #endif // EXTRA_CHECKS
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ goto DECODE_32BPP\n\t"
                         :
                         );
-#endif // COMPILE_ARM_ASM
+#endif // USE_INLINE_ARM_ASM
   
   goto DECODE_32BPP;
   
 DONE_32BPP:
-#if defined(COMPILE_ARM_ASM)
+#if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "@ DONE_32BPP\n\t"
                         );
-#endif //  COMPILE_ARM_ASM
+#endif //  USE_INLINE_ARM_ASM
   
 #if defined(EXTRA_CHECKS)
   MAXVID_ASSERT(inputBuffer32 == inputBuffer32Max, "must be at end of input");

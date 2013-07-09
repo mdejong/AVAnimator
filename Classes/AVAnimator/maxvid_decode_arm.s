@@ -42,6 +42,23 @@
 # endif
 #endif
 
+// This inline asm flag would only be used if USE_GENERATED_ARM_ASM was not defined
+
+#if defined(COMPILE_ARM)
+# define USE_INLINE_ARM_ASM 1
+#endif
+
+// It is possible one might want to actually compile the C code on an
+// ARM system and simply not use the inline ASM blocks and let the
+// compiler generate ARM code automatically. Set the argument
+// value for this if to 1 to enable build on ARM without inline ASM.
+
+#if 0 && defined(USE_GENERATED_ARM_ASM)
+#undef USE_GENERATED_ARM_ASM
+#undef USE_INLINE_ARM_ASM
+#endif
+
+
 #if defined(USE_GENERATED_ARM_ASM)
 	.section __TEXT,__text,regular
 	.section __TEXT,__textcoal_nt,coalesced
