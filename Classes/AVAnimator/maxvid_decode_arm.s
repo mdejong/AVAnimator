@@ -87,7 +87,7 @@ _maxvid_decode_c4_sample16:
 	ldr r8, [r9], #4
 	
 	@ goto DECODE_16BPP
-	
+
 	b	L19
 L3:
 	@ DUP_16BPP
@@ -102,7 +102,8 @@ L3:
 	ldr r8, [r9], #4
 	
 	@ if (numWords > 6) goto DUPBIG_16BPP
-	
+
+	@ DUPSMALL_16BPP
 	cmp	lr, #6
 	bhi	L4
 	mov r1, r0
@@ -262,8 +263,13 @@ L13:
 	b	L19
 L4:
 	@ DUPBIG_16BPP
-	
+
+	// align64 scheduled with r1 init
+	tst r10, #7
 	mov r1, r0
+	subne lr, lr, #1
+	strne r0, [r10], #4
+
 	mov r2, r0
 	mov r3, r0
 	mov r4, r0
@@ -288,6 +294,8 @@ L4:
 	strneh r0, [r10], #2
 	
 	ldr	r8, [r9, #-4]
+
+  // FIXME: schedule constants in between cmp ops
 	mov r5, #2
 	mvn r4, #0xC000
 	orr r5, r5, r11, lsr #1
@@ -341,7 +349,8 @@ L23:
 	ldmia r9!, {r8, lr}
 	
 	@ if (numWords > 6) goto DUPBIG_32BPP
-	
+
+	@ DUPSMALL_32BPP
 	cmp	ip, #6
 	bhi	L24
 	mov r1, r0
@@ -484,8 +493,12 @@ L33:
 L24:
 	@ DUPBIG_32BPP
 	
+	// align64 scheduled with inW1 save
+	tst r10, #7
 	mov lr, r8
-	
+	subne ip, ip, #1
+	strne r0, [r10], #4
+
 	mov r1, r0
 	mov r2, r0
 	mov r3, r0
@@ -509,7 +522,8 @@ L24:
 	
 	mov r8, lr
 	ldr lr, [r9, #-4]
-	
+
+  // FIXME: schedule constants in between cmp ops
 	mov r3, #1
 	mov r4, #6
 	mov r5, #9

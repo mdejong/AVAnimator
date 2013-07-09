@@ -535,7 +535,7 @@ DUP_16BPP:
   
   // numWords is numPixels/2, counts down to zero in the word8 loop.
   // num is a 14 bit number that indicates the number of pixels to copy.
-  // This logic must appear after the framebuffer has been aligned
+  // This logic must appear after the framebuffer has been word aligned
   // since that logic can decrement the numPixels by 1 in the
   // unaligned case.
   
@@ -640,6 +640,12 @@ DUP_16BPP:
   if (numWords > 6) {
     goto DUPBIG_16BPP;
   }
+  
+#if defined(USE_INLINE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ DUPSMALL_16BPP\n\t"
+                        );
+#endif //  USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numWords == numWordsSaved, "numWordsSaved");
@@ -1802,6 +1808,53 @@ DUPBIG_16BPP:
   MAXVID_ASSERT(numWords == numWordsSaved, "numWordsSaved");
 #endif
   
+// START align64 block
+  
+  // Earlier code has already aligned the output pointer to 32bits, now align to 64bits
+  // so that writing 8 words starts out already aligned.
+  
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(((frameBuffer16 - inframeBuffer16) < frameBufferSize), "dword align: already past end of framebuffer");
+  MAXVID_ASSERT(numWords >= 7, "dword align: numWords");
+#endif // EXTRA_CHECKS
+  
+#if defined(USE_INLINE_ARM_ASM)
+  __asm__ __volatile__ (
+                        // if (UINTMOD(frameBuffer16, sizeof(uint64_t)) != 0)
+                        "tst %[frameBuffer16], #7\n\t"
+                        // numWords -= 1;
+                        "subne %[numWords], %[numWords], #1\n\t"
+                        // *((uint32_t*)frameBuffer16) = WR1; (also adds 4 bytes to ptr)
+                        "strne %[TMP], [%[frameBuffer16]], #4\n\t"
+                        :
+                        [numWords] "+l" (numWords),
+                        [TMP] "+l" (pixel32Alias),
+                        [inputBuffer32] "+l" (inputBuffer32),
+                        [frameBuffer16] "+l" (frameBuffer16)
+                        );
+#else // USE_INLINE_ARM_ASM
+  
+  if (UINTMOD(frameBuffer16, sizeof(uint64_t)) != 0) {
+    // Framebuffer is word aligned, read/write a word (2 pixels) to dword align.
+    
+    *((uint32_t*)frameBuffer16) = pixel32Alias;
+    frameBuffer16 += 2;
+    numWords -= 1;
+  }
+  
+#endif //USE_INLINE_ARM_ASM
+
+#ifdef EXTRA_CHECKS
+  // The min numwords was 7, now could be >= 6
+  MAXVID_ASSERT(numWords >= 6, "dword align: numWords");
+  MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint64_t)) == 0, "frameBuffer16 dword alignment");
+#endif // EXTRA_CHECKS
+  
+// END align64 block
+  
+  // Dup big 8 word loop
+  
 #if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[wr2], %[wr1]\n\t"
@@ -1839,15 +1892,17 @@ DUPBIG_16BPP:
 #else // USE_INLINE_ARM_ASM
   {
     uint32_t inWordPtr = pixel32Alias;
-    memset_pattern4(frameBuffer16, &inWordPtr, (numPixels >> 1) * sizeof(uint32_t));
-    frameBuffer16 += (numPixels >> 1) * 2;
+    memset_pattern4(frameBuffer16, &inWordPtr, numWords << 2);
+    frameBuffer16 += numWords << 1;
+#ifdef EXTRA_CHECKS
+    numWords = 0;
+#endif
   }
-  numWords -= (numPixels >> 1);
 #endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
-  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 word alignment");
   
   MAXVID_ASSERT(frameBuffer16 == expectedDUPBigPost8FrameBuffer16, "frameBuffer16 post8");
   MAXVID_ASSERT(numWords >= 0 && numWords <= 3, "numWords");
@@ -2296,6 +2351,12 @@ DUP_32BPP:
   if (numPixels > 6) {
     goto DUPBIG_32BPP;
   }
+  
+#if defined(USE_INLINE_ARM_ASM)
+  __asm__ __volatile__ (
+                        "@ DUPSMALL_32BPP\n\t"
+                        );
+#endif //  USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
@@ -3308,7 +3369,7 @@ DUPBIG_32BPP:
   // numPixels is a 22 bit number
   MAXVID_ASSERT(numPixels > 2, "numPixels");
   MAXVID_ASSERT(numPixels <= MV_MAX_22_BITS, "numPixels");
-  MAXVID_ASSERT(numPixels > 6, "numPixels");
+  MAXVID_ASSERT(numPixels >= 7, "numPixels");
 #endif
   
   // Save inW1 as inW2 since inW2 is not clobbered by the word8 loop. Later, reset inW1 and reread inW2.
@@ -3343,6 +3404,52 @@ DUPBIG_32BPP:
   
   MAXVID_ASSERT(WR1 == WR1Saved, "WR1Saved");
 #endif
+  
+// START align64 block
+  
+  // Earlier code has already aligned the output pointer to 32bits, now align to 64bits
+  // so that writing 8 words starts out already aligned.
+  
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(((frameBuffer32 - inframeBuffer32) <= frameBufferSize), "dword align: already past end of framebuffer");
+  MAXVID_ASSERT(numPixels >= 7, "dword align: numPixels");
+#endif // EXTRA_CHECKS
+  
+#if defined(USE_INLINE_ARM_ASM)
+  __asm__ __volatile__ (
+                        // if (UINTMOD(frameBuffer32, sizeof(uint64_t)) != 0)
+                        "tst %[frameBuffer32], #7\n\t"
+                        // numWords -= 1;
+                        "subne %[numPixels], %[numPixels], #1\n\t"
+                        // *frameBuffer32++ = WR1;
+                        "strne %[TMP], [%[frameBuffer32]], #4\n\t"
+                        :
+                        [numPixels] "+l" (numPixels),
+                        [TMP] "+l" (WR1),
+                        [inputBuffer32] "+l" (inputBuffer32),
+                        [frameBuffer32] "+l" (frameBuffer32)
+                        );
+#else // USE_INLINE_ARM_ASM
+  
+  if (UINTMOD(frameBuffer32, sizeof(uint64_t)) != 0) {
+    // Framebuffer is word aligned, read/write a word (1 pixel) to dword align.
+    
+    *frameBuffer32++ = WR1;
+    numPixels -= 1;
+  }
+  
+#endif //USE_INLINE_ARM_ASM
+  
+#ifdef EXTRA_CHECKS
+  // The min numwords was 7, now could be >= 6
+  MAXVID_ASSERT(numPixels >= 6, "dword align: numWords");
+  MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint64_t)) == 0, "frameBuffer32 dword alignment");
+#endif // EXTRA_CHECKS
+  
+// END align64 block
+  
+  // Dup big 8 word loop
   
 #if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
@@ -3381,10 +3488,12 @@ DUPBIG_32BPP:
 #else // USE_INLINE_ARM_ASM
   {
     uint32_t inWordPtr = WR1;
-    memset_pattern4(frameBuffer32, &inWordPtr, numPixels * sizeof(uint32_t));
+    memset_pattern4(frameBuffer32, &inWordPtr, numPixels << 2);
     frameBuffer32 += numPixels;
+#ifdef EXTRA_CHECKS
+    numPixels = 0;
+#endif
   }
-  numPixels -= numPixels;
 #endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
