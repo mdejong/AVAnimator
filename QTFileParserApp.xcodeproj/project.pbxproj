@@ -16,9 +16,9 @@
 		CD0ACF29136F927300A203DF /* AV7zApng2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD0ACF28136F927300A203DF /* AV7zApng2MvidResourceLoader.m */; };
 		CD0ACF2A136F927300A203DF /* AV7zApng2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD0ACF28136F927300A203DF /* AV7zApng2MvidResourceLoader.m */; };
 		CD0ACFA8136F999100A203DF /* 2x2_black_blue_24BPP_opt_nc.apng.7z in Resources */ = {isa = PBXBuildFile; fileRef = CD0ACFA7136F999100A203DF /* 2x2_black_blue_24BPP_opt_nc.apng.7z */; };
-		CD0BD03C1363523800D8287A /* maxvid_decode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0341363523800D8287A /* maxvid_decode.c */; settings = {COMPILER_FLAGS = "-Qunused-arguments -mno-thumb"; }; };
+		CD0BD03C1363523800D8287A /* maxvid_decode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0341363523800D8287A /* maxvid_decode.c */; settings = {COMPILER_FLAGS = "-Qunused-arguments -mno-thumb -no-integrated-as"; }; };
 		CD0BD03E1363523800D8287A /* maxvid_file.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0381363523800D8287A /* maxvid_file.c */; };
-		CD0BD0401363523800D8287A /* maxvid_decode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0341363523800D8287A /* maxvid_decode.c */; settings = {COMPILER_FLAGS = "-Qunused-arguments -mno-thumb"; }; };
+		CD0BD0401363523800D8287A /* maxvid_decode.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0341363523800D8287A /* maxvid_decode.c */; settings = {COMPILER_FLAGS = "-Qunused-arguments -mno-thumb -no-integrated-as"; }; };
 		CD0BD0421363523800D8287A /* maxvid_file.c in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD0381363523800D8287A /* maxvid_file.c */; };
 		CD0BD14413635EDD00D8287A /* AVFileUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD14313635EDD00D8287A /* AVFileUtil.m */; };
 		CD0BD14513635EDD00D8287A /* AVFileUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = CD0BD14313635EDD00D8287A /* AVFileUtil.m */; };
