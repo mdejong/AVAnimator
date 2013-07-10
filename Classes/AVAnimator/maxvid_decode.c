@@ -3453,7 +3453,10 @@ DUPBIG_32BPP:
   
 // START align 8 word block
   
-  if (numPixels >= 16) {
+  // This if block used to be if (numPixels >= 16), but the instructions in the align
+  // logic can be run unconditionally when compiled as ARM
+  
+  if (1) {
     // To get maximum performance, each big stm of 8 words is aligned to an 8 word block.
     
     // Use WR5 as a tmp countdown register, it won't be written over in debug
@@ -3471,23 +3474,25 @@ DUPBIG_32BPP:
 
 #ifdef EXTRA_CHECKS
     MAXVID_ASSERT(WR1 == WR2, "wr2 init");
+    MAXVID_ASSERT(opCodeMaskConstRegister == opCodeMask, "opCodeMaskConstRegister");
+    
+    // Verify that advancing as much as 3 dwords would not go over the min
+    // number of pixels including one reduced to do a 64 bit align.
+    MAXVID_ASSERT(numPixels >= 6, "dword align: numWords");
 #endif
     
+    // Note that these instructions require significant rescheduling to avoid
+    // locking on register r4. The actual ARM asm is not in this order.
+    
     __asm__ __volatile__ (
-                          // Calculate num dwords to bound
-                          
-                          // note that this ubfx is executed unconditionally
-                          // and scheduled into the if cmp.
                           // TMP = (frameBuffer32 >> 3) & 0x3
-                          "ubfx %[TMP], %[frameBuffer32], #3, #2\n\t"
+                          // possible results : 0, 1, 2, 3 dwords
+                          // This instruction will also set the flags so that the
+                          // rsb need only be done if needed and so that the loop
+                          // condition when the loop is entered.
+                          "ands %[TMP], %[opCodeMaskReg], %[frameBuffer32], lsr #3\n\t"
                           // TMP = (BOUNDSIZE >> 3) - TMP;
-                          "rsb %[TMP], %[TMP], #4\n\t"
-                          
-                          // When framebuffer is already aligned to 8w, the results of
-                          // (rsb 4 0) is 4 and that is too large for the loop below.
-                          // Use AND to clamp to (0, 1, 2, 3) and also set the condition
-                          // flags for the conditional statements in the loop below.
-                          "ands %[TMP], %[TMP], #3\n\t"
+                          "rsbne %[TMP], %[TMP], #4\n\t"
                           
                           // write dwords loop
                           
@@ -3503,6 +3508,7 @@ DUPBIG_32BPP:
                           [TMP] "+l" (WR5),
                           [wr1] "+l" (WR1),
                           [wr2] "+l" (WR2),
+                          [opCodeMaskReg] "+l" (opCodeMaskConstRegister),
                           [frameBuffer32] "+l" (frameBuffer32)
                           );
 #else // USE_INLINE_ARM_ASM
@@ -3565,7 +3571,7 @@ DUPBIG_32BPP:
 
     MAXVID_ASSERT(inputBuffer32 == savedInputBuffer32, "savedInputBuffer32");
 #endif
-  } // end of if (numPixels >= 32)
+  }
   
   // Verify numPixels min again, one word could have been consumed by align to 64bit address
   
