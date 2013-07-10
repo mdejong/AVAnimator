@@ -492,25 +492,42 @@ L33:
 	b	L39
 L24:
 	@ DUPBIG_32BPP
-	
-	// align64 scheduled with inW1 save
-	tst r10, #7
+
 	mov lr, r8
+
+	// align64 scheduled with wr2 init
+	tst r10, #7
+	mov r1, r0
 	subne ip, ip, #1
 	strne r0, [r10], #4
+	// end align64
 
-	mov r1, r0
+	// align 8 word
+	cmp	ip, #16
+	ubfx r4, r10, #3, #2
+	blt 2f
+	rsb r4, r4, #4
+	ands r4, r4, #3
+	sub ip, ip, r4, lsl #1
+	//cmp r4, #0
+1:
+	stmgt r10!, {r0, r1}
+	subgts r4, r4, #1
+	bgt 1b
+	// end align 8 word
+
+2:
 	mov r2, r0
 	mov r3, r0
 	mov r4, r0
 	mov r5, r0
 	mov r6, r0
 	mov r8, r0
-	1:
+3:
 	cmp ip, #7
 	stmgtia r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	subgt ip, ip, #8
-	bgt 1b
+	bgt 3b
 	cmp ip, #3
 	subgt ip, ip, #4
 	stmgtia r10!, {r0, r1, r2, r3}
