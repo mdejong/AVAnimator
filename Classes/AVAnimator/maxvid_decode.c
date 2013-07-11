@@ -1288,7 +1288,7 @@ COPYSMALL_16BPP:
                         "ldreq %[wr1], [%[inWordPtr]], #4\n\t"
                         "streq %[wr1], [%[outWordPtr]], #4\n\t"
                         :
-                        [outWordPtr] "+l" ((uint32_t*)frameBuffer16),
+                        [outWordPtr] "+l" (frameBuffer16),
                         [inWordPtr] "+l" (inputBuffer32),
                         [numWords] "+l" (numWords),
                         [wr1] "+l" (WR1),
@@ -3419,14 +3419,16 @@ DUPBIG_32BPP:
   __asm__ __volatile__ (
                         // if (UINTMOD(frameBuffer32, sizeof(uint64_t)) != 0)
                         "tst %[frameBuffer32], #7\n\t"
+                        // schedule unconditional init of wr2 here!
+                        "mov %[wr2], %[wr1]\n\t"
                         // numWords -= 1;
                         "subne %[numPixels], %[numPixels], #1\n\t"
                         // *frameBuffer32++ = WR1;
-                        "strne %[TMP], [%[frameBuffer32]], #4\n\t"
+                        "strne %[wr1], [%[frameBuffer32]], #4\n\t"
                         :
                         [numPixels] "+l" (numPixels),
-                        [TMP] "+l" (WR1),
-                        [inputBuffer32] "+l" (inputBuffer32),
+                        [wr1] "+l" (WR1),
+                        [wr2] "+l" (WR2),
                         [frameBuffer32] "+l" (frameBuffer32)
                         );
 #else // USE_INLINE_ARM_ASM
@@ -3449,11 +3451,142 @@ DUPBIG_32BPP:
   
 // END align64 block
   
+// START align 8 word block
+  
+  // This entire align to 8 words block is disabled because it actually hurt performance
+  // for medium and large size blocks. It seems that as long as the output pointer is
+  // 64bit aligned that the hardware can deal with writes more effectively than more code.
+  
+  if (0) {
+    // To get maximum performance, each big stm of 8 words is aligned to an 8 word block.
+    
+    // Use WR5 as a tmp countdown register, it won't be written over in debug
+    // mode and it is set again after the word8 loop.
+    
+    // set WR5 to the number of dwords from the bound size. Since the framebuffer
+    // is already aligned to 64bits, the number of bytes to the bound is a multiple of 8.
+
+#ifdef EXTRA_CHECKS
+    MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint64_t)) == 0, "frameBuffer32 dword alignment");
+    uint32_t *savedInputBuffer32 = inputBuffer32;
+#endif
+    
+#if defined(USE_INLINE_ARM_ASM)
+
+#ifdef EXTRA_CHECKS
+    MAXVID_ASSERT(WR1 == WR2, "wr2 init");
+    MAXVID_ASSERT(opCodeMaskConstRegister == opCodeMask, "opCodeMaskConstRegister");
+    
+    // Verify that advancing as much as 3 dwords would not go over the min
+    // number of pixels including one reduced to do a 64 bit align.
+    MAXVID_ASSERT(numPixels >= 6, "dword align: numWords");
+#endif
+    
+    // Note that these instructions require significant rescheduling to avoid
+    // locking on register r4. The actual ARM asm is not in this order.
+    
+    __asm__ __volatile__ (
+                          // TMP = (frameBuffer32 >> 3) & 0x3
+                          // possible results : 0, 1, 2, 3 dwords
+                          // This instruction will also set the flags so that the
+                          // rsb need only be done if needed and so that the loop
+                          // condition when the loop is entered.
+                          "ands %[TMP], %[opCodeMaskReg], %[frameBuffer32], lsr #3\n\t"
+                          // TMP = (BOUNDSIZE >> 3) - TMP;
+                          "rsbne %[TMP], %[TMP], #4\n\t"
+                          
+                          // write dwords loop
+                          
+                          // numPixels -= numWords
+                          "sub %[numPixels], %[numPixels], %[TMP], lsl #1\n\t"
+                          //"cmp %[TMP], #0\n\t"
+                          "3:\n\t"
+                          "stmgt %[frameBuffer32]!, {%[wr1], %[wr2]}\n\t"
+                          "subgts %[TMP], %[TMP], #1\n\t"
+                          "bgt 3b\n\t"
+                          :
+                          [numPixels] "+l" (numPixels),
+                          [TMP] "+l" (WR5),
+                          [wr1] "+l" (WR1),
+                          [wr2] "+l" (WR2),
+                          [opCodeMaskReg] "+l" (opCodeMaskConstRegister),
+                          [frameBuffer32] "+l" (frameBuffer32)
+                          );
+#else // USE_INLINE_ARM_ASM
+    
+    WR5 = UINTMOD(frameBuffer32, BOUNDSIZE);
+    
+#ifdef EXTRA_CHECKS
+    MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 alignment");
+    MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint64_t)) == 0, "frameBuffer32 dword alignment");
+    MAXVID_ASSERT(WR5 >= 0 && WR5 <= BOUNDSIZE, "in bounds");
+    MAXVID_ASSERT((WR5 % 2) == 0, "should be even number of bytes");
+    MAXVID_ASSERT(((WR5 >> 2) % 2) == 0, "should be even number of words");
+    MAXVID_ASSERT(WR5 == 0 || WR5 == 8 || WR5 == 16 || WR5 == 24, "bound on dword interval");
+#endif
+    
+    // Convert number of bytes from the bound to number of bytes from
+    // the bound to the current pointer. The unconditional AND operation
+    // clamps the max value back to zero. Finally, shift to convert to
+    // number of words to the bound.
+    
+    WR5 = BOUNDSIZE - WR5;
+    WR5 &= (BOUNDSIZE - 1);
+    WR5 >>= 2;
+    
+#ifdef EXTRA_CHECKS
+    MAXVID_ASSERT(WR5 != MV_CACHE_LINE_SIZE, "invalid num words to bound");
+    MAXVID_ASSERT(WR5 < MV_CACHE_LINE_SIZE, "invalid num words to bound");
+    MAXVID_ASSERT((WR5 % 2) == 0, "should be even number of words");
+    uint32_t *expectedPostAlignFrameBuffer32 = frameBuffer32 + WR5;
+    MAXVID_ASSERT(WR5 == 0 || WR5 == 2 || WR5 == 4 || WR5 == 6, "bound on dword interval");
+#endif
+    
+    numPixels -= WR5;
+    WR5 = WR5 >> 1;
+
+#ifdef EXTRA_CHECKS
+    MAXVID_ASSERT(WR5 == 0 || WR5 == 1 || WR5 == 2 || WR5 == 3, "bound on dword interval");
+#endif
+    
+    // write a dword (2 words = 2 pixels) each iteration.
+    
+    uint64_t dWordValue = (((uint64_t)WR1) << 32)|(uint64_t)WR1;
+    for (; WR5; WR5--) {
+      // clang seems rather dumb as it does not want to generate a stm or strd for this 64bit write
+      memcpy(frameBuffer32, &dWordValue, sizeof(uint64_t));
+      frameBuffer32 += 2;
+    }
+    
+#ifdef EXTRA_CHECKS
+    MAXVID_ASSERT(expectedPostAlignFrameBuffer32 == frameBuffer32, "expectedPostAlignFrameBuffer32");
+#endif
+    
+#endif // USE_INLINE_ARM_ASM
+    
+#ifdef EXTRA_CHECKS
+    MAXVID_ASSERT(WR5 == 0, "WR5");
+    MAXVID_ASSERT(UINTMOD(frameBuffer32, BOUNDSIZE) == 0, "output ptr should be at bound");
+    MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint64_t)) == 0, "frameBuffer32 dword alignment");
+    MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 word alignment");
+
+    MAXVID_ASSERT(inputBuffer32 == savedInputBuffer32, "savedInputBuffer32");
+#endif
+  }
+  
+  // Verify numPixels min again, one word could have been consumed by align to 64bit address
+  
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(numPixels >= 6, "numPixels");
+#endif
+  
+// END align 8 word block
+
   // Dup big 8 word loop
   
 #if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
-                        "mov %[wr2], %[wr1]\n\t"
+                        // Note that wr2 was initialized unconditionally above
                         "mov %[wr3], %[wr1]\n\t"
                         "mov %[wr4], %[wr1]\n\t"
                         "mov %[wr5], %[wr1]\n\t"

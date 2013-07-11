@@ -492,31 +492,43 @@ L33:
 	b	L39
 L24:
 	@ DUPBIG_32BPP
-	
-	// align64 scheduled with inW1 save
-	tst r10, #7
-	mov lr, r8
-	subne ip, ip, #1
-	strne r0, [r10], #4
 
+	// align64 scheduled with wr2 init
+	tst r10, #7
 	mov r1, r0
+	strne r0, [r10], #4
+	subne ip, ip, #1
+	// end align64
+
+	mov lr, r8
 	mov r2, r0
+
+	// align 8 word scheduled to avoid r4 delays
+	//ands r4, r6, r10, lsr #3
 	mov r3, r0
-	mov r4, r0
+	//rsbne r4, r4, #4
 	mov r5, r0
 	mov r6, r0
 	mov r8, r0
-	1:
+	//subne ip, ip, r4, lsl #1
+//1:
+	//stmgt r10!, {r0, r1}
+	//subgts r4, r4, #1
+	//bgt 1b
+	// end align 8 word
+
+	mov r4, r0
+2:
 	cmp ip, #7
-	stmgtia r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	stmgt r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	subgt ip, ip, #8
-	bgt 1b
+	bgt 2b
 	cmp ip, #3
 	subgt ip, ip, #4
-	stmgtia r10!, {r0, r1, r2, r3}
+	stmgt r10!, {r0, r1, r2, r3}
 	cmp ip, #2
-	stmgtia r10!, {r0, r1, r2}
-	stmeqia r10!, {r0, r1}
+	stmgt r10!, {r0, r1, r2}
+	stmeq r10!, {r0, r1}
 	cmp ip, #1
 	streq r0, [r10], #4
 	
