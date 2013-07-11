@@ -1822,10 +1822,12 @@ DUPBIG_16BPP:
   __asm__ __volatile__ (
                         // if (UINTMOD(frameBuffer16, sizeof(uint64_t)) != 0)
                         "tst %[frameBuffer16], #7\n\t"
-                        // numWords -= 1;
-                        "subne %[numWords], %[numWords], #1\n\t"
+                        // schedule unconditional init of wr2 here!
+                        "mov %[wr2], %[wr1]\n\t"
                         // *((uint32_t*)frameBuffer16) = WR1; (also adds 4 bytes to ptr)
                         "strne %[TMP], [%[frameBuffer16]], #4\n\t"
+                        // numWords -= 1;
+                        "subne %[numWords], %[numWords], #1\n\t"
                         :
                         [numWords] "+l" (numWords),
                         [TMP] "+l" (pixel32Alias),
@@ -1857,7 +1859,7 @@ DUPBIG_16BPP:
   
 #if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
-                        "mov %[wr2], %[wr1]\n\t"
+                        // Note that wr2 was initialized unconditionally above
                         "mov %[wr3], %[wr1]\n\t"
                         "mov %[wr4], %[wr1]\n\t"
                         "mov %[wr5], %[wr1]\n\t"
@@ -3421,10 +3423,10 @@ DUPBIG_32BPP:
                         "tst %[frameBuffer32], #7\n\t"
                         // schedule unconditional init of wr2 here!
                         "mov %[wr2], %[wr1]\n\t"
-                        // numWords -= 1;
-                        "subne %[numPixels], %[numPixels], #1\n\t"
                         // *frameBuffer32++ = WR1;
                         "strne %[wr1], [%[frameBuffer32]], #4\n\t"
+                        // numWords -= 1;
+                        "subne %[numPixels], %[numPixels], #1\n\t"
                         :
                         [numPixels] "+l" (numPixels),
                         [wr1] "+l" (WR1),

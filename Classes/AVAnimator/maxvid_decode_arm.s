@@ -267,8 +267,9 @@ L4:
 	// align64 scheduled with r1 init
 	tst r10, #7
 	mov r1, r0
-	subne lr, lr, #1
 	strne r0, [r10], #4
+	subne lr, lr, #1
+	// end align64
 
 	mov r2, r0
 	mov r3, r0
