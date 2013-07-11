@@ -3453,10 +3453,11 @@ DUPBIG_32BPP:
   
 // START align 8 word block
   
-  // This if block used to be if (numPixels >= 16), but the instructions in the align
-  // logic can be run unconditionally when compiled as ARM
+  // This entire align to 8 words block is disabled because it actually hurt performance
+  // for medium and large size blocks. It seems that as long as the output pointer is
+  // 64bit aligned that the hardware can deal with writes more effectively than more code.
   
-  if (1) {
+  if (0) {
     // To get maximum performance, each big stm of 8 words is aligned to an 8 word block.
     
     // Use WR5 as a tmp countdown register, it won't be written over in debug

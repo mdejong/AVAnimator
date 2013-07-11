@@ -504,17 +504,17 @@ L24:
 	mov r2, r0
 
 	// align 8 word scheduled to avoid r4 delays
-	ands r4, r6, r10, lsr #3
+	//ands r4, r6, r10, lsr #3
 	mov r3, r0
-	rsbne r4, r4, #4
+	//rsbne r4, r4, #4
 	mov r5, r0
 	mov r6, r0
 	mov r8, r0
-	subne ip, ip, r4, lsl #1
-1:
-	stmgt r10!, {r0, r1}
-	subgts r4, r4, #1
-	bgt 1b
+	//subne ip, ip, r4, lsl #1
+//1:
+	//stmgt r10!, {r0, r1}
+	//subgts r4, r4, #1
+	//bgt 1b
 	// end align 8 word
 
 	mov r4, r0
