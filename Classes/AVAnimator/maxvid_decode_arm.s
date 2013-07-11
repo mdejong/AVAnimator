@@ -493,6 +493,8 @@ L33:
 L24:
 	@ DUPBIG_32BPP
 
+	mov lr, r8
+
 	// align64 scheduled with wr2 init
 	tst r10, #7
 	mov r1, r0
@@ -500,29 +502,17 @@ L24:
 	subne ip, ip, #1
 	// end align64
 
-	mov lr, r8
 	mov r2, r0
-
-	// align 8 word scheduled to avoid r4 delays
-	//ands r4, r6, r10, lsr #3
 	mov r3, r0
-	//rsbne r4, r4, #4
+	mov r4, r0
 	mov r5, r0
 	mov r6, r0
 	mov r8, r0
-	//subne ip, ip, r4, lsl #1
-//1:
-	//stmgt r10!, {r0, r1}
-	//subgts r4, r4, #1
-	//bgt 1b
-	// end align 8 word
-
-	mov r4, r0
-2:
+1:
 	cmp ip, #7
 	stmgt r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	subgt ip, ip, #8
-	bgt 2b
+	bgt 1b
 	cmp ip, #3
 	subgt ip, ip, #4
 	stmgt r10!, {r0, r1, r2, r3}
