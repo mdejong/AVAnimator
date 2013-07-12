@@ -682,16 +682,18 @@ DUP_16BPP:
                         "mov %[wr3], %[wr1]\n\t"
                         // if (numWords >= 3) then write 3 words
                         "cmp %[numWords], #2\n\t"
-                        "stmgtia %[r0]!, {%[wr1], %[wr2], %[wr3]}\n\t"
+                        "stmgt %[frameBuffer16]!, {%[wr1], %[wr2], %[wr3]}\n\t"
                         "subgt %[numWords], %[numWords], #3\n\t"
                         // if (numWords >= 2) then write 2 words
                         "cmp %[numWords], #1\n\t"
-                        "stmgtia %[r0]!, {%[wr1], %[wr2]}\n\t"
+                        "stmgt %[frameBuffer16], {%[wr1], %[wr2]}\n\t"
+                        // frameBuffer32 += numPixels;
+                        "add %[frameBuffer16], %[frameBuffer16], %[numWords], lsl #2\n\t"
                         // if (numWords == 1 || numWords == 3) then write 1 word
                         "tst %[numWords], #0x1\n\t"
-                        "strne %[wr1], [%[r0]], #4\n\t"
+                        "strne %[wr1], [%[frameBuffer16], #-4]\n\t"
                         :
-                        [r0] "+l" (frameBuffer16),
+                        [frameBuffer16] "+l" (frameBuffer16),
                         [numWords] "+l" (numWords),
                         [wr1] "+l" (WR1),
                         [wr2] "+l" (WR2),
@@ -709,11 +711,13 @@ DUP_16BPP:
     if (numWords >= 2) {
       *((uint32_t*)frameBuffer16) = pixel32Alias;
       *(((uint32_t*)frameBuffer16) + 1) = pixel32Alias;
-      frameBuffer16 += (2 * 2);
     }
+#ifdef EXTRA_CHECKS
+    MAXVID_ASSERT(numWords >=0 && numWords <= 3, "numWords must be in range 0 to 3 here");
+#endif
+    frameBuffer16 += (numWords << 1);
     if (numWords & 0x1) {
-      *((uint32_t*)frameBuffer16) = pixel32Alias;
-      frameBuffer16 += (1 * 2);
+      *(((uint32_t*)frameBuffer16) - 1) = pixel32Alias;
     }
   }
 #endif // USE_INLINE_ARM_ASM

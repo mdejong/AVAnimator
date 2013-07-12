@@ -103,19 +103,36 @@ L3:
 	
 	@ if (numWords > 6) goto DUPBIG_16BPP
 
+	// Note that the specific instruction order took a lot of work to get
+	// right since optimal execution performance on Cortex A8 and A9 is
+	// really tricky. The key to getting a speedup on both processors is
+	// to do an unconditional add after the second stm and then use a
+	// negative offset on the final conditional store without a writeback
+	// so that the next instruction in the decode block is not waiting on r10.
+
 	@ DUPSMALL_16BPP
 	cmp	lr, #6
 	bhi	L4
+
 	mov r1, r0
 	mov r2, r0
+
+	// if (numWords >= 3) then write 3 words
 	cmp lr, #2
-	stmgtia r10!, {r0, r1, r2}
+	stmgt r10!, {r0, r1, r2}
 	subgt lr, lr, #3
+
+	// if (numWords >= 2) then write 2 words
 	cmp lr, #1
-	stmgtia r10!, {r0, r1}
+	stmgt r10, {r0, r1}
+	// frameBuffer16 += numWords;
+	add r10, r10, lr, lsl #2
+
+	// if (numWords == 1 || numWords == 3) then write 1 word
 	tst lr, #0x1
-	strne r0, [r10], #4
-	
+	strne r0, [r10, #-4]
+
+	// if odd number of pixels, write a halfword
 	tst ip, #1
 	strneh r0, [r10], #2
 	
