@@ -1832,7 +1832,10 @@ DUPBIG_16BPP:
                         [numWords] "+l" (numWords),
                         [TMP] "+l" (pixel32Alias),
                         [inputBuffer32] "+l" (inputBuffer32),
-                        [frameBuffer16] "+l" (frameBuffer16)
+                        [frameBuffer16] "+l" (frameBuffer16),
+                        [wr1] "+l" (WR1),
+                        [wr2] "+l" (WR2),
+                        [wr3] "+l" (WR3)
                         );
 #else // USE_INLINE_ARM_ASM
   
@@ -2385,14 +2388,15 @@ DUP_32BPP:
                         "mov %[wr3], %[wr1]\n\t"
                         // if (numWords >= 3) then write 3 words
                         "cmp %[numWords], #2\n\t"
-                        "stmgtia %[frameBuffer32]!, {%[wr1], %[wr2], %[wr3]}\n\t"
-                        "subgt %[numWords], %[numWords], #3\n\t"
+                        "stmgt %[frameBuffer32]!, {%[wr1], %[wr2], %[wr3]}\n\t"
                         // if (numWords >= 2) then write 2 words
                         "cmp %[numWords], #1\n\t"
-                        "stmgtia %[frameBuffer32]!, {%[wr1], %[wr2]}\n\t"
+                        "stmgt %[frameBuffer32], {%[wr1], %[wr2]}\n\t"
+                        // frameBuffer32 += numPixels;
+                        "add %[frameBuffer32], %[frameBuffer32], %[numWords], lsl #2\n\t"
                         // if (numWords == 1 || numWords == 3) then write 1 word
                         "tst %[numWords], #0x1\n\t"
-                        "strne %[wr1], [%[frameBuffer32]], #4\n\t"
+                        "strne %[wr1], [%[frameBuffer32], #-4]\n\t"
                         :
                         [frameBuffer32] "+l" (frameBuffer32),
                         [numWords] "+l" (numPixels),
@@ -2412,11 +2416,13 @@ DUP_32BPP:
     if (numPixels >= 2) {
       *(frameBuffer32 + 0) = WR1;
       *(frameBuffer32 + 1) = WR1;
-      frameBuffer32 += 2;
     }
+#ifdef EXTRA_CHECKS
+    MAXVID_ASSERT(numPixels >=0 && numPixels <= 3, "numPixels must be in range 0 to 3 here");
+#endif
+    frameBuffer32 += numPixels;
     if (numPixels & 0x1) {
-      *(frameBuffer32 + 0) = WR1;
-      frameBuffer32 += 1;
+      *(frameBuffer32 - 1) = WR1;
     }
   }
 #endif // USE_INLINE_ARM_ASM
