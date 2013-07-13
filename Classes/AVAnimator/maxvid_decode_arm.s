@@ -299,15 +299,34 @@ L4:
 	stmgtia r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	subgt lr, lr, #8
 	bgt 1b
+
+	// The next set of instructions are ordered for max
+	// execution performance on A8 and A9. The key is to
+	// avoid register interlock as much as possible but
+	// without accessing r10 early, as a previous stm 8
+	// might not allow it. Like the fast logic from small
+	// DUP, this code calculates the end of the write
+	// so that writebacks are not needed on r10 at the end.
+
+	// if (numWords > 3) then write 4 words
 	cmp lr, #3
 	subgt lr, lr, #4
-	stmgtia r10!, {r0, r1, r2, r3}
+	stmgt r10!, {r0, r1, r2, r3}
+
+	// if (numWords > 2) then write 3 words
+	// if (numWords == 2) then write 2 words
 	cmp lr, #2
-	stmgtia r10!, {r0, r1, r2}
-	stmeqia r10!, {r0, r1}
+	// r4 = frameBuffer16 + (numWords << 1)
+	add r4, r10, lr, lsl #2
+	stmgt r10, {r0, r1, r2}
+	stmeq r10, {r0, r1}
+
+	// if (numWords == 1) then write 1 words
 	cmp lr, #1
-	streq r0, [r10], #4
-	
+	mov r10, r4
+	streq r0, [r4, #-4]
+
+	// if numPixels is odd then write 1 halfword
 	tst ip, #1
 	strneh r0, [r10], #2
 	
@@ -384,6 +403,9 @@ L23:
 
 	// if (numWords >= 3) then write 3 words
 	cmp ip, #2
+// FIXME: swap order of stmgt and ip set here to avoid interlock on ip -> cmp.
+// the 1+1 cycle on conditional sub locks on that register. Also see DUPSMALL 16!
+// Note that this is not exactly the same issue and DUPBIG since r10 is not waiting on prev write.
 	stmgt r10!, {r0, r1, r2}
 	subgt ip, ip, #3
 

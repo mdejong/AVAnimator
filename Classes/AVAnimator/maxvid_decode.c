@@ -1756,6 +1756,7 @@ DUPBIG_16BPP:
   MAXVID_ASSERT(numPixels != 0, "numPixels != 0");
   MAXVID_ASSERT(numPixels != 1, "numPixels != 1");
   MAXVID_ASSERT(numPixels > 2, "numPixels > 2");
+  MAXVID_ASSERT(numPixels > 13, "numPixels");
 #endif
   
 #ifdef EXTRA_CHECKS
@@ -1875,19 +1876,22 @@ DUPBIG_16BPP:
                         "mov %[wr8], %[wr1]\n\t"
                         "1:\n\t"
                         "cmp %[numWords], #7\n\t"
-                        "stmgtia %[r0]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
+                        "stmgt %[frameBuffer16]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
                         "subgt %[numWords], %[numWords], #8\n\t"
                         "bgt 1b\n\t"
                         "cmp %[numWords], #3\n\t"
                         "subgt %[numWords], %[numWords], #4\n\t"
-                        "stmgtia %[r0]!, {%[wr1], %[wr2], %[wr3], %[wr4]}\n\t"
+                        "stmgt %[frameBuffer16]!, {%[wr1], %[wr2], %[wr3], %[wr4]}\n\t"
                         "cmp %[numWords], #2\n\t"
-                        "stmgtia %[r0]!, {%[wr1], %[wr2], %[wr3]}\n\t"
-                        "stmeqia %[r0]!, {%[wr1], %[wr2]}\n\t"
+                        // WR5 = frameBuffer16 + (numWords << 1)
+                        "add %[wr5], %[frameBuffer16], %[numWords], lsl #2\n\t"
+                        "stmgt %[frameBuffer16], {%[wr1], %[wr2], %[wr3]}\n\t"
+                        "stmeq %[frameBuffer16], {%[wr1], %[wr2]}\n\t"
                         "cmp %[numWords], #1\n\t"
-                        "streq %[wr1], [%[r0]], #4\n\t"
+                        "mov %[frameBuffer16], %[wr5]\n\t"
+                        "streq %[wr1], [%[wr5], #-4]\n\t"
                         :
-                        [r0] "+l" (frameBuffer16),
+                        [frameBuffer16] "+l" (frameBuffer16),
                         [numWords] "+l" (numWords),
                         [wr1] "+l" (WR1),
                         [wr2] "+l" (WR2),
