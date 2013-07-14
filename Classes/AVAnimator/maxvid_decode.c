@@ -1880,16 +1880,19 @@ DUPBIG_16BPP:
                         "subgt %[numWords], %[numWords], #8\n\t"
                         "bgt 1b\n\t"
                         "cmp %[numWords], #3\n\t"
+                        // constant init
                         "subgt %[numWords], %[numWords], #4\n\t"
                         "stmgt %[frameBuffer16]!, {%[wr1], %[wr2], %[wr3], %[wr4]}\n\t"
+                        // constant init
                         "cmp %[numWords], #2\n\t"
-                        // WR5 = frameBuffer16 + (numWords << 1)
-                        "add %[wr5], %[frameBuffer16], %[numWords], lsl #2\n\t"
+                        // constant init
                         "stmgt %[frameBuffer16], {%[wr1], %[wr2], %[wr3]}\n\t"
                         "stmeq %[frameBuffer16], {%[wr1], %[wr2]}\n\t"
+                        // frameBuffer16 += (numWords << 1)
+                        "add %[frameBuffer16], %[frameBuffer16], %[numWords], lsl #2\n\t"
                         "cmp %[numWords], #1\n\t"
-                        "mov %[frameBuffer16], %[wr5]\n\t"
-                        "streq %[wr1], [%[wr5], #-4]\n\t"
+                        // constant init
+                        "streq %[wr1], [%[frameBuffer16], #-4]\n\t"
                         :
                         [frameBuffer16] "+l" (frameBuffer16),
                         [numWords] "+l" (numWords),

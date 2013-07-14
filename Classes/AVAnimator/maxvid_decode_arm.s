@@ -120,6 +120,8 @@ L3:
 
 	// if (numWords >= 3) then write 3 words
 	cmp lr, #2
+// FIXME: should schedule r2 init here for dual issue, perhaps r2 after stmgt3
+// FIXME: sub lr should be first
 	stmgt r10!, {r0, r1, r2}
 	subgt lr, lr, #3
 
@@ -297,7 +299,7 @@ L4:
 	mov r8, r0
 	1:
 	cmp lr, #7
-	stmgtia r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	stmgt r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	subgt lr, lr, #8
 	bgt 1b
 
@@ -311,33 +313,29 @@ L4:
 
 	// if (numWords > 3) then write 4 words
 	cmp lr, #3
+	mvn r4, #0xC000
 	subgt lr, lr, #4
 	stmgt r10!, {r0, r1, r2, r3}
 
+	mov r5, #2
 	// if (numWords > 2) then write 3 words
 	// if (numWords == 2) then write 2 words
 	cmp lr, #2
-	// r4 = frameBuffer16 + (numWords << 1)
-	add r4, r10, lr, lsl #2
+	orr r5, r5, r11, lsr #1
 	stmgt r10, {r0, r1, r2}
 	stmeq r10, {r0, r1}
+	// frameBuffer16 += (numWords << 1)
+	add r10, r10, lr, lsl #2
 
 	// if (numWords == 1) then write 1 words
 	cmp lr, #1
-	mov r10, r4
-	streq r0, [r4, #-4]
+	ldr r8, [r9, #-4]
+	streq r0, [r10, #-4]
 
 	// if numPixels is odd then write 1 halfword
 	tst ip, #1
 	strneh r0, [r10], #2
-	
-	ldr	r8, [r9, #-4]
 
-  // FIXME: schedule constants in between cmp ops
-	mov r5, #2
-	mvn r4, #0xC000
-	orr r5, r5, r11, lsr #1
-	
 	@ goto DECODE_16BPP
 	
 	b	L19
