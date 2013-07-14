@@ -142,6 +142,53 @@
   return;
 }
 
+// This test checks the special case of an optimized DUP 2 for 16BPP
+// on a framebuffer that is not word aligned.
+
++ (void) testEncodeAndDecodeDupTwoNotWordAligned16BPP
+{
+  uint16_t prev[] = { 0x1, 0x2, 0x3 };
+  uint16_t curr[] = { 0x1, 0x4, 0x4 };
+  int width = 3;
+  int height = 1;
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), width, height, NULL);
+  results = [MaxvidEncodeTests util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"SKIP 1 DUP 2 0x4 DONE"], @"isEqualToString");
+  
+  // convert generic codes to c4 codes
+  
+  uint32_t frameBufferSize = width * height;
+  
+  NSData *c4Codes = [self util_convertToC4Codes16:codes frameBufferNumPixels:frameBufferSize];
+  
+  uint32_t *inputBuffer32 = (uint32_t*) c4Codes.bytes;
+  uint32_t inputBuffer32NumWords = c4Codes.length / sizeof(uint32_t);
+  
+  // allocate framebuffer to decode into
+  
+  uint16_t *frameBuffer16 = valloc(4096);
+  memset(frameBuffer16, 0, 4096);
+  
+  frameBuffer16[0] = 0x1;
+  
+  // invoke decoder
+  
+  uint32_t result =
+  maxvid_decode_c4_sample16(frameBuffer16, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
+  
+  NSAssert(result == 0, @"result");
+  NSAssert(frameBuffer16[0] == 0x1, @"index 0");
+  NSAssert(frameBuffer16[1] == 0x4, @"index 2");
+  NSAssert(frameBuffer16[2] == 0x4, @"index 3");
+  
+  free(frameBuffer16);
+  return;
+}
+
 + (void) testEncodeAndDecodeDupTwo32BPP
 {
   uint32_t prev[] = { 0x1, 0x2 };

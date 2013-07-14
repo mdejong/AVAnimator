@@ -156,6 +156,11 @@ L19:
 	beq 2b
 	@ if (DUP2 == (inW1 >> 16)) ...
 	cmp r5, r8, lsr #16
+// FIXME: both here and in the COPY1, if r8 was moved into a tmp
+// register, then the ld was done first, that could speed up
+// the access of r8 when jumping back into decode. Since the
+// cmp cannot dual issue with the conditional, it means that
+// adding 1 inst could be okay in this situation.
 	streqh r8, [r10], #2
 	streqh r8, [r10], #2
 	ldreq r8, [r9], #4
@@ -426,10 +431,16 @@ L39:
 	2:
 	add r10, r10, r11, lsl #2
 	and r11, r8, #0xFF
+	// if ((inW1 >> 8) == copyOnePixelWord)
 	cmp r4, r8, lsr #8
+	// FIXME: take a look at unconditional mov after the cmp to save
+	// in tmp register so that ld can be done before str. Could
+	// ne used for both this and the DUP2 block (only one added mov).
+	// Unclear if needed since next cycle reads from r11.
 	streq lr, [r10], #4
 	ldmeqia r9!, {r8, lr}
 	beq 2b
+	// if ((inW1 >> 8) == dupTwoPixelsWord)
 	cmp r5, r8, lsr #8
 	streq lr, [r10], #4
 	streq lr, [r10], #4
