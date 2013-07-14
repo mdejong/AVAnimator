@@ -280,6 +280,26 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
   const uint32_t dupTwoPixelsHighHalfWord = (((uint32_t)DUP) << 14 | 0x2);
   const uint32_t extractNumPixelsHighHalfWord = 0x3FFF;
 #endif // !USE_INLINE_ARM_ASM || EXTRA_CHECKS
+
+#if defined(EXTRA_CHECKS)
+  // Double check that half word constants are not just totally wrong
+  {
+    //uint32_t expectedDup2Word = maxvid16_c4_code(DUP, 2, 0xFFFF);
+    uint32_t expectedDup2Word = 0x4002FFFF;
+    uint16_t expectedDup2HighHalfWord = (expectedDup2Word >> 16);
+    if (dupTwoPixelsHighHalfWord != expectedDup2HighHalfWord) {
+      MAXVID_ASSERT(dupTwoPixelsHighHalfWord == expectedDup2HighHalfWord, "dupTwoPixelsHighHalfWord");
+    }
+  }
+  {
+    //uint32_t expectedCopy1Word = maxvid16_c4_code(COPY, 1, 0xFFFF);
+    uint32_t expectedCopy1Word = 0x8001ffff;
+    uint16_t expectedCopy1HighHalfWord = (expectedCopy1Word >> 16);
+    if (copyOnePixelHighHalfWord != expectedCopy1HighHalfWord) {
+      MAXVID_ASSERT(copyOnePixelHighHalfWord == expectedCopy1HighHalfWord, "copyOnePixelHighHalfWord");
+    }
+  }
+#endif
   
 #if 1 && defined(USE_INLINE_ARM_ASM)
   register uint32_t * restrict inputBuffer32 __asm__ ("r9") = (uint32_t * restrict) inputBuffer32Arg;
@@ -814,7 +834,13 @@ DECODE_16BPP:
   // inputBuffer32 should be 1 word ahead of the previous read (ignored in COPY case)
   MAXVID_ASSERT(inputBuffer32 == (prevInputBuffer32 + 1), "inputBuffer32 != previous");
 #endif
-  
+
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
+  MAXVID_ASSERT(copyOnePixelHighHalfWordConstRegister == copyOnePixelHighHalfWord, "copyOnePixelHighHalfWordConstRegister");
+  MAXVID_ASSERT(dupTwoPixelsHighHalfWordConstRegister == dupTwoPixelsHighHalfWord, "dupTwoPixelsHighHalfWordConstRegister");
+#endif // EXTRA_CHECKS
+
   __asm__ __volatile__ (
                         "@ DECODE_16BPP\n\t"
                         "2:\n\t"
@@ -856,6 +882,7 @@ DECODE_16BPP:
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
   MAXVID_ASSERT(copyOnePixelHighHalfWordConstRegister == copyOnePixelHighHalfWord, "copyOnePixelHighHalfWordConstRegister");
+  MAXVID_ASSERT(dupTwoPixelsHighHalfWordConstRegister == dupTwoPixelsHighHalfWord, "dupTwoPixelsHighHalfWordConstRegister");
 #endif // EXTRA_CHECKS
   
 #else // USE_INLINE_ARM_ASM
@@ -2046,6 +2073,29 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
 #define dupTwoPixelsWord ((((uint32_t)0x2) << 2) | ((uint32_t)DUP))
 #define opCodeMask 0x3
 #define oneConstWord 0x1
+
+#if defined(EXTRA_CHECKS)
+  // Double check that half word constants are not just totally wrong
+  {
+    //uint32_t dupCode = maxvid32_internal_code(DUP, 2, 0);
+    uint32_t expectedDup2Word = 0x900;
+    uint32_t expectedDup2HighPart = (expectedDup2Word >> 8);
+    
+    if (dupTwoPixelsWord != expectedDup2HighPart) {
+      MAXVID_ASSERT(dupTwoPixelsWord == expectedDup2HighPart, "dupTwoPixelsWord");
+    }
+  }
+  // Double check that half word constants are not just totally wrong
+  {
+    //uint32_t copyCode = maxvid32_internal_code(COPY, 1, 0);
+    uint32_t expectedCopy1Word = 0x600;
+    uint32_t expectedCopy1HighPart = (expectedCopy1Word >> 8);
+
+    if (copyOnePixelWord != expectedCopy1HighPart) {
+      MAXVID_ASSERT(copyOnePixelWord == expectedCopy1HighPart, "copyOnePixelWord");
+    }
+  }
+#endif
   
 #if 1 && defined(USE_INLINE_ARM_ASM)
   register uint32_t * restrict inputBuffer32 __asm__ ("r9") = (uint32_t * restrict) inputBuffer32Arg;

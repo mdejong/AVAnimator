@@ -30,6 +30,24 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 }
 @end
 
+// Private API decl
+
+@interface MaxvidEncodeTests ()
+
++ (NSString*) util_printMvidCodes16:(NSData*)codes;
+
++ (NSString*) util_printMvidCodes32:(NSData*)codes;
+
++ (NSString*) util_convertAndPrintC4Codes16:(NSData*)codes
+                       frameBufferNumPixels:(NSUInteger)frameBufferNumPixels;
+
++ (NSString*) util_convertAndPrintC4Codes32:(NSData*)codes
+                       frameBufferNumPixels:(NSUInteger)frameBufferNumPixels;
+
+@end
+
+// implementation
+
 @implementation MaxvidEncodeTests
 
 // Debug print method for 16 bit codes
@@ -1061,6 +1079,11 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
 + (void) testEncodeReallyHugeDupTailingUnderTwoAt16BPP
 {
+  if (!TARGET_IPHONE_SIMULATOR) {
+    // This test consumes all memory on the device and results in the app getting killed.
+    return;
+  }
+  
   int width = 16383 + 1;
   int height = 1;
   int numBytes = width * height * sizeof(uint16_t);
@@ -1095,6 +1118,11 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
 + (void) testEncodeReallyHugeDupTailingUnderTwoAt32BPP
 {
+  if (!TARGET_IPHONE_SIMULATOR) {
+    // This test consumes all memory on the device and results in the app getting killed.
+    return;
+  }
+  
   int width = (MV_MAX_22_BITS + 1);
   int height = 1;
   int numBytes = width * height * sizeof(uint32_t);
@@ -1141,6 +1169,11 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
 + (void) testEncodeReallyHugeDupTailingTwoAt32BPP
 {
+  if (!TARGET_IPHONE_SIMULATOR) {
+    // This test consumes all memory on the device and results in the app getting killed.
+    return;
+  }
+  
   int width = (MV_MAX_22_BITS + 1 + 1);
   int height = 1;
   int numBytes = width * height * sizeof(uint32_t);
@@ -1360,6 +1393,11 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
 + (void) testEncodeHugeDupThenSkipAt32BPP
 {
+  if (!TARGET_IPHONE_SIMULATOR) {
+    // This test consumes all memory on the device and results in the app getting killed.
+    return;
+  }
+  
   int width = (MV_MAX_22_BITS + 2 + 1);
   int height = 1;
   int numBytes = width * height * sizeof(uint32_t);
