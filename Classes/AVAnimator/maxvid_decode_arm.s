@@ -66,6 +66,7 @@
 	.section __TEXT,__picsymbolstub4,symbol_stubs,none,16
 	.text
 	.align 2
+	.arm
 	.globl _maxvid_decode_c4_sample16
 	.private_extern _maxvid_decode_c4_sample16
 _maxvid_decode_c4_sample16:
@@ -352,6 +353,7 @@ L7:
 
 
 	.align 2
+	.arm
 	.globl _maxvid_decode_c4_sample32
 	.private_extern _maxvid_decode_c4_sample32
 _maxvid_decode_c4_sample32:
