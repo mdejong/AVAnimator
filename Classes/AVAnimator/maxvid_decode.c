@@ -3615,13 +3615,19 @@ DUPBIG_32BPP:
                         "subgt %[numWords], %[numWords], #8\n\t"
                         "bgt 1b\n\t"
                         "cmp %[numWords], #3\n\t"
+                        // In the optimized ASM code, constants are scheduled into this block from below.
+                        // constant init
                         "subgt %[numWords], %[numWords], #4\n\t"
-                        "stmgtia %[frameBuffer32]!, {%[wr1], %[wr2], %[wr3], %[wr4]}\n\t"
+                        "stmgt %[frameBuffer32]!, {%[wr1], %[wr2], %[wr3], %[wr4]}\n\t"
                         "cmp %[numWords], #2\n\t"
-                        "stmgtia %[frameBuffer32]!, {%[wr1], %[wr2], %[wr3]}\n\t"
-                        "stmeqia %[frameBuffer32]!, {%[wr1], %[wr2]}\n\t"
+                        // constant init
+                        "stmgt %[frameBuffer32], {%[wr1], %[wr2], %[wr3]}\n\t"
+                        "stmeq %[frameBuffer32], {%[wr1], %[wr2]}\n\t"
+                        // frameBuffer32 += (numWords << 1)
+                        "add %[frameBuffer32], %[frameBuffer32], %[numWords], lsl #2\n\t"
                         "cmp %[numWords], #1\n\t"
-                        "streq %[wr1], [%[frameBuffer32]], #4\n\t"
+                        // constant init
+                        "streq %[wr1], [%[frameBuffer32], #-4]\n\t"
                         :
                         [frameBuffer32] "+l" (frameBuffer32),
                         [numWords] "+l" (numPixels),

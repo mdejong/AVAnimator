@@ -571,23 +571,37 @@ L24:
 	stmgt r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	subgt ip, ip, #8
 	bgt 1b
+
+	// The next set of instructions are scheduled for max
+	// execution performance on A8 and A9. The key is to
+	// avoid register interlock as much as possible but
+	// without accessing r10 early, as a previous stm 8
+	// might not allow it. This logic mixes constant stores
+	// at the end into the store logic.
+
+	// if (numWords > 3) then write 4 words
 	cmp ip, #3
+	mov r4, #6
 	subgt ip, ip, #4
 	stmgt r10!, {r0, r1, r2, r3}
+
+	// if (numWords > 2) then write 3 words
+	// if (numWords == 2) then write 2 words
+	mov r5, #9
 	cmp ip, #2
-	stmgt r10!, {r0, r1, r2}
-	stmeq r10!, {r0, r1}
+	mov r6, #3
+	stmgt r10, {r0, r1, r2}
+	stmeq r10, {r0, r1}
+	// frameBuffer32 += (numWords << 1)
+	add r10, r10, ip, lsl #2
+
+	// if (numWords == 1) then write 1 words
 	cmp ip, #1
-	streq r0, [r10], #4
-	
+	mov r3, #1
+	streq r0, [r10, #-4]
+
 	mov r8, lr
 	ldr lr, [r9, #-4]
-
-  // FIXME: schedule constants in between cmp ops
-	mov r3, #1
-	mov r4, #6
-	mov r5, #9
-	mov r6, #3
 	
 	@ goto DECODE_32BPP
 	
