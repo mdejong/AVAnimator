@@ -442,6 +442,7 @@ L39:
 	beq 2b
 	// if ((inW1 >> 8) == dupTwoPixelsWord)
 	cmp r5, r8, lsr #8
+  // FIXME: why not use a single stm or strd here?
 	streq lr, [r10], #4
 	streq lr, [r10], #4
 	ldmeqia r9!, {r8, lr}
