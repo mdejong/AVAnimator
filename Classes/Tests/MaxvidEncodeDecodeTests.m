@@ -519,5 +519,334 @@
   return;
 }
 
+// Normally, 14 pixels would be 7 words that that would be considered a large DUP.
+// But in this tricky special case, the 16BPP framebuffer is not word aligned and the
+// result is that one halfword is written before the DUP test. That brings the
+// total remaining pixels down to 13 which is processed with the small DUP logic.
+
++ (void) testEncodeAndDecodeBigMinusOneSmallDup16BPP
+{
+  const int width = 15;
+  const int height = 1;
+  
+  uint16_t prev[width * height];
+  uint16_t curr[width * height];
+  
+  NSData *codes;
+  NSString *results;
+  
+  // Treat all previous pixels as zero
+  memset(&prev[0], 0, sizeof(prev));
+  assert(prev[0] == 0);
+  
+  int offset, val, num;
+  
+  offset = 0;
+  
+  // SKIP 1
+  curr[offset++] =0;
+  
+  // DUP 14
+  val = 0xE;
+  num = 14;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), width, height, NULL);
+  results = [MaxvidEncodeTests util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"SKIP 1 DUP 14 0xE DONE"], @"isEqualToString");
+  
+  // convert generic codes to c4 codes
+  
+  uint32_t frameBufferSize = width * height;
+  
+  NSData *c4Codes = [self util_convertToC4Codes16:codes frameBufferNumPixels:frameBufferSize];
+  
+  uint32_t *inputBuffer32 = (uint32_t*) c4Codes.bytes;
+  uint32_t inputBuffer32NumWords = c4Codes.length / sizeof(uint32_t);
+  
+  // allocate framebuffer to decode into
+  
+  uint16_t *frameBuffer16 = valloc(4096);
+  memset(frameBuffer16, 0, 4096);
+  
+  // invoke decoder
+  
+  uint32_t result =
+  maxvid_decode_c4_sample16(frameBuffer16, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
+  
+  NSAssert(result == 0, @"result");
+  
+  NSAssert(memcmp(curr, frameBuffer16, sizeof(curr)) == 0, @"memcmp");
+  
+  free(frameBuffer16);
+  return;
+}
+
+// This test encodes 16BPP DUP runs starting at the big size min of 14 pixels (7 words)
+// and then ending once a round of 8 words would get copied (14 + 16 = 30)
+
++ (void) testEncodeAndDecodeBigDup16BPP
+{
+  const int width = 374;
+  const int height = 1;
+  
+  uint16_t prev[width * height];
+  uint16_t curr[width * height];
+  
+  NSData *codes;
+  NSString *results;
+  
+  // Treat all previous pixels as zero
+  memset(&prev[0], 0, sizeof(prev));
+  assert(prev[0] == 0);
+  
+  int offset, val, num;
+  
+  offset = 0;
+  
+  // DUP 14
+  val = 0xE;
+  num = 14;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 15
+  val = 0xF;
+  num = 15;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 16
+  val = 0x10;
+  num = 16;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 17
+  val = 0x11;
+  num = 17;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 18
+  val = 0x12;
+  num = 18;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 19
+  val = 0x13;
+  num = 19;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 20
+  val = 0x14;
+  num = 20;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 21
+  val = 0x15;
+  num = 21;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 22
+  val = 0x16;
+  num = 22;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 23
+  val = 0x17;
+  num = 23;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 24
+  val = 0x18;
+  num = 24;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 25
+  val = 0x19;
+  num = 25;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 26
+  val = 0x1A;
+  num = 26;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 27
+  val = 0x1B;
+  num = 27;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 28
+  val = 0x1C;
+  num = 28;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 29
+  val = 0x1D;
+  num = 29;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 30
+  val = 0x1E;
+  num = 30;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), width, height, NULL);
+  results = [MaxvidEncodeTests util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"DUP 14 0xE DUP 15 0xF DUP 16 0x10 DUP 17 0x11 DUP 18 0x12 DUP 19 0x13 DUP 20 0x14 DUP 21 0x15 DUP 22 0x16 DUP 23 0x17 DUP 24 0x18 DUP 25 0x19 DUP 26 0x1A DUP 27 0x1B DUP 28 0x1C DUP 29 0x1D DUP 30 0x1E DONE"], @"isEqualToString");
+  
+  // convert generic codes to c4 codes
+  
+  uint32_t frameBufferSize = width * height;
+  
+  NSData *c4Codes = [self util_convertToC4Codes16:codes frameBufferNumPixels:frameBufferSize];
+  
+  uint32_t *inputBuffer32 = (uint32_t*) c4Codes.bytes;
+  uint32_t inputBuffer32NumWords = c4Codes.length / sizeof(uint32_t);
+  
+  // allocate framebuffer to decode into
+  
+  uint16_t *frameBuffer16 = valloc(4096);
+  memset(frameBuffer16, 0, 4096);
+  
+  // invoke decoder
+  
+  uint32_t result =
+  maxvid_decode_c4_sample16(frameBuffer16, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
+  
+  NSAssert(result == 0, @"result");
+  
+  NSAssert(memcmp(curr, frameBuffer16, sizeof(curr)) == 0, @"memcmp");
+  
+  free(frameBuffer16);
+  return;
+}
+
+// This test encodes 32BPP DUP runs starting at the big size min of 7 words
+// until 7 + 8 = 15 words are duplicated.
+
++ (void) testEncodeAndDecodeBigDup32BPP
+{
+  const int width = 99;
+  const int height = 1;
+  
+  uint32_t prev[width * height];
+  uint32_t curr[width * height];
+  
+  // Treat all previous pixels as zero
+  memset(&prev[0], 0, sizeof(prev));
+  assert(prev[0] == 0);
+  
+  int offset, val, num;
+  
+  offset = 0;
+  
+  // DUP 7
+  val = 0x7;
+  num = 7;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 8
+  val = 0x8;
+  num = 8;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 9
+  val = 0x9;
+  num = 9;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 10
+  val = 0xA;
+  num = 10;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 11
+  val = 0xB;
+  num = 11;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 12
+  val = 0xC;
+  num = 12;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 13
+  val = 0xD;
+  num = 13;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 14
+  val = 0xE;
+  num = 14;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  // DUP 15
+  val = 0xF;
+  num = 15;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val;
+  }
+  
+  NSData *codes;
+  NSString *results;
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint16_t), width, height, NULL);
+  results = [MaxvidEncodeTests util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"DUP 7 0x7 DUP 8 0x8 DUP 9 0x9 DUP 10 0xA DUP 11 0xB DUP 12 0xC DUP 13 0xD DUP 14 0xE DUP 15 0xF DONE"], @"isEqualToString");
+  
+  // convert generic codes to c4 codes
+  
+  uint32_t frameBufferSize = width * height;
+  
+  NSData *c4Codes = [self util_convertToC4Codes32:codes frameBufferNumPixels:frameBufferSize];
+  
+  uint32_t *inputBuffer32 = (uint32_t*) c4Codes.bytes;
+  uint32_t inputBuffer32NumWords = c4Codes.length / sizeof(uint32_t);
+  
+  // allocate framebuffer to decode into
+  
+  uint32_t *frameBuffer32 = valloc(4096);
+  memset(frameBuffer32, 0, 4096);
+  
+  // invoke decoder
+  
+  uint32_t result =
+  maxvid_decode_c4_sample32(frameBuffer32, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
+  
+  NSAssert(result == 0, @"result");
+  
+  NSAssert(memcmp(curr, frameBuffer32, sizeof(curr)) == 0, @"memcmp");
+  
+  free(frameBuffer32);
+  return;
+}
+
 
 @end
