@@ -543,6 +543,9 @@ DUP_16BPP:
   numPixelsSaved = numPixels;
   pixel32Saved = pixel32Alias;
   MAXVID_ASSERT(pixel32Alias == pixel32Saved, "pixel32Saved");
+  
+  // DUP numPixels min was 3, now min is 2 because of word alignment
+  MAXVID_ASSERT(numPixels >= 2, "numPixels >= 2");
 #endif // EXTRA_CHECKS
   
 #ifdef EXTRA_CHECKS
@@ -581,6 +584,9 @@ DUP_16BPP:
   MAXVID_ASSERT(numPixels > numWords, "numPixels > numPixels");
   // numPixels is a 14 bit number, so numWords can't be larger than 0x3FFF / 2
   MAXVID_ASSERT(numWords <= (0x3FFF >> 1), "numWords");
+  
+  // The min num pixels at this point is 2, so min number of words is 1, zero is not a valid value
+  MAXVID_ASSERT(numWords >= 1, "numWords >= 1");
 #endif
   
   // pixel32
@@ -669,6 +675,7 @@ DUP_16BPP:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numWords == numWordsSaved, "numWordsSaved");
+  MAXVID_ASSERT(numWords >= 1, "numWords");
   MAXVID_ASSERT(numWords <= 6, "numWords");
   
   MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
@@ -2319,7 +2326,6 @@ DUP_32BPP:
                         );
 #ifdef EXTRA_CHECKS
   numPixelsSaved = numPixels;
-  MAXVID_ASSERT(numPixels >= 1, "COPY numPixels");
 #endif // EXTRA_CHECKS
 #endif // USE_INLINE_ARM_ASM
   
@@ -2338,7 +2344,7 @@ DUP_32BPP:
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
   // numPixels is a 22 bit number
-  MAXVID_ASSERT(numPixels > 2, "numPixels");
+  MAXVID_ASSERT(numPixels >= 3, "numPixels");
   MAXVID_ASSERT(numPixels <= MV_MAX_22_BITS, "numPixels");
 #endif
   
@@ -2435,6 +2441,10 @@ DUP_32BPP:
   uint32_t *expectedDUPSmallPost8FrameBuffer32 = frameBuffer32 + numPixels;
   
   MAXVID_ASSERT(numPixels == numPixelsSaved, "numPixelsSaved");
+  
+  // Valid numPixels (numWords) values are 3, 4, 5, 6 at this point
+  
+  MAXVID_ASSERT(numPixels >= 3 && numPixels <= 6, "numPixels");
   
   if (numPixels >= 3) {
     MAXVID_ASSERT((numPixels - 3) <= 3, "numPixels - 3");
