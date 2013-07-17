@@ -2446,28 +2446,31 @@ DUP_32BPP:
   
   MAXVID_ASSERT(numPixels >= 3 && numPixels <= 6, "numPixels");
   
-  if (numPixels >= 3) {
-    MAXVID_ASSERT((numPixels - 3) <= 3, "numPixels - 3");
+  if (1) {
+    MAXVID_ASSERT(((int)numPixels - 3) >= 0, "numPixels - 3 >= 0");
+    MAXVID_ASSERT((numPixels - 3) <= 3, "numPixels - 3 <= 3");
   }
   
   MAXVID_ASSERT(WR1 == WR1Saved, "WR1Saved");
 #endif
+
+  // Note that this inline ASM code no longer matches the optimized implementation
+  // which has been significantly rescheduled to optimied execution on A8 and A9
+  // processors. Loading was folded into this logic, the C code was updated but
+  // this ASM is no longer the optimal logic.
   
 #if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[wr2], %[wr1]\n\t"
                         "mov %[wr3], %[wr1]\n\t"
-                        // if (numWords >= 3) then write 3 words
-                        "cmp %[numWords], #2\n\t"
-                        "stmgt %[frameBuffer32]!, {%[wr1], %[wr2], %[wr3]}\n\t"
-                        // if (numWords >= 2) then write 2 words
-                        "cmp %[numWords], #1\n\t"
-                        "stmgt %[frameBuffer32], {%[wr1], %[wr2]}\n\t"
-                        // frameBuffer32 += numPixels;
-                        "add %[frameBuffer32], %[frameBuffer32], %[numWords], lsl #2\n\t"
-                        // if (numWords == 1 || numWords == 3) then write 1 word
+                        // unconditionally write 3 words
+                        "stm %[frameBuffer32]!, {%[wr1], %[wr2], %[wr3]}\n\t"
+                        // if (numWords > 4) then write 2 words
+                        "cmp %[numWords], #4\n\t"
+                        "stmgt %[frameBuffer32]!, {%[wr1], %[wr2]}\n\t"
+                        // if (numWords == 4 || numWords == 6) then write 1 word
                         "tst %[numWords], #0x1\n\t"
-                        "strne %[wr1], [%[frameBuffer32], #-4]\n\t"
+                        "streq %[wr1], [%[frameBuffer32]], #4\n\t"
                         :
                         [frameBuffer32] "+l" (frameBuffer32),
                         [numWords] "+l" (numPixels),
@@ -2477,22 +2480,38 @@ DUP_32BPP:
                         );
 #else // USE_INLINE_ARM_ASM
   {
-    if (numPixels >= 3) {
+    // Valid numPixels (numWords) values are 3, 4, 5, 6 at this point
+    
+    // 3 = write 3
+    // 4 = write 3, write 1
+    // 5 = write 3, write 2,
+    // 6 = write 3, write 2, write 1
+    
+    // Write 3 words unconditionally since all 4 cases include a write 3
+    
+    if (1) {
       *(frameBuffer32 + 0) = WR1;
       *(frameBuffer32 + 1) = WR1;
       *(frameBuffer32 + 2) = WR1;
-      frameBuffer32 += 3;
-      numPixels -= 3;
     }
-    if (numPixels >= 2) {
-      *(frameBuffer32 + 0) = WR1;
-      *(frameBuffer32 + 1) = WR1;
+    
+    // Write 2, when numPixels is 5, 6
+    
+    if (numPixels > 4) {
+      *(frameBuffer32 + 3) = WR1;
+      *(frameBuffer32 + 4) = WR1;
     }
-#ifdef EXTRA_CHECKS
-    MAXVID_ASSERT(numPixels >=0 && numPixels <= 3, "numPixels must be in range 0 to 3 here");
-#endif
+
+    #ifdef EXTRA_CHECKS
+        MAXVID_ASSERT(numPixels >=3 && numPixels <= 6, "numPixels must be in range");
+    #endif
+    
     frameBuffer32 += numPixels;
-    if (numPixels & 0x1) {
+    
+    // Write 1 word, when numPixels is 4, 6
+    // Note that numPixels cannot be 0, 2
+    
+    if ((numPixels & 0x1) == 0) {
       *(frameBuffer32 - 1) = WR1;
     }
   }
@@ -2507,7 +2526,7 @@ DUP_32BPP:
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(frameBuffer32 == expectedDUPSmallPost8FrameBuffer32, "frameBuffer32 post8");
-  MAXVID_ASSERT(numPixels >= 0 && numPixels <= 3, "numPixels");
+//  MAXVID_ASSERT(numPixels >= 0 && numPixels <= 3, "numPixels");
 #endif
   
 #ifdef EXTRA_CHECKS

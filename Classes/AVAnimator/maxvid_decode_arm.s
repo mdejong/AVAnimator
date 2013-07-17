@@ -383,46 +383,41 @@ _maxvid_decode_c4_sample32:
 	b	L39
 L23:
 	@ DUP_32BPP
-	
-	mov ip, r8, lsr #10
-	
-	mov r0, lr
-	
-	ldmia r9!, {r8, lr}
-	
-	@ if (numWords > 6) goto DUPBIG_32BPP
 
 	// Note that the specific instruction order took a lot of work to get
 	// right since optimal execution performance on Cortex A8 and A9 is
-	// really tricky. The key to getting a speedup on both processors is
-	// to do an unconditional add after the second stm and then use a
-	// negative offset on the final conditional store without a writeback
-	// so that the next instruction in the decode block is not waiting on r10.
+	// really tricky. In the small DUP case at 32BPP, only the numPixels
+	// values 3, 4, 5, 6 are valid at this point since DUP 2 is handled
+	// inline in the DECODE block. This impl will reorder instruction
+	// execution to take advantage of dual issue and placing unconditional
+	// instructions after a compare. This logic also avoids using r2 as
+	// a stm write value so that lr can be used until lr is reloaded.
+
+	mov ip, r8, lsr #10
+	
+	@ if (numWords > 6) goto DUPBIG_32BPP
 
 	@ DUPSMALL_32BPP
 	cmp	ip, #6
 	bhi	L24
 
-	mov r1, r0
-	mov r2, r0
+	mov r0, lr
+	mov r1, lr
 
-	// if (numWords >= 3) then write 3 words
-	cmp ip, #2
-// FIXME: swap order of stmgt and ip set here to avoid interlock on ip -> cmp.
-// the 1+1 cycle on conditional sub locks on that register. Also see DUPSMALL 16!
-// Note that this is not exactly the same issue and DUPBIG since r10 is not waiting on prev write.
-	stmgt r10!, {r0, r1, r2}
-	subgt ip, ip, #3
+	// Unconditionally write 3 words (numPixels is 3, 4, 5, or 6)
+	stm r10, {r0, r1, lr}
+	add r2, r10, #12
 
-	// if (numWords >= 2) then write 2 words
-	cmp ip, #1
-	stmgt r10, {r0, r1}
+	// if (numWords > 4) then write 2 words (numPixels is 5 or 6)
+	cmp ip, #4
 	// frameBuffer32 += numPixels;
 	add r10, r10, ip, lsl #2
+	stmgt r2, {r0, r1}
 
-	// if (numWords == 1 || numWords == 3) then write 1 word
+	// if (numWords == 4 || numWords == 6) then write 1 word
 	tst ip, #0x1
-	strne r0, [r10, #-4]
+	ldm r9!, {r8, lr}
+	streq r0, [r10, #-4]
 	
 	@ fall through to DECODE_32BPP
 	
@@ -561,7 +556,10 @@ L33:
 L24:
 	@ DUPBIG_32BPP
 
-	mov lr, r8
+	// Note that this r0 init and the loading of r8, lr were pulled into this
+	// block as a result of wanting to optimize DUPSMALL.
+	mov r0, lr
+	ldm r9!, {r8, lr}
 
 	// align64 scheduled with wr2 init
 	tst r10, #7
@@ -570,6 +568,7 @@ L24:
 	subne ip, ip, #1
 	// end align64
 
+	mov lr, r8
 	mov r2, r0
 	mov r3, r0
 	mov r4, r0
