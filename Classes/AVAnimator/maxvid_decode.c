@@ -706,11 +706,11 @@ DUP_16BPP:
 #if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
                         "mov %[wr2], %[wr1]\n\t"
-                        "mov %[wr3], %[wr1]\n\t"
                         // if (numWords >= 3) then write 3 words
                         "cmp %[numWords], #2\n\t"
-                        "stmgt %[frameBuffer16]!, {%[wr1], %[wr2], %[wr3]}\n\t"
+                        "mov %[wr3], %[wr1]\n\t"
                         "subgt %[numWords], %[numWords], #3\n\t"
+                        "stmgt %[frameBuffer16]!, {%[wr1], %[wr2], %[wr3]}\n\t"
                         // if (numWords >= 2) then write 2 words
                         "cmp %[numWords], #1\n\t"
                         "stmgt %[frameBuffer16], {%[wr1], %[wr2]}\n\t"

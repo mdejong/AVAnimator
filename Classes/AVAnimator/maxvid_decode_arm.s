@@ -116,14 +116,12 @@ L3:
 	bhi	L4
 
 	mov r1, r0
-	mov r2, r0
 
 	// if (numWords >= 3) then write 3 words
 	cmp lr, #2
-// FIXME: should schedule r2 init here for dual issue, perhaps r2 after stmgt3
-// FIXME: sub lr should be first
-	stmgt r10!, {r0, r1, r2}
+	mov r2, r0
 	subgt lr, lr, #3
+	stmgt r10!, {r0, r1, r2}
 
 	// if (numWords >= 2) then write 2 words
 	cmp lr, #1
