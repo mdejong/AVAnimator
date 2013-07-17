@@ -848,5 +848,447 @@
   return;
 }
 
+// This test encodes all the small COPY operations at 16BPP (A big COPY is 16 or more pixels)
+// so a COPY convers 2 to 15 pixels with one more pixel possibly consumed to align to 32 bits.
+
+// COPYBIG 16 : if (numPixels >= (8*2))
+
++ (void) testEncodeAndDecodeSmallCopy16BPP
+{
+  const int width = 256;
+  const int height = 1;
+  
+  uint16_t prev[width * height];
+  uint16_t curr[width * height];
+  
+  NSData *codes;
+  NSString *results;
+  
+  // Treat all previous pixels as zero
+  memset(&prev[0], 0, sizeof(prev));
+  assert(prev[0] == 0);
+
+  // Treat all (skipped) pixels as zero
+  memset(&curr[0], 0, sizeof(prev));
+  assert(curr[0] == 0);
+  
+  int offset, val, num;
+  
+  offset = 0;
+
+  // COPY 2 0x2 0x1 SKIP 1
+  val = 0x2;
+  num = 2;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 3 0x3 0x2 0x1 SKIP 1
+  val = 0x3;
+  num = 3;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 4 0x4 0x3 0x2 0x1 SKIP 1
+  val = 0x4;
+  num = 4;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 5 ...
+  val = 0x5;
+  num = 5;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 6
+  val = 0x6;
+  num = 6;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+  }
+  offset += 1;
+  // COPY 7
+  val = 0x7;
+  num = 7;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+  }
+  offset += 1;
+  // COPY 8
+  val = 0x8;
+  num = 8;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+  }
+  offset += 1;
+  // COPY 9
+  val = 0x9;
+  num = 9;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+  }
+  offset += 1;
+  // COPY 10
+  val = 0xA;
+  num = 10;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+  }
+  offset += 1;
+  // COPY 11
+  val = 0xB;
+  num = 11;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+  }
+  offset += 1;
+  // COPY 12
+  val = 0xC;
+  num = 12;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+  }
+  offset += 1;
+  // COPY 13
+  val = 0xD;
+  num = 13;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+  }
+  offset += 1;
+  // COPY 14
+  val = 0xE;
+  num = 14;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+  }
+  offset += 1;
+  // COPY 15
+  val = 0xF;
+  num = 15;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+    
+  //NSLog(@"last offset after first loop %d", (offset - 1));
+
+  // COPY 5 ...
+  val = 0x5;
+  num = 5;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 6
+  val = 0x6;
+  num = 6;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 7
+  val = 0x7;
+  num = 7;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 8
+  val = 0x8;
+  num = 8;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 9
+  val = 0x9;
+  num = 9;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 10
+  val = 0xA;
+  num = 10;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 11
+  val = 0xB;
+  num = 11;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 12
+  val = 0xC;
+  num = 12;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 13
+  val = 0xD;
+  num = 13;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 14
+  val = 0xE;
+  num = 14;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 15
+  val = 0xF;
+  num = 15;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  
+  // Add 1 more COPY 2
+  
+  curr[offset++] = 0x2;
+  //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  curr[offset++] = 0x1;
+  //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  
+  assert(offset == 256);
+    
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), width, height, NULL);
+  results = [MaxvidEncodeTests util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"COPY 2 0x2 0x1 SKIP 1 COPY 3 0x3 0x2 0x1 SKIP 1 COPY 4 0x4 0x3 0x2 0x1 SKIP 1 COPY 5 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 6 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 7 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 8 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 9 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 10 0xA 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 11 0xB 0xA 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 12 0xC 0xB 0xA 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 13 0xD 0xC 0xB 0xA 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 14 0xE 0xD 0xC 0xB 0xA 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 15 0xF 0xE 0xD 0xC 0xB 0xA 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 5 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 6 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 7 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 8 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 9 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 10 0xA 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 11 0xB 0xA 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 12 0xC 0xB 0xA 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 13 0xD 0xC 0xB 0xA 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 14 0xE 0xD 0xC 0xB 0xA 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 15 0xF 0xE 0xD 0xC 0xB 0xA 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 2 0x2 0x1 DONE"], @"isEqualToString");
+  
+  // convert generic codes to c4 codes
+  
+  uint32_t frameBufferSize = width * height;
+  
+  NSData *c4Codes = [self util_convertToC4Codes16:codes frameBufferNumPixels:frameBufferSize];
+  
+  uint32_t *inputBuffer32 = (uint32_t*) c4Codes.bytes;
+  uint32_t inputBuffer32NumWords = c4Codes.length / sizeof(uint32_t);
+  
+  // allocate framebuffer to decode into
+  
+  uint16_t *frameBuffer16 = valloc(4096);
+  memset(frameBuffer16, 0, 4096);
+  
+  // invoke decoder
+  
+  uint32_t result =
+  maxvid_decode_c4_sample16(frameBuffer16, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
+  
+  NSAssert(result == 0, @"result");
+  
+  NSAssert(memcmp(curr, frameBuffer16, sizeof(curr)) == 0, @"memcmp");
+  
+  free(frameBuffer16);
+  return;
+}
+
+// Normally, 16 pixels would be a big copy of 8 words, but when the framebuffer is not word
+// aligned then a one pixel is consumed to align it. The result is a 16 pixel COPY that is
+// handled by writing 7 words and with a half word write before hand.
+
++ (void) testEncodeAndDecodeBigCopyMinusOne16BPP
+{
+  const int width = 17;
+  const int height = 1;
+  
+  uint16_t prev[width * height];
+  uint16_t curr[width * height];
+  
+  NSData *codes;
+  NSString *results;
+  
+  // Treat all previous pixels as zero
+  memset(&prev[0], 0, sizeof(prev));
+  assert(prev[0] == 0);
+  
+  // Treat all (skipped) pixels as zero
+  memset(&curr[0], 0, sizeof(prev));
+  assert(curr[0] == 0);
+  
+  int offset, val, num;
+  
+  offset = 0;
+  
+  offset += 1;
+  
+  // COPY 16
+  val = 0x10;
+  num = 16;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  
+  //NSLog(@"last offset after first loop %d", (offset - 1));
+  
+  assert(offset == 17);
+  
+  codes = maxvid_encode_generic_delta_pixels16(prev, curr, sizeof(curr)/sizeof(uint16_t), width, height, NULL);
+  results = [MaxvidEncodeTests util_printMvidCodes16:codes];
+  NSAssert([results isEqualToString:@"SKIP 1 COPY 16 0x10 0xF 0xE 0xD 0xC 0xB 0xA 0x9 0x8 0x7 0x6 0x5 0x4 0x3 0x2 0x1 DONE"], @"isEqualToString");
+  
+  // convert generic codes to c4 codes
+  
+  uint32_t frameBufferSize = width * height;
+  
+  NSData *c4Codes = [self util_convertToC4Codes16:codes frameBufferNumPixels:frameBufferSize];
+  
+  uint32_t *inputBuffer32 = (uint32_t*) c4Codes.bytes;
+  uint32_t inputBuffer32NumWords = c4Codes.length / sizeof(uint32_t);
+  
+  // allocate framebuffer to decode into
+  
+  uint16_t *frameBuffer16 = valloc(4096);
+  memset(frameBuffer16, 0, 4096);
+  
+  // invoke decoder
+  
+  uint32_t result =
+  maxvid_decode_c4_sample16(frameBuffer16, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
+  
+  NSAssert(result == 0, @"result");
+  
+  NSAssert(memcmp(curr, frameBuffer16, sizeof(curr)) == 0, @"memcmp");
+  
+  free(frameBuffer16);
+  return;
+}
+
+
+// This test encodes all the small COPY operations at 32BPP (a big copy is 8 pixels/words or more)
+
++ (void) testEncodeAndDecodeSmallCopy32BPP
+{
+  const int width = 32;
+  const int height = 1;
+  
+  uint32_t prev[width * height];
+  uint32_t curr[width * height];
+  
+  NSData *codes;
+  NSString *results;
+  
+  // Treat all previous pixels as zero
+  memset(&prev[0], 0, sizeof(prev));
+  assert(prev[0] == 0);
+  
+  // Treat all (skipped) pixels as zero
+  memset(&curr[0], 0, sizeof(prev));
+  assert(curr[0] == 0);
+  
+  int offset, val, num;
+  
+  offset = 0;
+  
+  // COPY 2 0x2 0x1 SKIP 1
+  val = 0x2;
+  num = 2;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 3 0x3 0x2 0x1 SKIP 1
+  val = 0x3;
+  num = 3;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 4 0x4 0x3 0x2 0x1 SKIP 1
+  val = 0x4;
+  num = 4;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 5 ...
+  val = 0x5;
+  num = 5;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 6
+  val = 0x6;
+  num = 6;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  offset += 1;
+  // COPY 7
+  val = 0x7;
+  num = 7;
+  for (int i=0; i<num; i++) {
+    curr[offset++] = val - i;
+    //NSLog(@"curr[%d] = %d", (offset - 1), curr[(offset - 1)]);
+  }
+  
+  assert(offset == 32);
+  
+  codes = maxvid_encode_generic_delta_pixels32(prev, curr, sizeof(curr)/sizeof(uint32_t), width, height, NULL);
+  results = [MaxvidEncodeTests util_printMvidCodes32:codes];
+  NSAssert([results isEqualToString:@"COPY 2 0x2 0x1 SKIP 1 COPY 3 0x3 0x2 0x1 SKIP 1 COPY 4 0x4 0x3 0x2 0x1 SKIP 1 COPY 5 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 6 0x6 0x5 0x4 0x3 0x2 0x1 SKIP 1 COPY 7 0x7 0x6 0x5 0x4 0x3 0x2 0x1 DONE"], @"isEqualToString");
+  
+  // convert generic codes to c4 codes
+  
+  uint32_t frameBufferSize = width * height;
+  
+  NSData *c4Codes = [self util_convertToC4Codes32:codes frameBufferNumPixels:frameBufferSize];
+  
+  uint32_t *inputBuffer32 = (uint32_t*) c4Codes.bytes;
+  uint32_t inputBuffer32NumWords = c4Codes.length / sizeof(uint32_t);
+  
+  // allocate framebuffer to decode into
+  
+  uint32_t *frameBuffer32 = valloc(4096);
+  memset(frameBuffer32, 0, 4096);
+  
+  // invoke decoder
+  
+  uint32_t result =
+  maxvid_decode_c4_sample32(frameBuffer32, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
+  
+  NSAssert(result == 0, @"result");
+  
+  NSAssert(memcmp(curr, frameBuffer32, sizeof(curr)) == 0, @"memcmp");
+  
+  free(frameBuffer32);
+  return;
+}
+
 
 @end
