@@ -1904,15 +1904,25 @@ DUPBIG_16BPP:
                         // Note that wr2 was initialized unconditionally above
                         "mov %[wr3], %[wr1]\n\t"
                         "mov %[wr4], %[wr1]\n\t"
+                        
+                        // In the case where the 8 word loop will not be executed, skip forward
+                        // over the next 8 instructions. This provides a nice speed boost on A8
+                        // processors and is a little bit faster on A9 too.
+                        "cmp %[numWords], #8\n\t"
+                        "blt 2f\n\t"
+
                         "mov %[wr5], %[wr1]\n\t"
                         "mov %[wr6], %[wr1]\n\t"
                         "mov %[wr7], %[wr1]\n\t"
                         "mov %[wr8], %[wr1]\n\t"
                         "1:\n\t"
-                        "cmp %[numWords], #7\n\t"
-                        "stmgt %[frameBuffer16]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
-                        "subgt %[numWords], %[numWords], #8\n\t"
+                        "cmp %[numWords], #15\n\t"
+                        "stm %[frameBuffer16]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
+                        "sub %[numWords], %[numWords], #8\n\t"
                         "bgt 1b\n\t"
+                        "2:\n\t"
+
+                        // handle 7 words or fewer
                         "cmp %[numWords], #3\n\t"
                         // constant init
                         "subgt %[numWords], %[numWords], #4\n\t"
@@ -3687,15 +3697,24 @@ DUPBIG_32BPP:
                         // Note that wr2 was initialized unconditionally above
                         "mov %[wr3], %[wr1]\n\t"
                         "mov %[wr4], %[wr1]\n\t"
+                        
+                        // In the case where the 8 word loop will not be executed, skip forward
+                        // over the next 8 instructions. This provides a nice speed boost on A8
+                        // processors and is a little bit faster on A9 too.
+                        "cmp %[numWords], #8\n\t"
+                        "blt 2f\n\t"
+                        
                         "mov %[wr5], %[wr1]\n\t"
                         "mov %[wr6], %[wr1]\n\t"
                         "mov %[wr7], %[wr1]\n\t"
                         "mov %[wr8], %[wr1]\n\t"
                         "1:\n\t"
-                        "cmp %[numWords], #7\n\t"
-                        "stmgtia %[frameBuffer32]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
-                        "subgt %[numWords], %[numWords], #8\n\t"
+                        "cmp %[numWords], #15\n\t"
+                        "stm %[frameBuffer32]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
+                        "sub %[numWords], %[numWords], #8\n\t"
                         "bgt 1b\n\t"
+                        "2:\n\t"
+                        
                         "cmp %[numWords], #3\n\t"
                         // In the optimized ASM code, constants are scheduled into this block from below.
                         // constant init

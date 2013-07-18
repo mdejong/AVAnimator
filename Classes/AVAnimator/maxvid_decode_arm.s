@@ -296,15 +296,24 @@ L4:
 
 	mov r2, r0
 	mov r3, r0
+
+	// In the case where the 8 word loop will not be executed, skip forward
+	// over the next 8 instructions. This provides a nice speed boost on A8
+	// processors and is a little bit faster on A9 too.
+
+	cmp lr, #8
+	blt 2f
+
 	mov r4, r0
 	mov r5, r0
 	mov r6, r0
 	mov r8, r0
-	1:
-	cmp lr, #7
-	stmgt r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
-	subgt lr, lr, #8
+1:
+	cmp lr, #15 // 7 + 8
+	stm r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	sub lr, lr, #8
 	bgt 1b
+2:
 
 	// The next set of instructions are ordered for max
 	// execution performance on A8 and A9. The key is to
@@ -566,18 +575,28 @@ L24:
 	subne ip, ip, #1
 	// end align64
 
-	mov lr, r8
 	mov r2, r0
 	mov r3, r0
+	// Note that this lr init does not appear in the inline ASM code from the C file
+	mov lr, r8
+
+	// In the case where the 8 word loop will not be executed, skip forward
+	// over the next 8 instructions. This provides a nice speed boost on A8
+	// processors and is a little bit faster on A9 too.
+
+	cmp ip, #8
+	blt 2f
+
 	mov r4, r0
 	mov r5, r0
 	mov r6, r0
 	mov r8, r0
 1:
-	cmp ip, #7
-	stmgt r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
-	subgt ip, ip, #8
+	cmp ip, #15 // 7 + 8
+	stm r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	sub ip, ip, #8
 	bgt 1b
+2:
 
 	// The next set of instructions are scheduled for max
 	// execution performance on A8 and A9. The key is to
