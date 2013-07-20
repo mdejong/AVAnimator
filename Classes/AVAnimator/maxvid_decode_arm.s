@@ -182,6 +182,10 @@ L19:
 	subne ip, ip, #1
 	strneh r8, [r10], #2
 
+// FIXME: possible dual issue performance issue here since
+// ip is getting written by subne above. Could this mov
+// be moved down after the cmp, still unconditional but
+// the extra cycle could avoid register lock on ip.
 	@ numWords
 	mov lr, ip, lsr #1
   
@@ -463,8 +467,8 @@ L39:
 
 	@ else (opCode == COPY) fallthrough
 
-	str lr, [r10], #4
 	rsb ip, r3, r8, lsr #10
+	str lr, [r10], #4
 	
 	@ if (numWords > 7) goto COPYBIG_32BPP
 	

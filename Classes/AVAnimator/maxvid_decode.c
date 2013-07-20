@@ -2970,10 +2970,10 @@ DECODE_32BPP:
   
 #if defined(USE_INLINE_ARM_ASM)
   __asm__ __volatile__ (
-                        // *frameBuffer32++ = inW2;
-                        "str %[inW2], [%[frameBuffer32]], #4\n\t"
                         // numPixels = (inW1 >> 8+2) - 1;
                         "rsb %[numPixels], %[oneConstRegister], %[inW1], lsr #10\n\t"
+                        // *frameBuffer32++ = inW2;
+                        "str %[inW2], [%[frameBuffer32]], #4\n\t"
                         :
                         [numPixels] "+l" (numPixels),
                         [inW1] "+l" (inW1),
