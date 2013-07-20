@@ -1336,9 +1336,40 @@ COPYSMALL_16BPP:
                         );
 
 #else // USE_INLINE_ARM_ASM
-  memcpy(frameBuffer16, inputBuffer32, numWords << 2);
+  // Valid numWords values are 1, 2, 3, 4, 5, 6, 7 at this point
+  
+  // Read/Write 4 words, when numWords is 4, 5, 6, 7
+  
+  if (numWords > 3) {
+    *((uint32_t*)frameBuffer16 + 0) = *(inputBuffer32 + 0);
+    *((uint32_t*)frameBuffer16 + 1) = *(inputBuffer32 + 1);
+    *((uint32_t*)frameBuffer16 + 2) = *(inputBuffer32 + 2);
+    *((uint32_t*)frameBuffer16 + 3) = *(inputBuffer32 + 3);
+    frameBuffer16 += 4 << 1;
+    inputBuffer32 += 4;
+    numWords -= 4;
+  }
+  
+  // Read/Write 2 words, when numWords is 2, 3
+  
+  if (numWords > 1) {
+    *((uint32_t*)frameBuffer16 + 0) = *(inputBuffer32 + 0);
+    *((uint32_t*)frameBuffer16 + 1) = *(inputBuffer32 + 1);
+  }
+  
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(numWords >=0 && numWords <= 3, "numWords must be in range");
+#endif
+  
   frameBuffer16 += numWords << 1;
   inputBuffer32 += numWords;
+  
+  // Read/Write 1 word, when numWords is 1, 3
+  
+  if (numWords & 0x1) {
+    *((uint32_t*)frameBuffer16 - 1) = *(inputBuffer32 - 1);
+  }
+
 #endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
@@ -3059,9 +3090,40 @@ COPYSMALL_32BPP:
                         );
   
 #else // USE_INLINE_ARM_ASM
-  memcpy(frameBuffer32, inputBuffer32, numPixels << 2);
+  // Valid numPixels (numWords) values are 1, 2, 3, 4, 5, 6, 7 at this point
+
+  // Read/Write 4 words, when numPixels is 4, 5, 6, 7
+  
+  if (numPixels > 3) {
+    *(frameBuffer32 + 0) = *(inputBuffer32 + 0);
+    *(frameBuffer32 + 1) = *(inputBuffer32 + 1);
+    *(frameBuffer32 + 2) = *(inputBuffer32 + 2);
+    *(frameBuffer32 + 3) = *(inputBuffer32 + 3);
+    frameBuffer32 += 4;
+    inputBuffer32 += 4;
+    numPixels -= 4;
+  }
+  
+  // Read/Write 2 words, when numPixels is 2, 3
+  
+  if (numPixels > 1) {
+    *(frameBuffer32 + 0) = *(inputBuffer32 + 0);
+    *(frameBuffer32 + 1) = *(inputBuffer32 + 1);
+  }
+  
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(numPixels >=0 && numPixels <= 3, "numPixels must be in range");
+#endif
+  
   frameBuffer32 += numPixels;
   inputBuffer32 += numPixels;
+  
+  // Read/Write 1 word, when numPixels is 1, 3
+  
+  if (numPixels & 0x1) {
+    *(frameBuffer32 - 1) = *(inputBuffer32 - 1);
+  }
+
 #endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
