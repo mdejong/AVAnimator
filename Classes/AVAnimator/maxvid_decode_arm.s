@@ -166,18 +166,14 @@ L19:
 	
 	and ip, r4, r8, lsr #16
 	
-	@ Phantom assign to opCode
-	
 	@ if (opCode == DUP) goto DUP_16BPP
 	
-	cmp	r6, #1
-	beq	L3
-	@ Phantom assign to opCode
-	
+	cmp	r6, #2
+	blt	L3
+
 	@ if (opCode == DONE) goto DONE_16BPP
 	
-	cmp	r6, #3
-	beq	L7
+	bgt	L7
 
 	@ COPY 16BPP
 
@@ -449,24 +445,24 @@ L39:
 	streq lr, [r10], #4
 	ldmeqia r9!, {r8, lr}
 	beq 2b
+	// if (opCode == SKIP)
 	ands ip, r6, r8, lsr #8
 	addeq r10, r10, r8, lsr #8
 	moveq r8, lr
 	ldreq lr, [r9], #4
 	beq 2b
 	
-	@ Phantom assign to opCode
-	
 	@ if (opCode == DUP) goto DUP_32BPP
 	
-	cmp	ip, #1
-	beq	L23
-	@ Phantom assign to opCode
-	
+	cmp	ip, #2
+	blt	L23
+
 	@ if (opCode == DONE) goto DONE_32BPP
-	
-	cmp	ip, #3
-	beq	L27
+
+	bgt	L27
+
+	@ else (opCode == COPY) fallthrough
+
 	str lr, [r10], #4
 	rsb ip, r3, r8, lsr #10
 	
