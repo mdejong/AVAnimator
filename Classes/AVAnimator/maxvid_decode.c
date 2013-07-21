@@ -2612,6 +2612,9 @@ DECODE_32BPP:
   
   MAXVID_ASSERT(skipAfter == skipAfterSaved, "skipAfterSaved");
 #endif
+
+  // Note that the optimized instruction order in the generated ASM no longer matches
+  // this asm block.
   
   __asm__ __volatile__ (
                         "@ DECODE_32BPP\n\t"

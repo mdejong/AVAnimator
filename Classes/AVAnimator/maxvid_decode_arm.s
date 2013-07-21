@@ -431,31 +431,34 @@ L23:
 L39:
 	@ DECODE_32BPP
 	2:
+
+	// frameBuffer32 += skipAfter;
 	add r10, r10, r11, lsl #2
-	and r11, r8, #0xFF
+
 	// if ((inW1 >> 8) == copyOnePixelWord)
 	cmp r4, r8, lsr #8
-	// FIXME: take a look at unconditional mov after the cmp to save
-	// in tmp register so that ld can be done before str. Could
-	// ne used for both this and the DUP2 block (only one added mov).
-	// Unclear if needed since next cycle reads from r11.
+	and r11, r8, #0xFF
+	// r2 = (inW1 >> 8)
+	lsr r2, r8, #8
 	streq lr, [r10], #4
-	ldmeqia r9!, {r8, lr}
+	ldmeq r9!, {r8, lr}
 	beq 2b
+
 	// if ((inW1 >> 8) == dupTwoPixelsWord)
-	cmp r5, r8, lsr #8
-  // FIXME: why not use a single stm or strd here?
-	streq lr, [r10], #4
-	streq lr, [r10], #4
-	ldmeqia r9!, {r8, lr}
+	cmp r5, r2
+	streq lr, [r10]
+	addeq r10, #8
+	streq lr, [r10, #-4]
+	ldmeq r9!, {r8, lr}
 	beq 2b
+
 	// if (opCode == SKIP)
-	ands ip, r6, r8, lsr #8
-	addeq r10, r10, r8, lsr #8
+	ands ip, r6, r2
+	addeq r10, r10, r2
 	moveq r8, lr
 	ldreq lr, [r9], #4
 	beq 2b
-	
+
 	@ if (opCode == DUP) goto DUP_32BPP
 	
 	cmp	ip, #2
@@ -467,7 +470,7 @@ L39:
 
 	@ else (opCode == COPY) fallthrough
 
-	rsb ip, r3, r8, lsr #10
+	rsb ip, r3, r2, lsr #2
 	str lr, [r10], #4
 	
 	@ if (numWords > 7) goto COPYBIG_32BPP
