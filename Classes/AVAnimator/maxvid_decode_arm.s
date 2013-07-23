@@ -554,8 +554,12 @@ LDUP2_32BPP:
 	@ DUP2_32BPP
 
 	str lr, [r10]
-	add r10, #8
-	str lr, [r10, #-4]
+	// The first instr of DECODE_32BPP does an add num words, so
+	// use this little trick to avoid writing to r10 here.
+	//add r10, r10, #8
+	//str lr, [r10, #-4]
+	mov r11, #8>>2
+	str lr, [r10, #4]
 	ldm r9!, {r8, lr}
 
 	@ goto DECODE_32BPP
