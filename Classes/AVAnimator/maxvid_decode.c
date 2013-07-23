@@ -848,6 +848,10 @@ DECODE_16BPP:
   MAXVID_ASSERT(dupTwoPixelsHighHalfWordConstRegister == dupTwoPixelsHighHalfWord, "dupTwoPixelsHighHalfWordConstRegister");
 #endif // EXTRA_CHECKS
 
+  // This impl of the inline ASM no longer matches the optimized implementation. Too much
+  // of the structure has changed to keep this inline block and the optimized ARM asm in sync.
+  // The optimized assembly does forward branches instead of conditional instrs as it is faster.
+  
   __asm__ __volatile__ (
                         "@ DECODE_16BPP\n\t"
                         "2:\n\t"

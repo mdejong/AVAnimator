@@ -90,6 +90,11 @@ _maxvid_decode_c4_sample16:
 	@ goto DECODE_16BPP
 
 	b	L19
+
+// FIXME: check into adding ".align 3" here to align the DUP
+// handler to 64 bits. This might improve performance in
+// the critical decode loop for small and large dups.
+
 L3:
 	@ DUP_16BPP
 	
@@ -138,34 +143,31 @@ L3:
 	strneh r0, [r10], #2
 	
 	@ fall through to DECODE_16BPP
-	
+
+// FIXME: check into adding ".align 3" here to align
+// the branch target to 64bits. Would this improve
+// performance if the code above were an odd number
+// of ARM instructions?
+
 L19:
 	@ DECODE_16BPP
-	2:
+
 	@ if ((opCode = (inW1 >> 30)) == SKIP) ...
 	movs r6, r8, lsr #30
-	addeq r10, r10, r8, lsl #1
-	ldreq r8, [r9], #4
-	beq 2b
+	mov r2, r8, lsr #16
+	beq LSKIP_16BPP
+
 	@ if (COPY1 == (inW1 >> 16)) ...
-	cmp r11, r8, lsr #16
-	streqh r8, [r10], #2
-	ldreq r8, [r9], #4
-	beq 2b
+	cmp r11, r2
+	beq LCOPY1_16BPP
+
 	@ if (DUP2 == (inW1 >> 16)) ...
-	cmp r5, r8, lsr #16
-// FIXME: both here and in the COPY1, if r8 was moved into a tmp
-// register, then the ld was done first, that could speed up
-// the access of r8 when jumping back into decode. Since the
-// cmp cannot dual issue with the conditional, it means that
-// adding 1 inst could be okay in this situation.
-	streqh r8, [r10], #2
-	streqh r8, [r10], #2
-	ldreq r8, [r9], #4
-	beq 2b
-	
-	and ip, r4, r8, lsr #16
-	
+	cmp r5, r2
+	beq LDUP2_16BPP
+
+	@ numPixels = (inW1 >> 16) & extractNumPixelsHighHalfWord;
+	and ip, r4, r2
+
 	@ if (opCode == DUP) goto DUP_16BPP
 	
 	cmp	r6, #2
@@ -193,7 +195,7 @@ L19:
 	
 	cmp	ip, #15
 	bhi	L9
-L10:
+
 	@ COPYSMALL_16BPP
 
 	cmp lr, #3
@@ -215,8 +217,44 @@ L10:
 	ldr r8, [r9], #4
 	
 	@ goto DECODE_16BPP
-	
 	b	L19
+
+// Force each branch in the critical DECODE execution path
+// to be 64 bit aligned. This avoids slower execution
+// in the case where the instruction being branched to
+// is not 64bit aligned.
+
+.align 3
+LSKIP_16BPP:
+	@ SKIP_16BPP
+
+	add r10, r10, r8, lsl #1
+	ldr r8, [r9], #4
+
+	@ goto DECODE_16BPP
+	b L19
+
+.align 3
+LCOPY1_16BPP:
+	@ COPY1_16BPP
+
+	strh r8, [r10], #2
+	ldr r8, [r9], #4
+
+	@ goto DECODE_16BPP
+	b L19
+
+.align 3
+LDUP2_16BPP:
+	@ DUP2_16BPP
+
+	strh r8, [r10], #2
+	strh r8, [r10], #2
+	ldr r8, [r9], #4
+
+	@ goto DECODE_16BPP
+	b L19
+
 L9:
 	@ COPYBIG_16BPP
 
