@@ -474,29 +474,23 @@ L39:
 
 	// frameBuffer32 += skipAfter;
 	add r10, r10, r11, lsl #2
+	mov r2, r8, lsr #8
+	and r11, r8, #0xFF
 
 	// if ((inW1 >> 8) == copyOnePixelWord)
-	cmp r4, r8, lsr #8
-	and r11, r8, #0xFF
-	// r2 = (inW1 >> 8)
-	lsr r2, r8, #8
-	streq lr, [r10], #4
-	ldmeq r9!, {r8, lr}
-	beq 2b
+	cmp r4, r2
+	beq LCOPY1_32BPP
 
 	// if ((inW1 >> 8) == dupTwoPixelsWord)
 	cmp r5, r2
-	streq lr, [r10]
-	addeq r10, #8
-	streq lr, [r10, #-4]
-	ldmeq r9!, {r8, lr}
-	beq 2b
+	beq LDUP2_32BPP
 
 	// if (opCode == SKIP)
 	ands ip, r6, r2
-	addeq r10, r10, r2
 	moveq r8, lr
 	ldreq lr, [r9], #4
+	// faster way to do r10 += (r11 << 2)
+	moveq r11, r2, lsr #2
 	beq 2b
 
 	@ if (opCode == DUP) goto DUP_32BPP
@@ -517,7 +511,7 @@ L39:
 	
 	cmp	ip, #7
 	bhi	L29
-L30:
+
 	@ COPYSMALL_32BPP
 	
 	cmp ip, #3
@@ -539,6 +533,34 @@ L30:
 	@ goto DECODE_32BPP
 	
 	b	L39
+
+// Force each branch in the critical DECODE execution path
+// to be 64 bit aligned. This avoids slower execution
+// in the case where the instruction being branched to
+// is not 64bit aligned.
+
+.align 3
+LCOPY1_32BPP:
+	@ COPY1_32BPP
+
+	str lr, [r10], #4
+	ldm r9!, {r8, lr}
+
+	@ goto DECODE_32BPP
+	b L39
+
+.align 3
+LDUP2_32BPP:
+	@ DUP2_32BPP
+
+	str lr, [r10]
+	add r10, #8
+	str lr, [r10, #-4]
+	ldm r9!, {r8, lr}
+
+	@ goto DECODE_32BPP
+	b L39
+
 L29:
 	@ COPYBIG_32BPP
 	
