@@ -102,7 +102,9 @@ L3:
 	pkhbt r0, r8, r8, lsl #16
 	subne ip, ip, #1
 	strneh r8, [r10], #2
-	
+
+// FIXME: register wait on ip here, move below the ldr.
+	@ numWords
 	mov lr, ip, lsr #1
 	
 	ldr r8, [r9], #4
