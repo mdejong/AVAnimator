@@ -3457,6 +3457,20 @@ COPYBIG_32BPP:
   
 #if defined(USE_INLINE_ARM_ASM)
   if (numPixels >= 16) {
+    // Once we know there are at least 16 words to be copied then do an
+    // additional check to see if it is worth it to invoke memcpy()
+    // for a very large copy operation. The platform defined memcpy()
+    // is optimized for the specific processor type (A8 vs A9) and as
+    // a result it is faster for large copies.
+    
+    if (numPixels >= (MV_PAGESIZE / sizeof(uint32_t))) {
+      memcpy(frameBuffer32, inputBuffer32, numPixels << 2);
+      frameBuffer32 += numPixels;
+      inputBuffer32 += numPixels;
+      // Skip the 8 word loop and any remaining copies by setting to zero
+      numPixels = 0;
+    } else {
+    
     __asm__ __volatile__ (
                           "1:\n\t"
                           "ldm %[inWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
@@ -3481,6 +3495,7 @@ COPYBIG_32BPP:
                           [wr7] "+l" (WR7),
                           [wr8] "+l" (WR8)
                           );
+    }
   }
   
 #ifdef EXTRA_CHECKS

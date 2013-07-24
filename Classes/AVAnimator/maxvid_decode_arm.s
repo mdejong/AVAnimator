@@ -58,6 +58,15 @@
 #undef USE_INLINE_ARM_ASM
 #endif
 
+// It is possible to compile this decoder module without the logic to
+// make a call to the system defined memcpy() function. In the case
+// where the system defined memcpy() is significantly faster for
+// large copies this external call can speed things up. But, if
+// it is slower or does not exist in a bare metal impl then this
+// module can be compiled completely self contained by commenting
+// out this define.
+
+#define USE_SYSTEM_MEMCPY
 
 #if defined(USE_GENERATED_ARM_ASM)
 	.section __TEXT,__text,regular
@@ -478,7 +487,8 @@ L39:
 	ands ip, r6, r2
 	moveq r8, lr
 	ldreq lr, [r9], #4
-	// faster way to do r10 += (r11 << 2)
+	// faster way to do r10 += (r11 << 2), only valid because we know
+	// that a SKIP always has 0x0 as the value for the SKIP_AFTER byte.
 	moveq r11, r2, lsr #2
 	beq 2b
 
@@ -544,10 +554,12 @@ LDUP2_32BPP:
 
 	str lr, [r10]
 	// The first instr of DECODE_32BPP does an add num words, so
-	// use this little trick to avoid writing to r10 here.
+	// use this little trick to avoid writing to r10 here. This
+	// trick depends on add as opposed to mov because a DUP could
+	// have set r11 to a SKIP_AFTER value.
 	//add r10, r10, #8
 	//str lr, [r10, #-4]
-	mov r11, #8>>2
+	add r11, r11, #8>>2
 	str lr, [r10, #4]
 	ldm r9!, {r8, lr}
 
@@ -572,6 +584,13 @@ L29:
 	// if (numPixels >= 16) do 8 word read/write loop
 	cmp	ip, #15
 	bls	L33
+
+#if defined(USE_SYSTEM_MEMCPY)
+	// if (numPixels >= 1024) call memcpy()
+	cmp	ip, #1024
+	bge	LHUGECOPY_32BPP
+#endif // USE_SYSTEM_MEMCPY
+
 1:
 	ldm r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	pld	[r9, #32]
@@ -600,7 +619,7 @@ L33:
 	ldreq r0, [r9], #4
 	streq r0, [r10], #4
 	
-	ldmia r9!, {r8, lr}
+	ldm r9!, {r8, lr}
 	
 	mov r3, #1
 	mov r4, #6
@@ -610,6 +629,49 @@ L33:
 	@ goto DECODE_32BPP
 	
 	b	L39
+
+#if defined(USE_SYSTEM_MEMCPY)
+
+LHUGECOPY_32BPP:
+	@ HUGECOPY_32BPP
+
+	// registers:
+	// r0-r3   : scratch, will not be restored
+	// r4-r8   : function will restore these
+	// r9      : will not be restored
+	// r10-r11 : function will restore these
+	// r12-r15 : will not be restored
+
+	mov r4, r9
+	mov r5, r12 // aka ip
+	mov r6, r12, lsl #2
+
+	// memcpy(frameBuffer32, inputBuffer32, numPixels << 2);
+	mov	r0, r10
+	mov	r1, r9
+	mov	r2, r6
+	bl  _memcpy
+
+	mov	r9, r4
+	mov	r12, r5
+
+	// inputBuffer32 += numPixels;
+	add r9, r9, r6
+	// frameBuffer32 += numPixels;
+	add r10, r10, r6
+
+	ldm r9!, {r8, lr}
+
+	mov r3, #1
+	mov r4, #6
+	mov r5, #9
+	mov r6, #3
+
+	@ goto DECODE_32BPP
+	b L39
+
+#endif // USE_SYSTEM_MEMCPY
+
 L24:
 	@ DUPBIG_32BPP
 
