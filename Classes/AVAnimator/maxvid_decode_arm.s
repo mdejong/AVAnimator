@@ -100,9 +100,7 @@ _maxvid_decode_c4_sample16:
 
 	b	L19
 
-// FIXME: check into adding ".align 3" here to align the DUP
-// handler to 64 bits. This might improve performance in
-// the critical decode loop for small and large dups.
+	// Attempting to add ".align 3" here degraded performance.
 
 L3:
 	@ DUP_16BPP
@@ -527,10 +525,16 @@ L23:
 	streq r0, [r10, #-4]
 	
 	@ fall through to DECODE_32BPP
-	
+
+	// Aligning the DECODE branch to 64 bits fixes a performance problem that only shows up in
+	// the single special case op loop. This issue only appeared after mods to add a memcpy call.
+	// This has something to do with the instruction cache alignment but it is unclear why
+	// this align makes code execute more quickly on A9 but the same change makes the
+	// 16 BPP block execute more slowly.
+
+.align 3
 L39:
 	@ DECODE_32BPP
-	2:
 
 	// frameBuffer32 += skipAfter;
 	add r10, r10, r11, lsl #2
@@ -552,7 +556,7 @@ L39:
 	// faster way to do r10 += (r11 << 2), only valid because we know
 	// that a SKIP always has 0x0 as the value for the SKIP_AFTER byte.
 	moveq r11, r2, lsr #2
-	beq 2b
+	beq L39
 
 	@ if (opCode == DUP) goto DUP_32BPP
 	
