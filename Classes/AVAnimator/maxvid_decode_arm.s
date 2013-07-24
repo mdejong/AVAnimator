@@ -281,6 +281,13 @@ L9:
 	// if (numPixels >= 16) do 8 word read/write loop
 	cmp	lr, #15
 	bls	L13
+
+#if defined(USE_SYSTEM_MEMCPY)
+	// if (numPixels >= 1024) call memcpy()
+	cmp	ip, #1024
+	bge	LHUGECOPY_16BPP
+#endif // USE_SYSTEM_MEMCPY
+
 1:
 	ldm r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	pld	[r9, #32]
@@ -322,6 +329,61 @@ L13:
 	@ goto DECODE_16BPP
 	
 	b	L19
+
+#if defined(USE_SYSTEM_MEMCPY)
+
+LHUGECOPY_16BPP:
+	@ HUGECOPY_16BPP
+
+	// registers:
+	// r0-r3   : scratch, will not be restored
+	// r4-r8   : function will restore these
+	// r9      : will not be restored
+	// r10-r11 : function will restore these
+	// r12-r15 : will not be restored
+
+	mov r4, r9
+	// The r12 register (ip) gets blown away by the memcpy()
+	// invocation, so it needs to be saved. This register
+	// holds the number of pixels and is used to determine
+	// if a trailing half word should be written.
+	mov r5, r12
+	// The r14 register (lr) gets blown away by the memcpy()
+	// invocation, but it is not needed anymore. This
+	// register is currently holding the number of words.
+	mov r6, r14, lsl #2
+
+	// memcpy(frameBuffer32, inputBuffer32, numPixels << 2);
+	mov	r0, r10
+	mov	r1, r9
+	mov	r2, r6
+	bl  _memcpy
+
+	mov	r9, r4
+	mov	r12, r5
+
+	// inputBuffer32 += numPixels;
+	add r9, r9, r6
+	// frameBuffer32 += numPixels;
+	add r10, r10, r6
+
+	// One additional half word might need to be emitted
+	tst ip, #0x1
+	ldrne r3, [r9], #4
+	strneh r3, [r10], #2
+
+	ldr r8, [r9], #4
+
+	mov r5, #2
+	mvn r4, #0xC000
+	// r11 should have been restored to the constant 32769
+	orr r5, r5, r11, lsr #1
+
+	@ goto DECODE_16BPP
+	b L19
+
+#endif // USE_SYSTEM_MEMCPY
+
 L4:
 	@ DUPBIG_16BPP
 
