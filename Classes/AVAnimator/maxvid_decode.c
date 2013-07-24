@@ -1549,7 +1549,58 @@ COPYBIG_16BPP:
                         );
 #endif // USE_INLINE_ARM_ASM
   
-  if (numWords >= 32) {
+// START align64 block
+  
+  // Align to 64 bits to speed up stm writes with only a few conditional instrs.
+  
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(((frameBuffer16 - inframeBuffer16) < frameBufferSize), "dword align already past end of framebuffer");
+  MAXVID_ASSERT(numWords >= 7, "dword align: numWords");
+#endif // EXTRA_CHECKS
+  
+#if defined(USE_INLINE_ARM_ASM)
+  __asm__ __volatile__ (
+                        // if (UINTMOD(frameBuffer16, sizeof(uint64_t)) != 0)
+                        "tst %[frameBuffer16], #7\n\t"
+                        // WR1 = *inputBuffer32++;
+                        "ldrne %[wr1], [%[inputBuffer32]], #4\n\t"
+                        // numWords -= 1;
+                        "subne %[numWords], %[numWords], #1\n\t"
+                        // *((uint32_t*)frameBuffer16) = WR1; frameBuffer16 += 2;
+                        "strne %[wr1], [%[frameBuffer16]], #4\n\t"
+                        :
+                        [numWords] "+l" (numWords),
+                        [wr1] "+l" (WR1),
+                        [wr2] "+l" (WR2),
+                        [inputBuffer32] "+l" (inputBuffer32),
+                        [frameBuffer16] "+l" (frameBuffer16)
+                        );
+#else // USE_INLINE_ARM_ASM
+  
+  if (UINTMOD(frameBuffer16, sizeof(uint64_t)) != 0) {
+    // Framebuffer is word aligned, read/write a word (1 pixel) to dword align.
+    
+    WR1 = *inputBuffer32++;
+    numWords -= 1;
+    *((uint32_t*)frameBuffer16) = WR1;
+    frameBuffer16 += 2;
+  }
+  
+#endif //USE_INLINE_ARM_ASM
+  
+#ifdef EXTRA_CHECKS
+  // The min numWords was 7, now could be >= 6
+  MAXVID_ASSERT(numWords >= 6, "dword align: numWords");
+  MAXVID_ASSERT(frameBuffer16 != NULL, "frameBuffer16");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint64_t)) == 0, "frameBuffer16 dword alignment");
+#endif // EXTRA_CHECKS
+  
+// END align64 block
+  
+  // if (numWords >= 32) block disabled because it seems to be faster to align64
+  // for the output buffer. That avoids a branch forward and a bunch of instructions.
+  
+  if (0) {
     // 16 word copy loop will be run more than 1 time, so align to 8 word cache line
     
     // Align the input pointer to the start of the next cache line. On ARM6 a
@@ -1621,7 +1672,7 @@ COPYBIG_16BPP:
   } // end of if (numWords >= 32)
   
 #ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(numWords >= 7, "numWords");
+  MAXVID_ASSERT(numWords >= 6, "numWords");
 #endif
 
   // Big write loop, use stm to read and write 8 words at a time, 16 words in each loop
@@ -3281,7 +3332,7 @@ COPYBIG_32BPP:
   
 // START align64 block
   
-  // Alight to 64 bits to speed up stm writes with only a few conditional instrs.
+  // Align to 64 bits to speed up stm writes with only a few conditional instrs.
   
 #ifdef EXTRA_CHECKS
   MAXVID_ASSERT(((frameBuffer32 - inframeBuffer32) <= frameBufferSize), "dword align: already past end of framebuffer");

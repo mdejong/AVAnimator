@@ -261,52 +261,41 @@ L9:
 	@ COPYBIG_16BPP
 
 	@ Phantom assign to numWords
-	
-	cmp	lr, #31
-	bls	L11
-	and	r4, r9, #31
-	rsb	r4, r4, #32
-	mov	r4, r4, lsr #2
-	and	r4, r4, #7
-	sub lr, lr, r4
-	cmp r4, #1
-	ldmgtia r9!, {r2, r3}
-	3:
-	subgt r4, r4, #2
-	stmgtia r10!, {r2, r3}
-	cmp r4, #1
-	ldmgtia r9!, {r2, r3}
-	bgt 3b
-	ldreq r2, [r9], #4
-	streq r2, [r10], #4
-	
-L11:
+
+	// align64
+	tst r10, #7
+	ldrne r0, [r9], #4
+	subne lr, lr, #1
+	strne r0, [r10], #4
+	// end align64
+
+	// if (numPixels >= 16) do 8 word read/write loop
 	cmp	lr, #15
 	bls	L13
-	1:
-	ldmia r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
+1:
+	ldm r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	pld	[r9, #32]
 	sub lr, lr, #16
-	stmia r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
-	ldmia r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	stm r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	ldm r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	pld	[r9, #32]
 	cmp lr, #15
-	stmia r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	stm r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	bgt 1b
 	
 L13:
 	cmp lr, #7
-	ldmgtia r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	ldmgt r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	subgt lr, lr, #8
-	stmgtia r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	stmgt r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	cmp lr, #3
-	ldmgtia r9!, {r0, r1, r2, r3}
+	ldmgt r9!, {r0, r1, r2, r3}
 	subgt lr, lr, #4
-	stmgtia r10!, {r0, r1, r2, r3}
+	stmgt r10!, {r0, r1, r2, r3}
 	cmp lr, #1
-	ldmgtia r9!, {r0, r1}
+	ldmgt r9!, {r0, r1}
 	subgt lr, lr, #2
-	stmgtia r10!, {r0, r1}
+	stmgt r10!, {r0, r1}
 	cmp lr, #1
 	ldreq r0, [r9], #4
 	streq r0, [r10], #4
@@ -584,29 +573,29 @@ L29:
 	cmp	ip, #15
 	bls	L33
 1:
-	ldmia r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	ldm r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	pld	[r9, #32]
 	sub ip, ip, #16
-	stmia r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
-	ldmia r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	stm r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	ldm r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	pld	[r9, #32]
 	cmp ip, #15
-	stmia r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	stm r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	bgt 1b
 	
 L33:
 	cmp ip, #7
-	ldmgtia r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	ldmgt r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	subgt ip, ip, #8
-	stmgtia r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
+	stmgt r10!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	cmp ip, #3
-	ldmgtia r9!, {r0, r1, r2, r3}
+	ldmgt r9!, {r0, r1, r2, r3}
 	subgt ip, ip, #4
-	stmgtia r10!, {r0, r1, r2, r3}
+	stmgt r10!, {r0, r1, r2, r3}
 	cmp ip, #1
-	ldmgtia r9!, {r0, r1}
+	ldmgt r9!, {r0, r1}
 	subgt ip, ip, #2
-	stmgtia r10!, {r0, r1}
+	stmgt r10!, {r0, r1}
 	cmp ip, #1
 	ldreq r0, [r9], #4
 	streq r0, [r10], #4
