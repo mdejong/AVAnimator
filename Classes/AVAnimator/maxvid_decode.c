@@ -3279,7 +3279,57 @@ COPYBIG_32BPP:
                         );
 #endif // USE_INLINE_ARM_ASM
   
-  if (numPixels >= 32) {
+// START align64 block
+  
+  // Alight to 64 bits to speed up stm writes with only a few conditional instrs.
+  
+#ifdef EXTRA_CHECKS
+  MAXVID_ASSERT(((frameBuffer32 - inframeBuffer32) <= frameBufferSize), "dword align: already past end of framebuffer");
+  MAXVID_ASSERT(numPixels >= 7, "dword align: numPixels");
+#endif // EXTRA_CHECKS
+  
+#if defined(USE_INLINE_ARM_ASM)
+  __asm__ __volatile__ (
+                        // if (UINTMOD(frameBuffer32, sizeof(uint64_t)) != 0)
+                        "tst %[frameBuffer32], #7\n\t"
+                        // WR1 = *inputBuffer32++;
+                        "ldrne %[wr1], [%[inputBuffer32]], #4\n\t"
+                        // numWords -= 1;
+                        "subne %[numPixels], %[numPixels], #1\n\t"
+                        // *frameBuffer32++ = WR1;
+                        "strne %[wr1], [%[frameBuffer32]], #4\n\t"
+                        :
+                        [numPixels] "+l" (numPixels),
+                        [wr1] "+l" (WR1),
+                        [wr2] "+l" (WR2),
+                        [inputBuffer32] "+l" (inputBuffer32),
+                        [frameBuffer32] "+l" (frameBuffer32)
+                        );
+#else // USE_INLINE_ARM_ASM
+  
+  if (UINTMOD(frameBuffer32, sizeof(uint64_t)) != 0) {
+    // Framebuffer is word aligned, read/write a word (1 pixel) to dword align.
+
+    WR1 = *inputBuffer32++;
+    numPixels -= 1;
+    *frameBuffer32++ = WR1;
+  }
+  
+#endif //USE_INLINE_ARM_ASM
+  
+#ifdef EXTRA_CHECKS
+  // The min numwords was 7, now could be >= 6
+  MAXVID_ASSERT(numPixels >= 6, "dword align: numWords");
+  MAXVID_ASSERT(frameBuffer32 != NULL, "frameBuffer32");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint64_t)) == 0, "frameBuffer32 dword alignment");
+#endif // EXTRA_CHECKS
+  
+// END align64 block
+  
+  // if (numPixels >= 32) block disabled because it seems to be faster to align64
+  // for the output buffer. That avoids a branch forward and a bunch of instructions.
+  
+  if (0) {
     // 16 word copy loop will be run more than 1 time, so align to 8 word cache line
     
     // Align the input pointer to the start of the next cache line. On ARM6 a
@@ -3349,7 +3399,7 @@ COPYBIG_32BPP:
   } // end of if (numPixels >= 32)
   
 #ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(numPixels > 7, "numPixels");
+  MAXVID_ASSERT(numPixels >= 6, "numPixels");
 #endif
   
   // Big write loop, use stm to read and write 8 words at a time, 16 words in each loop
@@ -3358,14 +3408,14 @@ COPYBIG_32BPP:
   if (numPixels >= 16) {
     __asm__ __volatile__ (
                           "1:\n\t"
-                          "ldmia %[inWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
+                          "ldm %[inWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
                           "pld	[%[inWordPtr], #32]\n\t"
                           "sub %[numWords], %[numWords], #16\n\t"
-                          "stmia %[outWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
-                          "ldmia %[inWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
+                          "stm %[outWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
+                          "ldm %[inWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
                           "pld	[%[inWordPtr], #32]\n\t"
                           "cmp %[numWords], #15\n\t"
-                          "stmia %[outWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
+                          "stm %[outWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
                           "bgt 1b\n\t"
                           :
                           [outWordPtr] "+l" (frameBuffer32),
@@ -3395,17 +3445,17 @@ COPYBIG_32BPP:
   
   __asm__ __volatile__ (
                         "cmp %[numWords], #7\n\t"
-                        "ldmgtia %[inWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
+                        "ldmgt %[inWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
                         "subgt %[numWords], %[numWords], #8\n\t"
-                        "stmgtia %[outWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
+                        "stmgt %[outWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4], %[wr5], %[wr6], %[wr7], %[wr8]}\n\t"
                         "cmp %[numWords], #3\n\t"
-                        "ldmgtia %[inWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4]}\n\t"
+                        "ldmgt %[inWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4]}\n\t"
                         "subgt %[numWords], %[numWords], #4\n\t"
-                        "stmgtia %[outWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4]}\n\t"
+                        "stmgt %[outWordPtr]!, {%[wr1], %[wr2], %[wr3], %[wr4]}\n\t"
                         "cmp %[numWords], #1\n\t"
-                        "ldmgtia %[inWordPtr]!, {%[wr1], %[wr2]}\n\t"
+                        "ldmgt %[inWordPtr]!, {%[wr1], %[wr2]}\n\t"
                         "subgt %[numWords], %[numWords], #2\n\t"
-                        "stmgtia %[outWordPtr]!, {%[wr1], %[wr2]}\n\t"
+                        "stmgt %[outWordPtr]!, {%[wr1], %[wr2]}\n\t"
                         "cmp %[numWords], #1\n\t"
                         "ldreq %[wr1], [%[inWordPtr]], #4\n\t"
                         "streq %[wr1], [%[outWordPtr]], #4\n\t"
@@ -3457,7 +3507,7 @@ COPYBIG_32BPP:
   __asm__ __volatile__ (
                         // inW1 = *inputBuffer32++
                         // inW2 = *inputBuffer32++
-                        "ldmia %[inputBuffer32]!, {%[inW1], %[inW2]}\n\t"
+                        "ldm %[inputBuffer32]!, {%[inW1], %[inW2]}\n\t"
                         :
                         [inW1] "+l" (inW1),
                         [inW2] "+l" (inW2),

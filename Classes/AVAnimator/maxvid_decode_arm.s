@@ -569,29 +569,21 @@ L29:
 	@ COPYBIG_32BPP
 	
 	@ Phantom assign to numPixels
-	
-	cmp	ip, #31
-	bls	L31
-	and	r4, r9, #31
-	rsb	r4, r4, #32
-	mov	r4, r4, lsr #2
-	and	r4, r4, #7
-	sub ip, ip, r4
-	cmp r4, #1
-	ldmgtia r9!, {r2, r3}
-	3:
-	subgt r4, r4, #2
-	stmgtia r10!, {r2, r3}
-	cmp r4, #1
-	ldmgtia r9!, {r2, r3}
-	bgt 3b
-	ldreq r2, [r9], #4
-	streq r2, [r10], #4
-	
-L31:
+
+	// Note that align64 needs to go before cmp to branch past
+	// the 8 word loop in the case where 16 would become 15.
+
+	// align64
+	tst r10, #7
+	ldrne r0, [r9], #4
+	subne ip, ip, #1
+	strne r0, [r10], #4
+	// end align64
+
+	// if (numPixels >= 16) do 8 word read/write loop
 	cmp	ip, #15
 	bls	L33
-	1:
+1:
 	ldmia r9!, {r0, r1, r2, r3, r4, r5, r6, r8}
 	pld	[r9, #32]
 	sub ip, ip, #16
