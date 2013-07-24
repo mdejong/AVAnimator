@@ -486,7 +486,13 @@ _maxvid_decode_c4_sample32:
 	@ goto DECODE_32BPP
 	
 	b	L39
-L23:
+
+	// Explicit 64 bit alignment of the DUP block seems to improve performance for the
+	// special case loop. It is unclear exactly why as disassembly indicates that the
+	// first instruction of this block was already 64 bit aligned.
+
+.align 3
+LDUP_32BPP:
 	@ DUP_32BPP
 
 	// Note that the specific instruction order took a lot of work to get
@@ -561,7 +567,7 @@ L39:
 	@ if (opCode == DUP) goto DUP_32BPP
 	
 	cmp	ip, #2
-	blt	L23
+	blt	LDUP_32BPP
 
 	@ if (opCode == DONE) goto DONE_32BPP
 
