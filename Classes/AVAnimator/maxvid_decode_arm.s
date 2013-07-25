@@ -100,8 +100,7 @@ _maxvid_decode_c4_sample16:
 
 	b	LDECODE_16BPP
 
-	// Attempting to add ".align 3" here degraded performance.
-
+.align 3
 LDUP_16BPP:
 	@ DUP_16BPP
 	
@@ -154,11 +153,7 @@ LDUP_16BPP:
 	
 	@ fall through to DECODE_16BPP
 
-// FIXME: check into adding ".align 3" here to align
-// the branch target to 64bits. Would this improve
-// performance if the code above were an odd number
-// of ARM instructions?
-
+.align 3
 LDECODE_16BPP:
 	@ DECODE_16BPP
 
