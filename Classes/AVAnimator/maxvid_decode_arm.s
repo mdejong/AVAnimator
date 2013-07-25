@@ -109,7 +109,9 @@ LDUP_16BPP:
 	subne ip, ip, #1
 	strneh r8, [r10], #2
 
-// FIXME: register wait on ip here, move below the ldr.
+	// Note that the order here is to place a mov between str/ldr to
+	// improvie dual issue. It is slower with the mov after the ldr.
+
 	@ numWords
 	mov lr, ip, lsr #1
 	
@@ -189,10 +191,6 @@ LDECODE_16BPP:
 	subne ip, ip, #1
 	strneh r8, [r10], #2
 
-// FIXME: possible dual issue performance issue here since
-// ip is getting written by subne above. Could this mov
-// be moved down after the cmp, still unconditional but
-// the extra cycle could avoid register lock on ip.
 	@ numWords
 	mov lr, ip, lsr #1
   
