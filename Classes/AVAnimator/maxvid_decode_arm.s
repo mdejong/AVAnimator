@@ -98,11 +98,11 @@ _maxvid_decode_c4_sample16:
 	
 	@ goto DECODE_16BPP
 
-	b	L19
+	b	LDECODE_16BPP
 
 	// Attempting to add ".align 3" here degraded performance.
 
-L3:
+LDUP_16BPP:
 	@ DUP_16BPP
 	
 	tst r10, #3
@@ -125,9 +125,10 @@ L3:
 	// negative offset on the final conditional store without a writeback
 	// so that the next instruction in the decode block is not waiting on r10.
 
-	@ DUPSMALL_16BPP
 	cmp	lr, #6
-	bhi	L4
+	bhi	LDUPBIG_16BPP
+
+	@ DUPSMALL_16BPP
 
 	mov r1, r0
 
@@ -158,7 +159,7 @@ L3:
 // performance if the code above were an odd number
 // of ARM instructions?
 
-L19:
+LDECODE_16BPP:
 	@ DECODE_16BPP
 
 	@ if ((opCode = (inW1 >> 30)) == SKIP) ...
@@ -180,11 +181,11 @@ L19:
 	@ if (opCode == DUP) goto DUP_16BPP
 	
 	cmp	r6, #2
-	blt	L3
+	blt	LDUP_16BPP
 
 	@ if (opCode == DONE) goto DONE_16BPP
 	
-	bgt	L7
+	bgt	LDONE_16BPP
 
 	@ COPY 16BPP
 
@@ -203,7 +204,7 @@ L19:
 	@ if (numWords > 7) goto COPYBIG_16BPP
 	
 	cmp	ip, #15
-	bhi	L9
+	bhi	LCOPYBIG_16BPP
 
 	@ COPYSMALL_16BPP
 
@@ -226,7 +227,7 @@ L19:
 	ldr r8, [r9], #4
 	
 	@ goto DECODE_16BPP
-	b	L19
+	b	LDECODE_16BPP
 
 // Force each branch in the critical DECODE execution path
 // to be 64 bit aligned. This avoids slower execution
@@ -241,7 +242,7 @@ LSKIP_16BPP:
 	ldr r8, [r9], #4
 
 	@ goto DECODE_16BPP
-	b L19
+	b LDECODE_16BPP
 
 .align 3
 LCOPY1_16BPP:
@@ -251,7 +252,7 @@ LCOPY1_16BPP:
 	ldr r8, [r9], #4
 
 	@ goto DECODE_16BPP
-	b L19
+	b LDECODE_16BPP
 
 .align 3
 LDUP2_16BPP:
@@ -262,9 +263,9 @@ LDUP2_16BPP:
 	ldr r8, [r9], #4
 
 	@ goto DECODE_16BPP
-	b L19
+	b LDECODE_16BPP
 
-L9:
+LCOPYBIG_16BPP:
 	@ COPYBIG_16BPP
 
 	@ Phantom assign to numWords
@@ -326,7 +327,7 @@ L13:
 	
 	@ goto DECODE_16BPP
 	
-	b	L19
+	b	LDECODE_16BPP
 
 #if defined(USE_SYSTEM_MEMCPY)
 
@@ -378,11 +379,11 @@ LHUGECOPY_16BPP:
 	orr r5, r5, r11, lsr #1
 
 	@ goto DECODE_16BPP
-	b L19
+	b LDECODE_16BPP
 
 #endif // USE_SYSTEM_MEMCPY
 
-L4:
+LDUPBIG_16BPP:
 	@ DUPBIG_16BPP
 
 	// align64 scheduled with r1 init
@@ -448,8 +449,9 @@ L4:
 
 	@ goto DECODE_16BPP
 	
-	b	L19
-L7:
+	b	LDECODE_16BPP
+
+LDONE_16BPP:
 	@ DONE_16BPP
 	
 	mov	r0, #0
@@ -485,7 +487,7 @@ _maxvid_decode_c4_sample32:
 	
 	@ goto DECODE_32BPP
 	
-	b	L39
+	b	LDECODE_32BPP
 
 	// Explicit 64 bit alignment of the DUP block seems to improve performance for the
 	// special case loop. It is unclear exactly why as disassembly indicates that the
@@ -508,9 +510,10 @@ LDUP_32BPP:
 	
 	@ if (numWords > 6) goto DUPBIG_32BPP
 
-	@ DUPSMALL_32BPP
 	cmp	ip, #6
-	bhi	L24
+	bhi	LDUPBIG_32BPP
+
+	@ DUPSMALL_32BPP
 
 	mov r0, lr
 	mov r1, lr
@@ -539,7 +542,7 @@ LDUP_32BPP:
 	// 16 BPP block execute more slowly.
 
 .align 3
-L39:
+LDECODE_32BPP:
 	@ DECODE_32BPP
 
 	// frameBuffer32 += skipAfter;
@@ -562,7 +565,7 @@ L39:
 	// faster way to do r10 += (r11 << 2), only valid because we know
 	// that a SKIP always has 0x0 as the value for the SKIP_AFTER byte.
 	moveq r11, r2, lsr #2
-	beq L39
+	beq LDECODE_32BPP
 
 	@ if (opCode == DUP) goto DUP_32BPP
 	
@@ -571,7 +574,7 @@ L39:
 
 	@ if (opCode == DONE) goto DONE_32BPP
 
-	bgt	L27
+	bgt	LDONE_32BPP
 
 	@ else (opCode == COPY) fallthrough
 
@@ -581,7 +584,7 @@ L39:
 	@ if (numWords > 7) goto COPYBIG_32BPP
 	
 	cmp	ip, #7
-	bhi	L29
+	bhi	LCOPYBIG_32BPP
 
 	@ COPYSMALL_32BPP
 	
@@ -603,7 +606,7 @@ L39:
 	
 	@ goto DECODE_32BPP
 	
-	b	L39
+	b	LDECODE_32BPP
 
 // Force each branch in the critical DECODE execution path
 // to be 64 bit aligned. This avoids slower execution
@@ -618,7 +621,7 @@ LCOPY1_32BPP:
 	ldm r9!, {r8, lr}
 
 	@ goto DECODE_32BPP
-	b L39
+	b LDECODE_32BPP
 
 .align 3
 LDUP2_32BPP:
@@ -636,9 +639,9 @@ LDUP2_32BPP:
 	ldm r9!, {r8, lr}
 
 	@ goto DECODE_32BPP
-	b L39
+	b LDECODE_32BPP
 
-L29:
+LCOPYBIG_32BPP:
 	@ COPYBIG_32BPP
 	
 	@ Phantom assign to numPixels
@@ -700,7 +703,7 @@ L33:
 	
 	@ goto DECODE_32BPP
 	
-	b	L39
+	b	LDECODE_32BPP
 
 #if defined(USE_SYSTEM_MEMCPY)
 
@@ -740,11 +743,11 @@ LHUGECOPY_32BPP:
 	mov r6, #3
 
 	@ goto DECODE_32BPP
-	b L39
+	b LDECODE_32BPP
 
 #endif // USE_SYSTEM_MEMCPY
 
-L24:
+LDUPBIG_32BPP:
 	@ DUPBIG_32BPP
 
 	// Note that this r0 init and the loading of r8, lr were pulled into this
@@ -815,8 +818,9 @@ L24:
 	
 	@ goto DECODE_32BPP
 	
-	b	L39
-L27:
+	b	LDECODE_32BPP
+
+LDONE_32BPP:
 	@ DONE_32BPP
 	
 	mov	r0, #0
