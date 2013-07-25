@@ -306,16 +306,16 @@ L13:
 	stmgt r10!, {r0, r1}
 	cmp lr, #1
 	ldreq r0, [r9], #4
+	mov r5, #2
 	streq r0, [r10], #4
 	
 	tst ip, #0x1
 	ldrne r3, [r9], #4
+	mvn r4, #0xC000
 	strneh r3, [r10], #2
 	
 	ldr r8, [r9], #4
-	
-	mov r5, #2
-	mvn r4, #0xC000
+
 	orr r5, r5, r11, lsr #1
 	
 	@ goto DECODE_16BPP
@@ -685,12 +685,11 @@ L33:
 	stmgt r10!, {r0, r1}
 	cmp ip, #1
 	ldreq r0, [r9], #4
-	streq r0, [r10], #4
-	
-	ldm r9!, {r8, lr}
-	
 	mov r3, #1
+	streq r0, [r10], #4
+
 	mov r4, #6
+	ldm r9!, {r8, lr}
 	mov r5, #9
 	mov r6, #3
 	
