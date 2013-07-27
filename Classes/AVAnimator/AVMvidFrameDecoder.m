@@ -11,6 +11,10 @@
 
 #import "maxvid_file.h"
 
+#if MV_ENABLE_DELTAS
+#include "maxvid_deltas.h"
+#endif // MV_ENABLE_DELTAS
+
 #if defined(USE_SEGMENTED_MMAP)
 #import "SegmentedMappedData.h"
 #endif // USE_SEGMENTED_MMAP
@@ -96,6 +100,16 @@
    */
 
   self.cgFrameBuffers = nil;
+
+#if MV_ENABLE_DELTAS
+  
+  if (decompressionBuffer) {
+    free(decompressionBuffer);
+    decompressionBuffer = NULL;
+    decompressionBufferSize = 0;
+  }
+  
+#endif // MV_ENABLE_DELTAS
   
   [super dealloc];
 }
@@ -502,6 +516,10 @@
   uint32_t frameBufferNumBytes = nextFrameBuffer.numBytes;
   NSAssert(frameBufferNumBytes > 0, @"frameBufferNumBytes"); // to avoid compiler warning
   
+#if MV_ENABLE_DELTAS
+  uint32_t isDeltas = [self isDeltas];
+#endif // MV_ENABLE_DELTAS
+    
   // Check for the case where multiple frames need to be processed,
   // if one of the frames between the current frame and the target
   // frame is a keyframe, then save time by skipping directly to
@@ -546,11 +564,62 @@
     MVFrame *frame = maxvid_file_frame(self->m_mvFrames, actualFrameIndex);
 
 #ifdef EXTRA_CHECKS
+# if MV_ENABLE_DELTAS
+    if (isDeltas) {
+      NSAssert(maxvid_frame_iskeyframe(frame) == 0, @"frame must not be a keyframe in deltas mode");
+    }
+# endif // MV_ENABLE_DELTAS
+    
     if (actualFrameIndex == 0) {
-      // First frame must be a keyframe
+# if MV_ENABLE_DELTAS
+      if (isDeltas == FALSE) {
+        NSAssert(maxvid_frame_iskeyframe(frame) == 1, @"initial frame must be a keyframe");
+      }
+# else
       NSAssert(maxvid_frame_iskeyframe(frame) == 1, @"initial frame must be a keyframe");
+# endif // MV_ENABLE_DELTAS
     }
 #endif // EXTRA_CHECKS
+    
+#if MV_ENABLE_DELTAS
+    
+    if (isDeltas && actualFrameIndex == 0) {
+      // Delta logic assumes that the previous framebuffer is made up of all black zero pixels.
+      // Explicitly create the "last" framebuffer so that we can apply a patch below. Note
+      // that we have to explicitly mark the data as changed because we want a new frame
+      // that is not marked as a duplicate of the previous frame to be returned.
+      
+      if (maxvid_frame_isnopframe(frame)) {
+        changeFrameData = TRUE;
+      }
+      
+      AVFrame *frame = [AVFrame aVFrame];
+      NSAssert(frame, @"AVFrame is nil");
+      
+      // FIXME: would it be possible to not even create a "last frame and framebuffer"
+      // and instead just set them to nil and clear the next framebuffer so that
+      // we can avoid a copy of plain black pixels anyway? That would also mean
+      // this logic would not need to get 2 buffers or set the lastFrame value.
+      // Unclear how the nop initial frame would work with that approach though.
+      
+      // FIXME: is it possible to rewind in deltas mode and skip past the initial
+      // frame such that the prev data framebuffer has some old junk video frames?
+      
+      // Mark the nextFrameBuffer as locked for a moment so that we can be sure
+      // it will not be returned again by asking for the next framebuffer.
+      nextFrameBuffer.isLockedByDataProvider = TRUE;
+      CGFrameBuffer *emptyFrameBuffer = [self _getNextFramebuffer];
+      NSAssert(emptyFrameBuffer != nextFrameBuffer, @"got same framebuffer twice");
+      nextFrameBuffer.isLockedByDataProvider = FALSE;
+      
+      [emptyFrameBuffer clear];
+      frame.cgFrameBuffer = emptyFrameBuffer;
+      self.lastFrame = frame;
+      
+      self.currentFrameBuffer = emptyFrameBuffer;
+    }
+    
+#endif // MV_ENABLE_DELTAS
     
     if (maxvid_frame_isnopframe(frame)) {
       // This frame is a no-op, since it duplicates data from the previous frame.
@@ -637,7 +706,7 @@
         // recent frame that was successfully decoded.
         
         frameIndex -= 1;
-      } else if (isDeltaFrame) {        
+      } else if (isDeltaFrame) {
         // Apply delta from input buffer over the existing framebuffer
 
         changeFrameData = TRUE;
@@ -649,10 +718,52 @@
 #endif // EXTRA_CHECKS        
         uint32_t inputBuffer32NumWords = inputBuffer32NumBytes >> 2;
         uint32_t status;
+        
+        uint32_t *actualInputBuffer32 = inputBuffer32;
+        
+#if MV_ENABLE_DELTAS
+        
+        if (isDeltas) {
+          // In the case where the input contains pixel deltas, the input data needs to
+          // be transformed in order to remove the deltas before the fast ASM code can
+          // be invoked to actually apply the delta to the framebuffer. This does cost
+          // an extra cycle or read/write logic but it means that multiple decompression
+          // steps can be applied which could save significant space.
+          
+          uint32_t inputBuffer32NumBytes = (inputBuffer32NumWords * 4);
+          
+          if (self->decompressionBuffer == NULL) {
+            self->decompressionBufferSize = self.currentFrameBuffer.numBytes / 4;
+            if (inputBuffer32NumBytes > self->decompressionBufferSize) {
+              self->decompressionBufferSize = inputBuffer32NumBytes;
+            }
+            self->decompressionBuffer = malloc(self->decompressionBufferSize);
+            assert(self->decompressionBuffer);
+          } else if (inputBuffer32NumBytes > self->decompressionBufferSize) {
+            free(self->decompressionBuffer);
+            self->decompressionBufferSize = inputBuffer32NumBytes;
+            self->decompressionBuffer = malloc(self->decompressionBufferSize);
+            assert(self->decompressionBuffer);
+          }
+          
+          // Convert input delta codes to data that can be applied as a patch
+          
+          actualInputBuffer32 = self->decompressionBuffer;
+          
+          if (bpp == 16) {
+            status = maxvid_deltas_decompress16(inputBuffer32, actualInputBuffer32, inputBuffer32NumWords);
+          } else {
+            status = maxvid_deltas_decompress32(inputBuffer32, actualInputBuffer32, inputBuffer32NumWords);
+          }
+          NSAssert(status == 0, @"status");
+        }
+        
+#endif // MV_ENABLE_DELTAS
+        
         if (bpp == 16) {
-          status = maxvid_decode_c4_sample16(frameBuffer, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
+          status = maxvid_decode_c4_sample16(frameBuffer, actualInputBuffer32, inputBuffer32NumWords, frameBufferSize);
         } else {
-          status = maxvid_decode_c4_sample32(frameBuffer, inputBuffer32, inputBuffer32NumWords, frameBufferSize);
+          status = maxvid_decode_c4_sample32(frameBuffer, actualInputBuffer32, inputBuffer32NumWords, frameBufferSize);
         }
         NSAssert(status == 0, @"status");
         
@@ -669,7 +780,7 @@
         if (maxvid_file_version(header) == MV_FILE_VERSION_ZERO) {
           // File rev 0 will calculate an adler checksum using (width * height * numBytesInPixel)
           // such that an odd sized buffer will not include the zero padding pixels. This logic
-          // was changes for file rev 1 so that both the keyframe and delta frame checksums
+          // was changed for file rev 1 so that both the keyframe and delta frame checksums
           // include any zero padding for odd sized framebuffers.
           
           if (bpp == 16) {
@@ -910,5 +1021,22 @@
           self.width, self.height,
           self.numFrames];
 }
+
+#if MV_ENABLE_DELTAS
+
+// FALSE by default, if the mvid file was created with the
+// -deltas option then this property would be TRUE.
+
+- (BOOL) isDeltas
+{
+  uint32_t isCond = maxvid_file_is_deltas([self header]);
+  if (isCond) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+
+#endif // MV_ENABLE_DELTAS
 
 @end

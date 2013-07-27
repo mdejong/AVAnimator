@@ -18,7 +18,8 @@ BOOL
 maxvid_calculate_delta_pixels(NSArray *deltaPixels,
                               int bpp,
                               NSMutableData *mData,
-                              NSUInteger frameBufferNumPixels);
+                              NSUInteger frameBufferNumPixels,
+                              uint32_t encodeFlags);
 
 // Testing indicates that there is no performance improvement in emitting ARM code for this
 // encode module.
@@ -1181,6 +1182,11 @@ goto done; \
       uint16_t dupPixel;
       uint32_t inputBuffer32NumWordsRead;
       
+      if (encodeFlags & MaxvidEncodeFlags_NO_DUP) {
+        // If no DUP codes should be generated, then none should be found in the stream.
+        assert(0);
+      }
+      
       status = maxvid_encode_sample16_generic_decode_dupcodes(inputBuffer32, &inputBuffer32NumWordsRead, inword,
                                                               &dupNumPixels, &dupPixel);
       RETCODE(status);
@@ -1619,6 +1625,11 @@ goto done; \
       uint32_t inputBuffer32NumWordsRead;
       uint32_t skipAfterThisOp = 0;
       
+      if (encodeFlags & MaxvidEncodeFlags_NO_DUP) {
+        // If no DUP codes should be generated, then none should be found in the stream.
+        assert(0);
+      }
+      
       status = maxvid_encode_sample32_generic_decode_dupcodes(inputBuffer32, &inputBuffer32NumWordsRead, inword,
                                                               &dupNumPixels, &dupPixel);
       RETCODE(status);
@@ -1826,7 +1837,8 @@ maxvid_encode_generic_delta_pixels16(const uint16_t * restrict prevInputBuffer16
                                      const uint32_t inputBufferNumWords,
                                      uint32_t width,
                                      uint32_t height,
-                                     BOOL *emitKeyframeAnyway)
+                                     BOOL *emitKeyframeAnyway,
+                                     uint32_t encodeFlags)
 {
   // Calculate delta between previous framebuffer and the current one
   
@@ -1847,7 +1859,8 @@ maxvid_encode_generic_delta_pixels16(const uint16_t * restrict prevInputBuffer16
     BOOL worked = maxvid_calculate_delta_pixels(deltaPixels,
                                                 16,
                                                 mData,
-                                                width * height);
+                                                width * height,
+                                                encodeFlags);
     
     assert(worked);
   }
@@ -1865,7 +1878,8 @@ maxvid_encode_generic_delta_pixels32(const uint32_t * restrict prevInputBuffer32
                                      const uint32_t inputBufferNumWords,
                                      uint32_t width,
                                      uint32_t height,
-                                     BOOL *emitKeyframeAnyway)
+                                     BOOL *emitKeyframeAnyway,
+                                     uint32_t encodeFlags)
 {
   // Calculate delta between previous framebuffer and the current one
   
@@ -1886,7 +1900,8 @@ maxvid_encode_generic_delta_pixels32(const uint32_t * restrict prevInputBuffer32
     BOOL worked = maxvid_calculate_delta_pixels(deltaPixels,
                                                 32,
                                                 mData,
-                                                width * height);
+                                                width * height,
+                                                encodeFlags);
     
     assert(worked);
   }
@@ -2074,7 +2089,8 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
                        NSMutableArray *mPixelRun,
                        int prevPixelOffset,
                        int nextPixelOffset,
-                       int bpp)
+                       int bpp,
+                       uint32_t encodeFlags)
 {
   if ([mPixelRun count] > 0) {
     // Emit codes for this run of pixels
@@ -2090,6 +2106,8 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
     
     assert((lastPixelOffset - firstPixelOffset + 1) == runLength);
     
+    uint32_t checkForDup = (encodeFlags & MaxvidEncodeFlags_NO_DUP) == 0;
+    
     // Scan over the pixels in a run looking for a DUP pattern,
     // meaning a run of delta pixels where each value is the same
     // as the previous one.
@@ -2103,7 +2121,7 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
     for (DeltaPixel *deltaPixel in mPixelRun) {
       uint32_t value = deltaPixel->newValue;
       
-      if ((isFirstPixelInRun == FALSE) && (value == prevPixelValue)) {
+      if ((isFirstPixelInRun == FALSE) && (value == prevPixelValue) && checkForDup) {
         // This delta pixel is the same value as the previous one
         
         if ((dupCount == 0) && ([copyPixels count] > 0)) {
@@ -2127,6 +2145,7 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
         }
       } else {
         // This pixel is not the same value as the previous one, or it is the first pixel
+        // or checking for DUP codes has been disabled.
         
         if (dupCount != 0) {
           // Emit a previous DUP pattern when durrent pixel does not match previous
@@ -2190,7 +2209,8 @@ BOOL
 maxvid_calculate_delta_pixels(NSArray *deltaPixels,
                               int bpp,
                               NSMutableData *mData,
-                              NSUInteger frameBufferNumPixels)
+                              NSUInteger frameBufferNumPixels,
+                              uint32_t encodeFlags)
 {
   NSMutableData *mvidWordCodes = [NSMutableData dataWithCapacity:1024];
   
@@ -2213,7 +2233,7 @@ maxvid_calculate_delta_pixels(NSArray *deltaPixels,
       // and in that case the existing run is of zero length. Otherwise, emit
       // the previous run of pixels so that we can start a new run.
       
-      process_pixel_run(mvidWordCodes, mPixelRun, prevPixelOffset, nextPixelOffset, bpp);
+      process_pixel_run(mvidWordCodes, mPixelRun, prevPixelOffset, nextPixelOffset, bpp, encodeFlags);
       
       [mPixelRun addObject:deltaPixel];
     }
@@ -2225,7 +2245,7 @@ maxvid_calculate_delta_pixels(NSArray *deltaPixels,
   // At the end of the delta pixels, we could have a run of pixels that still need to
   // be processed. In addition, we might need to SKIP to the end of the framebuffer.
   
-  process_pixel_run(mvidWordCodes, mPixelRun, prevPixelOffset, frameBufferNumPixels, bpp);
+  process_pixel_run(mvidWordCodes, mPixelRun, prevPixelOffset, frameBufferNumPixels, bpp, encodeFlags);
   
   // Emit DONE code to indicate that all codes have been emitted
   {
@@ -2255,7 +2275,8 @@ maxvid_write_delta_pixels(AVMvidFileWriter *mvidWriter,
                           NSData *maxvidData,
                           void *inputBuffer,
                           uint32_t inputBufferNumBytes,
-                          NSUInteger frameBufferNumPixels)
+                          NSUInteger frameBufferNumPixels,
+                          const uint32_t encodeFlags)
 {
   int retcode;
   
@@ -2277,9 +2298,9 @@ maxvid_write_delta_pixels(AVMvidFileWriter *mvidWriter,
   NSMutableData *mC4Data = [NSMutableData dataWithCapacity:frameBufferNumPixels];
   
   if (bpp == 16) {
-    retcode = maxvid_encode_c4_sample16(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, mC4Data, 0);
+    retcode = maxvid_encode_c4_sample16(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, mC4Data, encodeFlags);
   } else if (bpp == 24 || bpp == 32) {
-    retcode = maxvid_encode_c4_sample32(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, mC4Data, 0);
+    retcode = maxvid_encode_c4_sample32(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, mC4Data, encodeFlags);
   } else {
     assert(FALSE);
   }

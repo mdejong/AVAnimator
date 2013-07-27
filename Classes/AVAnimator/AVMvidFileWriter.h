@@ -37,6 +37,9 @@
   BOOL  isOpen;
   BOOL  m_genAdler;
   BOOL  m_isAllKeyframes;
+#if MV_ENABLE_DELTAS
+  BOOL  m_isDeltas;
+#endif // MV_ENABLE_DELTAS
 }
 
 @property (nonatomic, copy)   NSString      *mvidPath;
@@ -52,6 +55,15 @@
 
 @property (nonatomic, assign) BOOL          isAllKeyframes;
 
+#if MV_ENABLE_DELTAS
+
+// FALSE by default, if the mvid file was created with the
+// -deltas option then this property would be TRUE.
+
+@property (nonatomic, assign) BOOL          isDeltas;
+
+#endif // MV_ENABLE_DELTAS
+
 + (AVMvidFileWriter*) aVMvidFileWriter;
 
 - (BOOL) open;
@@ -61,6 +73,17 @@
 // Write a single nop frame after a keyframe or a delta frame
 
 - (void) writeNopFrame;
+
+#if MV_ENABLE_DELTAS
+
+// Write special case nop frame that appears at the begining of
+// the file. The weird special case bascially means that the
+// first frame is constructed by applying a frame delta to an
+// all black framebuffer.
+
+- (void) writeInitialNopFrame;
+
+#endif // MV_ENABLE_DELTAS
 
 // Count up the number of nop frames that would appear after the indicated
 // frame display time. The currentFrameDuration is the duration that

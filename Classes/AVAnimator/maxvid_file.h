@@ -6,6 +6,12 @@
 
 #include "maxvid_decode.h"
 
+// If this define is set to 1, then support for the experimental "deltas"
+// input format will be abled. This deltas logic will generate a diff
+// of every frame, including the initial frame.
+
+#define MV_ENABLE_DELTAS 1
+
 #define MV_FILE_MAGIC 0xCAFEBABE
 
 // This flag is set for a .mvid file that contains no delta frames. It is possible
@@ -18,6 +24,17 @@
 // mind that already generated .mvids might have it set as it was used for sRGB flag.
 
 #define MV_FILE_ALL_KEYFRAMES 0x2
+
+// This flag is set for a .mvid file that contains all delta frames. Even the first
+// frame is a delta. This makes it possible to delta specific pixels in the frame
+// deltas.
+
+#if MV_ENABLE_DELTAS
+#define MV_FILE_DELTAS 0x4
+#endif // MV_ENABLE_DELTAS
+
+// These flags are set for a specific frame. A keyframe is not a delta. When
+// data does not change from one frame to the next, that is a nop frame.
 
 #define MV_FRAME_IS_KEYFRAME 0x1
 #define MV_FRAME_IS_NOPFRAME 0x2
@@ -71,6 +88,8 @@ static inline
 void maxvid_frame_setnopframe(MVFrame *mvFrame) {
   mvFrame->lengthAndFlags |= MV_FRAME_IS_NOPFRAME;
 }
+
+// Set/Get frame offset and length, both in terms of bytes
 
 static inline
 void maxvid_frame_setoffset(MVFrame *mvFrame, uint32_t offset) {
@@ -217,6 +236,29 @@ static inline
 void maxvid_file_set_all_keyframes(MVFileHeader *fileHeaderPtr) {
   fileHeaderPtr->versionAndFlags |= (MV_FILE_ALL_KEYFRAMES << 8);
 }
+
+#if MV_ENABLE_DELTAS
+
+// Return TRUE if this file was encoded with frame and pixel deltas.
+// The -deltas option at the command line controls this special logic
+// that makes it possible to treat pixel values as deltas as opposed
+// to direct values.
+
+static inline
+uint32_t maxvid_file_is_deltas(MVFileHeader *fileHeaderPtr) {
+  uint32_t flags = fileHeaderPtr->versionAndFlags >> 8;
+  uint32_t isDeltas = flags & MV_FILE_DELTAS;
+  return isDeltas;
+}
+
+// Explicitly set the deltas flag.
+
+static inline
+void maxvid_file_set_deltas(MVFileHeader *fileHeaderPtr) {
+  fileHeaderPtr->versionAndFlags |= (MV_FILE_DELTAS << 8);
+}
+
+#endif // MV_ENABLE_DELTAS
 
 // adler32 calculation method
 

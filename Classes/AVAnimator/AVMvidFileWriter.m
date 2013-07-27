@@ -89,6 +89,10 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
 @synthesize movieSize = m_movieSize;
 @synthesize isAllKeyframes = m_isAllKeyframes;
 
+#if MV_ENABLE_DELTAS
+@synthesize isDeltas = m_isDeltas;
+#endif // MV_ENABLE_DELTAS
+
 - (void) close
 {
   if (maxvidOutFile) {
@@ -219,6 +223,44 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   frameNum++;
 }
 
+#if MV_ENABLE_DELTAS
+
+// Write special case nop frame that appears at the begining of
+// the file. The weird special case bascially means that the
+// first frame is constructed by applying a frame delta to an
+// all black framebuffer.
+
+- (void) writeInitialNopFrame
+{
+#ifdef LOGGING
+  NSLog(@"writeInitialNopFrame %d", frameNum);
+#endif // LOGGING
+  
+  NSAssert(frameNum == 0, @"initial nop frame must be first frame");
+  NSAssert(frameNum < self.totalNumFrames, @"totalNumFrames");
+  
+  MVFrame *mvFrame = &mvFramesArray[frameNum];
+  
+  maxvid_frame_setoffset(mvFrame, 0);
+  maxvid_frame_setlength(mvFrame, 0);
+
+  // This special case initial nop frame is only emitted with the
+  // all deltas type of mvid file, this type of file contains no
+  // keyframes, only deltas frames.
+  
+  maxvid_frame_setnopframe(mvFrame);
+  
+  // Normally, an adler is not generated for a nop frame. But
+  // this nop frame is actually like a keyframe with all black
+  // pixels. So, set the adler to all bits on.
+  
+  mvFrame->adler = 0xFFFFFFFF;
+  
+  frameNum++;
+}
+
+#endif // MV_ENABLE_DELTAS
+
 + (int) countTrailingNopFrames:(float)currentFrameDuration
                  frameDuration:(float)frameDuration
 {
@@ -344,6 +386,14 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   if (self.isAllKeyframes) {
     maxvid_file_set_all_keyframes(mvHeader);
   }
+  
+#if MV_ENABLE_DELTAS
+  
+  if (self.isDeltas) {
+    maxvid_file_set_deltas(mvHeader);
+  }
+  
+#endif // MV_ENABLE_DELTAS
   
   (void)fseek(maxvidOutFile, 0L, SEEK_SET);
   
