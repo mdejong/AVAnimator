@@ -39,6 +39,14 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 
 @property (readonly) size_t numBytesAllocated;
 
+// This tricky ref to self is needed in ARC mode, since an object cannot invoke retain
+// to retain itself. Instead, hold a property that is set to self so that ARC will
+// do the retain.
+
+#if __has_feature(objc_arc)
+@property (nonatomic, retain) NSObject *arcRefToSelf;
+#endif // objc_arc
+
 @end
 
 // class CGFrameBuffer
@@ -58,13 +66,20 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 @synthesize lockedByImageRef = m_lockedByImageRef;
 @synthesize colorspace = m_colorspace;
 
+#if __has_feature(objc_arc)
+@synthesize arcRefToSelf = m_arcRefToSelf;
+#endif // objc_arc
+
 + (CGFrameBuffer*) cGFrameBufferWithBppDimensions:(NSInteger)bitsPerPixel
                                             width:(NSInteger)width
                                            height:(NSInteger)height
 {
   CGFrameBuffer *obj = [[CGFrameBuffer alloc] initWithBppDimensions:bitsPerPixel width:width height:height];
-  [obj autorelease];
+#if __has_feature(objc_arc)
   return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 - (id) initWithBppDimensions:(NSInteger)bitsPerPixel
@@ -424,7 +439,12 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 
   void *pixelsPtr = self.pixels; // Will return zero copy pointer in zero copy mode. Otherwise self.pixels
   
-	CGDataProviderRef dataProviderRef = CGDataProviderCreateWithData(self,
+	CGDataProviderRef dataProviderRef = CGDataProviderCreateWithData(
+#if __has_feature(objc_arc)
+																	 (__bridge void *)self,
+#else
+																	 self,
+#endif // objc_arc
 																	 pixelsPtr,
 																	 self.width * self.height * (bitsPerPixel / 8),
 																	 releaseData);
@@ -490,6 +510,29 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 	return self->m_isLockedByDataProvider;
 }
 
+#if __has_feature(objc_arc)
+
+// The arc impl uses a property of type NSObject to hold a ref to itself
+// during the time that the buffer is locked by CoreGraphics.
+
+- (void) setIsLockedByDataProvider:(BOOL)newValue
+{
+	NSAssert(m_isLockedByDataProvider == !newValue,
+           @"isLockedByDataProvider property can only be switched");
+  
+	self->m_isLockedByDataProvider = newValue;
+  
+	if (self->m_isLockedByDataProvider) {
+    self.arcRefToSelf = self;
+	} else {
+    self.arcRefToSelf = nil;
+	}
+}
+
+#else
+
+// non-arc impl the explicitly invokes retain/release and does some tricky logging
+
 - (void) setIsLockedByDataProvider:(BOOL)newValue
 {
 	NSAssert(m_isLockedByDataProvider == !newValue,
@@ -525,6 +568,8 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 		}
 	}
 }
+
+#endif // objc_arc
 
 // Set all pixels to 0x0
 
@@ -642,7 +687,12 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 
   self.zeroCopyMappedData = nil;
   
+#if __has_feature(objc_arc)
+  // It should not actually be possible for this method to be invoked if arcRefToSelf is non-nil
+  self.arcRefToSelf = nil;
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 // Save a "zero copy" pointer and a ref to the mapped data. Invoking this function
@@ -698,7 +748,13 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 	NSLog(@"CGFrameBufferProviderReleaseData() called");
 #endif
 
-	CGFrameBuffer *cgBuffer = (CGFrameBuffer *) info;
+  	CGFrameBuffer *cgBuffer;
+#if __has_feature(objc_arc)
+  cgBuffer = (__bridge CGFrameBuffer *) info;
+#else
+	cgBuffer = (CGFrameBuffer *) info;
+#endif // objc_arc
+
 	cgBuffer.isLockedByDataProvider = FALSE;
 
 	// Note that the cgBuffer just deallocated itself, so the

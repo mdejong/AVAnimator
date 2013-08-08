@@ -36,6 +36,10 @@
 	int32_t m_isLockedByDataProvider;
 	CGImageRef m_lockedByImageRef;
 	CGColorSpaceRef m_colorspace;
+
+#if __has_feature(objc_arc)
+	NSObject *m_arcRefToSelf;
+#endif // objc_arc
 }
 
 @property (readonly) char *pixels;
