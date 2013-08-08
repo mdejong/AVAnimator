@@ -127,6 +127,12 @@
   
   RefCountedFD *rcFD = [RefCountedFD refCountedFD:fd];
   
+  // FIXME: examine use case for F_NOCACHE, since it seems to avoid eviction of other data that
+  // is already cached. The F_RDAHEAD seems useful in any case.
+  
+  //fcntl(fd, F_NOCACHE, 1);
+  //fcntl(fd, F_RDAHEAD, 1);
+  
   SegmentedMappedData *obj = [[SegmentedMappedData alloc] init];
   obj.filePath = filePath;
   obj.refCountedFD = rcFD;
@@ -264,7 +270,6 @@
   
   NSAssert((offset % SM_PAGESIZE) == 0, @"offset");
   NSAssert((len % SM_PAGESIZE) == 0, @"len");
-  
   
   int protection;
   int flags;
