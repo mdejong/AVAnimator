@@ -8,9 +8,12 @@
 //  This class defines the protocol that a media render must implement.
 //  The object that contains a AVAnimatorMedia object must set the
 //  media.renderer reference so that the media is able to update
-//  the on screen display when media data is updated.
+//  the on screen display when media data is updated. Each time a frame
+//  of video data is ready, the setFrame setter method is invoked.
 
 #import <Foundation/Foundation.h>
+
+@class AVFrame;
 
 @protocol AVAnimatorMediaRendererProtocol
 
@@ -19,12 +22,12 @@
 
 - (void) mediaAttached:(BOOL)worked;
 
-// setter for obj.image property
+// setter for obj.AVFrame property
 
-- (void) setImage:(UIImage*)inImage;
+- (void) setAVFrame:(AVFrame*)inFrame;
 
-// getter for obj.image property
+// getter for obj.AVFrame property
 
-- (UIImage*) image;
+- (AVFrame*) AVFrame;
 
 @end

@@ -779,7 +779,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   NSAssert(media.currentFrame == 1, @"currentFrame");
 
-  NSAssert(animatorView.image != media.nextFrame, @"nextFrame");
+  NSAssert(animatorView.AVFrame != media.nextFrame, @"nextFrame");
   
   // Invoke pause, this should cancel the next decode and display
   

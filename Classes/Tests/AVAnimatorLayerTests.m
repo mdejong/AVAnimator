@@ -51,9 +51,9 @@
   
   NSString *resourceName = @"2x2_black_blue_16BPP.mvid";
   
-  // Create a plain AVAnimatorView without a movie controls and display
+  // Create a plain AVAnimatorLayer without a movie controls and display
   // in portrait mode. This setup involves no containing views and
-  // has no transforms applied to the AVAnimatorView.
+  // has no transforms applied to the AVAnimatorLayer.
   
   CGRect frame = CGRectMake(0, 0, 2, 2);
   UIView *view = [[[UIView alloc] initWithFrame:frame] autorelease];
@@ -96,15 +96,16 @@
   
   NSAssert(media.currentFrame == 0, @"currentFrame");
   
-  NSAssert(avLayerObj.image != nil, @"image");
-  
   NSAssert(media.prevFrame == nil, @"prev frame not set properly");
   
   uint16_t pixel[4];
 
   // First frame is all black pixels
   
-  [self getPixels16BPP:avLayerObj.image.CGImage
+  AVFrame *frameObj = avLayerObj.AVFrame;
+  NSAssert(frameObj != nil, @"AVFrame");
+  
+  [self getPixels16BPP:frameObj.image.CGImage
                 offset:0
                nPixels:4
               pixelPtr:&pixel[0]];
@@ -116,21 +117,23 @@
   
   // Double check that the contents field matches the core graphics image
 
-  NSAssert(avLayerObj.image.CGImage != nil, @"CGImage is nil");
-  NSAssert((id)avLayerObj.image.CGImage == viewLayer.contents, @"contents not set");
+  NSAssert(frameObj.image.CGImage != nil, @"CGImage is nil");
+  NSAssert((id)frameObj.image.CGImage == viewLayer.contents, @"contents not set");
   
   // Second frame is all blue pixels
   
-  UIImage *frameBefore = avLayerObj.image;
+  UIImage *frameBeforeImage = frameObj.image;
   
   [media showFrame:1];
   
-  UIImage *frameAfter = avLayerObj.image;
+  frameObj = avLayerObj.AVFrame;
+  NSAssert(frameObj != nil, @"AVFrame");
+  UIImage *frameAfterImage = frameObj.image;
   
-  NSAssert(frameAfter != nil, @"image");
-  NSAssert(frameBefore != frameAfter, @"image");
+  NSAssert(frameAfterImage != nil, @"image");
+  NSAssert(frameBeforeImage != frameAfterImage, @"image");
 
-  [self getPixels16BPP:avLayerObj.image.CGImage
+  [self getPixels16BPP:frameAfterImage.CGImage
                 offset:0
                nPixels:4
               pixelPtr:&pixel[0]];
@@ -142,8 +145,8 @@
   
   // Double check that the contents field matches the core graphics image
   
-  NSAssert(avLayerObj.image.CGImage != nil, @"CGImage is nil");
-  NSAssert((id)avLayerObj.image.CGImage == viewLayer.contents, @"contents not set");  
+  NSAssert(frameAfterImage.CGImage != nil, @"CGImage is nil");
+  NSAssert((id)frameAfterImage.CGImage == viewLayer.contents, @"contents not set");
   
   return;
 }
@@ -169,20 +172,27 @@
   
   [window addSubview:view];
   
+  // Create an AVFrame object and set the corresponding property in the
+  // AVAnimatorLayer to explicitly assign a frame that contains a 1x1 image.
+  
+  AVFrame *frameObj = [AVFrame aVFrame];
+  
   // Set image property of the view to a 1x1 image
   
   UIImage *image = [UIImage imageWithContentsOfFile:resPath];
   NSAssert(image, @"image");
+
+  frameObj.image = image;
   
-  NSAssert(avLayerObj.image == nil, @"image should initially be nil");
-  avLayerObj.image = image;
-  NSAssert(avLayerObj.image != nil, @"image is nil");
-  NSAssert(avLayerObj.image == image, @"image");
+  NSAssert(avLayerObj.AVFrame == nil, @"AVFrame should initially be nil");
+  avLayerObj.AVFrame = frameObj;
+  NSAssert(avLayerObj.AVFrame != nil, @"AVFrame is nil");
+  NSAssert(avLayerObj.AVFrame.image == image, @"image");
   
   // Now set the image propert to nil to make sure that clear the current image.
   
-  avLayerObj.image = nil;
-  NSAssert(avLayerObj.image == nil, @"image");
+  avLayerObj.AVFrame = nil;
+  NSAssert(avLayerObj.AVFrame == nil, @"AVFrame getter");
   
   return;
 }

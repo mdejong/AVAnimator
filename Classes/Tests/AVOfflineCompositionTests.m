@@ -10,12 +10,6 @@
 
 #import "RegressionTests.h"
 
-#import "AVAnimatorView.h"
-#include "AVAnimatorViewPrivate.h"
-
-#import "AVAnimatorLayer.h"
-#include "AVAnimatorLayerPrivate.h"
-
 #import "AVAnimatorMedia.h"
 #import "AVAnimatorMediaPrivate.h"
 

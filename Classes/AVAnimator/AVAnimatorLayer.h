@@ -22,7 +22,7 @@
 @private
   CALayer *m_layerObj;
 	AVAnimatorMedia *m_mediaObj;
-	UIImage *m_imageObj;
+	AVFrame *m_frameObj;
 	BOOL mediaDidLoad;
 }
 
@@ -46,12 +46,12 @@
 
 - (void) mediaAttached:(BOOL)worked;
 
-// setter for obj.image property
+// setter for obj.AVFrame property
 
-- (void) setImage:(UIImage*)inImage;
+- (void) setAVFrame:(AVFrame*)inFrame;
 
-// getter for obj.image property
+// getter for obj.AVFrame property
 
-- (UIImage*) image;
+- (AVFrame*) AVFrame;
 
 @end

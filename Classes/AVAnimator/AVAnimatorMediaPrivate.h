@@ -3,9 +3,9 @@
 //
 //  Created by Moses DeJong on 1/8/11.
 //
-// This file defines the private members of the AVAnimatorView.
+// This file defines the private members of the AVAnimatorMedia.
 // These fields would typically be used only by the implementation
-// of AVAnimatorView, but could be needed for regression tests.
+// of AVAnimatorMedia, but could be needed for regression tests.
 //
 //  License terms defined in License.txt.
 
@@ -15,7 +15,7 @@
 
 #import "AVAnimatorMedia.h"
 
-// private properties declaration for AVAnimatorView class
+// private properties declaration for AVAnimatorMedia class
 
 @interface AVAnimatorMedia ()
 
@@ -23,8 +23,8 @@
 
 @property (nonatomic, retain) NSURL *animatorAudioURL;
 
-@property (nonatomic, retain) UIImage *prevFrame;
-@property (nonatomic, retain) UIImage *nextFrame;
+@property (nonatomic, retain) AVFrame *prevFrame;
+@property (nonatomic, retain) AVFrame *nextFrame;
 
 @property (nonatomic, retain) NSTimer *animatorPrepTimer;
 @property (nonatomic, retain) NSTimer *animatorReadyTimer;

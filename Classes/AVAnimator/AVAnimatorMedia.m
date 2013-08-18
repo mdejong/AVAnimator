@@ -1,5 +1,5 @@
 //
-//  AVAnimatorView.m
+//  AVAnimatorMedia.m
 //
 //  Created by Moses DeJong on 3/18/09.
 //
@@ -35,14 +35,14 @@
 
 - (id) initWithMedia:(AVAnimatorMedia*)inMedia;
 
-@end // class AVAnimatorViewAudioPlayerDelegate declaration
+@end // class AVAnimatorMediaAudioPlayerDelegate declaration
 
 @implementation AVAnimatorMediaAudioPlayerDelegate
 
 - (id) initWithMedia:(AVAnimatorMedia*)inMedia {
 	self = [super init];
 	if (self) {
-    // Note that we don't retain a ref here, since the AVAnimatorView is
+    // Note that we don't retain a ref here, as AVAnimatorView/AVAnimatorLayer is
     // the only object that can ref this object, holding a ref would create
     // a circular reference and the view would never be deallocated.
     self->media = inMedia;
@@ -81,10 +81,11 @@
 
 @end // class AVAnimatorMediaAudioPlayerDelegate implementation
 
-// private properties declaration for AVAnimatorView class
+// private properties declaration for AVAnimatorMedia class
+
 #include "AVAnimatorMediaPrivate.h"
 
-// AVAnimatorView class
+// class AVAnimatorMedia
 
 @implementation AVAnimatorMedia
 
@@ -134,12 +135,6 @@
 	NSAssert(self.state != ANIMATING, @"dealloc while animating");
     
 	self.animatorAudioURL = nil;
-  
-  /*
-   CGImageRef imgRef1 = imageView.image.CGImage;
-   CGImageRef imgRef2 = prevFrame.CGImage;
-   CGImageRef imgRef3 = nextFrame.CGImage;
-   */
   
 	self.prevFrame = nil;
 	self.nextFrame = nil;
@@ -348,7 +343,7 @@
 	[self.animatorReadyTimer invalidate];
 	self.animatorReadyTimer = nil;
   
-  //NSLog(@"AVAnimatorViewController: _cleanupReadyToAnimate");
+  //NSLog(@"AVAnimatorMedia: _cleanupReadyToAnimate");
 }
 
 // When a media item is ready to load resources needed for audio/video
@@ -1324,25 +1319,25 @@
   }
 #endif // DEBUG_OUTPUT
   
-	// Display the "next" frame image, this logic does
+	// Display the "next" frame, this logic does
 	// the minimium amount of work to paint the display
 	// with the contents of a UIImage. No objects are
 	// allocated in this callback and no objects
 	// are released. In the case of a duplicate frame
 	// where the next frame is the exact same data as
-	// the current frame, don't change self.image
-	// so that no repaint is done.
+	// the current frame, don't cause a repaint by
+	// changing the AVFrame property.
   
-	UIImage *currentImage = self.renderer.image;
-	UIImage *nextImage = self->m_nextFrame;
-  NSAssert(nextImage, @"nextImage");
+	AVFrame *currentFrame = self.renderer.AVFrame;
+	AVFrame *nextFrame = self.nextFrame;
+	NSAssert(nextFrame, @"nextFrame");
   
-	if (nextImage != currentImage) {
-		self.prevFrame = currentImage;
+	if (nextFrame.isDuplicate == FALSE) {
+		self.prevFrame = currentFrame;
 #if defined(__GNUC__) && !defined(__clang__)
-		[self.renderer setImage:nextImage];
+		[self.renderer setAVFrame:nextFrame];
 #else
-		self.renderer.image = nextImage;
+		self.renderer.AVFrame = nextFrame;
 #endif
 	}
   
@@ -1406,16 +1401,16 @@
 	NSInteger nextFrameNum = self.currentFrame + 1;
 	NSAssert(nextFrameNum >= 0 && nextFrameNum < self.animatorNumFrames, @"nextFrameNum is invalid");
   
-	// Deallocate UIImage object for the frame before
+	// Deallocate AVFrame/UIImage object for the frame before
 	// the currently displayed one. This will drop the
 	// provider ref if it is holding the last ref.
 	// Note that this should also clear the data
 	// provider flag on an associated CGFrameBuffer
 	// so that it can be used again.
   
-	UIImage *prevFrameImage = self.prevFrame;
+	AVFrame *prevFrame = self.prevFrame;
   
-	if (prevFrameImage != nil) {
+	if (prevFrame != nil) {
 /*
 		if (prevFrameImage != self.nextFrame) {
 			NSAssert(prevFrameImage != self.renderer.image,
@@ -1449,8 +1444,7 @@
   if (frame.isDuplicate == TRUE) {
     wasChanged = FALSE;
   } else {
-    UIImage *img = frame.image;
-    self.nextFrame = img;
+    self.nextFrame = frame;
     wasChanged = TRUE;
   }
   
@@ -1527,17 +1521,15 @@
   // will be released while the app is in the background.
   // Note that duplicateCurrentFrame could return nil.
 
-  UIImage *resultImage = nil;
+  AVFrame *resultFrame = nil;
   
   if (copyFinalFrame) {
-    AVFrame *frame = [self.frameDecoder duplicateCurrentFrame];
-    UIImage *finalFrameCopy = frame.image;
-    resultImage = finalFrameCopy;
+    resultFrame = [self.frameDecoder duplicateCurrentFrame];
   }
 #if defined(__GNUC__) && !defined(__clang__)
-  [self.renderer setImage:resultImage];
+  [self.renderer setAVFrame:resultFrame];
 #else
-  self.renderer.image = resultImage;
+  self.renderer.AVFrame = resultFrame;
 #endif
   
   self.renderer = nil;

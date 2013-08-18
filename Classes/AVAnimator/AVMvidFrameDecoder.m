@@ -860,7 +860,9 @@
     
     self.lastFrame = nil;
     
-    // Return a CGImage wrapped in a AVFrame
+    // Return a CGImage wrapped in a AVFrame. Note that a new AVFrame object is returned
+    // each time this method is invoked. The caller can hold on to this returned object
+    // without worry about it being reused.
 
     AVFrame *frame = [AVFrame aVFrame];
     NSAssert(frame, @"AVFrame is nil");

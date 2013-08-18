@@ -25,6 +25,7 @@
 	UIImageOrientation m_animatorOrientation;
 	CGSize m_renderSize;
 	AVAnimatorMedia *m_mediaObj;
+	AVFrame *m_frameObj;
 	BOOL mediaDidLoad;
 }
 

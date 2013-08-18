@@ -1,5 +1,5 @@
 //
-//  AVAnimatorViewPrivate.h
+//  AVAnimatorLayerPrivate.h
 //
 //  Created by Moses DeJong on 1/8/11.
 //
@@ -15,7 +15,7 @@
 
 #import "AVAnimatorLayer.h"
 
-// private properties declaration for AVAnimatorView class
+// private properties declaration for AVAnimatorLayer class
 
 @interface AVAnimatorLayer ()
 
@@ -23,6 +23,6 @@
 
 @property (nonatomic, retain) AVAnimatorMedia *mediaObj;
 
-@property (nonatomic, retain) UIImage *imageObj;
+@property (nonatomic, retain) AVFrame *frameObj;
 
 @end

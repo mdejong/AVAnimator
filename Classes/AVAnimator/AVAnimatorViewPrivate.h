@@ -23,6 +23,8 @@
 
 @property (nonatomic, retain) AVAnimatorMedia *mediaObj;
 
+@property (nonatomic, retain) AVFrame *frameObj;
+
 // private methods
 
 - (void) rotateToPortrait;
