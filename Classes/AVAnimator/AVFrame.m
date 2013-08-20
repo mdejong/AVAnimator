@@ -13,6 +13,7 @@
 
 @synthesize image = m_image;
 @synthesize cgFrameBuffer = m_cgFrameBuffer;
+@synthesize cvBufferRef = m_cvBufferRef;
 @synthesize isDuplicate = m_isDuplicate;
 
 // Constructor
@@ -27,6 +28,7 @@
 {
   self.image = nil;
   self.cgFrameBuffer = nil;
+  self.cvBufferRef = NULL;
   [super dealloc];
 }
 
@@ -68,6 +70,29 @@
   [pool drain];
   
   NSAssert(cgFrameBuffer.isLockedByDataProvider, @"image buffer should be locked by frame image");  
+}
+
+// Setter for self.cvBufferRef, this logic holds on to a retain for the CoreVideo buffer
+
+- (void) setCvBufferRef:(CVImageBufferRef)cvBufferRef
+{
+  if (cvBufferRef) {
+    CFRetain(cvBufferRef);
+  }
+  if (self->m_cvBufferRef) {
+    CFRelease(self->m_cvBufferRef);
+  }
+  self->m_cvBufferRef = cvBufferRef;
+}
+
+- (NSString*) description
+{
+  return [NSString stringWithFormat:@"AVFrame %p (isDuplicate = %d), self.image %p, self.cgFrameBuffer %p, self.cvBufferRef %p",
+          self,
+          self.isDuplicate,
+          self.image,
+          self.cgFrameBuffer,
+          self.cvBufferRef];
 }
 
 @end

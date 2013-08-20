@@ -6,6 +6,8 @@
 
 #import "AVAsset2MvidResourceLoader.h"
 
+#if defined(HAS_AVASSET_CONVERT_MAXVID)
+
 #import "AVFileUtil.h"
 
 #import "AVAssetReaderConvertMaxvid.h"
@@ -153,3 +155,5 @@
 }
 
 @end
+
+#endif // HAS_AVASSET_CONVERT_MAXVID

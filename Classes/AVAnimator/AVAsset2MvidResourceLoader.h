@@ -14,6 +14,10 @@
 
 #import "AVAppResourceLoader.h"
 
+#import "AVAssetConvertCommon.h"
+
+#if defined(HAS_AVASSET_CONVERT_MAXVID)
+
 @interface AVAsset2MvidResourceLoader : AVAppResourceLoader {
   NSString *m_outPath;
   BOOL m_alwaysGenerateAdler;
@@ -28,3 +32,5 @@
 + (AVAsset2MvidResourceLoader*) aVAsset2MvidResourceLoader;
 
 @end
+
+#endif // HAS_AVASSET_CONVERT_MAXVID

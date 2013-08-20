@@ -28,8 +28,9 @@
 #else
   NSImage *m_image;
 #endif // TARGET_OS_IPHONE
-
+  
   CGFrameBuffer *m_cgFrameBuffer;
+  CVImageBufferRef m_cvBufferRef;
   BOOL m_isDuplicate;
 }
 
@@ -44,6 +45,14 @@
 // platform specific image data.
 
 @property (nonatomic, retain) CGFrameBuffer *cgFrameBuffer;
+
+// A frame decoder might provide a buffer directly as a CoreVideo image
+// buffer as opposed to an image. Typically, this ref actually points
+// at a CVPixelBufferRef, but CVImageBufferRef is a more generic superclass
+// ref that could also apply to an OpenGL buffer. The AVAssetFrameDecoder
+// class can decode this type of CoreVideo buffer directly.
+
+@property (nonatomic, assign) CVImageBufferRef cvBufferRef;
 
 @property (nonatomic, assign) BOOL     isDuplicate;
 

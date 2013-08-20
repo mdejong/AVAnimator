@@ -20,7 +20,7 @@
 
 #import <Foundation/Foundation.h>
 
-#include "AVAssetConvertCommon.h"
+#import "AVAssetConvertCommon.h"
 
 #import "AVFrameDecoder.h"
 
@@ -46,9 +46,23 @@
   
   BOOL m_isOpen;
   BOOL m_isReading;
+  BOOL m_readingFinished;
+  BOOL m_produceCoreVideoPixelBuffers;
 }
 
 @property (nonatomic, readonly) NSUInteger  numFrames;
+
+// If this flag is set to TRUE (the default is FALSE) then each AVFrame produced
+// by this frame decoder will contain a CVPixelBufferRef instead of an
+// image. This optimized path avoids multiple pointless framebuffer copies.
+// Because video data can be very very large, this optimal execution path can
+// save a significant amount of execution time, but it is only valid if the rendering
+// target is able to accept a CoreVideo pixel buffer directly. Currently, only a
+// AVAnimatorOpenGLView is able to accept CoreVideo buffers directly.
+// This value should not be changed while actually decoding frames, it should
+// only be set before rendering of frames begins.
+
+@property (nonatomic, assign) BOOL produceCoreVideoPixelBuffers;
 
 + (AVAssetFrameDecoder*) aVAssetFrameDecoder;
 
