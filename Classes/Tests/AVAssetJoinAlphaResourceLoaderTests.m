@@ -21,6 +21,8 @@
 
 #import "AVAssetFrameDecoder.h"
 
+#import "AVFrame.h"
+
 #import "movdata.h"
 
 #define MAX_WAIT 600

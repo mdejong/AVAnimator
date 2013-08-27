@@ -28,6 +28,8 @@
 
 #import "AVGIF89A2MvidResourceLoader.h"
 
+#import "AVFrame.h"
+
 @interface AVResourceLoaderTests : NSObject {}
 @end
 

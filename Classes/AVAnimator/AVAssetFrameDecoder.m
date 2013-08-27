@@ -11,6 +11,8 @@
 
 #import "CGFrameBuffer.h"
 
+#import "AVFrame.h"
+
 #import <AVFoundation/AVFoundation.h>
 
 #import <AVFoundation/AVAsset.h>

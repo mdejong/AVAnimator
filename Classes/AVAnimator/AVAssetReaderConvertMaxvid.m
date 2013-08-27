@@ -11,6 +11,8 @@
 
 #if defined(HAS_AVASSET_CONVERT_MAXVID)
 
+#import "AVFrame.h"
+
 #import "AVAssetFrameDecoder.h"
 
 #import "CGFrameBuffer.h"

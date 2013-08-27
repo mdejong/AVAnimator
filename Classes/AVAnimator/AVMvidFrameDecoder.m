@@ -9,6 +9,8 @@
 
 #import "CGFrameBuffer.h"
 
+#import "AVFrame.h"
+
 #import "maxvid_file.h"
 
 #if MV_ENABLE_DELTAS

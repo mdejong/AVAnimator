@@ -14,6 +14,8 @@
 
 #import "AVAssetReaderConvertMaxvid.h"
 
+#import "AVFrame.h"
+
 #import "AVAssetFrameDecoder.h"
 
 #import "CGFrameBuffer.h"

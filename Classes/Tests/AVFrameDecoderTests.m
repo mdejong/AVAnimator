@@ -27,6 +27,8 @@
 
 #import "CGFrameBuffer.h"
 
+#import "AVFrame.h"
+
 @interface AVFrameDecoderTests : NSObject {
 }
 @end

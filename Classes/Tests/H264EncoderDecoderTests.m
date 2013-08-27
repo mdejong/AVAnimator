@@ -35,6 +35,8 @@
 
 #import "AVAssetFrameDecoder.h"
 
+#import "AVFrame.h"
+
 // Util class for use in testing decoder
 
 @interface AVAssetReaderConvertMaxvid_NotificationUtil : NSObject {

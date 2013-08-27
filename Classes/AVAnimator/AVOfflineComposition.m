@@ -15,6 +15,8 @@
 
 #import "AVMvidFileWriter.h"
 
+#import "AVFrame.h"
+
 #import "AVMvidFrameDecoder.h"
 
 #import <QuartzCore/QuartzCore.h>

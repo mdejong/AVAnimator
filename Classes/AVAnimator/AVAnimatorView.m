@@ -9,6 +9,8 @@
 
 #import <QuartzCore/QuartzCore.h>
 
+#import "AVFrame.h"
+
 #import "AVFrameDecoder.h"
 
 #import "AVAnimatorMedia.h"

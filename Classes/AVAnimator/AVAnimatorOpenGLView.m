@@ -20,6 +20,8 @@
 
 #import "AVAnimatorMedia.h"
 
+#import "AVFrame.h"
+
 #import <mach/mach.h>
 
 #if __has_feature(objc_arc)

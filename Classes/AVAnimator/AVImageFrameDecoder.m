@@ -8,6 +8,8 @@
 #import "AVImageFrameDecoder.h"
 #import "AutoPropertyRelease.h"
 
+#import "AVFrame.h"
+
 @implementation AVImageFrameDecoder
 
 @synthesize cgFrameBuffers = m_cgFrameBuffers;

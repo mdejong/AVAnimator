@@ -11,8 +11,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import "AVFrame.h"
-
+@class AVFrame;
 @class CGFrameBuffer;
 
 @interface AVFrameDecoder : NSObject {

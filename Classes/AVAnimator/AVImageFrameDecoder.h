@@ -20,6 +20,8 @@
 #import <Foundation/Foundation.h>
 #import "AVFrameDecoder.h"
 
+@class UIImage;
+
 @interface AVImageFrameDecoder : AVFrameDecoder {
   NSArray *m_cgFrameBuffers;
   NSArray *m_urls;

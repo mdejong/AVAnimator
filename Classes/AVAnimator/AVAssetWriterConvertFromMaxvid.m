@@ -25,6 +25,8 @@
 // FIXME: remove CGFrameBuffer include later
 #import "CGFrameBuffer.h"
 
+#import "AVFrame.h"
+
 #import "AutoPropertyRelease.h"
 
 #import "AVMvidFrameDecoder.h"

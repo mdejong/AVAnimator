@@ -16,6 +16,7 @@
 
 #import "CGFrameBuffer.h"
 #import "AVResourceLoader.h"
+#import "AVFrame.h"
 #import "AVFrameDecoder.h"
 
 #import "AVAppResourceLoader.h"

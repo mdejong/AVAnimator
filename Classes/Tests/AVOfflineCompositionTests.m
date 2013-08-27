@@ -23,6 +23,8 @@
 
 #import "AVOfflineComposition.h"
 
+#import "AVFrame.h"
+
 #define MAX_WAIT_TIME 10.0
 
 // Private API

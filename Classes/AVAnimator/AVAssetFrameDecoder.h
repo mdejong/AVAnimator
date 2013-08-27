@@ -19,6 +19,7 @@
 //  be used to read frames from an asset is a non-realtime blocking usage.
 
 #import <Foundation/Foundation.h>
+#import <CoreGraphics/CoreGraphics.h>
 
 #import "AVAssetConvertCommon.h"
 
