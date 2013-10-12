@@ -30,6 +30,8 @@
 		CD15C2D512BC9BDC00A26588 /* VolumeLeftTall.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C2CD12BC9BDC00A26588 /* VolumeLeftTall.png */; };
 		CD15C2D612BC9BDC00A26588 /* VolumeRightTall.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C2CE12BC9BDC00A26588 /* VolumeRightTall.png */; };
 		CD15C54F12BCADA800A26588 /* smiley.png in Resources */ = {isa = PBXBuildFile; fileRef = CD15C54E12BCADA800A26588 /* smiley.png */; };
+		CD1616D6180902ED00429AC2 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD1616D5180902ED00429AC2 /* MobileCoreServices.framework */; };
+		CD1616D91809039F00429AC2 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD1616D5180902ED00429AC2 /* MobileCoreServices.framework */; };
 		CD17DF6C168BAAB500DE7E56 /* Sweep15FPS.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CDD64171168804CD00492B80 /* Sweep15FPS.mvid.7z */; };
 		CD17DF70168BB3C800DE7E56 /* AlphaGhost.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = CDD6416D1687FC3C00492B80 /* AlphaGhost.mvid.7z */; };
 		CD1B207D1793283400D83D28 /* MaxvidEncodeDecodeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD1B207C1793283400D83D28 /* MaxvidEncodeDecodeTests.m */; };
@@ -383,6 +385,7 @@
 		CD15C2CD12BC9BDC00A26588 /* VolumeLeftTall.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = VolumeLeftTall.png; sourceTree = "<group>"; };
 		CD15C2CE12BC9BDC00A26588 /* VolumeRightTall.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = VolumeRightTall.png; sourceTree = "<group>"; };
 		CD15C54E12BCADA800A26588 /* smiley.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = smiley.png; sourceTree = "<group>"; };
+		CD1616D5180902ED00429AC2 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		CD1B207C1793283400D83D28 /* MaxvidEncodeDecodeTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MaxvidEncodeDecodeTests.m; sourceTree = "<group>"; };
 		CD288F101694A72400A5CDAD /* ExplosionAdjusted_alpha_CRF_30_24BPP.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ExplosionAdjusted_alpha_CRF_30_24BPP.m4v; sourceTree = "<group>"; };
 		CD288F111694A72400A5CDAD /* ExplosionAdjusted_rgb_CRF_30_24BPP.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = ExplosionAdjusted_rgb_CRF_30_24BPP.m4v; sourceTree = "<group>"; };
@@ -628,6 +631,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD1616D6180902ED00429AC2 /* MobileCoreServices.framework in Frameworks */,
 				CD8CAB1217C32A61008FB2A1 /* GLKit.framework in Frameworks */,
 				CD8CAB1317C32A61008FB2A1 /* OpenGLES.framework in Frameworks */,
 				CD64780F17754827000FDD3A /* CoreText.framework in Frameworks */,
@@ -649,6 +653,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD1616D91809039F00429AC2 /* MobileCoreServices.framework in Frameworks */,
 				CD8CAB1017C32A4E008FB2A1 /* GLKit.framework in Frameworks */,
 				CD8CAB1117C32A4E008FB2A1 /* OpenGLES.framework in Frameworks */,
 				CD64781017754831000FDD3A /* CoreText.framework in Frameworks */,
@@ -755,6 +760,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				CD1616D5180902ED00429AC2 /* MobileCoreServices.framework */,
 				CD8CAB0E17C32A4E008FB2A1 /* GLKit.framework */,
 				CD8CAB0F17C32A4E008FB2A1 /* OpenGLES.framework */,
 				CD64780E17754827000FDD3A /* CoreText.framework */,

@@ -9,6 +9,11 @@
 
 #import <QuartzCore/QuartzCore.h>
 
+#import <ImageIO/ImageIO.h>
+
+#import <MobileCoreServices/UTCoreTypes.h>
+
+
 // Alignment is not an issue, makes no difference in performance
 //#define USE_ALIGNED_VALLOC 1
 
@@ -735,6 +740,74 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   }
   
   self->m_colorspace = colorspace;
+}
+
+- (void) clearAlphaChannel
+{
+  assert(self.isLockedByDataProvider == FALSE);
+  //assert(self.bitsPerPixel == 24);
+  
+  uint32_t *pixelsPtr  = (uint32_t*) self.pixels;
+  uint32_t numPixels = (uint32_t)(self.width * self.height);
+  
+  for (int i = 0; i < numPixels; i++) {
+    uint32_t value = pixelsPtr[i];
+    assert((value >> 24) == 0xFF || (value >> 24) == 0x0);
+    // Throw out alpha values
+    value = value & 0xFFFFFF;
+    pixelsPtr[i] = value;
+  }
+}
+
+// This method resets the alpha channel for each pixel to be fully opaque.
+
+- (void) resetAlphaChannel
+{
+  assert(self.isLockedByDataProvider == FALSE);
+  //assert(self.bitsPerPixel == 24);
+  
+  uint32_t *pixelsPtr  = (uint32_t*) self.pixels;
+  uint32_t numPixels = (uint32_t)(self.width * self.height);
+  
+  for (int i = 0; i < numPixels; i++) {
+    uint32_t value = pixelsPtr[i];
+    value = (0xFF << 24) | value;
+    pixelsPtr[i] = value;
+  }
+}
+
+// Convert pixels to a PNG image format that can be easily saved to disk.
+
+- (NSData*) formatAsPNG
+{
+  NSMutableData *mData = [NSMutableData data];
+  
+  @autoreleasepool {
+    
+    // Render buffer as a PNG image
+    
+    CFStringRef type = kUTTypePNG;
+    size_t count = 1;
+    CGImageDestinationRef dataDest;
+    dataDest = CGImageDestinationCreateWithData((CFMutableDataRef)mData,
+                                                type,
+                                                count,
+                                                NULL);
+    assert(dataDest);
+    
+    CGImageRef imgRef = [self createCGImageRef];
+    
+    CGImageDestinationAddImage(dataDest, imgRef, NULL);
+    CGImageDestinationFinalize(dataDest);
+    
+    CGImageRelease(imgRef);
+    CFRelease(dataDest);
+    
+    // Return instance object that was allocated outside the scope of pool
+    
+  }
+  
+  return [NSData dataWithData:mData];
 }
 
 @end
