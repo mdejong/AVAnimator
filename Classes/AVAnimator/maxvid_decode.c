@@ -2971,7 +2971,7 @@ DECODE_32BPP:
     // DUP
     
 #ifdef EXTRA_CHECKS
-    numPixels = inW1 >> 8+2;
+    numPixels = inW1 >> (8+2);
     
     MAXVID_ASSERT(numPixels != 0, "DUP2 numPixels");
     MAXVID_ASSERT(numPixels != 1, "DUP2 numPixels");
@@ -3007,7 +3007,7 @@ DECODE_32BPP:
   
   if (opCode == DONE) {
 #ifdef EXTRA_CHECKS
-    numPixels = inW1 >> 8+2;
+    numPixels = inW1 >> (8+2);
     
     MAXVID_ASSERT(numPixels == 0, "numPixels");
     MAXVID_ASSERT(inW1 == (DONE << 8), "DONE");
@@ -3034,7 +3034,7 @@ DECODE_32BPP:
   MAXVID_ASSERT(inW1 == inW1Saved, "inW1Saved");
   MAXVID_ASSERT(inW2 == inW2Saved, "inW2Saved");
   
-  numPixels = inW1 >> 8+2;
+  numPixels = inW1 >> (8+2);
   
   MAXVID_ASSERT(numPixels != 0, "COPY1 numPixels");
   MAXVID_ASSERT(numPixels != 1, "COPY1 numPixels");
