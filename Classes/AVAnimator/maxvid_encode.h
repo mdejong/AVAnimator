@@ -147,7 +147,7 @@ maxvid32_internal_code(MV_GENERIC_CODE opCode, const uint32_t num, const uint32_
   // num is the upper most 22 bits in the word
   // opCode is the next 2 bits
   // the lowest 8 bits are a small "skip after" value
-  uint32_t word = (numWord << 8+2) | (opCodeWord << 8) | skipAfterWord;
+  uint32_t word = (numWord << (8+2)) | (opCodeWord << 8) | skipAfterWord;
 #ifdef EXTRA_CHECKS
   {
     MV32_PARSE_OP_NUM_SKIP(word, opVal, numVal, skipVal);
