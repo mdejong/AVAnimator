@@ -902,7 +902,7 @@ maxvid_encode_sample16_c4_encode_dupcodes(NSMutableData *mC4Data,
 #ifdef EXTRA_CHECKS
     uint32_t opCodeDecoded = (dupCode >> (16 + 14));
     assert(opCodeDecoded == opCode);
-    uint32_t numPartDecoded = ((dupCode << 2) >> 2+16);
+    uint32_t numPartDecoded = ((dupCode << 2) >> (2+16));
     
     assert(numPartDecoded == dupCountThisLoop);
     uint16_t pixelPartDecoded = (uint16_t)dupPixel;
@@ -1005,7 +1005,7 @@ maxvid_encode_sample16_c4_encode_copycodes(NSMutableData *mC4Data,
 #ifdef EXTRA_CHECKS
     uint32_t opCodeDecoded = (copyCode >> (16 + 14));
     assert(opCodeDecoded == opCode);
-    uint32_t numPartDecoded = ((copyCode << 2) >> 2+16);
+    uint32_t numPartDecoded = ((copyCode << 2) >> (2+16));
     assert(numPartDecoded == numPart);
     uint16_t pixelPartDecoded = (uint16_t)copyCode;
     assert(pixelPartDecoded == copyPixel);
