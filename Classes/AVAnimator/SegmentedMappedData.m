@@ -35,7 +35,13 @@
   RefCountedFD *obj = [[RefCountedFD alloc] init];
   obj->m_fd = fd;
   obj->m_closeFileFlag = TRUE;
+#if __has_feature(objc_arc)
+  // ARC enabled
+  return obj;
+#else
+  // ARC disabled
   return [obj autorelease];
+#endif
 }
 
 + (RefCountedFD*) refCountedFDWithCloseFlag:(int)fd
@@ -52,7 +58,13 @@
     int close_result = close(m_fd);
     NSAssert(close_result == 0, @"close_result");
   }
+  
+#if __has_feature(objc_arc)
+  // ARC enabled
+#else
+  // ARC disabled
   [super dealloc];
+#endif
 }
 
 @end // RefCountedFD
@@ -138,7 +150,14 @@
   obj.refCountedFD = rcFD;
   obj->m_mappedLen = fileSizeT;
   obj->isContainer = TRUE;
+  
+#if __has_feature(objc_arc)
+  // ARC enabled
+  return obj;
+#else
+  // ARC disabled
   return [obj autorelease];
+#endif
 }
 
 + (SegmentedMappedData*) segmentedMappedDataWithDeferredMapping:(NSString*)filePath
@@ -176,8 +195,14 @@
   }
   
   obj->m_mappedOSLen = osLength;
-  
+ 
+#if __has_feature(objc_arc)
+  // ARC enabled
+  return obj;
+#else
+  // ARC disabled
   return [obj autorelease];
+#endif
 }
 
 // Create a writeable mapped memory segment at the given offset and with the
@@ -216,10 +241,15 @@
     [self unmapSegment];
   }
   
-  [m_filePath release];
-  [m_refCountedFD release];
+  self.filePath = nil;
+  self.refCountedFD = nil;
   
+#if __has_feature(objc_arc)
+  // ARC enabled
+#else
+  // ARC disabled
   [super dealloc];
+#endif
 }
 
 - (const void*) bytes
@@ -383,7 +413,13 @@
 
 - (id) copyWithZone:(NSZone*)zone
 {
+#if __has_feature(objc_arc)
+  // ARC enabled
+  return self;
+#else
+  // ARC disabled
   return [self retain];
+#endif
 }
 
 @end
