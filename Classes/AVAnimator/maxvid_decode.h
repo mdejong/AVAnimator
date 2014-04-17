@@ -82,7 +82,7 @@ if (0) { assert(num); }
 
 # define MV32_PARSE_OP_NUM_SKIP(word, op, num, skip) \
 const uint32_t op = (word >> 8) & 0x3; \
-const uint32_t num = ((word >> 8+2) & MV_MAX_22_BITS); \
+const uint32_t num = ((word >> (8+2)) & MV_MAX_22_BITS); \
 const uint32_t skip = (word & MV_MAX_8_BITS); \
 if (0) { assert(op); } \
 if (0) { assert(num); } \
