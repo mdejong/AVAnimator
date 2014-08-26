@@ -312,7 +312,7 @@ CF_RETURNS_RETAINED
 - (CGColorRef) createParsedCGColor:(NSString*)colorSpec
 CF_RETURNS_RETAINED
 {
-  int len = [colorSpec length];
+  int len = (int) [colorSpec length];
   if (len != 7 && len != 9) {
     self.errorString = @"CompBackgroundColor invalid";
     return NULL;
@@ -1054,7 +1054,7 @@ CF_RETURNS_RETAINED
   fileWriter.movieSize = CGSizeMake(scaledWidth, scaledHeight);
 
   fileWriter.frameDuration = self.compFrameDuration;
-  fileWriter.totalNumFrames = maxFrame;
+  fileWriter.totalNumFrames = (int) maxFrame;
 
   //fileWriter.genAdler = TRUE;
   
@@ -1082,7 +1082,7 @@ CF_RETURNS_RETAINED
     
     // Write frame buffer out to .mvid container
     
-    worked = [fileWriter writeKeyframe:(char*)cgFrameBuffer.pixels bufferSize:cgFrameBuffer.numBytes];
+    worked = [fileWriter writeKeyframe:(char*)cgFrameBuffer.pixels bufferSize:(int)cgFrameBuffer.numBytes];
     
     if (worked == FALSE) {
       retcode = FALSE;
@@ -1174,7 +1174,7 @@ CF_RETURNS_RETAINED
         clipFrame = (NSUInteger) (clipTime / clipFrameDuration);
         
 #ifdef LOGGING_CLIP_ACTIVE
-        NSLog(@"clip time %0.2f maps to clip frame %d (duration %0.2f)", clipTime, clipFrame, compClip->clipFrameDuration);
+        NSLog(@"clip time %0.2f maps to clip frame %d (duration %0.2f)", clipTime, (int)clipFrame, compClip->clipFrameDuration);
 #endif // LOGGING_CLIP_ACTIVE
         
         if (clipFrame >= compClip->clipNumFrames) {
@@ -1185,7 +1185,7 @@ CF_RETURNS_RETAINED
           clipFrame = (compClip->clipNumFrames - 1);
           
 #ifdef LOGGING_CLIP_ACTIVE
-          NSLog(@"clip frame bound to the final frame %d", clipFrame);
+          NSLog(@"clip frame bound to the final frame %d", (int)clipFrame);
 #endif // LOGGING_CLIP_ACTIVE
         }
       }

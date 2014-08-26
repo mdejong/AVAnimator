@@ -350,8 +350,8 @@ goto retcode; \
     // the exact binary layout of the GIF image data might be, though it
     // is likely to be a flat array of 32 BPP pixels.
     
-    uint32_t imageWidth = CGImageGetWidth(imgRef);
-    uint32_t imageHeight = CGImageGetHeight(imgRef);
+    uint32_t imageWidth  = (uint32_t) CGImageGetWidth(imgRef);
+    uint32_t imageHeight = (uint32_t) CGImageGetHeight(imgRef);
     
     assert(imageWidth == width);
     assert(imageHeight == height);
@@ -383,7 +383,7 @@ goto retcode; \
     
     // Write the keyframe to the output file
     
-    int numBytesInBuffer = cgFrameBuffer.numBytes;
+    int numBytesInBuffer = (int) cgFrameBuffer.numBytes;
     
     worked = [aVMvidFileWriter writeKeyframe:cgFrameBuffer.pixels bufferSize:numBytesInBuffer];
     

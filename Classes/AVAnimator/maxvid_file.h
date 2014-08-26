@@ -186,7 +186,7 @@ static inline
 uint32_t maxvid_file_is_valid(FILE *inFile) {
   (void)fseek(inFile, 0L, SEEK_SET);
   uint32_t magic;
-  int numRead = fread(&magic, sizeof(uint32_t), 1, inFile);
+  int numRead = (int) fread(&magic, sizeof(uint32_t), 1, inFile);
   if (numRead != 1) {
     // Could not read magic number
     return 0;

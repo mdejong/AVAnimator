@@ -247,7 +247,7 @@ typedef enum
     AVAssetReaderStatus status = aVAssetReader.status;
     NSError *error = aVAssetReader.error;
     
-    NSLog(@"status = %d", status);
+    NSLog(@"status = %d", (int)status);
     NSLog(@"error = %@", [error description]);
     
     return FALSE;
@@ -320,7 +320,7 @@ typedef enum
   
   float frameDurationTooEarly = (self.frameDuration * 0.90);
   
-  int frameNum = self.frameIndex + 1;
+  int frameNum = (int)self.frameIndex + 1;
   
 #ifdef LOGGING
   NSLog(@"READING frame %d", frameNum);
@@ -448,7 +448,7 @@ typedef enum
     NSError *error = aVAssetReader.error;
     
     NSLog(@"AVAssetReaderStatusReading");
-    NSLog(@"status = %d", status);
+    NSLog(@"status = %d", (int)status);
     NSLog(@"error = %@", [error description]);
   } else {
     // The copyNextSampleBuffer returned nil, so we seem to be done reading from
@@ -727,11 +727,11 @@ typedef enum
     NSAssert(FALSE, @"%@: %d -> %d",
              @"can't advance to frame before current frameIndex",
              frameIndex,
-             newFrameIndex);
+             (int)newFrameIndex);
   }
   
   BOOL skippingAhead = (frameIndex + 1) < newFrameIndex;
-  int skippingOverNumFrames = newFrameIndex - (frameIndex + 1);
+  int skippingOverNumFrames = (int)(newFrameIndex - (frameIndex + 1));
   if (skippingAhead) {
 #ifdef LOGGING
     NSLog(@"skipping ahead : current %d, new %d, skip %d", (frameIndex + 1), newFrameIndex, skippingOverNumFrames);
@@ -740,10 +740,10 @@ typedef enum
   
   // Make sure we do not advance past the last frame
   
-  int numFrames = [self numFrames];
+  int numFrames = (int) [self numFrames];
   
   if (newFrameIndex >= numFrames) {
-    NSAssert(FALSE, @"%@: %d", @"can't advance past last frame", newFrameIndex);
+    NSAssert(FALSE, @"%@: %d", @"can't advance past last frame", (int)newFrameIndex);
   }
   
   // Decode the frame into a framebuffer.
@@ -883,7 +883,7 @@ typedef enum
   }
   
   if (m_readingFinished == FALSE) {
-    NSAssert(frameIndex == newFrameIndex, @"frameIndex != newFrameIndex, %d != %d", frameIndex, newFrameIndex);
+    NSAssert(frameIndex == newFrameIndex, @"frameIndex != newFrameIndex, %d != %d", frameIndex, (int)newFrameIndex);
   }
   
   if ((m_readingFinished == FALSE) && (newFrameIndex == (numFrames - 1))) {

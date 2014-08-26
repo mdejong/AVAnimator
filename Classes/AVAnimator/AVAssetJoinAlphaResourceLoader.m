@@ -216,14 +216,14 @@
   NSUInteger numFrames = [frameDecoderRGB numFrames];
   NSUInteger numFramesAlpha = [frameDecoderAlpha numFrames];
   if (numFrames != numFramesAlpha) {
-    NSLog(@"error: RGB movie numFrames %d does not match alpha movie numFrames %d", numFrames, numFramesAlpha);
+    NSLog(@"error: RGB movie numFrames %d does not match alpha movie numFrames %d", (int)numFrames, (int)numFramesAlpha);
     return FALSE;
   }
   
   // width x height
   
-  int width = [frameDecoderRGB width];
-  int height = [frameDecoderRGB height];
+  int width  = (int) [frameDecoderRGB width];
+  int height = (int) [frameDecoderRGB height];
   NSAssert(width > 0, @"width");
   NSAssert(height > 0, @"height");
   CGSize size = CGSizeMake(width, height);
@@ -250,7 +250,7 @@
   // Note that we don't know the movie size until the first frame is read
   
   fileWriter.frameDuration = frameRate;
-  fileWriter.totalNumFrames = numFrames;
+  fileWriter.totalNumFrames = (int) numFrames;
   
   if (genAdler) {
     fileWriter.genAdler = TRUE;
@@ -293,13 +293,13 @@
       
       NSString *tmpDir = NSTemporaryDirectory();
       
-      NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"JoinAlpha_RGB_Frame%d.png", (frameIndex + 1)];
+      NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"JoinAlpha_RGB_Frame%d.png", (int)(frameIndex + 1)];
       
       NSData *data = [NSData dataWithData:UIImagePNGRepresentation(frameRGB.image)];
       [data writeToFile:tmpPNGPath atomically:YES];
       NSLog(@"wrote %@", tmpPNGPath);
       
-      tmpPNGPath = [tmpDir stringByAppendingFormat:@"JoinAlpha_ALPHA_Frame%d.png", (frameIndex + 1)];
+      tmpPNGPath = [tmpDir stringByAppendingFormat:@"JoinAlpha_ALPHA_Frame%d.png", (int)(frameIndex + 1)];
       
       data = [NSData dataWithData:UIImagePNGRepresentation(frameAlpha.image)];
       [data writeToFile:tmpPNGPath atomically:YES];
@@ -340,7 +340,7 @@
     // Write combined RGBA pixles as a keyframe, we do not attempt to calculate
     // frame diffs when processing on the device as that takes too long.
     
-    int numBytesInBuffer = combinedFrameBuffer.numBytes;
+    int numBytesInBuffer = (int) combinedFrameBuffer.numBytes;
         
     worked = [fileWriter writeKeyframe:(char*)combinedPixels bufferSize:numBytesInBuffer];
     

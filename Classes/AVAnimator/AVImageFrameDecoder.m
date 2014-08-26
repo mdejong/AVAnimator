@@ -40,7 +40,7 @@
 {
 	NSMutableArray *numberedNames = [[NSMutableArray alloc] initWithCapacity:40];
   
-	for (int i = rangeStart; i <= rangeEnd; i++) {
+	for (NSInteger i = rangeStart; i <= rangeEnd; i++) {
 		NSString *suffix = [NSString stringWithFormat:suffixFormat, i];
 		NSString *filename = [NSString stringWithFormat:@"%@%@", filenamePrefix, suffix];
     

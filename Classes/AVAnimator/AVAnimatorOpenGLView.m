@@ -440,8 +440,8 @@ enum {
                                                               (CFDictionaryRef) NULL,
                                                               GL_TEXTURE_2D, // not GL_RENDERBUFFER
                                                               GL_RGBA,
-                                                              frameWidth,
-                                                              frameHeight,
+                                                              (GLsizei)frameWidth,
+                                                              (GLsizei)frameHeight,
                                                               GL_BGRA,
                                                               GL_UNSIGNED_BYTE,
                                                               0,

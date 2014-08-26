@@ -228,7 +228,7 @@ goto retcode; \
   if (status != 0) {
     RETCODE(READ_ERROR);
   }
-  uint32_t endOffset = ftell(fp);
+  uint32_t endOffset = (uint32_t) ftell(fp);
 #ifdef DEBUG_PRINT_FRAME_DURATION
   printf("file length %d\n", (int)ftell(fp));
 #endif

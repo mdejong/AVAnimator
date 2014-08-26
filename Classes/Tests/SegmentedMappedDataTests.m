@@ -823,7 +823,7 @@
     NSLog(@"Processing1");
 
     char *ptr = (char*) [data bytes];
-    int len = [data length];
+    int len = (int) [data length];
     
     int sum = 0;
     
@@ -847,7 +847,7 @@
     NSLog(@"Processing2");
     
     char *ptr = (char*) [data bytes];
-    int len = [data length];
+    int len = (int) [data length];
     
     int sum = 0;
     
@@ -889,7 +889,7 @@
     NSLog(@"Processing3");
     
     char *ptr = (char*) [data bytes];
-    int len = [data length];
+    int len = (int) [data length];
     
     int sum = 0;
     
@@ -977,7 +977,7 @@
   // Map large files into memory
   
   for (NSString *path in tmpFilenames) {
-    NSLog(@"Mapping %@, total %d megs", [path lastPathComponent], [mappedFileDatas count] * largeSizeMegs);
+    NSLog(@"Mapping %@, total %d megs", [path lastPathComponent], (int)([mappedFileDatas count] * largeSizeMegs));
     
     NSData *data = [NSData dataWithContentsOfMappedFile:path];
     if (data == nil) {
@@ -999,7 +999,7 @@
   // Now walk over all the bytes in the mapping, one mapping at a time.
   // This should bring all the pages into memory by swapping.
   
-  int numMappedFiles = [mappedFileDatas count];
+  int numMappedFiles = (int) [mappedFileDatas count];
   
   for (int i=0; i < numMappedFiles; i++) {
     NSString *filename = [tmpFilenames objectAtIndex:i];
@@ -1008,7 +1008,7 @@
     NSLog(@"Accessing : %@", [filename lastPathComponent]);
     
     char *ptr = (char*) [data bytes];
-    int len = [data length];
+    int len = (int) [data length];
     
     int sum = 0;
     
@@ -1034,7 +1034,7 @@
     NSLog(@"Processing2");
     
     char *ptr = (char*) [data bytes];
-    int len = [data length];
+    int len = (int) [data length];
     
     int sum = 0;
     
@@ -1080,7 +1080,7 @@
     NSLog(@"Processing3");
     
     char *ptr = (char*) [data bytes];
-    int len = [data length];
+    int len = (int) [data length];
     
     int sum = 0;
     

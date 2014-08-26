@@ -188,8 +188,8 @@
     NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
     NSAssert(resMvidData, @"could not map .mov data");
     
-    uint32_t resByteLength = [resMvidData length];
-    uint32_t wroteByteLength = [wroteMvidData length];
+    uint32_t resByteLength = (uint32_t) [resMvidData length];
+    uint32_t wroteByteLength = (uint32_t) [wroteMvidData length];
     
     // Extracted 2x2_black_blue_16BPP.mvid Size should be 12288 bytes
     
@@ -247,8 +247,8 @@
     NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
     NSAssert(resMvidData, @"could not map .mov data");
     
-    uint32_t resByteLength = [resMvidData length];
-    uint32_t wroteByteLength = [wroteMvidData length];
+    uint32_t resByteLength   = (uint32_t) [resMvidData length];
+    uint32_t wroteByteLength = (uint32_t) [wroteMvidData length];
     
     // Converted 2x2_black_blue_16BPP.mvid should be 12288 bytes
     
@@ -1315,8 +1315,8 @@
     NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
     NSAssert(resMvidData, @"could not map .mvid data");
     
-    uint32_t resByteLength = [resMvidData length];
-    uint32_t wroteByteLength = [wroteMvidData length];
+    uint32_t resByteLength   = (uint32_t) [resMvidData length];
+    uint32_t wroteByteLength = (uint32_t) [wroteMvidData length];
     
     // Extracted 2x2_black_blue_16BPP.mvid Size should be 8204 bytes
     
@@ -1400,8 +1400,8 @@
     NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
     NSAssert(resMvidData, @"could not map .mvid data");
     
-    uint32_t resByteLength = [resMvidData length];
-    uint32_t wroteByteLength = [wroteMvidData length];
+    uint32_t resByteLength   = (uint32_t) [resMvidData length];
+    uint32_t wroteByteLength = (uint32_t) [wroteMvidData length];
     
     // Converted 2x2_black_blue_16BPP.mvid should be 12288 bytes
     

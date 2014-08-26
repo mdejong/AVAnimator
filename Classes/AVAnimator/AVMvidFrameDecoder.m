@@ -145,8 +145,8 @@
     return;
   }
   
-  int renderWidth = [self width];
-  int renderHeight = [self height];
+  int renderWidth  = (int) [self width];
+  int renderHeight = (int) [self height];
   
   NSAssert(renderWidth > 0 && renderHeight > 0, @"renderWidth or renderHeight is zero");
 
@@ -255,7 +255,7 @@
   assert(sizeof(MVFileHeader) == 16*4);
   assert(sizeof(MVFrame) == 3*4);
   
-  int numRead = fread(hPtr, sizeof(MVFileHeader), 1, fp);
+  int numRead = (int) fread(hPtr, sizeof(MVFileHeader), 1, fp);
   if (numRead != 1) {
     // Could not read header from file, it must be empty or invalid
     worked = FALSE;
@@ -283,7 +283,7 @@
     
     NSUInteger numFrames = hPtr->numFrames;
     NSAssert(numFrames > 1, @"numFrames");
-    int numBytes = sizeof(MVFrame) * numFrames;
+    int numBytes = (int) (sizeof(MVFrame) * numFrames);
     self->m_mvFrames = malloc(numBytes);
     
     if (self->m_mvFrames == NULL) {
@@ -292,7 +292,7 @@
     }
     
     if (worked) {
-      int numRead = fread(self->m_mvFrames, numBytes, 1, fp);
+      int numRead = (int) fread(self->m_mvFrames, numBytes, 1, fp);
       if (numRead != 1) {
         // Could not read frames from file
         worked = FALSE;
@@ -492,16 +492,16 @@
     NSAssert(FALSE, @"%@: %d -> %d",
              @"can't advance to frame before current frameIndex",
              frameIndex,
-             newFrameIndex);
+             (int)newFrameIndex);
   }
   
   // Get the number of frames directly from the header
   // instead of invoking method to query self.numFrames.
   
-  int numFrames = [self numFrames];
+  int numFrames = (int) [self numFrames];
   
   if (newFrameIndex >= numFrames) {
-    NSAssert(FALSE, @"%@: %d", @"can't advance past last frame", newFrameIndex);
+    NSAssert(FALSE, @"%@: %d", @"can't advance past last frame", (int) newFrameIndex);
   }
   
   BOOL changeFrameData = FALSE;
@@ -513,9 +513,9 @@
   NSAssert(mappedPtr, @"mappedPtr");
 #endif // USE_SEGMENTED_MMAP
   
-  uint32_t frameBufferSize = [self width] * [self height];
+  uint32_t frameBufferSize = (uint32_t) ([self width] * [self height]);
   uint32_t bpp = [self header]->bpp;
-  uint32_t frameBufferNumBytes = nextFrameBuffer.numBytes;
+  uint32_t frameBufferNumBytes = (uint32_t) nextFrameBuffer.numBytes;
   NSAssert(frameBufferNumBytes > 0, @"frameBufferNumBytes"); // to avoid compiler warning
   
 #if MV_ENABLE_DELTAS
@@ -735,7 +735,7 @@
           uint32_t inputBuffer32NumBytes = (inputBuffer32NumWords * 4);
           
           if (self->decompressionBuffer == NULL) {
-            self->decompressionBufferSize = self.currentFrameBuffer.numBytes / 4;
+            self->decompressionBufferSize = (uint32_t) (self.currentFrameBuffer.numBytes / 4);
             if (inputBuffer32NumBytes > self->decompressionBufferSize) {
               self->decompressionBufferSize = inputBuffer32NumBytes;
             }
@@ -1022,8 +1022,9 @@
           [self.filePath lastPathComponent],
           self.isOpen,
           (self.mappedData == nil ? 0 : 1),
-          self.width, self.height,
-          self.numFrames];
+          (int)self.width,
+          (int)self.height,
+          (int)self.numFrames];
 }
 
 #if MV_ENABLE_DELTAS

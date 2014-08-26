@@ -170,8 +170,8 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
                                                             error:&error] autorelease];
   NSAssert(videoWriter, @"videoWriter");
     
-  NSNumber *widthNum = [NSNumber numberWithUnsignedInt:width];
-  NSNumber *heightNum = [NSNumber numberWithUnsignedInt:height];
+  NSNumber *widthNum = [NSNumber numberWithUnsignedInteger:width];
+  NSNumber *heightNum = [NSNumber numberWithUnsignedInteger:height];
   
   NSDictionary *videoSettings = [NSDictionary dictionaryWithObjectsAndKeys:
                                  AVVideoCodecH264, AVVideoCodecKey,
@@ -248,7 +248,7 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
  
   CVPixelBufferRef buffer = NULL;
   
-  const int numFrames = [frameDecoder numFrames];
+  const int numFrames = (int) [frameDecoder numFrames];
   int frameNum;
   for (frameNum = 0; frameNum < numFrames; frameNum++) {
     NSAutoreleasePool *innerPool = [[NSAutoreleasePool alloc] init];

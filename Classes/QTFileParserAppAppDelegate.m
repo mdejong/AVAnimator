@@ -1178,7 +1178,7 @@
   // Make sure view was removed from main window
   NSArray *subviews = self.window.subviews;
   NSAssert(subviews, @"subviews is nil");
-  int subviewCount = [subviews count];
+  int subviewCount = (int) [subviews count];
   // If the num subviews if not zero, then this loadIndexedExample callback
   // might have been called by two different button callbacks in the XIB
   NSAssert(subviewCount == 0, @"expected no subviews inside main window");

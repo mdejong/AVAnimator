@@ -576,16 +576,16 @@
   NSAssert(animatorView.media == nil, @"animatorView connected to media");
   NSAssert(media.renderer == nil, @"media connected to animatorView");
   
-  int viewRefCountBefore = [animatorView retainCount];
-  int mediaRefCountBefore = [media retainCount];
+  int viewRefCountBefore = (int) [animatorView retainCount];
+  int mediaRefCountBefore = (int) [media retainCount];
   
   [animatorView attachMedia:media];
   
   NSAssert(animatorView.media == media, @"animatorView not connected to media");
   NSAssert(media.renderer == animatorView, @"media not connected to animatorView");
 
-  int viewRefCountAfter = [animatorView retainCount];
-  int mediaRefCountAfter = [media retainCount];
+  int viewRefCountAfter = (int) [animatorView retainCount];
+  int mediaRefCountAfter = (int) [media retainCount];
 
   // The AVAnimatorView holds a ref to the media in the view
   
@@ -596,8 +596,8 @@
   
   [animatorView attachMedia:nil];
   
-  viewRefCountAfter = [animatorView retainCount];
-  mediaRefCountAfter = [media retainCount];
+  viewRefCountAfter = (int) [animatorView retainCount];
+  mediaRefCountAfter = (int) [media retainCount];
 
   NSAssert(viewRefCountBefore == viewRefCountAfter, @"view ref count was incremented by attach");
   NSAssert(mediaRefCountBefore == mediaRefCountAfter, @"media ref count was not incremented by attach");
@@ -671,16 +671,16 @@
   NSAssert(avLayerObj.media == nil, @"animatorView connected to media");
   NSAssert(media.renderer == nil, @"media connected to animatorView");
   
-  int viewRefCountBefore = [avLayerObj retainCount];
-  int mediaRefCountBefore = [media retainCount];
+  int viewRefCountBefore = (int) [avLayerObj retainCount];
+  int mediaRefCountBefore = (int) [media retainCount];
   
   [avLayerObj attachMedia:media];
   
   NSAssert(avLayerObj.media == media, @"animatorView not connected to media");
   NSAssert(media.renderer == avLayerObj, @"media not connected to animatorView");
   
-  int viewRefCountAfter = [avLayerObj retainCount];
-  int mediaRefCountAfter = [media retainCount];
+  int viewRefCountAfter = (int) [avLayerObj retainCount];
+  int mediaRefCountAfter = (int) [media retainCount];
   
   // The AVAnimatorLayer holds a ref to the media in the view
   
@@ -691,8 +691,8 @@
   
   [avLayerObj attachMedia:nil];
   
-  viewRefCountAfter = [avLayerObj retainCount];
-  mediaRefCountAfter = [media retainCount];
+  viewRefCountAfter = (int) [avLayerObj retainCount];
+  mediaRefCountAfter = (int) [media retainCount];
   
   NSAssert(viewRefCountBefore == viewRefCountAfter, @"view ref count was incremented by attach");
   NSAssert(mediaRefCountBefore == mediaRefCountAfter, @"media ref count was not incremented by attach");

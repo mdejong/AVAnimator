@@ -460,7 +460,7 @@
     uint32_t expectedAdler = 2895601221;
     uint32_t adler;
     
-    adler = maxvid_adler32(0L, (const unsigned char*)combinedBuffer.pixels, combinedBuffer.numBytes);
+    adler = maxvid_adler32(0L, (const unsigned char*)combinedBuffer.pixels, (uint32_t)combinedBuffer.numBytes);
     
     NSAssert(adler == expectedAdler, @"adler");
   }
@@ -633,7 +633,7 @@
     uint32_t expectedAdler = 2895601221;
     uint32_t adler;
     
-    adler = maxvid_adler32(0L, (const unsigned char*)premultBuffer.pixels, premultBuffer.numBytes);
+    adler = maxvid_adler32(0L, (const unsigned char*)premultBuffer.pixels, (uint32_t)premultBuffer.numBytes);
     
     NSAssert(adler == expectedAdler, @"adler");
   }

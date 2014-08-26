@@ -61,7 +61,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSMutableString *mStr = [NSMutableString string];
   
   int index = 0;
-  int end = [codes length] / sizeof(uint32_t);
+  int end = (int) ([codes length] / sizeof(uint32_t));
   uint32_t *ptr = (uint32_t *)codes.bytes;
   
   for ( ; index < end; ) {
@@ -120,7 +120,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSMutableString *mStr = [NSMutableString string];
     
   int index = 0;
-  int end = [codes length] / sizeof(uint32_t);
+  int end = (int) ([codes length] / sizeof(uint32_t));
   uint32_t *ptr = (uint32_t *)codes.bytes;
   
   for ( ; index < end; ) {
@@ -181,10 +181,10 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   // Convert generic codes to m4 codes at 16BPP
   
   uint32_t *maxvidCodeBuffer = (uint32_t*)codes.bytes;
-  uint32_t numMaxvidCodeWords = codes.length / sizeof(uint32_t);
+  uint32_t numMaxvidCodeWords = (uint32_t) (codes.length / sizeof(uint32_t));
   
   int retcode;
-  retcode = maxvid_encode_c4_sample16(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, mC4Data, 0);
+  retcode = maxvid_encode_c4_sample16(maxvidCodeBuffer, numMaxvidCodeWords, (uint32_t)frameBufferNumPixels, mC4Data, 0);
   assert(retcode == 0);
   
   // Format c4 codes as string entries
@@ -192,7 +192,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSMutableString *mStr = [NSMutableString string];
   
   int index = 0;
-  int end = [mC4Data length] / sizeof(uint32_t);
+  int end = (int) ([mC4Data length] / sizeof(uint32_t));
   uint32_t *ptr = (uint32_t *)mC4Data.bytes;
   
   int frameBufferNumPixelsWritten = 0;
@@ -285,10 +285,10 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSMutableData *mC4Data = [NSMutableData dataWithCapacity:frameBufferNumPixels];
   
   uint32_t *maxvidCodeBuffer = (uint32_t*)codes.bytes;
-  uint32_t numMaxvidCodeWords = codes.length / sizeof(uint32_t);
+  uint32_t numMaxvidCodeWords = (uint32_t) (codes.length / sizeof(uint32_t));
   
   int retcode;
-  retcode = maxvid_encode_c4_sample32(maxvidCodeBuffer, numMaxvidCodeWords, frameBufferNumPixels, mC4Data, 0);
+  retcode = maxvid_encode_c4_sample32(maxvidCodeBuffer, numMaxvidCodeWords, (uint32_t)frameBufferNumPixels, mC4Data, 0);
   assert(retcode == 0);
   
   // Format c4 codes as string entries
@@ -296,7 +296,7 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
   NSMutableString *mStr = [NSMutableString string];
   
   int index = 0;
-  int end = [mC4Data length] / sizeof(uint32_t);
+  int end = (int) ([mC4Data length] / sizeof(uint32_t));
   uint32_t *ptr = (uint32_t *)mC4Data.bytes;
   
   for ( ; index < end; ) {

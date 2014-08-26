@@ -109,14 +109,14 @@
     return;
   }
   
-  int indexEndBefore = [self length];
+  int indexEndBefore = (int) [self length];
   
   CFStringRef cfStr = (CFStringRef)string;
   CFMutableAttributedStringRef attrString = self.attrString;
   CFAttributedStringReplaceString(attrString, CFRangeMake([self length], 0), cfStr);
   
   self.length = indexEndBefore + [string length];
-  int indexEndAfter = self.length;
+  int indexEndAfter = (int) self.length;
   
   CFRange range = CFRangeMake(indexEndBefore, indexEndAfter - indexEndBefore);
   
@@ -157,7 +157,7 @@
     
   if (LOGGING) {
     NSString *description = [(NSObject*)attrString description];
-    NSLog(@"post appendText (%d) : \"%@\"", [self length], description);
+    NSLog(@"post appendText (%d) : \"%@\"", (int)[self length], description);
   }
   
   } // @autoreleasepool
@@ -179,7 +179,7 @@
   
   if (LOGGING) {
     NSString *description = [(NSObject*)attrString description];
-    NSLog(@"post doneAppendingText (%d) : \"%@\"", [self length], description);
+    NSLog(@"post doneAppendingText (%d) : \"%@\"", (int)[self length], description);
   }
   
   return;

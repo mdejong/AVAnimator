@@ -118,7 +118,7 @@
 		// are found then release the held ref count.
 
 		for (NSString *comp in typeComponents) {
-			const int len = [comp length];
+			const int len = (int) [comp length];
 			unichar c = (len == 0 ? '\0' : [comp characterAtIndex:0]);
 
 			if ((len == 1) && (c == '&' || c == 'C')) {

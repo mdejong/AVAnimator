@@ -146,7 +146,7 @@
     
     for (NSUInteger frameIndex = 0; frameIndex < frameDecoder.numFrames; frameIndex++) {
       NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-      NSLog(@"render frame %d", frameIndex);
+      NSLog(@"render frame %d", (int)frameIndex);
       AVFrame *frame = [frameDecoder advanceToFrame:frameIndex];
       UIImage *img = frame.image;
       NSAssert(img, @"frame image is nil");
@@ -155,7 +155,7 @@
       
       NSString *tmpDir = NSTemporaryDirectory();
       
-      NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"Frame%d.png", (frameIndex + 1)];
+      NSString *tmpPNGPath = [tmpDir stringByAppendingFormat:@"Frame%d.png", (int)(frameIndex + 1)];
       
       NSData *data = [NSData dataWithData:UIImagePNGRepresentation(img)];
       [data writeToFile:tmpPNGPath atomically:YES];

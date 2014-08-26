@@ -233,7 +233,7 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
   int seek_status;
   
   while (1) {
-    uint32_t atomOffset = ftell(movFile);
+    uint32_t atomOffset = (uint32_t) ftell(movFile);
     
     if (atomOffset >= maxOffset || feof(movFile)) {
       // Done reading from atom at this point
@@ -323,7 +323,7 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
         return 1;
       }
       
-      movData->rleDataOffset = ftell(movFile);
+      movData->rleDataOffset = (uint32_t) ftell(movFile);
       movData->rleDataLength = atom.asize - 8;
       
 #ifdef DUMP_WHILE_PARSING
@@ -779,7 +779,7 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
         // We don't want to actually read the data since there could
         // be a lot of data.
         
-        entry->data_offset = ftell(movFile);
+        entry->data_offset = (uint32_t) ftell(movFile);
         entry->data_size = entry->size - (4 + 4 + 1 + 3);
         
 #ifdef DUMP_WHILE_PARSING
@@ -1043,7 +1043,7 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
 
       // Record the size and locaton of this table
       movData->timeToSampleTableNumEntries = num_entries;
-      movData->timeToSampleTableOffset = ftell(movFile);
+      movData->timeToSampleTableOffset = (uint32_t) ftell(movFile);
       
     } else if (atom.atype == fcc_toint('s', 't', 's', 's')) {
       // Sync sample : moov.trak.mdia.minf.stbl.stss
@@ -1078,7 +1078,7 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
       
       // Record the size and locaton of this table
       movData->syncSampleTableNumEntries = num_entries;
-      movData->syncSampleTableOffset = ftell(movFile);      
+      movData->syncSampleTableOffset = (uint32_t) ftell(movFile);
             
     } else if (atom.atype == fcc_toint('s', 't', 's', 'c')) {
       // Sample to chunk : moov.trak.mdia.minf.stbl.stsc
@@ -1113,7 +1113,7 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
       
       // Record the size and locaton of this table
       movData->sampleToChunkTableNumEntries = num_entries;
-      movData->sampleToChunkTableOffset = ftell(movFile);      
+      movData->sampleToChunkTableOffset = (uint32_t) ftell(movFile);
             
     } else if (atom.atype == fcc_toint('s', 't', 's', 'z')) {
       // Sample size : moov.trak.mdia.minf.stbl.stsz
@@ -1154,7 +1154,7 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
       movData->sampleSizeCommon = sample_size;
       movData->sampleSizeTableNumEntries = num_entries;
       if (num_entries > 0) {
-        movData->sampleSizeTableOffset = ftell(movFile);
+        movData->sampleSizeTableOffset = (uint32_t) ftell(movFile);
       }
       
     } else if (atom.atype == fcc_toint('s', 't', 'c', 'o')) {
@@ -1189,7 +1189,7 @@ process_atoms(FILE *movFile, MovData *movData, uint32_t maxOffset)
 
       // Record the size and locaton of this table
       movData->chunkOffsetTableNumEntries = num_entries;
-      movData->chunkOffsetTableOffset = ftell(movFile);      
+      movData->chunkOffsetTableOffset = (uint32_t) ftell(movFile);      
       
     }
     

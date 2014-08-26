@@ -861,7 +861,7 @@ int testJoinAlphaForExplosionVideoCheckAdler_device_expectedAdler[] = {
     // the zero copy pixels when inspecting buffer contents.
     
     uint32_t *pixelPtr = (uint32_t*)frame.cgFrameBuffer.pixels;
-    uint32_t numPixels = frame.cgFrameBuffer.width * frame.cgFrameBuffer.height;
+    uint32_t numPixels = (uint32_t) (frame.cgFrameBuffer.width * frame.cgFrameBuffer.height);
     BOOL has_non_zero_pixel = FALSE;
     
     for (int pixeli = 0; pixeli < numPixels; pixeli++) {

@@ -224,7 +224,7 @@
   
   NSArray *subviews = [self.mainWindow subviews];
   NSAssert(subviews != nil, @"subviews is nil");
-  int subviewCount = [subviews count];
+  int subviewCount = (int) [subviews count];
   NSAssert(subviewCount == 0, @"mainWindow must contain no subviews");
       
   // force loading of the view controller and its contained views
@@ -1018,7 +1018,7 @@
   // subview.
   
   NSArray *subviews = [self.mainWindow subviews];
-  int subviewCount = [subviews count];
+  int subviewCount = (int) [subviews count];
   NSAssert(subviewCount == 1, @"mainWindow must contain 1 subviews");
   NSAssert([subviews objectAtIndex:0] == self.view, @"self.view must be only subview of mainWindow");
   

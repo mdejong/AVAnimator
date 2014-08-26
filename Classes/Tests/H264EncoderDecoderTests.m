@@ -743,7 +743,7 @@
     BOOL worked = [frameDecoder openForReading:tmpPath];
     NSAssert(worked, @"worked");
   
-    int numFrames = [frameDecoder numFrames];
+    int numFrames = (int) [frameDecoder numFrames];
     
     NSAssert(numFrames == 575, @"numFrames");    
   }
@@ -796,7 +796,7 @@
     BOOL worked = [frameDecoder openForReading:tmpPath];
     NSAssert(worked, @"worked");
     
-    int numFrames = [frameDecoder numFrames];
+    int numFrames = (int) [frameDecoder numFrames];
     
     NSAssert(numFrames == 3, @"numFrames");
   }
@@ -1286,7 +1286,7 @@
   {
     uint32_t bluePixel = 0xFF0000FF; // BGRA
     
-    uint32_t numPixels = (buffer1.width * buffer1.height);
+    uint32_t numPixels = (uint32_t) (buffer1.width * buffer1.height);
     uint32_t *pixels = (uint32_t*) buffer1.pixels;
     
     for (int i=0; i < numPixels; i++) {

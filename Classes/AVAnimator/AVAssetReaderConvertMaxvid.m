@@ -89,7 +89,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   // is padded in the case of an odd number of pixels, pass the buffer size
   // including the padding pixels.
   
-  int bufferSize = frameBuffer.numBytes;
+  int bufferSize  = (int) frameBuffer.numBytes;
   void *pixelsPtr = frameBuffer.pixels;
   
   // write entire buffer of raw 32bit pixels to the file.
@@ -118,7 +118,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   
   AVAssetFrameDecoder *frameDecoder = self.frameDecoder;
   
-  self.totalNumFrames = frameDecoder.numFrames;
+  self.totalNumFrames = (int) frameDecoder.numFrames;
   self.frameDuration = frameDecoder.frameDuration;
   self.movieSize = CGSizeMake(frameDecoder.width, frameDecoder.height);
   self.bpp = 24;
@@ -132,7 +132,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   BOOL writeFailed = FALSE;
 
   int frameIndex;
-  int numFrames = frameDecoder.numFrames;
+  int numFrames = (int) frameDecoder.numFrames;
   
   for (frameIndex = 0; (frameIndex < numFrames) && (writeFailed == FALSE); frameIndex++) {
     NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];

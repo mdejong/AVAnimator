@@ -162,7 +162,7 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   
   int numWritten = 0;
   
-  numWritten = fwrite(mvHeader, sizeof(MVFileHeader), 1, maxvidOutFile);
+  numWritten = (int) fwrite(mvHeader, sizeof(MVFileHeader), 1, maxvidOutFile);
   if (numWritten != 1) {
     return FALSE;
   }
@@ -178,7 +178,7 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   }
   memset(mvFramesArray, 0, framesArrayNumBytes);
   
-  numWritten = fwrite(mvFramesArray, framesArrayNumBytes, 1, maxvidOutFile);
+  numWritten = (int) fwrite(mvFramesArray, framesArrayNumBytes, 1, maxvidOutFile);
   if (numWritten != 1) {
     return FALSE;
   }
@@ -318,7 +318,7 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   
   [self skipToNextPageBound];
   
-  int numWritten = fwrite(ptr, bufferSize, 1, maxvidOutFile);
+  int numWritten = (int) fwrite(ptr, bufferSize, 1, maxvidOutFile);
   
   if (numWritten != 1) {
     return FALSE;
@@ -397,12 +397,12 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   
   (void)fseek(maxvidOutFile, 0L, SEEK_SET);
   
-  int numWritten = fwrite(mvHeader, sizeof(MVFileHeader), 1, maxvidOutFile);
+  int numWritten = (int) fwrite(mvHeader, sizeof(MVFileHeader), 1, maxvidOutFile);
   if (numWritten != 1) {
     return FALSE;
   }
   
-  numWritten = fwrite(mvFramesArray, framesArrayNumBytes, 1, maxvidOutFile);
+  numWritten = (int) fwrite(mvFramesArray, framesArrayNumBytes, 1, maxvidOutFile);
   if (numWritten != 1) {
     return FALSE;
   }  
@@ -415,7 +415,7 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   (void)fseek(maxvidOutFile, 0L, SEEK_SET);
   
   uint32_t magic = MV_FILE_MAGIC;
-  numWritten = fwrite(&magic, sizeof(uint32_t), 1, maxvidOutFile);
+  numWritten = (int) fwrite(&magic, sizeof(uint32_t), 1, maxvidOutFile);
   if (numWritten != 1) {
     return FALSE;
   }
@@ -435,7 +435,7 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   
   [self saveOffset];
   
-  int numWritten = fwrite(ptr, bufferSize, 1, maxvidOutFile);
+  int numWritten = (int) fwrite(ptr, bufferSize, 1, maxvidOutFile);
   
   if (numWritten != 1) {
     return FALSE;

@@ -38,7 +38,7 @@
 - (NSInteger) getFPS
 {
   NSAssert(self.segControl, @"segControl is nil");
-  int index = [self.segControl selectedSegmentIndex];
+  int index = (int) [self.segControl selectedSegmentIndex];
   
   if (index == UISegmentedControlNoSegment) {
     return -1;

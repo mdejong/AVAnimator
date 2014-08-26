@@ -632,7 +632,7 @@ libapng_main(FILE *apngFile, libapng_frame_func frame_func, void *userData)
     
     fseek(apngFile, 0, SEEK_SET);
     
-    if ((res = fread(sig, 1, 8, apngFile)) == 8)
+    if ((res = (int)fread(sig, 1, 8, apngFile)) == 8)
     {
       if (memcmp(sig, png_sign, 8) == 0)
       {

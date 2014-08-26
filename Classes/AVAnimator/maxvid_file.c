@@ -24,8 +24,8 @@ uint32_t maxvid_adler32(
                           uint32_t len)
 {
 	int k;
-	unsigned long s1 = adler & 0xffff;
-	unsigned long s2 = (adler >> 16) & 0xffff;
+	uint32_t s1 = adler & 0xffff;
+	uint32_t s2 = (adler >> 16) & 0xffff;
   
 	if (!buf)
 		return 1;
