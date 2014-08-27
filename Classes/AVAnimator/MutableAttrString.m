@@ -156,7 +156,7 @@
   CFRelease(attrValues);
     
   if (LOGGING) {
-    NSString *description = [(NSObject*)attrString description];
+    NSString *description = [(NSAttributedString*)attrString description];
     NSLog(@"post appendText (%d) : \"%@\"", (int)[self length], description);
   }
   
@@ -178,7 +178,7 @@
   self.isDoneAppendingText = TRUE;
   
   if (LOGGING) {
-    NSString *description = [(NSObject*)attrString description];
+    NSString *description = [(NSAttributedString*)attrString description];
     NSLog(@"post doneAppendingText (%d) : \"%@\"", (int)[self length], description);
   }
   
