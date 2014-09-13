@@ -81,9 +81,9 @@
 _maxvid_decode_c4_sample16:
 	@ args = 0, pretend = 0, frame = 0
 	@ frame_needed = 1, uses_anonymous_args = 0
-	stmfd	sp!, {r4, r5, r6, r7, lr}
+	push {r4, r5, r6, r7, lr}
 	add	r7, sp, #12
-	stmfd	sp!, {r8, r10, r11}
+	push {r8, r10, r11}
 	mov	r9, r1
 	mov	r10, r0
 	mov r8, #0
@@ -107,7 +107,7 @@ LDUP_16BPP:
 	tst r10, #3
 	pkhbt r0, r8, r8, lsl #16
 	subne ip, ip, #1
-	strneh r8, [r10], #2
+	strhne r8, [r10], #2
 
 	// Note that the order here is to place a mov between str/ldr to
 	// improvie dual issue. It is slower with the mov after the ldr.
@@ -151,7 +151,7 @@ LDUP_16BPP:
 
 	// if odd number of pixels, write a halfword
 	tst ip, #1
-	strneh r0, [r10], #2
+	strhne r0, [r10], #2
 	
 	@ fall through to DECODE_16BPP
 
@@ -189,7 +189,7 @@ LDECODE_16BPP:
 	@ align32
 	tst r10, #3
 	subne ip, ip, #1
-	strneh r8, [r10], #2
+	strhne r8, [r10], #2
 
 	@ numWords
 	mov lr, ip, lsr #1
@@ -202,20 +202,20 @@ LDECODE_16BPP:
 	@ COPYSMALL_16BPP
 
 	cmp lr, #3
-	ldmgtia r9!, {r0, r1, r2, r3}
+	ldmgt r9!, {r0, r1, r2, r3}
 	subgt lr, lr, #4
-	stmgtia r10!, {r0, r1, r2, r3}
+	stmgt r10!, {r0, r1, r2, r3}
 	cmp lr, #1
-	ldmgtia r9!, {r0, r1}
+	ldmgt r9!, {r0, r1}
 	subgt lr, lr, #2
-	stmgtia r10!, {r0, r1}
+	stmgt r10!, {r0, r1}
 	cmp lr, #1
 	ldreq r0, [r9], #4
 	streq r0, [r10], #4
 	
 	tst ip, #0x1
 	ldrne r3, [r9], #4
-	strneh r3, [r10], #2
+	strhne r3, [r10], #2
 	
 	ldr r8, [r9], #4
 	
@@ -312,7 +312,7 @@ L13:
 	tst ip, #0x1
 	ldrne r3, [r9], #4
 	mvn r4, #0xC000
-	strneh r3, [r10], #2
+	strhne r3, [r10], #2
 	
 	ldr r8, [r9], #4
 
@@ -362,7 +362,7 @@ LHUGECOPY_16BPP:
 	// One additional half word might need to be emitted
 	tst ip, #0x1
 	ldrne r3, [r9], #4
-	strneh r3, [r10], #2
+	strhne r3, [r10], #2
 
 	ldr r8, [r9], #4
 
@@ -438,7 +438,7 @@ LDUPBIG_16BPP:
 
 	// if numPixels is odd then write 1 halfword
 	tst ip, #1
-	strneh r0, [r10], #2
+	strhne r0, [r10], #2
 
 	@ goto DECODE_16BPP
 	
@@ -448,8 +448,8 @@ LDONE_16BPP:
 	@ DONE_16BPP
 	
 	mov	r0, #0
-	ldmfd	sp!, {r8, r10, r11}
-	ldmfd	sp!, {r4, r5, r6, r7, pc}
+	pop {r8, r10, r11}
+	pop {r4, r5, r6, r7, pc}
 
 
 
@@ -462,16 +462,16 @@ LDONE_16BPP:
 _maxvid_decode_c4_sample32:
 	@ args = 0, pretend = 0, frame = 0
 	@ frame_needed = 1, uses_anonymous_args = 0
-	stmfd	sp!, {r4, r5, r6, r7, lr}
+	push {r4, r5, r6, r7, lr}
 	add	r7, sp, #12
-	stmfd	sp!, {r8, r10, r11}
+	push {r8, r10, r11}
 	mov	r11, #0
 	mov	r9, r1
 	mov	r10, r0
 	mov r8, #0
 	mov lr, #0
 	
-	ldmia r9!, {r8, lr}
+	ldm r9!, {r8, lr}
 	
 	mov r3, #1
 	mov r4, #6
@@ -582,18 +582,18 @@ LDECODE_32BPP:
 	@ COPYSMALL_32BPP
 	
 	cmp ip, #3
-	ldmgtia r9!, {r0, r1, r2, r3}
+	ldmgt r9!, {r0, r1, r2, r3}
 	subgt ip, ip, #4
-	stmgtia r10!, {r0, r1, r2, r3}
+	stmgt r10!, {r0, r1, r2, r3}
 	cmp ip, #1
-	ldmgtia r9!, {r0, r1}
+	ldmgt r9!, {r0, r1}
 	subgt ip, ip, #2
-	stmgtia r10!, {r0, r1}
+	stmgt r10!, {r0, r1}
 	cmp ip, #1
 	ldreq r0, [r9], #4
 	streq r0, [r10], #4
 	
-	ldmia r9!, {r8, lr}
+	ldm r9!, {r8, lr}
 	
 	mov r3, #1
 	
@@ -816,8 +816,8 @@ LDONE_32BPP:
 	@ DONE_32BPP
 	
 	mov	r0, #0
-	ldmfd	sp!, {r8, r10, r11}
-	ldmfd	sp!, {r4, r5, r6, r7, pc}
+	pop {r8, r10, r11}
+	pop {r4, r5, r6, r7, pc}
 
 	.subsections_via_symbols
 
