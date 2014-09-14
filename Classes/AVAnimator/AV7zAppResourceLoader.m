@@ -23,19 +23,27 @@
 {
   self.archiveFilename = nil;
   self.outPath = nil;
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 + (AV7zAppResourceLoader*) aV7zAppResourceLoader
 {
-  return [[[AV7zAppResourceLoader alloc] init] autorelease];
+  AV7zAppResourceLoader *obj = [[AV7zAppResourceLoader alloc] init];
+#if __has_feature(objc_arc)
+  return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 // This method is invoked in the secondary thread to decode the contents of the archive entry
 // and write it to an output file (typically in the tmp dir).
 
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  @autoreleasepool {
   
   NSAssert([arr count] == 5, @"arr count");
   
@@ -87,7 +95,7 @@
     [self releaseSerialResourceLoaderLock];
   }
   
-  [pool drain];
+  }
 }
 
 - (void) _detachNewThread:(NSString*)archivePath

@@ -113,7 +113,10 @@
   
 #endif // MV_ENABLE_DELTAS
   
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 - (id) init
@@ -125,9 +128,16 @@
   return self;
 }
 
+// Constructor
+
 + (AVMvidFrameDecoder*) aVMvidFrameDecoder
 {
-  return [[[AVMvidFrameDecoder alloc] init] autorelease];
+  AVMvidFrameDecoder *obj = [[AVMvidFrameDecoder alloc] init];
+#if __has_feature(objc_arc)
+  return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 - (MVFileHeader*) header
@@ -559,9 +569,7 @@
   
   int inputMemoryMapped = TRUE;
   
-  for ( ; inputMemoryMapped && (frameIndex < newFrameIndexSigned); frameIndex++) {
-    NSAutoreleasePool *loop_pool = [[NSAutoreleasePool alloc] init];
-    
+  for ( ; inputMemoryMapped && (frameIndex < newFrameIndexSigned); frameIndex++) @autoreleasepool {
     int actualFrameIndex = frameIndex + 1;
     MVFrame *frame = maxvid_file_frame(self->m_mvFrames, actualFrameIndex);
 
@@ -833,7 +841,6 @@
       }
     } // end for loop over indexes
     
-    [loop_pool drain];
   }
   
   if (!changeFrameData) {

@@ -20,8 +20,12 @@
 
 + (AVFrame*) aVFrame
 {
-  AVFrame *obj = [[[AVFrame alloc] init] autorelease];
+  AVFrame *obj = [[AVFrame alloc] init];
+#if __has_feature(objc_arc)
   return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 - (void) dealloc
@@ -29,7 +33,11 @@
   self.image = nil;
   self.cgFrameBuffer = nil;
   self.cvBufferRef = NULL;
+  
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 - (void) makeImageFromFramebuffer
@@ -48,7 +56,7 @@
   // lives in this object. If the image object is created in the caller's
   // autorelease pool then we could not set image property to release.
   
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  @autoreleasepool {
   
 #if TARGET_OS_IPHONE
   UIImage *uiImage = [UIImage imageWithCGImage:imgRef];
@@ -67,7 +75,7 @@
   
   CGImageRelease(imgRef);
   
-  [pool drain];
+  }
   
   NSAssert(cgFrameBuffer.isLockedByDataProvider, @"image buffer should be locked by frame image");  
 }

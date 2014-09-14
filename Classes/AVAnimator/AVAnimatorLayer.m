@@ -15,7 +15,10 @@
 // private method in Media class
 #include "AVAnimatorMediaPrivate.h"
 
+#if __has_feature(objc_arc)
+#else
 #import "AutoPropertyRelease.h"
+#endif // objc_arc
 
 #import "AVFrame.h"
 
@@ -38,8 +41,11 @@
   
   self.layer.contents = nil;
   
-  [AutoPropertyRelease releaseProperties:self thisClass:AVAnimatorLayer.class];  
+#if __has_feature(objc_arc)
+#else
+  [AutoPropertyRelease releaseProperties:self thisClass:AVAnimatorLayer.class];
   [super dealloc];
+#endif // objc_arc
 }
 
 // static ctor
@@ -48,17 +54,12 @@
 {
   NSAssert(layer, @"layer");
   AVAnimatorLayer *obj = [[AVAnimatorLayer alloc] init];
-  [obj autorelease];
+#if __has_feature(objc_arc)
+#else
+  obj = [obj autorelease];
+#endif // objc_arc
   obj.layerObj = layer;
   return obj;  
-}
-
-- (id) init
-{
-  if ((self = [super init])) {
-    // No specific defaults are needed
-  }
-  return self;
 }
 
 // Invoked with TRUE argument once renderer has been attached to loaded media,

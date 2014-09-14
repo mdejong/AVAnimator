@@ -15,7 +15,10 @@
 
 #import "AVAnimatorMedia.h"
 
+#if __has_feature(objc_arc)
+#else
 #import "AutoPropertyRelease.h"
+#endif // objc_arc
 
 // private properties declaration for AVAnimatorView class
 #include "AVAnimatorViewPrivate.h"
@@ -48,8 +51,11 @@
     [self.mediaObj detachFromRenderer:self copyFinalFrame:FALSE];
   }
   
+#if __has_feature(objc_arc)
+#else
   [AutoPropertyRelease releaseProperties:self thisClass:AVAnimatorView.class];
   [super dealloc];
+#endif // objc_arc
 }
 
 // static ctor
@@ -61,9 +67,12 @@
 
 + (AVAnimatorView*) aVAnimatorViewWithFrame:(CGRect)viewFrame
 {
-  AVAnimatorView *obj = [[AVAnimatorView alloc] initWithFrame:viewFrame];
-  [obj autorelease];
+  AVAnimatorView *obj = [[AVAnimatorView alloc] initWithFrame:viewFrame];  
+#if __has_feature(objc_arc)
   return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 - (id) initWithFrame:(CGRect)frame

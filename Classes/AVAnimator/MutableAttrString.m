@@ -67,7 +67,12 @@
   CFMutableAttributedStringRef ref = CFAttributedStringCreateMutable(kCFAllocatorDefault, 0);
   NSAssert(ref, @"CFAttributedStringCreateMutable() failed");
   obj->m_attrString = ref;
+  
+#if __has_feature(objc_arc)
+  return obj;
+#else
   return [obj autorelease];
+#endif // objc_arc
 }
 
 - (void) dealloc
@@ -95,7 +100,10 @@
   // setter will release the held ref
   self.color = NULL;
   
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 - (void) appendText:(NSString*)string

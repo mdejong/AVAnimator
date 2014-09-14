@@ -18,12 +18,21 @@
 {
   self.movieFilename = nil;
   self.audioFilename = nil;
+  
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 + (AVAppResourceLoader*) aVAppResourceLoader
 {
-  return [[[AVAppResourceLoader alloc] init] autorelease];
+  AVAppResourceLoader *obj = [[AVAppResourceLoader alloc] init];
+#if __has_feature(objc_arc)
+  return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 - (NSString*) _getMoviePath

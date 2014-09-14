@@ -119,13 +119,21 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   }
     
   self.mvidPath = nil;
+  
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 + (AVMvidFileWriter*) aVMvidFileWriter
 {
-  AVMvidFileWriter *obj = [[[AVMvidFileWriter alloc] init] autorelease];
+  AVMvidFileWriter *obj = [[AVMvidFileWriter alloc] init];
+#if __has_feature(objc_arc)
   return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 - (BOOL) open

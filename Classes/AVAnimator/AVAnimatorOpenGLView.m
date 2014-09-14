@@ -139,9 +139,10 @@ enum {
 {
   AVAnimatorOpenGLView *obj = [[AVAnimatorOpenGLView alloc] initWithFrame:viewFrame];
 #if __has_feature(objc_arc)
-  [obj autorelease];
-#endif // objc_arc
   return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 - (id) initWithFrame:(CGRect)frame

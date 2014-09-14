@@ -23,7 +23,12 @@
 
 + (AV7zApng2MvidResourceLoader*) aV7zApng2MvidResourceLoader
 {
-  return [[[AV7zApng2MvidResourceLoader alloc] init] autorelease];
+  AV7zApng2MvidResourceLoader *obj = [[AV7zApng2MvidResourceLoader alloc] init];
+#if __has_feature(objc_arc)
+  return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 // This method is invoked in the secondary thread to decode the contents of the archive entry
@@ -32,7 +37,7 @@
 #define LOGGING
 
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  @autoreleasepool {
   
   NSAssert([arr count] == 7, @"arr count");
   
@@ -113,7 +118,7 @@
     [self releaseSerialResourceLoaderLock];
   }
 
-  [pool drain];
+  }
 }
 
 - (void) _detachNewThread:(NSString*)archivePath

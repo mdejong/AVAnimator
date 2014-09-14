@@ -567,9 +567,9 @@ retcode:
                outMaxvidPath:(NSString*)outMaxvidPath
                     genAdler:(BOOL)genAdler
 {
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  
   uint32_t retcode = 0;
+  
+  @autoreleasepool {
   
   FILE *inAPNGFile = NULL;
   
@@ -664,7 +664,7 @@ retcode:
   
   [aVMvidFileWriter close];
   
-  [pool drain];
+  }
   
 	return retcode;
 }

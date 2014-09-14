@@ -7,7 +7,10 @@
 
 #import "AVAssetFrameDecoder.h"
 
+#if __has_feature(objc_arc)
+#else
 #import "AutoPropertyRelease.h"
+#endif // objc_arc
 
 #import "CGFrameBuffer.h"
 
@@ -89,15 +92,23 @@ typedef enum
 
 - (void) dealloc
 {
+#if __has_feature(objc_arc)
+#else
   [AutoPropertyRelease releaseProperties:self thisClass:AVAssetFrameDecoder.class];
   [super dealloc];
+#endif // objc_arc
 }
 
 + (AVAssetFrameDecoder*) aVAssetFrameDecoder
 {
   AVAssetFrameDecoder *obj = [[AVAssetFrameDecoder alloc] init];
   obj->frameIndex = -1;
+  
+#if __has_feature(objc_arc)
+  return obj;
+#else
   return [obj autorelease];
+#endif // objc_arc
 }
 
 // This utility method will setup the asset so that it is opened and ready
@@ -110,7 +121,11 @@ typedef enum
   NSDictionary *options = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES]
                                                       forKey:AVURLAssetPreferPreciseDurationAndTimingKey];
   
-  AVURLAsset *avUrlAsset = [[[AVURLAsset alloc] initWithURL:self.assetURL options:options] autorelease];
+  AVURLAsset *avUrlAsset = [[AVURLAsset alloc] initWithURL:self.assetURL options:options];
+#if __has_feature(objc_arc)
+#else
+  avUrlAsset = [avUrlAsset autorelease];
+#endif // objc_arc
   NSAssert(avUrlAsset, @"AVURLAsset");
   
   // FIXME: return false error code if something goes wrong
@@ -205,8 +220,12 @@ typedef enum
   
   self->m_numFrames = numFrames;
   
-  AVAssetReaderTrackOutput *aVAssetReaderOutput = [[[AVAssetReaderTrackOutput alloc]
-                                                    initWithTrack:videoTrack outputSettings:videoSettings] autorelease];
+  AVAssetReaderTrackOutput *aVAssetReaderOutput = [[AVAssetReaderTrackOutput alloc]
+                                                    initWithTrack:videoTrack outputSettings:videoSettings];
+#if __has_feature(objc_arc)
+#else
+  aVAssetReaderOutput = [aVAssetReaderOutput autorelease];
+#endif // objc_arc
   
   NSAssert(aVAssetReaderOutput, @"AVAssetReaderVideoCompositionOutput failed");
 
@@ -546,7 +565,10 @@ typedef enum
   
   if (frameBuffer == NULL) {
     frameBuffer = [[CGFrameBuffer alloc] initWithBppDimensions:24 width:width height:height];
+#if __has_feature(objc_arc)
+#else
     frameBuffer = [frameBuffer autorelease];
+#endif // objc_arc
     NSAssert(frameBuffer, @"frameBuffer");
     *frameBufferPtr = frameBuffer;
 

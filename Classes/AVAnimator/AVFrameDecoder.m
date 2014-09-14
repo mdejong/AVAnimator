@@ -11,7 +11,10 @@
 
 - (void) dealloc
 {
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 - (BOOL) openForReading:(NSString*)path

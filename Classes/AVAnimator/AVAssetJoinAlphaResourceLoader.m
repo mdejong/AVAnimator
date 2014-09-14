@@ -48,7 +48,11 @@
 + (AVAssetJoinAlphaResourceLoader*) aVAssetJoinAlphaResourceLoader
 {
   AVAssetJoinAlphaResourceLoader *obj = [[AVAssetJoinAlphaResourceLoader alloc] init];
+#if __has_feature(objc_arc)
+  return obj;
+#else
   return [obj autorelease];
+#endif // objc_arc
 }
 
 - (void) dealloc
@@ -58,7 +62,11 @@
   self.outPath = nil;
   self.rgbLoader = nil;
   self.alphaLoader = nil;
+  
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 // Overload suerclass self.movieFilename getter so that standard loading
@@ -273,9 +281,7 @@
   //FILE *fp = fopen(utf8Str, "w");
   //assert(fp);
   
-  for (NSUInteger frameIndex = 0; frameIndex < numFrames; frameIndex++) {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-    
+  for (NSUInteger frameIndex = 0; frameIndex < numFrames; frameIndex++) @autoreleasepool {
 #ifdef LOGGING
     NSLog(@"reading frame %d", frameIndex);
 #endif // LOGGING
@@ -348,8 +354,6 @@
       NSLog(@"cannot write keyframe data to mvid file \"%@\"", joinedMvidPath);
       return FALSE;
     }
-    
-    [pool drain];
   }
   
   //fclose(fp);
@@ -473,7 +477,7 @@
 
 + (void) decodeThreadEntryPoint:(NSArray*)arr
 {
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  @autoreleasepool {
   
   NSAssert([arr count] == 6, @"arr count");
   
@@ -527,7 +531,7 @@
     [self releaseSerialResourceLoaderLock];
   }
   
-  [pool drain];
+  }
 }
 
 @end

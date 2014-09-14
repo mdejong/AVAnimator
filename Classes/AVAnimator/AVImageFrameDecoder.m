@@ -6,7 +6,11 @@
 //  License terms defined in License.txt.
 
 #import "AVImageFrameDecoder.h"
+
+#if __has_feature(objc_arc)
+#else
 #import "AutoPropertyRelease.h"
+#endif // objc_arc
 
 #import "AVFrame.h"
 
@@ -19,8 +23,11 @@
 @synthesize currentFrameImage = m_currentFrameImage;
 
 - (void) dealloc {
+#if __has_feature(objc_arc)
+#else
   [AutoPropertyRelease releaseProperties:self thisClass:AVImageFrameDecoder.class];
   [super dealloc];
+#endif // objc_arc
 }
 
 // Create an array of file/resource names with the given filename prefix,
@@ -38,7 +45,7 @@
                            rangeEnd:(NSInteger)rangeEnd
                        suffixFormat:(NSString*)suffixFormat
 {
-	NSMutableArray *numberedNames = [[NSMutableArray alloc] initWithCapacity:40];
+	NSMutableArray *numberedNames = [NSMutableArray arrayWithCapacity:40];
   
 	for (NSInteger i = rangeStart; i <= rangeEnd; i++) {
 		NSString *suffix = [NSString stringWithFormat:suffixFormat, i];
@@ -48,7 +55,6 @@
 	}
   
 	NSArray *newArray = [NSArray arrayWithArray:numberedNames];
-	[numberedNames release];
 	return newArray;
 }
 
@@ -58,7 +64,7 @@
 
 + (NSArray*) arrayWithResourcePrefixedURLs:(NSArray*)inNumberedNames
 {
-	NSMutableArray *URLs = [[NSMutableArray alloc] initWithCapacity:[inNumberedNames count]];
+	NSMutableArray *URLs = [NSMutableArray arrayWithCapacity:[inNumberedNames count]];
 	NSBundle* appBundle = [NSBundle mainBundle];
   
 	for ( NSString* path in inNumberedNames ) {
@@ -69,7 +75,6 @@
 	}
   
 	NSArray *newArray = [NSArray arrayWithArray:URLs];
-	[URLs release];
 	return newArray;
 }
 
@@ -81,7 +86,10 @@
 + (AVImageFrameDecoder*) aVImageFrameDecoder:(NSArray*)urls cacheDecodedImages:(BOOL)cacheDecodedImages
 {
   AVImageFrameDecoder *obj = [[AVImageFrameDecoder alloc] init];
-  [obj autorelease];
+#if __has_feature(objc_arc)
+#else
+  obj = [obj autorelease];
+#endif // objc_arc
   if (obj == nil) {
     return nil;
   }

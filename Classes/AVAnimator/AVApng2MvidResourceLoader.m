@@ -24,13 +24,22 @@
 
 + (AVApng2MvidResourceLoader*) aVApng2MvidResourceLoader
 {
-  return [[[AVApng2MvidResourceLoader alloc] init] autorelease];
+  AVApng2MvidResourceLoader *obj = [[AVApng2MvidResourceLoader alloc] init];
+#if __has_feature(objc_arc)
+  return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 - (void) dealloc
 {
   self.outPath = nil;
+  
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 // Output movie filename must be redefined
@@ -46,7 +55,7 @@
 #define LOGGING
 
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  @autoreleasepool {
   
   NSAssert([arr count] == 5, @"arr count");
   
@@ -109,7 +118,7 @@
     [self releaseSerialResourceLoaderLock];
   }
   
-  [pool drain];
+  }
 }
 
 - (void) _detachNewThread:(NSString*)resPath

@@ -22,20 +22,28 @@
 + (AVAsset2MvidResourceLoader*) aVAsset2MvidResourceLoader
 {
   AVAsset2MvidResourceLoader *obj = [[AVAsset2MvidResourceLoader alloc] init];
+#if __has_feature(objc_arc)
+  return obj;
+#else
   return [obj autorelease];
+#endif // objc_arc
 }
 
 - (void) dealloc
 {
   self.outPath = nil;
+  
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 // This method is invoked in the secondary thread to decode the contents of the archive entry
 // and write it to an output file (typically in the tmp dir).
 
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+  @autoreleasepool {
   
   NSAssert([arr count] == 5, @"arr count");
   
@@ -96,7 +104,7 @@
     [self releaseSerialResourceLoaderLock];
   }
   
-  [pool drain];
+  }
 }
 
 - (void) _detachNewThread:(NSString*)assetPath

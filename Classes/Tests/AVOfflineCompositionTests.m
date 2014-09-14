@@ -25,7 +25,7 @@
 
 #import "AVFrame.h"
 
-#define MAX_WAIT_TIME 10.0
+#define MAX_WAIT_TIME 15.0
 
 // Private API
 
