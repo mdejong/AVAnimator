@@ -39,8 +39,13 @@
 + (MovieControlsViewController*) movieControlsViewController:(UIView*)overView
 {
   MovieControlsViewController *obj = [[MovieControlsViewController alloc] init];
-  [obj autorelease];
   NSAssert(overView, @"overView is nil");
+  
+#if __has_feature(objc_arc)
+#else
+  obj = [obj autorelease];
+#endif // objc_arc
+  
   obj.view = overView;
   return obj;
 }
@@ -100,9 +105,13 @@
                     forControlEvents:UIControlEventTouchUpInside];
 	[self.fastForwardButton removeTarget:self
                            action:@selector(pressFastForward:)
-                 forControlEvents:UIControlEventTouchUpInside];    
+                 forControlEvents:UIControlEventTouchUpInside];
+  
+#if __has_feature(objc_arc)
+#else
   [AutoPropertyRelease releaseProperties:self thisClass:MovieControlsViewController.class];
   [super dealloc];
+#endif // objc_arc
 }
 
 - (CGSize) _containerSize
@@ -170,7 +179,11 @@
   
   CGRect frame = CGRectMake(0.0f, 0.0f, containerSize.width, 40.0f);
   UINavigationBar *navigationBar = [[UINavigationBar alloc] initWithFrame:frame];
-  [navigationBar autorelease];
+  
+#if __has_feature(objc_arc)
+#else
+  navigationBar = [navigationBar autorelease];
+#endif // objc_arc
 
 	navigationBar.barStyle = UIBarStyleBlackTranslucent;
   
@@ -178,10 +191,16 @@
 	UIBarButtonItem *doneItemButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
 																					target:self
 																					action:@selector(pressDone:)];
-  [doneItemButton autorelease];
+#if __has_feature(objc_arc)
+#else
+  doneItemButton = [doneItemButton autorelease];
+#endif // objc_arc
   
   UINavigationItem *navigationItem = [[UINavigationItem alloc] initWithTitle:@""];
-  [navigationItem autorelease];
+#if __has_feature(objc_arc)
+#else
+  navigationItem = [navigationItem autorelease];
+#endif // objc_arc
 
   [navigationBar pushNavigationItem:navigationItem animated:FALSE];
   
@@ -430,8 +449,15 @@
 {
 	CGRect frame = CGRectMake(0, 0, 280, 33);
 
-	self.volumeSubview = [[[UIView alloc] initWithFrame:frame] autorelease];
-
+  UIView *volumeSubviewObj = [[UIView alloc] initWithFrame:frame];
+  
+#if __has_feature(objc_arc)
+#else
+  volumeSubviewObj = [volumeSubviewObj autorelease];
+#endif // objc_arc
+  
+	self.volumeSubview = volumeSubviewObj;
+  
 	// Set the location of the center of the volume view widget
 
 	int centerVolumeOffset = 27;
@@ -442,11 +468,18 @@
 	center.y += centerVolumeOffset;
 	volumeSubview.center = center;
 
-	self.volumeView = [[[MPVolumeView alloc] initWithFrame:volumeSubview.bounds] autorelease];
+  MPVolumeView *volumeViewObj = [[MPVolumeView alloc] initWithFrame:volumeSubview.bounds];
+  
+#if __has_feature(objc_arc)
+#else
+  volumeViewObj = [volumeViewObj autorelease];
+#endif // objc_arc
+  
+	self.volumeView = volumeViewObj;
 
-	[volumeView sizeToFit];
+	[volumeViewObj sizeToFit];
 
-	[volumeSubview addSubview:volumeView];
+	[volumeSubview addSubview:volumeViewObj];
 
 	[controlsImageView addSubview:volumeSubview];
 
@@ -492,13 +525,21 @@
 	CGRect frame = CGRectMake(0, 0, containerSize.height, image_height + spacer);
 
 	UIView *controlsSubviewObj = [[UIView alloc] initWithFrame:frame];
-  [controlsSubviewObj autorelease];
-
-	self.controlsImageView = [[[UIImageView alloc] initWithImage:controlsBackgroundImage] autorelease];
-
+#if __has_feature(objc_arc)
+#else
+  controlsSubviewObj = [controlsSubviewObj autorelease];
+#endif // objc_arc
+  
 	self.controlsSubview = controlsSubviewObj;
+  
+  UIImageView *controlsImageViewObj = [[UIImageView alloc] initWithImage:controlsBackgroundImage];
+#if __has_feature(objc_arc)
+#else
+  controlsImageViewObj = [controlsImageViewObj autorelease];
+#endif // objc_arc
+	self.controlsImageView = controlsImageViewObj;
 
-	[controlsSubview addSubview:controlsImageView];
+	[self.controlsSubview addSubview:controlsImageViewObj];
 
 	controlsImageView.userInteractionEnabled = TRUE;
 	self.controlsSubview.userInteractionEnabled = TRUE;
@@ -522,7 +563,7 @@
 	// Define a background color for debugging
 
 	if (FALSE) {
-		[controlsSubview setBackgroundColor:[UIColor greenColor]];
+		[self.controlsSubview setBackgroundColor:[UIColor greenColor]];
 	}
 }
 
@@ -602,7 +643,14 @@
   // overlaySubview completely covers self.view and contains
   // all the movie control widgets.
   
-  self.overlaySubview = [[[UIView alloc] initWithFrame:frame] autorelease];
+  UIView *overlaySubviewObj = [[UIView alloc] initWithFrame:frame];
+  
+#if __has_feature(objc_arc)
+#else
+  overlaySubviewObj = [overlaySubviewObj autorelease];
+#endif // objc_arc
+  
+  self.overlaySubview = overlaySubviewObj;
   
   [self.view addSubview:self.overlaySubview];
   
@@ -863,15 +911,15 @@
 		NSLog(@"hit in self.view");
 	} else if (hitView == self.overlaySubview) {
 		NSLog(@"hit in overlaySubview");	
-	} else if (hitView == controlsSubview) {
+	} else if (hitView == self.controlsSubview) {
 		NSLog(@"hit in controlsSubview");
-	} else if (hitView == controlsImageView) {
+	} else if (hitView == self.controlsImageView) {
 		NSLog(@"hit in controlsImageView");
-	} else if (hitView == volumeSubview) {
+	} else if (hitView == self.volumeSubview) {
 		NSLog(@"hit in volumeSubview");
-	} else if (hitView == volumeView) {
+	} else if (hitView == self.volumeView) {
 		NSLog(@"hit in volumeView");
-	} else if (hitView == playPauseButton) {
+	} else if (hitView == self.playPauseButton) {
 		NSLog(@"hit in playPauseButton");
 	} else {
 		NSLog(@"hit in unknown view");
