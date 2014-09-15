@@ -57,12 +57,25 @@
 	ViewLoadTests_SubviewController1 *vc = [[ViewLoadTests_SubviewController1 alloc] init];
 	if (vc == nil)
 		return nil;
-	return [vc autorelease];
+#if __has_feature(objc_arc)
+  return vc;
+#else
+  return [vc autorelease];
+#endif // objc_arc
 }
 
 - (void)loadView {
 	CGRect frame = CGRectMake(0,0,10,10);
-	self.view = [[[UIView alloc] initWithFrame:frame] autorelease];
+  
+  UIView *view = [[UIView alloc] initWithFrame:frame];
+  
+#if __has_feature(objc_arc)
+#else
+  view = [view autorelease];
+#endif // objc_arc
+  
+	self.view = view;
+  
 	NSAssert(self.view, @"view is nil");	
 }
 

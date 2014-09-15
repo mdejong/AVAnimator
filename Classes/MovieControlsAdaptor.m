@@ -23,14 +23,21 @@
 + (MovieControlsAdaptor*) movieControlsAdaptor
 {
   MovieControlsAdaptor *obj = [[MovieControlsAdaptor alloc] init];
-  [obj autorelease];
+#if __has_feature(objc_arc)
   return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 - (void)dealloc {
   self.animatorView = nil;
   self.movieControlsViewController = nil;
+  
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 - (void) startAnimator
