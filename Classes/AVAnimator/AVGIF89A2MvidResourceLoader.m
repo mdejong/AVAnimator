@@ -217,7 +217,14 @@
   
   CGFrameBuffer *cgFrameBuffer = nil;
   
-  CGImageSourceRef srcRef = CGImageSourceCreateWithData((CFDataRef)inGIF89AData, NULL);
+  CGImageSourceRef srcRef = CGImageSourceCreateWithData(
+#if __has_feature(objc_arc)
+                                                        (__bridge CFDataRef)inGIF89AData
+#else
+                                                        (CFDataRef)inGIF89AData
+#endif // objc_arc
+                                                        , NULL);
+    
   assert(srcRef);
 
   AVMvidFileWriter *aVMvidFileWriter = nil;
@@ -254,7 +261,13 @@ goto retcode; \
     CFNumberRef delayTime = CFDictionaryGetValue(gifProperties, kCGImagePropertyGIFUnclampedDelayTime);
     assert(delayTime);
     
-    NSNumber *delayTimeNum = (NSNumber*)delayTime;
+    NSNumber *delayTimeNum;
+    
+#if __has_feature(objc_arc)
+    delayTimeNum = (__bridge NSNumber*)delayTime;
+#else
+    delayTimeNum = (NSNumber*)delayTime;
+#endif // objc_arc
     
     // ImageIO must return the delay time in seconds
     
@@ -275,8 +288,16 @@ goto retcode; \
       CFNumberRef pixelWidth = CFDictionaryGetValue(imageFrameProperties, @"PixelWidth");
       CFNumberRef pixelHeight = CFDictionaryGetValue(imageFrameProperties, @"PixelHeight");
       
-      NSNumber *pixelWidthNum = (NSNumber*)pixelWidth;
-      NSNumber *pixelHeightNum = (NSNumber*)pixelHeight;
+      NSNumber *pixelWidthNum;
+      NSNumber *pixelHeightNum;
+      
+#if __has_feature(objc_arc)
+      pixelWidthNum = (__bridge NSNumber*)pixelWidth;
+      pixelHeightNum = (__bridge NSNumber*)pixelHeight;
+#else
+      pixelWidthNum = (NSNumber*)pixelWidth;
+      pixelHeightNum = (NSNumber*)pixelHeight;
+#endif // objc_arc
       
       width = [pixelWidthNum unsignedIntValue];
       height = [pixelHeightNum unsignedIntValue];

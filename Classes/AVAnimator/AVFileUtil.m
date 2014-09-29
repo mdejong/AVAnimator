@@ -82,13 +82,12 @@
     [[NSFileManager defaultManager] removeItemAtPath:toPath error:NULL];
   }
   
-  NSError *error;
-  NSError **errorPtr = &error;
-  BOOL worked = [[NSFileManager defaultManager] moveItemAtPath:path toPath:toPath error:errorPtr];
+  NSError *error = nil;
+  BOOL worked = [[NSFileManager defaultManager] moveItemAtPath:path toPath:toPath error:&error];
   if (!worked) {
     BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:path];
     NSAssert(exists, @"src file does not exist : %@", path);
-    NSAssert(worked, @"moveItemAtPath failed for decode result : %@", *errorPtr);
+    NSAssert(worked, @"moveItemAtPath failed for decode result : %@", error);
   }
   
   return;

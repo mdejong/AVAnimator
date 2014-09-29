@@ -789,7 +789,12 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
     CFStringRef type = kUTTypePNG;
     size_t count = 1;
     CGImageDestinationRef dataDest;
-    dataDest = CGImageDestinationCreateWithData((CFMutableDataRef)mData,
+    dataDest = CGImageDestinationCreateWithData(
+#if __has_feature(objc_arc)
+                                                (__bridge CFMutableDataRef)mData,
+#else
+                                                (CFMutableDataRef)mData,
+#endif // objc_arc
                                                 type,
                                                 count,
                                                 NULL);

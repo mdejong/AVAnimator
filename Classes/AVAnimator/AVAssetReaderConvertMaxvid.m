@@ -117,6 +117,8 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   BOOL worked;
   BOOL retstatus = FALSE;
   
+  AVAssetFrameDecoder *frameDecoder = nil;
+  
   self.wasSuccessful = FALSE;
   
   NSAssert(self.frameDecoder == nil, @"frameDecoder property should be nil");
@@ -126,7 +128,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
     goto retcode;
   }
   
-  AVAssetFrameDecoder *frameDecoder = self.frameDecoder;
+  frameDecoder = self.frameDecoder;
   
   self.totalNumFrames = (int) frameDecoder.numFrames;
   self.frameDuration = frameDecoder.frameDuration;
@@ -182,6 +184,7 @@ retcode:
   
   [self.frameDecoder close];
   self.frameDecoder = nil;
+  frameDecoder = nil;
 
   if (retstatus) {
 #ifdef LOGGING

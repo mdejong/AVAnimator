@@ -243,17 +243,20 @@ typedef enum
 + (id) readPlist:(NSString*)resFileName
 {
   NSData *plistData;  
-  NSString *error;  
+  NSString *error = nil;
   NSPropertyListFormat format;  
-  id plist;  
+  id plist;
   
   NSString *resPath = [[NSBundle mainBundle] pathForResource:resFileName ofType:@""];  
   plistData = [NSData dataWithContentsOfFile:resPath];   
   
   plist = [NSPropertyListSerialization propertyListFromData:plistData mutabilityOption:NSPropertyListImmutable format:&format errorDescription:&error];
   if (!plist) {
-    NSLog(@"Error reading plist from file '%s', error = '%s'", [resFileName UTF8String], [error UTF8String]);  
-    [error release];  
+    NSLog(@"Error reading plist from file '%s', error = '%s'", [resFileName UTF8String], [error UTF8String]);
+#if __has_feature(objc_arc)
+#else
+    [error release];
+#endif // objc_arc
   }
   return plist;  
 }
