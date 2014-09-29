@@ -409,8 +409,8 @@ process_apng_frame(
   LibapngUserData *userDataPtr;
   
 #if __has_feature(objc_arc)
-  userDataPtr = (__bridge_transfer LibapngUserData*)userData;
-#else  
+  userDataPtr = (__bridge LibapngUserData*)userData;
+#else
   userDataPtr = (LibapngUserData*)userData;
 #endif // objc_arc
   

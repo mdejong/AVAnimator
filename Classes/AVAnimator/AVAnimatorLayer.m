@@ -136,7 +136,13 @@
     self.frameObj = inFrame;
     UIImage *image = inFrame.image;
     CGImageRef cgImage = image.CGImage;
-    self.layer.contents = (id) cgImage;
+    
+    self.layer.contents =
+#if __has_feature(objc_arc)
+    (__bridge id) cgImage;
+#else
+    (id) cgImage;
+#endif // objc_arc
   }
 }
 
