@@ -5,6 +5,10 @@
 //  Placed in the public domain.
 //
 
+#if __has_feature(objc_arc)
+// No-op
+#else
+
 #import "AutoPropertyRelease.h"
 
 #import <objc/runtime.h>
@@ -204,3 +208,5 @@
 }
 
 @end
+
+#endif // objc_arc

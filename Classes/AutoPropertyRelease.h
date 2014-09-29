@@ -29,6 +29,10 @@
 //    [AutoPropertyRelease releaseProperties:self thisClass:[MyClass class]];
 //}
 
+#if __has_feature(objc_arc)
+// No-op
+#else
+
 #import <Foundation/Foundation.h>
 
 @interface AutoPropertyRelease : NSObject {
@@ -37,3 +41,5 @@
 + (void)releaseProperties:(NSObject*)obj thisClass:(Class)thisClass;
 
 @end
+
+#endif // objc_arc
