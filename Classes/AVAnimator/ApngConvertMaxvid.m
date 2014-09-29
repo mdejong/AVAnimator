@@ -18,11 +18,41 @@
 
 #pragma clang diagnostic ignored "-Wmissing-prototypes"
 
+#if __has_feature(objc_arc)
+// ARC impl
+
+@interface LibapngUserData : NSObject
+
+@property (nonatomic, retain) AVMvidFileWriter *avMvidFileWriter;
+
+@property (nonatomic, assign) uint32_t bpp;
+
+@property (nonatomic, assign) uint32_t *cgFrameBuffer;
+
++ (LibapngUserData*) libapngUserData;
+
+@end
+
+@implementation LibapngUserData
+
++ (LibapngUserData*) libapngUserData
+{
+  LibapngUserData *obj = [[LibapngUserData alloc] init];
+  return obj;
+}
+
+@end
+
+#else
+// non-ARC impl
+
 typedef struct {
   AVMvidFileWriter *avMvidFileWriter;
   uint32_t bpp;
   uint32_t *cgFrameBuffer;
 } LibapngUserData;
+
+#endif // objc_arc
 
 // Read a big endian uint32_t from a char* and store in result (ARGB).
 // Each pixel needs to be multiplied by the alpha channel value.
@@ -376,9 +406,21 @@ process_apng_frame(
                    uint32_t bpp,
                    void *userData)
 {
-  LibapngUserData *userDataPtr = (LibapngUserData*)userData;
+  LibapngUserData *userDataPtr;
   
-  AVMvidFileWriter *aVMvidFileWriter = userDataPtr->avMvidFileWriter;
+#if __has_feature(objc_arc)
+  userDataPtr = (__bridge_transfer LibapngUserData*)userData;
+#else  
+  userDataPtr = (LibapngUserData*)userData;
+#endif // objc_arc
+  
+  AVMvidFileWriter *aVMvidFileWriter;
+
+#if __has_feature(objc_arc)
+  aVMvidFileWriter = userDataPtr.avMvidFileWriter;
+#else
+  aVMvidFileWriter = userDataPtr->avMvidFileWriter;
+#endif // objc_arc
   
   uint32_t framebufferNumBytes;
   
@@ -421,9 +463,15 @@ process_apng_frame(
   
   assert(bpp == 24 || bpp == 32);
   
+#if __has_feature(objc_arc)
+  if (bpp > userDataPtr.bpp) {
+    userDataPtr.bpp = bpp;
+  }
+#else
   if (bpp > userDataPtr->bpp) {
     userDataPtr->bpp = bpp;
   }
+#endif // objc_arc
   
   // In the case where the first frame is hidden, this callback is not invoked for the first frame in the APNG file.
   
@@ -447,14 +495,28 @@ process_apng_frame(
     // Each pixel in the framebuffer must be prepared before it can be passed to the CoreGraphics framebuffer.
     // ARGB must be pre-multiplied and converted to ABGR.
     
+#if __has_feature(objc_arc)
+    if (userDataPtr.cgFrameBuffer == NULL) {
+      userDataPtr.cgFrameBuffer = malloc(framebufferNumBytes);
+      memset(userDataPtr.cgFrameBuffer, 0, framebufferNumBytes);
+    }
+#else
     if (userDataPtr->cgFrameBuffer == NULL) {
       userDataPtr->cgFrameBuffer = malloc(framebufferNumBytes);
       memset(userDataPtr->cgFrameBuffer, 0, framebufferNumBytes);
     }
+#endif // objc_arc
     
     uint32_t count = width * height;
     uint32_t *inPtr = framebuffer;
-    uint32_t *outPtr = userDataPtr->cgFrameBuffer;  
+    uint32_t *outPtr;
+    
+#if __has_feature(objc_arc)
+    outPtr = userDataPtr.cgFrameBuffer;
+#else
+    outPtr = userDataPtr->cgFrameBuffer;
+#endif // objc_arc
+
     if (bpp == 32) {
       do {
         *outPtr++ = argb_to_abgr_and_premultiply(*inPtr++);
@@ -471,9 +533,15 @@ process_apng_frame(
     // are in, and the system does not support color profiles. Logic might need to
     // require that input pixels be in sRGB colorspace or else fail to load on iOS.
     
+#if __has_feature(objc_arc)
+    outPtr = userDataPtr.cgFrameBuffer;
+#else
+    outPtr = userDataPtr->cgFrameBuffer;
+#endif // objc_arc
+    
     // Each frame is emitted as a keyframe
     
-    BOOL worked = [aVMvidFileWriter writeKeyframe:(char*)userDataPtr->cgFrameBuffer bufferSize:framebufferNumBytes];
+    BOOL worked = [aVMvidFileWriter writeKeyframe:(char*)outPtr bufferSize:framebufferNumBytes];
     
     if (worked == FALSE) {
       return WRITE_ERROR;
@@ -575,10 +643,17 @@ retcode:
   
   AVMvidFileWriter *aVMvidFileWriter = nil;
   
+#if __has_feature(objc_arc)
+  LibapngUserData *userData;
+  userData = [LibapngUserData libapngUserData];
+#else
   LibapngUserData userData;
   memset(&userData, 0, sizeof(LibapngUserData));
-  assert(userData.cgFrameBuffer == NULL);  
-  
+#endif // objc_arc
+    
+  assert(userData.avMvidFileWriter == NULL);
+  assert(userData.cgFrameBuffer == NULL);
+
 #undef RETCODE
 #define RETCODE(status) \
 if (status != 0) { \
@@ -663,6 +738,8 @@ retcode:
   }
   
   [aVMvidFileWriter close];
+    
+  userData.avMvidFileWriter = nil;
   
   }
   
