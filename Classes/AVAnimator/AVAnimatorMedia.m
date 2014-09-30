@@ -168,7 +168,10 @@
   
   if (self.avAudioPlayer) {
     self.avAudioPlayer.delegate = self->m_originalAudioDelegate;
+#if __has_feature(objc_arc)
+#else
     [self->m_retainedAudioDelegate release];
+#endif // objc_arc
     self.avAudioPlayer = nil;
   }
   self.audioSimulatedStartTime = nil;
@@ -176,7 +179,10 @@
   self.audioPlayerFallbackStartTime = nil;
   self.audioPlayerFallbackNowTime = nil;
   
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 // static ctor
@@ -184,8 +190,11 @@
 + (AVAnimatorMedia*) aVAnimatorMedia
 {
   AVAnimatorMedia *obj = [[AVAnimatorMedia alloc] init];
-  [obj autorelease];
+#if __has_feature(objc_arc)
   return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 - (id) init
@@ -217,7 +226,6 @@
 - (void) _createAudioPlayer
 {
 	NSError *error;
-	NSError **errorPtr = &error;
 	AVAudioPlayer *avPlayer = nil;
   
   if (self.animatorAudioURL == nil) {
@@ -232,8 +240,12 @@
 	NSAssert(audioURLTail != nil, @"audioURLTail is nil");
   
 	avPlayer = [AVAudioPlayer alloc];
-	avPlayer = [avPlayer initWithContentsOfURL:audioURL error:errorPtr];
-  [avPlayer autorelease];
+	avPlayer = [avPlayer initWithContentsOfURL:audioURL error:&error];
+  
+#if __has_feature(objc_arc)
+#else
+	avPlayer = [avPlayer autorelease];
+#endif // objc_arc
   
 	if (error.code == kAudioFileUnsupportedFileTypeError) {
 		NSAssert(FALSE, @"unsupported audio file format");
@@ -1437,8 +1449,9 @@
   // the next frame is exactly the same as the previous frame,
   // then the isDuplicate flag is TRUE.
   
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  BOOL wasChanged;
+  BOOL wasChanged = FALSE;
+  
+  @autoreleasepool {
   
   AVFrame *frame = [self.frameDecoder advanceToFrame:nextFrameNum];
   
@@ -1448,8 +1461,7 @@
     self.nextFrame = frame;
     wasChanged = TRUE;
   }
-  
-  [pool drain];
+  }
   return wasChanged;
 }
 

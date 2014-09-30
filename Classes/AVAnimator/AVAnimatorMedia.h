@@ -68,6 +68,10 @@ typedef enum AVAnimatorPlayerState {
 @interface AVAnimatorMedia : NSObject {
 @private
 
+#if __has_feature(objc_arc)
+  __unsafe_unretained
+#else
+#endif // objc_arc
 	id<AVAnimatorMediaRendererProtocol> m_renderer;
   
 	AVResourceLoader *m_resourceLoader;
