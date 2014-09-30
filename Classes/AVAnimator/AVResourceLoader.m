@@ -26,18 +26,25 @@ static NSLock *serialResourceLoaderLock = nil;
       NSLock *obj = [[NSLock alloc] init];
       NSAssert(obj, @"NSLock could not be allocated");
       serialResourceLoaderLock = obj;
-      [serialResourceLoaderLock retain];
       [serialResourceLoaderLock setName:@"serialResourceLoaderLock"];
+#if __has_feature(objc_arc)
+#else
+      [serialResourceLoaderLock retain];
       [obj release];
+#endif // objc_arc
     }
   }
 }
 
 + (void) freeSerialResourceLoaderLock
 {
+#if __has_feature(objc_arc)
+  serialResourceLoaderLock = nil;
+#else
   NSLock *obj = serialResourceLoaderLock;
   serialResourceLoaderLock = nil;
   [obj release];
+#endif // objc_arc
 }
 
 + (void) grabSerialResourceLoaderLock

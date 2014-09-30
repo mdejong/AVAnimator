@@ -1779,7 +1779,11 @@ NSArray* calculateDeltaPixels16(
         deltaPixel->newValue = new_pixel;
         
         [deltaPixels addObject:deltaPixel];
+        
+#if __has_feature(objc_arc)
+#else
         [deltaPixel release];
+#endif // objc_arc
       }
     }
   }
@@ -1820,7 +1824,11 @@ NSArray* calculateDeltaPixels32(
         deltaPixel->newValue = new_pixel;
         
         [deltaPixels addObject:deltaPixel];
+        
+#if __has_feature(objc_arc)
+#else
         [deltaPixel release];
+#endif // objc_arc
       }
     }
   }
