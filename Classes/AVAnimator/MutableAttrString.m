@@ -119,7 +119,12 @@
   
   int indexEndBefore = (int) [self length];
   
+#if __has_feature(objc_arc)
+  CFStringRef cfStr = (__bridge CFStringRef)string;
+#else
   CFStringRef cfStr = (CFStringRef)string;
+#endif // objc_arc
+  
   CFMutableAttributedStringRef attrString = self.attrString;
   CFAttributedStringReplaceString(attrString, CFRangeMake([self length], 0), cfStr);
   
@@ -164,7 +169,12 @@
   CFRelease(attrValues);
     
   if (LOGGING) {
+#if __has_feature(objc_arc)
+    NSString *description = [(__bridge NSAttributedString*)attrString description];
+#else
     NSString *description = [(NSAttributedString*)attrString description];
+#endif // objc_arc
+    
     NSLog(@"post appendText (%d) : \"%@\"", (int)[self length], description);
   }
   
@@ -186,7 +196,11 @@
   self.isDoneAppendingText = TRUE;
   
   if (LOGGING) {
+#if __has_feature(objc_arc)
+    NSString *description = [(__bridge NSAttributedString*)attrString description];
+#else
     NSString *description = [(NSAttributedString*)attrString description];
+#endif // objc_arc
     NSLog(@"post doneAppendingText (%d) : \"%@\"", (int)[self length], description);
   }
   
@@ -286,7 +300,13 @@
   CTFontRef plainFont;
   CTFontRef boldFont;
   
-  plainFont = CTFontCreateWithName((CFStringRef)plainFontName, fontSize, nil);
+  plainFont = CTFontCreateWithName(
+#if __has_feature(objc_arc)
+                                   (__bridge CFStringRef)plainFontName,
+#else
+                                   (CFStringRef)plainFontName,
+#endif // objc_arc
+                                   fontSize, nil);
   NSAssert(plainFont, @"plainFont");
   self.plainTextFont = plainFont;
   
@@ -296,7 +316,13 @@
   if ([boldFontName isEqualToString:plainFontName]) {
     boldFont = CFRetain(plainFont);
   } else {
-    boldFont = CTFontCreateWithName((CFStringRef)boldFontName, fontSize, nil);
+    boldFont = CTFontCreateWithName(
+#if __has_feature(objc_arc)
+                                    (__bridge CFStringRef)boldFontName,
+#else
+                                    (CFStringRef)boldFontName,
+#endif // objc_arc
+                                    fontSize, nil);
   }
   NSAssert(boldFont, @"boldFont");
   self.boldTextFont = boldFont;
