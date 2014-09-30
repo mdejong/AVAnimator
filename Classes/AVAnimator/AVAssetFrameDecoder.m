@@ -59,7 +59,7 @@ typedef enum
 
 @interface AVAssetFrameDecoder ()
 
-@property (nonatomic, retain) NSURL         *assetURL;
+@property (nonatomic, copy) NSURL         *assetURL;
 
 @property (nonatomic, retain) AVAssetReader *aVAssetReader;
 

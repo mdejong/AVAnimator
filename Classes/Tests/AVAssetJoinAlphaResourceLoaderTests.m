@@ -282,9 +282,11 @@
   // Allocate output buffer and phony RGB buffer with all white pixels
   
   uint32_t *rgbPixels = malloc(numPixels * sizeof(uint32_t));
+  assert(rgbPixels);
   memset(rgbPixels, 0xff, numPixels * sizeof(uint32_t));
 
   uint32_t *combinedPixels = malloc(numPixels * sizeof(uint32_t));
+  assert(combinedPixels);
   memset(combinedPixels, 0x0, numPixels * sizeof(uint32_t));
   
   uint32_t *alphaPixels = (uint32_t*) frame.cgFrameBuffer.pixels;
