@@ -159,6 +159,9 @@
       NSAssert([results isEqualToString:expectedResults], @"pixel");
     }
   }
+    
+  free(combinedPixels);
+  free(rgbPixels);
   
   return;
 }
@@ -209,8 +212,8 @@
                                                  rgbPixels:rgbPixels
                                                alphaPixels:alphaPixels];  
   
-  for (int rowi = 0; rowi < height; rowi++) {
-    for (int coli = 0; coli < width; coli++) {
+  for (int rowi = 0; rowi < height; rowi++) @autoreleasepool {
+    for (int coli = 0; coli < width; coli++) @autoreleasepool {
       uint32_t pixel = combinedPixels[(rowi * width) + coli];
       NSString *results = [self util_pixelToRGBAStr:pixel];
       int alpha = rowi;
@@ -223,6 +226,9 @@
       NSAssert([results isEqualToString:expectedResults], @"pixel");
     }
   }
+
+  free(combinedPixels);
+  free(rgbPixels);
   
   return;
 }
@@ -329,7 +335,10 @@
       }
     }
   }
-  
+
+  free(combinedPixels);
+  free(rgbPixels);
+    
   return;
 }
 
@@ -1103,6 +1112,10 @@ int testJoinAlphaForExplosionVideoCheckAdler_device_expectedAdler[] = {
   
   NSLog(@"done combine loop");
   
+  free(alphaPixels);
+  free(rgbPixels);
+  free(combinedPixels);
+    
   return;
 }
 
