@@ -776,7 +776,7 @@
     
     BOOL worked = [RegressionTests waitUntilTrue:notificationUtil
                                         selector:@selector(wasSuccessNotificationDelivered)
-                                     maxWaitTime:MAX_WAIT_TIME * 20];
+                                     maxWaitTime:MAX_WAIT_TIME * 30];
     NSAssert(worked, @"worked");
   }
   
