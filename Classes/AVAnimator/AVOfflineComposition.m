@@ -27,7 +27,9 @@
 
 #import "MutableAttrString.h"
 
-#define LOGGING
+#if defined(DEBUG)
+# define LOGGING
+#endif // DEBUG
 
 // Notification name constants
 
