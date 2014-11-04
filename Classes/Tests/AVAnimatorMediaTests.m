@@ -61,12 +61,19 @@
 + (NotificationUtil*) notificationUtil
 {
   NotificationUtil *obj = [[NotificationUtil alloc] init];
+#if __has_feature(objc_arc)
+  return obj;
+#else
   return [obj autorelease];
+#endif // objc_arc
 }
 
 - (void) dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 - (void) setupFailedToLoadNotification:(AVAnimatorMedia*)media
@@ -576,31 +583,40 @@
   NSAssert(animatorView.media == nil, @"animatorView connected to media");
   NSAssert(media.renderer == nil, @"media connected to animatorView");
   
+#if __has_feature(objc_arc)
+#else
   int viewRefCountBefore = (int) [animatorView retainCount];
   int mediaRefCountBefore = (int) [media retainCount];
+#endif // objc_arc
   
   [animatorView attachMedia:media];
   
   NSAssert(animatorView.media == media, @"animatorView not connected to media");
   NSAssert(media.renderer == animatorView, @"media not connected to animatorView");
 
+#if __has_feature(objc_arc)
+#else
   int viewRefCountAfter = (int) [animatorView retainCount];
   int mediaRefCountAfter = (int) [media retainCount];
-
+  
   // The AVAnimatorView holds a ref to the media in the view
   
   NSAssert(viewRefCountBefore == viewRefCountAfter, @"view ref count was incremented by attach");
   NSAssert((mediaRefCountBefore + 1) == mediaRefCountAfter, @"media ref count was not incremented by attach");
-
+#endif // objc_arc
+  
   // Detaching the media should drop the ref count
   
   [animatorView attachMedia:nil];
-  
+
+#if __has_feature(objc_arc)
+#else
   viewRefCountAfter = (int) [animatorView retainCount];
   mediaRefCountAfter = (int) [media retainCount];
-
+  
   NSAssert(viewRefCountBefore == viewRefCountAfter, @"view ref count was incremented by attach");
   NSAssert(mediaRefCountBefore == mediaRefCountAfter, @"media ref count was not incremented by attach");
+#endif // objc_arc
   
   // Now reattach and let the cleanup happen in the auto release pool logic, should not leak
   
@@ -624,7 +640,13 @@
   // Create view that would be the render destination for the media
   
   CGRect frame = CGRectMake(0, 0, 480, 320);  
-  UIView *view = [[[UIView alloc] initWithFrame:frame] autorelease];
+  UIView *view = [[UIView alloc] initWithFrame:frame];
+  
+#if __has_feature(objc_arc)
+#else
+  view = [view autorelease];
+#endif // objc_arc
+  
   CALayer *viewLayer = view.layer;
   
   AVAnimatorLayer *avLayerObj = [AVAnimatorLayer aVAnimatorLayer:viewLayer];
@@ -671,14 +693,19 @@
   NSAssert(avLayerObj.media == nil, @"animatorView connected to media");
   NSAssert(media.renderer == nil, @"media connected to animatorView");
   
+#if __has_feature(objc_arc)
+#else
   int viewRefCountBefore = (int) [avLayerObj retainCount];
   int mediaRefCountBefore = (int) [media retainCount];
+#endif // objc_arc
   
   [avLayerObj attachMedia:media];
   
   NSAssert(avLayerObj.media == media, @"animatorView not connected to media");
   NSAssert(media.renderer == avLayerObj, @"media not connected to animatorView");
   
+#if __has_feature(objc_arc)
+#else
   int viewRefCountAfter = (int) [avLayerObj retainCount];
   int mediaRefCountAfter = (int) [media retainCount];
   
@@ -686,16 +713,20 @@
   
   NSAssert(viewRefCountBefore == viewRefCountAfter, @"view ref count was incremented by attach");
   NSAssert((mediaRefCountBefore + 1) == mediaRefCountAfter, @"media ref count was not incremented by attach");
+#endif // objc_arc
   
   // Detaching the media should drop the ref count
   
   [avLayerObj attachMedia:nil];
-  
+
+#if __has_feature(objc_arc)
+#else
   viewRefCountAfter = (int) [avLayerObj retainCount];
   mediaRefCountAfter = (int) [media retainCount];
   
   NSAssert(viewRefCountBefore == viewRefCountAfter, @"view ref count was incremented by attach");
   NSAssert(mediaRefCountBefore == mediaRefCountAfter, @"media ref count was not incremented by attach");
+#endif // objc_arc
   
   // Now reattach and let the cleanup happen in the auto release pool logic, should not leak
   
@@ -722,15 +753,21 @@
   UIView *view = [[UIView alloc] initWithFrame:frame];
   CALayer *viewLayer = view.layer;
   
+#if __has_feature(objc_arc)
+#else
   NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
+#endif // objc_arc
   
   AVAnimatorLayer *avLayerObj = [AVAnimatorLayer aVAnimatorLayer:viewLayer];
   NSAssert(avLayerObj, @"avLayerObj");
-  
+
+#if __has_feature(objc_arc)
+#else
   // Explicitly retain the layer
   [avLayerObj retain];
   
   [inner_pool drain];
+#endif // objc_arc
   
   [window addSubview:view];
   
@@ -794,12 +831,15 @@
   
   [view removeFromSuperview];
 
+#if __has_feature(objc_arc)
+#else
   NSAssert([avLayerObj retainCount] == 1, @"retainCount");
   NSAssert([view retainCount] == 1, @"retainCount");
   
   [avLayerObj release];
   [view release];
-
+#endif // objc_arc
+  
   NSAssert(media.renderer == nil, @"media connected to animatorView");
   
   return;

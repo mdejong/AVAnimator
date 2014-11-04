@@ -50,7 +50,10 @@
   
   SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
   NSAssert(parentData, @"parentData");
+#if __has_feature(objc_arc)
+#else
   NSAssert([parentData retainCount] == 1, @"retainCount");
+#endif // objc_arc
 
   NSAssert([parentData length] == AV_PAGESIZE, @"container length");
   
@@ -61,7 +64,10 @@
   SegmentedMappedData *segmentData = [parentData subdataWithRange:range];  
   NSAssert(segmentData != nil, @"segmentData");
   
+#if __has_feature(objc_arc)
+#else
   NSAssert([segmentData retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   NSAssert([segmentData length] == AV_PAGESIZE, @"mapped data length");
 
@@ -119,7 +125,11 @@
   
   SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
   NSAssert(parentData, @"parentData");
+  
+#if __has_feature(objc_arc)
+#else
   NSAssert([parentData retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   NSAssert([parentData length] == AV_PAGESIZE * 2, @"container length");
   
@@ -140,8 +150,12 @@
 
   SegmentedMappedData *segmentData2 = [parentData subdataWithRange:range];
   NSAssert(segmentData1 != nil, @"segmentData1");
-    
-  NSAssert([segmentData1 retainCount] == 1, @"retainCount");  
+
+#if __has_feature(objc_arc)
+#else
+  NSAssert([segmentData1 retainCount] == 1, @"retainCount");
+#endif // objc_arc
+  
   NSAssert([segmentData1 length] == AV_PAGESIZE, @"mapped data length");
   
   NSAssert(segmentData1.mappedOffset == 0, @"mappedOffset");
@@ -150,7 +164,11 @@
   NSAssert(segmentData1.mappedLen == AV_PAGESIZE, @"mappedLen");
   NSAssert(segmentData1.mappedOSLen == AV_PAGESIZE, @"mappedOSLen");
   
-  NSAssert([segmentData2 retainCount] == 1, @"retainCount");  
+#if __has_feature(objc_arc)
+#else
+  NSAssert([segmentData2 retainCount] == 1, @"retainCount");
+#endif // objc_arc
+
   NSAssert([segmentData2 length] == AV_PAGESIZE, @"mapped data length");
   
   NSAssert(segmentData2.mappedOffset == AV_PAGESIZE, @"mappedOffset");
@@ -227,7 +245,11 @@
   
   SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
   NSAssert(parentData, @"parentData");
+  
+#if __has_feature(objc_arc)
+#else
   NSAssert([parentData retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   NSAssert([parentData length] == AV_PAGESIZE * 3, @"container length");
   
@@ -248,8 +270,12 @@
   
   SegmentedMappedData *segmentData2 = [parentData subdataWithRange:range];
   NSAssert(segmentData2 != nil, @"segmentData2");
-    
-  NSAssert([segmentData1 retainCount] == 1, @"retainCount");  
+  
+#if __has_feature(objc_arc)
+#else
+  NSAssert([segmentData1 retainCount] == 1, @"retainCount");
+#endif // objc_arc
+  
   NSAssert([segmentData1 length] == AV_PAGESIZE, @"mapped data length");
   
   NSAssert(segmentData1.mappedOffset == 0, @"mappedOffset");
@@ -257,8 +283,12 @@
   
   NSAssert(segmentData1.mappedLen == AV_PAGESIZE, @"mappedLen");
   NSAssert(segmentData1.mappedOSLen == AV_PAGESIZE, @"mappedOSLen");
-    
-  NSAssert([segmentData2 retainCount] == 1, @"retainCount");  
+
+#if __has_feature(objc_arc)
+#else
+  NSAssert([segmentData2 retainCount] == 1, @"retainCount");
+#endif // objc_arc
+
   NSAssert([segmentData2 length] == AV_PAGESIZE*2, @"mapped data length");
   
   NSAssert(segmentData2.mappedOffset == AV_PAGESIZE, @"mappedOffset");
@@ -329,7 +359,11 @@
   
   SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
   NSAssert(parentData, @"parentData");
+  
+#if __has_feature(objc_arc)
+#else
   NSAssert([parentData retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   NSAssert([parentData length] == 1, @"container length");
   
@@ -339,8 +373,11 @@
 
   SegmentedMappedData *segmentData = [parentData subdataWithRange:range];
   NSAssert(segmentData != nil, @"segmentData");
-    
+  
+#if __has_feature(objc_arc)
+#else
   NSAssert([segmentData retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   NSAssert([segmentData length] == 1, @"mapped data length");
   
@@ -411,7 +448,11 @@
   
   SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
   NSAssert(parentData, @"parentData");
+  
+#if __has_feature(objc_arc)
+#else
   NSAssert([parentData retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   NSAssert([parentData length] == AV_PAGESIZE, @"container length");
   
@@ -421,8 +462,11 @@
 
   SegmentedMappedData *segmentData = [parentData subdataWithRange:range];
   NSAssert(segmentData != nil, @"segmentData");
-  
+
+#if __has_feature(objc_arc)
+#else
   NSAssert([segmentData retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   NSAssert([segmentData length] == (AV_PAGESIZE/2), @"mapped data length");
   
@@ -492,7 +536,11 @@
   
   SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
   NSAssert(parentData, @"parentData");
+  
+#if __has_feature(objc_arc)
+#else
   NSAssert([parentData retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   NSAssert([parentData length] == AV_PAGESIZE*2, @"container length");
   
@@ -503,7 +551,10 @@
   SegmentedMappedData *segmentData = [parentData subdataWithRange:range];
   NSAssert(segmentData != nil, @"segmentData");
   
+#if __has_feature(objc_arc)
+#else
   NSAssert([segmentData retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   NSAssert([segmentData length] == AV_PAGESIZE, @"mapped data length");
   
@@ -576,7 +627,11 @@
   
   SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
   NSAssert(parentData, @"parentData");
+  
+#if __has_feature(objc_arc)
+#else
   NSAssert([parentData retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   NSAssert([parentData length] == AV_PAGESIZE*2, @"container length");
   
@@ -706,7 +761,11 @@
   
   SegmentedMappedData *parentData = [SegmentedMappedData segmentedMappedData:filePath];
   NSAssert(parentData, @"parentData");
+  
+#if __has_feature(objc_arc)
+#else
   NSAssert([parentData retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   NSAssert([parentData length] == AV_PAGESIZE, @"container length");
   

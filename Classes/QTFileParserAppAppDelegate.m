@@ -57,7 +57,11 @@
   self.movieControlsAdaptor = nil;
   self.plainView = nil;
   self.animatorLayer = nil;
+  
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
@@ -686,7 +690,11 @@
 - (void) loadScreenCaptureAnimation:(float)frameDuration
 {
   CGRect rect = CGRectMake(0, 0, 480, 320);
-  UIView *view = [[[UIView alloc] initWithFrame:rect] autorelease];
+  UIView *view = [[UIView alloc] initWithFrame:rect];
+#if __has_feature(objc_arc)
+#else
+  view = [view autorelease];
+#endif // objc_arc
   NSAssert(view, @"view is nil");
   
   NSBundle* appBundle = [NSBundle mainBundle];
@@ -695,7 +703,11 @@
   UIImage *image = [UIImage imageWithContentsOfFile:resPath];
   NSAssert(image, @"image is nil");
   
-  UIImageView *imageView = [[[UIImageView alloc] initWithImage:image] autorelease];
+  UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
+#if __has_feature(objc_arc)
+#else
+  imageView = [imageView autorelease];
+#endif // objc_arc
   NSAssert(imageView, @"imageView is nil");
   
   // Rotate image view!
@@ -704,7 +716,11 @@
   CGRect screenRect = CGRectMake(33, 25, 410, 199);
     
   if (0) {
-    UIView *animatorView = [[[UIView alloc] initWithFrame:screenRect] autorelease];
+    UIView *animatorView = [[UIView alloc] initWithFrame:screenRect];
+#if __has_feature(objc_arc)
+#else
+    animatorView = [animatorView autorelease];
+#endif // objc_arc
     animatorView.backgroundColor = [UIColor blueColor];
     animatorView.clearsContextBeforeDrawing = TRUE;
     [imageView addSubview:animatorView];
@@ -878,7 +894,11 @@
   NSString *resPrefix = @"AlphaGhost";
   
   CGRect frame = CGRectMake(0, 0, 320, 480);
-  UIView *mainView = [[[UIView alloc] initWithFrame:frame] autorelease];
+  UIView *mainView = [[UIView alloc] initWithFrame:frame];
+#if __has_feature(objc_arc)
+#else
+  mainView = [mainView autorelease];
+#endif // objc_arc
   [self.window addSubview:mainView];
   
   mainView.backgroundColor = [UIColor grayColor];
@@ -889,7 +909,11 @@
   
   // Create a CoreAnimation sublayer that the media will render into
   
-  CALayer *renderLayer = [[[CALayer alloc] init] autorelease];
+  CALayer *renderLayer = [[CALayer alloc] init];
+#if __has_feature(objc_arc)
+#else
+  renderLayer = [renderLayer autorelease];
+#endif // objc_arc
 
   // By default, the backgroundColor for a CALayer is nil, so
   // no background is rendered before the image is painted.
@@ -975,7 +999,12 @@
   NSString *tmpFilename = @"superwalk_h264.mvid";
   
   CGRect frame = CGRectMake(0, 0, 320, 480);
-  UIView *mainView = [[[UIView alloc] initWithFrame:frame] autorelease];
+  UIView *mainView = [[UIView alloc] initWithFrame:frame];
+#if __has_feature(objc_arc)
+#else
+  mainView = [mainView autorelease];
+#endif // objc_arc
+
   [self.window addSubview:mainView];
   
   mainView.backgroundColor = [UIColor grayColor];
@@ -986,7 +1015,11 @@
   
   // Create a CoreAnimation sublayer that the media will render into
   
-  CALayer *renderLayer = [[[CALayer alloc] init] autorelease];
+  CALayer *renderLayer = [[CALayer alloc] init];
+#if __has_feature(objc_arc)
+#else
+  renderLayer = [renderLayer autorelease];
+#endif // objc_arc
   
   // By default, the backgroundColor for a CALayer is nil, so
   // no background is rendered before the image is painted.
@@ -1074,7 +1107,12 @@
   NSString *tmpFilename = @"superwalk_gif.mvid";
   
   CGRect frame = CGRectMake(0, 0, 320, 480);
-  UIView *mainView = [[[UIView alloc] initWithFrame:frame] autorelease];
+  
+  UIView *mainView = [[UIView alloc] initWithFrame:frame];
+#if __has_feature(objc_arc)
+#else
+  mainView = [mainView autorelease];
+#endif // objc_arc
   [self.window addSubview:mainView];
   
   mainView.backgroundColor = [UIColor grayColor];
@@ -1085,7 +1123,11 @@
   
   // Create a CoreAnimation sublayer that the media will render into
   
-  CALayer *renderLayer = [[[CALayer alloc] init] autorelease];
+  CALayer *renderLayer = [[CALayer alloc] init];
+#if __has_feature(objc_arc)
+#else
+  renderLayer = [renderLayer autorelease];
+#endif // objc_arc
   
   // By default, the backgroundColor for a CALayer is nil, so
   // no background is rendered before the image is painted.

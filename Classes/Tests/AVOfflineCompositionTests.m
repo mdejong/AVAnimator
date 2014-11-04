@@ -85,13 +85,20 @@
 
 + (AVOfflineCompositionNotificationUtil*) aVOfflineCompositionNotificationUtil
 {
-  AVOfflineCompositionNotificationUtil *obj = [[AVOfflineCompositionNotificationUtil alloc] init];
+  AVOfflineCompositionNotificationUtil *obj = [[AVOfflineCompositionNotificationUtil alloc] init];  
+#if __has_feature(objc_arc)
+  return obj;
+#else
   return [obj autorelease];
+#endif // objc_arc
 }
 
 - (void) dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 - (void) setupNotification:(AVOfflineComposition*)composition
@@ -144,8 +151,7 @@
     worked = [frameDecoder allocateDecodeResources];
     NSAssert(worked, @"allocateDecodeResources");
     
-    for (NSUInteger frameIndex = 0; frameIndex < frameDecoder.numFrames; frameIndex++) {
-      NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    for (NSUInteger frameIndex = 0; frameIndex < frameDecoder.numFrames; frameIndex++) @autoreleasepool {
       NSLog(@"render frame %d", (int)frameIndex);
       AVFrame *frame = [frameDecoder advanceToFrame:frameIndex];
       UIImage *img = frame.image;
@@ -160,7 +166,6 @@
       NSData *data = [NSData dataWithData:UIImagePNGRepresentation(img)];
       [data writeToFile:tmpPNGPath atomically:YES];
       NSLog(@"wrote %@", tmpPNGPath);
-      [pool drain];
     }
     
   }
@@ -790,11 +795,10 @@
     // Delete rendered comp file
     
     BOOL worked;
-    NSError *error;
-    NSError **errorPtr = &error;
-    worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:errorPtr];
+    NSError *error = nil;
+    worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:&error];
     if (!worked) {
-      NSAssert(worked, @"could not remove tmp file: %@", *errorPtr);
+      NSAssert(worked, @"could not remove tmp file: %@", error);
     }
   }
  

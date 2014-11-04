@@ -60,13 +60,20 @@
 
 + (AVAssetReaderConvertMaxvid_NotificationUtil*) notificationUtil
 {
-  AVAssetReaderConvertMaxvid_NotificationUtil *obj = [[[AVAssetReaderConvertMaxvid_NotificationUtil alloc] init] autorelease];
+  AVAssetReaderConvertMaxvid_NotificationUtil *obj = [[AVAssetReaderConvertMaxvid_NotificationUtil alloc] init];
+#if __has_feature(objc_arc)
   return obj;
+#else
+  return [obj autorelease];
+#endif // objc_arc
 }
 
 - (void) dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 - (void) setupNotification:(AVAssetReaderConvertMaxvid*)obj
@@ -126,12 +133,19 @@
 + (AVAssetWriterConvertFromMaxvid_NotificationUtil*) notificationUtil
 {
   AVAssetWriterConvertFromMaxvid_NotificationUtil *obj = [[AVAssetWriterConvertFromMaxvid_NotificationUtil alloc] init];
+#if __has_feature(objc_arc)
+  return obj;
+#else
   return [obj autorelease];
+#endif // objc_arc
 }
 
 - (void) dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
+#if __has_feature(objc_arc)
+#else
   [super dealloc];
+#endif // objc_arc
 }
 
 - (void) setupNotification:(AVAssetWriterConvertFromMaxvid*)obj
@@ -818,7 +832,10 @@
   
   AVAssetWriterConvertFromMaxvid *obj = [AVAssetWriterConvertFromMaxvid aVAssetWriterConvertFromMaxvid];
   
+#if __has_feature(objc_arc)
+#else
   NSAssert([obj retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   obj.inputPath = mvidTmpPath;
   obj.outputPath = h264TmpPath;
@@ -1128,7 +1145,10 @@
   
   AVAssetWriterConvertFromMaxvid *obj = [AVAssetWriterConvertFromMaxvid aVAssetWriterConvertFromMaxvid];
   
+#if __has_feature(objc_arc)
+#else
   NSAssert([obj retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   obj.inputPath = tmpInputPath;
   obj.outputPath = tmpOutputPath;
@@ -1170,7 +1190,10 @@
   
   AVAssetWriterConvertFromMaxvid *obj = [AVAssetWriterConvertFromMaxvid aVAssetWriterConvertFromMaxvid];
   
+#if __has_feature(objc_arc)
+#else
   NSAssert([obj retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   obj.inputPath = tmpInputPath;
   obj.outputPath = tmpOutputPath;
@@ -1272,7 +1295,10 @@
   
   AVAssetWriterConvertFromMaxvid *obj = [AVAssetWriterConvertFromMaxvid aVAssetWriterConvertFromMaxvid];
   
+#if __has_feature(objc_arc)
+#else
   NSAssert([obj retainCount] == 1, @"retainCount");
+#endif // objc_arc
   
   CGFrameBuffer *buffer0 = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:size.width height:size.height];
   CGFrameBuffer *buffer1 = [CGFrameBuffer cGFrameBufferWithBppDimensions:24 width:size.width height:size.height];
@@ -1551,16 +1577,16 @@
 + (BOOL) util_encodeAndCheckTwoFrameBlackBlueAsH264:(CGSize)size
                                         h264TmpPath:(NSString*)h264TmpPath
 {
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  
   BOOL worked;
+  
+  @autoreleasepool {
   
   worked = [self util_encodeTwoFrameBlackBlueAsH264:size h264TmpPath:h264TmpPath];
   if (worked) {
     worked = [self util_checkTwoFrameBlackBlueAsH264:size h264TmpPath:h264TmpPath];
   }
   
-  [pool drain];
+  }
   
   if (worked) {
     NSLog(@"encoding successful :\t%d\tx\t%d", (int)size.width, (int)size.height); 

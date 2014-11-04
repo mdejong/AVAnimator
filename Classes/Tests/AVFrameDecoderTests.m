@@ -79,26 +79,21 @@
   
   AVFrame *frame;
   UIImage* img;
-  NSAutoreleasePool *pool;
   
   // Run through all 30 frames in order, to ensure that the
   // frames can be decoded properly.
   
-  for (int i=0; i < [frameDecoder numFrames]; i++) {
-    pool = [[NSAutoreleasePool alloc] init];
-    
+  for (int i=0; i < [frameDecoder numFrames]; i++) @autoreleasepool {
     frame = [frameDecoder advanceToFrame:i];
     img = frame.image;
     NSAssert(img != nil, @"advanceToFrame");
     
     NSAssert([frameDecoder frameIndex] == i, @"frameIndex");
-    
-    [pool drain];
   }
 
   // Rewind and start over
   
-  pool = [[NSAutoreleasePool alloc] init];
+  @autoreleasepool {
   
   [frameDecoder rewind];
 
@@ -117,11 +112,11 @@
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 2, @"frameIndex");
   
-  [pool drain];
+  }
 
   // Rewind and skip frame 1
 
-  pool = [[NSAutoreleasePool alloc] init];
+  @autoreleasepool {
   
   [frameDecoder rewind];
   
@@ -135,11 +130,11 @@
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 2, @"frameIndex");
   
-  [pool drain];  
+  }
 
   // Rewind and skip frame 1 and 2
   
-  pool = [[NSAutoreleasePool alloc] init];
+  @autoreleasepool {
   
   [frameDecoder rewind];
   
@@ -153,11 +148,11 @@
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 3, @"frameIndex");
   
-  [pool drain];  
+  }
   
   // Rewind and skip half the frames in the video
 
-  pool = [[NSAutoreleasePool alloc] init];
+  @autoreleasepool {
   
   [frameDecoder rewind];
   
@@ -176,11 +171,11 @@
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 29, @"frameIndex");  
   
-  [pool drain];  
+  }
 
   // Rewind and skip all the frames in the video
   
-  pool = [[NSAutoreleasePool alloc] init];
+  @autoreleasepool {
   
   [frameDecoder rewind];
   
@@ -194,7 +189,7 @@
   NSAssert(img != nil, @"advanceToFrame");
   NSAssert([frameDecoder frameIndex] == 29, @"frameIndex");  
   
-  [pool drain];  
+  }
   
   return;
 }
