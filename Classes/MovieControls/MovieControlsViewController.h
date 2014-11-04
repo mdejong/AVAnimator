@@ -26,6 +26,10 @@
 #define MovieControlsFastForwardNotification @"MovieControlsFastForwardNotification"
 
 @interface MovieControlsViewController : UIViewController {
+#if __has_feature(objc_arc)
+    __unsafe_unretained
+#else
+#endif // objc_arc
   UIWindow *m_mainWindow;
 
   // All elements that float over self.view are contained in this subview

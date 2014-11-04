@@ -88,8 +88,11 @@
 }
 
 + (void) _invokeIfClassRespondsToSelector:(Class)c sel:(SEL)sel {
-	if ([self _classRespondsToSelector:c sel:sel]) {
+	if ([self _classRespondsToSelector:c sel:sel]) @autoreleasepool {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
 		[c performSelector:sel];
+#pragma clang diagnostic pop
 	}
 }
 
@@ -103,10 +106,16 @@
 	
 	numClasses = objc_getClassList(NULL, 0);
   
-	if (numClasses == 0 )
+    if (numClasses == 0 ) {
 		return nil;
-  
-	classes = malloc(sizeof(Class) * numClasses);
+    }
+
+#if __has_feature(objc_arc)
+    classes = (__unsafe_unretained Class*) malloc(sizeof(Class) * numClasses);
+#else
+    classes = (Class*) malloc(sizeof(Class) * numClasses);
+#endif // objc_arc
+    
 	numClasses = objc_getClassList(classes, numClasses);
 	
 	for (int i=0; i<numClasses; i++) {
@@ -211,7 +220,7 @@
 
 + (void) _testApp {
   for (Class c in [self _getTestClasses]) {
-    NSAutoreleasePool *outer_pool = [[NSAutoreleasePool alloc] init];
+    @autoreleasepool {
     
     const char *className = class_getName(c);
     NSString *classNameStr = [NSString stringWithFormat:@"%s", className];
@@ -219,9 +228,7 @@
     unsigned int count;
     Method *methods = [self _classTestMethods:c outCount:&count];
       
-    for (int i=0; i < count; i++) {
-      NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
-      
+    for (int i=0; i < count; i++) @autoreleasepool {
       SEL selector = method_getName(methods[i]);
       
       NSString *methodNameStr = [NSString stringWithFormat:@"%s", sel_getName(selector)];
@@ -231,13 +238,11 @@
       [self _invokeIfClassRespondsToSelector:c sel:selector];
       
       [self cleanupAfterTest];
-      
-      [inner_pool drain];
     }
     
     free(methods);
     
-    [outer_pool drain];
+    } // end autoreleasepool
 	}
   
   NSLog(@"RegressionTest DONE");

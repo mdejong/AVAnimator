@@ -29,11 +29,14 @@
   //self.view.bounds = CGRectMake(0, 0, 320, 480);
 }
 
+#if __has_feature(objc_arc)
+#else
 - (void) dealloc
 {
-  [AutoPropertyRelease releaseProperties:self thisClass:QTFileParserAppViewController.class]; 
-  [super dealloc];
+    [AutoPropertyRelease releaseProperties:self thisClass:QTFileParserAppViewController.class];
+    [super dealloc];
 }
+#endif // objc_arc
 
 - (NSInteger) getFPS
 {

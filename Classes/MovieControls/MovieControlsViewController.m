@@ -117,13 +117,24 @@
 - (CGSize) _containerSize
 {
   CGSize containerSize;
-  
-  if (portraitMode) {
-    containerSize.width = 320.0;
-    containerSize.height = 480.0;
+    
+  CGRect mainScreenFrame = [UIScreen mainScreen].applicationFrame;
+  if (mainScreenFrame.size.height == 568) {
+      if (portraitMode) {
+          containerSize.width = 320.0;
+          containerSize.height = 568.0;
+      } else {
+          containerSize.width = 568.0;
+          containerSize.height = 320.0;
+      }
   } else {
-    containerSize.width = 480.0;
-    containerSize.height = 320.0;
+      if (portraitMode) {
+          containerSize.width = 320.0;
+          containerSize.height = 480.0;
+      } else {
+          containerSize.width = 480.0;
+          containerSize.height = 320.0;
+      }
   }
   
   return containerSize;

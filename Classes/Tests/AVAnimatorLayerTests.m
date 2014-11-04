@@ -58,7 +58,11 @@
   // has no transforms applied to the AVAnimatorLayer.
   
   CGRect frame = CGRectMake(0, 0, 2, 2);
-  UIView *view = [[[UIView alloc] initWithFrame:frame] autorelease];
+  UIView *view = [[UIView alloc] initWithFrame:frame];
+#if __has_feature(objc_arc)
+#else
+    view = [view autorelease];
+#endif // objc_arc
   CALayer *viewLayer = view.layer;
   
   AVAnimatorLayer *avLayerObj = [AVAnimatorLayer aVAnimatorLayer:viewLayer];
@@ -166,7 +170,11 @@
   NSString *resPath = [AVFileUtil getResourcePath:resourceName];
   
   CGRect frame = CGRectMake(0, 0, 2, 2);
-  UIView *view = [[[UIView alloc] initWithFrame:frame] autorelease];
+  UIView *view = [[UIView alloc] initWithFrame:frame];
+#if __has_feature(objc_arc)
+#else
+    view = [view autorelease];
+#endif // objc_arc
   CALayer *viewLayer = view.layer;
   
   AVAnimatorLayer *avLayerObj = [AVAnimatorLayer aVAnimatorLayer:viewLayer];
