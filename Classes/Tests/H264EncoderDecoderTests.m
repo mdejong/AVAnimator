@@ -1737,6 +1737,7 @@
   
   // Dump frame 2
   
+  img = nil;
   frame = [frameDecoder advanceToFrame:1];
   NSAssert(frame, @"frame 1");
   img = frame.image;
@@ -1752,7 +1753,8 @@
   }
 
   // Dump frame 3
-  
+
+  img = nil;
   frame = [frameDecoder advanceToFrame:2];
   NSAssert(frame, @"frame 2");
   img = frame.image;

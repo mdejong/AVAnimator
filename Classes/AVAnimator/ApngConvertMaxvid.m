@@ -406,18 +406,18 @@ process_apng_frame(
                    uint32_t bpp,
                    void *userData)
 {
-  LibapngUserData *userDataPtr;
-  
 #if __has_feature(objc_arc)
-  userDataPtr = (__bridge LibapngUserData*)userData;
+  LibapngUserData *userDataObj;
+  userDataObj = (__bridge LibapngUserData*)userData;
 #else
+  LibapngUserData *userDataPtr;
   userDataPtr = (LibapngUserData*)userData;
 #endif // objc_arc
   
   AVMvidFileWriter *aVMvidFileWriter;
 
 #if __has_feature(objc_arc)
-  aVMvidFileWriter = userDataPtr.avMvidFileWriter;
+  aVMvidFileWriter = userDataObj.avMvidFileWriter;
 #else
   aVMvidFileWriter = userDataPtr->avMvidFileWriter;
 #endif // objc_arc
@@ -464,8 +464,8 @@ process_apng_frame(
   assert(bpp == 24 || bpp == 32);
   
 #if __has_feature(objc_arc)
-  if (bpp > userDataPtr.bpp) {
-    userDataPtr.bpp = bpp;
+  if (bpp > userDataObj.bpp) {
+    userDataObj.bpp = bpp;
   }
 #else
   if (bpp > userDataPtr->bpp) {
@@ -496,9 +496,9 @@ process_apng_frame(
     // ARGB must be pre-multiplied and converted to ABGR.
     
 #if __has_feature(objc_arc)
-    if (userDataPtr.cgFrameBuffer == NULL) {
-      userDataPtr.cgFrameBuffer = malloc(framebufferNumBytes);
-      memset(userDataPtr.cgFrameBuffer, 0, framebufferNumBytes);
+    if (userDataObj.cgFrameBuffer == NULL) {
+      userDataObj.cgFrameBuffer = malloc(framebufferNumBytes);
+      memset(userDataObj.cgFrameBuffer, 0, framebufferNumBytes);
     }
 #else
     if (userDataPtr->cgFrameBuffer == NULL) {
@@ -512,7 +512,7 @@ process_apng_frame(
     uint32_t *outPtr;
     
 #if __has_feature(objc_arc)
-    outPtr = userDataPtr.cgFrameBuffer;
+    outPtr = userDataObj.cgFrameBuffer;
 #else
     outPtr = userDataPtr->cgFrameBuffer;
 #endif // objc_arc
@@ -534,7 +534,7 @@ process_apng_frame(
     // require that input pixels be in sRGB colorspace or else fail to load on iOS.
     
 #if __has_feature(objc_arc)
-    outPtr = userDataPtr.cgFrameBuffer;
+    outPtr = userDataObj.cgFrameBuffer;
 #else
     outPtr = userDataPtr->cgFrameBuffer;
 #endif // objc_arc
@@ -642,13 +642,17 @@ retcode:
   FILE *inAPNGFile = NULL;
   
   AVMvidFileWriter *aVMvidFileWriter = nil;
-  
+
+  void *userDataPtr;
+      
 #if __has_feature(objc_arc)
   LibapngUserData *userData;
   userData = [LibapngUserData libapngUserData];
+  userDataPtr = (__bridge void *)userData;
 #else
   LibapngUserData userData;
   memset(&userData, 0, sizeof(LibapngUserData));
+  userDataPtr = &userData;
 #endif // objc_arc
     
   assert(userData.avMvidFileWriter == NULL);
@@ -715,7 +719,7 @@ goto retcode; \
   
   // Invoke library interface to parse frames from .apng file and render to .mvid
   
-  status = libapng_main(inAPNGFile, process_apng_frame, &userData);
+  status = libapng_main(inAPNGFile, process_apng_frame, userDataPtr);
   if (status != 0) {
     RETCODE(status);
   }

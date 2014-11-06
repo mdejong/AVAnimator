@@ -24,6 +24,10 @@
 
 @implementation SegmentedMappedDataTests
 
+// Create a file that is two pages long and map with two different segments
+
+#if defined(USE_SEGMENTED_MMAP)
+
 // This test case creates a file that is one page long and then maps the
 // contents of the file using a single segment that is a single page.
 
@@ -99,8 +103,6 @@
   
   return;
 }
-
-// Create a file that is two pages long and map with two different segments
 
 + (void) testMapFileWithTwoSegments
 {
@@ -1178,5 +1180,7 @@
   return;
 }
 
+
+#endif // USE_SEGMENTED_MMAP
 
 @end

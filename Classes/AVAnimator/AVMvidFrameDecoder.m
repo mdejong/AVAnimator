@@ -707,6 +707,13 @@
       uint32_t *inputBuffer32 = (uint32_t*) (mappedPtr + maxvid_frame_offset(frame));
       uint32_t inputBuffer32NumBytes = maxvid_frame_length(frame);
       NSData *mappedDataObj = self.mappedData;
+        
+#if defined(REGRESSION_TESTS)
+      if (self.simulateMemoryMapFailure) {
+        inputMemoryMapped = FALSE;
+      }
+#endif // REGRESSION_TESTS
+        
 #endif // USE_SEGMENTED_MMAP
       
       if (inputMemoryMapped == FALSE) {

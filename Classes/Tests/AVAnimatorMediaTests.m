@@ -832,6 +832,8 @@
   [view removeFromSuperview];
 
 #if __has_feature(objc_arc)
+  avLayerObj = nil;
+  view = nil;
 #else
   NSAssert([avLayerObj retainCount] == 1, @"retainCount");
   NSAssert([view retainCount] == 1, @"retainCount");

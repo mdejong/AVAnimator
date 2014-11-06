@@ -921,6 +921,7 @@
   // Drop ref to UIImage, this must drop the ref to CGFrameBuffer data
   
   frame.image = nil;
+  image = nil;
 
   NSAssert(frameBuffer.isLockedByDataProvider == FALSE, @"isLockedByDataProvider"); 
   
