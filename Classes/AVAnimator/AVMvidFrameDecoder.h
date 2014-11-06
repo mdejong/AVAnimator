@@ -16,7 +16,14 @@
 // strict. MacOSX fully supports swapping with virtual memory so segmenting is not important.
 
 #if TARGET_OS_IPHONE
+
+#if __LP64__
+// Do not enable USE_SEGMENTED_MMAP in ARM64 build since the virtual memory page
+// size is 4x larger and the logic assumes that 1 page is 4kb
+#else
 # define USE_SEGMENTED_MMAP
+#endif // __LP64__
+
 #endif // TARGET_OS_IPHONE
 
 #if defined(USE_SEGMENTED_MMAP)
