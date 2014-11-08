@@ -1457,7 +1457,11 @@ SzArEx_DictCache_free(SzArEx_DictCache *dictCache)
   SzArEx_DictCache_init(dictCache, dictCache->allocMain);
 }
 
+#if __LP64__
+#define SM_PAGESIZE 16384
+#else
 #define SM_PAGESIZE 4096
+#endif // __LP64__
 
 int
 SzArEx_DictCache_mmap(SzArEx_DictCache *dictCache)

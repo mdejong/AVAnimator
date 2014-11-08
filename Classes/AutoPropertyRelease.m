@@ -194,7 +194,11 @@
         }
       }
       
+            #if __LP64__
+			((void(*)(id, SEL, id))objc_msgSend)(obj, setPropertySelector, nil);
+            #else
 			objc_msgSend(obj, setPropertySelector, nil);
+            #endif // __LP64__
 
 #if defined(LOGGING)
 			NSLog(@"invoked %@%@", propSetterMethodName, @"nil");

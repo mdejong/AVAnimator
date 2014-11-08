@@ -1125,8 +1125,13 @@ maxvid_encode_c4_sample16(
   uint32_t retcode = 0;
   
 #ifdef EXTRA_CHECKS
-  const int pagesize = getpagesize();
-  MAXVID_ASSERT(pagesize == MV_PAGESIZE, "pagesize");
+    
+#if __LP64__
+#else
+    const int pagesize = getpagesize();
+    MAXVID_ASSERT(pagesize == MV_PAGESIZE, "pagesize");
+#endif // __LP64__
+    
   MAXVID_ASSERT(inputBuffer32, "inputBuffer32");
   // The input buffer must be word aligned
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 initial alignment");
@@ -1551,8 +1556,13 @@ maxvid_encode_c4_sample32(
   uint32_t retcode = 0;
   
 #ifdef EXTRA_CHECKS
-  const int pagesize = getpagesize();
-  MAXVID_ASSERT(pagesize == MV_PAGESIZE, "pagesize");
+    
+#if __LP64__
+#else
+    const int pagesize = getpagesize();
+    MAXVID_ASSERT(pagesize == MV_PAGESIZE, "pagesize");
+#endif // __LP64__
+
   MAXVID_ASSERT(inputBuffer32, "inputBuffer32");
   // The input buffer must be word aligned
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 initial alignment");

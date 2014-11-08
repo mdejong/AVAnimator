@@ -408,7 +408,13 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
 #endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(getpagesize() == MV_PAGESIZE, "pagesize");
+    
+#if __LP64__
+#else
+  const int pagesize = getpagesize();
+  MAXVID_ASSERT(pagesize == MV_PAGESIZE, "pagesize");
+#endif // __LP64__
+
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   // The input buffer must be word aligned
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 initial alignment");
@@ -2308,7 +2314,13 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
 #endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
-  MAXVID_ASSERT(getpagesize() == MV_PAGESIZE, "pagesize");
+    
+#if __LP64__
+#else
+    const int pagesize = getpagesize();
+    MAXVID_ASSERT(pagesize == MV_PAGESIZE, "pagesize");
+#endif // __LP64__
+    
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   // The input buffer must be word aligned
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 initial alignment");
