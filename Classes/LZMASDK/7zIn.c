@@ -1529,7 +1529,7 @@ SzArEx_DictCache_mmap(SzArEx_DictCache *dictCache)
     char page[SM_PAGESIZE];
     bzero(page, SM_PAGESIZE);
     for (int pageIndex = 0; pageIndex < (mapSize / SM_PAGESIZE); pageIndex++) {
-      int writeNum = fwrite(page, 1, SM_PAGESIZE, mapfile);
+      int writeNum = (int)fwrite(page, 1, SM_PAGESIZE, mapfile);
       assert(writeNum == SM_PAGESIZE);
     }
   }
