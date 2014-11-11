@@ -17,6 +17,13 @@
 + (NSArray*) extract7zArchive:(NSString*)archivePath
                    tmpDirName:(NSString*)tmpDirName;
 
+// Extract all the contents of a .7z archive directly into the indicated dir.
+// Directory structure is ignored if preserveDir is false.
+
++ (NSArray*) extract7zArchive:(NSString*)archivePath
+                      dirName:(NSString*)dirName
+                  preserveDir:(BOOL)preserveDir;
+
 // Extract just one entry from an archive and save it at the
 // path indicated by outPath.
 

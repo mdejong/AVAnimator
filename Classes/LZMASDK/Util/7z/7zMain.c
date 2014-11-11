@@ -514,7 +514,7 @@ static void GetAttribString(UInt32 wa, Bool isDir, char *s)
 
 //#define DEBUG_OUTPUT
 
-int do7z_extract_entry(char *archivePath, char *archiveCachePath, char *entryName, char *entryPath)
+int do7z_extract_entry(char *archivePath, char *archiveCachePath, char *entryName, char *entryPath, int fullPaths)
 {
   CFileInStream archiveStream;
   CLookToRead lookStream;
@@ -575,7 +575,7 @@ int do7z_extract_entry(char *archivePath, char *archiveCachePath, char *entryNam
   res = SzArEx_Open(&db, &lookStream.s, &allocImp, &allocTempImp);
   if (res == SZ_OK)
   {
-    const int extractCommand = 1, fullPaths = 0;
+    const int extractCommand = 1;
     
     assert(archiveCachePath);
     
