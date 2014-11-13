@@ -7,7 +7,7 @@
 #include "maxvid_decode.h"
 
 // If this define is set to 1, then support for the experimental "deltas"
-// input format will be abled. This deltas logic will generate a diff
+// input format will be enabled. This deltas logic will generate a diff
 // of every frame, including the initial frame.
 
 #define MV_ENABLE_DELTAS 1

@@ -55,7 +55,7 @@ typedef enum {
 
 // bitwise AND version of (ptr % pot)
 
-#if defined(_LP64)
+#if __LP64__
 // CPU uses 64 bit pointers, need additional cast to avoid compiler warning
 #define UINTMOD(ptr, pot) (((uint32_t)(uint64_t)ptr) & (pot - 1))
 #else
