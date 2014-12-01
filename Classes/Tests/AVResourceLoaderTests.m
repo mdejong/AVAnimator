@@ -1136,6 +1136,7 @@
 
   AVFrame *frameObj = avLayerObj.AVFrame;
   NSAssert(frameObj.image != nil, @"image");
+  NSAssert(frameObj.isDuplicate == FALSE, @"AVFrame.isDuplicate");
   
   [self getPixels32BPP:frameObj.image.CGImage
                 offset:0
@@ -1154,32 +1155,21 @@
   
   // Second frame is all black pixels, advancing to the second
   // frame is a no-op since no pixels changed as compared to
-  // the first frame.
-
-  UIImage *imageBefore;
-  UIImage *imageAfter;
-  
-  imageBefore = frameObj.image;
+  // the first frame. The media object will still send a AVFrame
+  // to the render target on a no-op, but it will be marked as
+  // a duplicate.
   
   [media showFrame:1];
-  
+
   frameObj = avLayerObj.AVFrame;
-  imageAfter = frameObj.image;
-  
-  NSAssert(imageBefore == imageAfter, @"advancing to 2nd frame changed the image");  
+  NSAssert(frameObj.isDuplicate == TRUE, @"AVFrame.isDuplicate");
   
   // Third frame is all blue pixels
-  
-  frameObj = avLayerObj.AVFrame;
-  imageBefore = frameObj.image;
-  
+    
   [media showFrame:2];
   
   frameObj = avLayerObj.AVFrame;
-  imageAfter = frameObj.image;
-  
-  NSAssert(imageAfter != nil, @"image");
-  NSAssert(imageBefore != imageAfter, @"image");
+  NSAssert(frameObj.isDuplicate == FALSE, @"AVFrame.isDuplicate");
   
   [self getPixels32BPP:frameObj.image.CGImage
                 offset:0

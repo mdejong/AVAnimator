@@ -984,13 +984,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 
   media.currentFrame = 0;
   
-  UIImage *imageBefore = animatorView.image;
-  
   [media showFrame:1];
-
-  UIImage *imageAfter = animatorView.image;
-
-  NSAssert(imageBefore == imageAfter, @"image changed");
   
   NSAssert(media.currentFrame == 1, @"currentFrame");
   
@@ -1494,51 +1488,40 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   // The media is now ready, attaching media1 will display the first keyframe in the view.
   
-  UIImage *beforeImage;
-  UIImage *afterImage;
-  
-  beforeImage = animatorView.image;
-  
+  NSAssert(animatorView.image == nil, @"image");
   [animatorView attachMedia:media1];
+  NSAssert(animatorView.image != nil, @"image");
   
   NSAssert(animatorView.media == media1, @"media");
   
   NSAssert([media1.frameDecoder isResourceUsageLimit] == FALSE, @"isResourceUsageLimit");
   NSAssert([media2.frameDecoder isResourceUsageLimit] == TRUE, @"isResourceUsageLimit");  
-
-  afterImage = animatorView.image;
-  
-  NSAssert(beforeImage != afterImage, @"image");
   
   NSAssert(media1.currentFrame == 0, @"currentFrame");
   
   // Attach the second media object. Resources associated
   // with the first media element are deallocated and
   // those needed for the second would be allocated on demand.
-  
-  beforeImage = animatorView.image;
-  
+    
   [animatorView attachMedia:media2];
+
+  NSAssert(animatorView.image != nil, @"image");
 
   NSAssert([media1.frameDecoder isResourceUsageLimit] == TRUE, @"isResourceUsageLimit");
   NSAssert([media2.frameDecoder isResourceUsageLimit] == FALSE, @"isResourceUsageLimit");
   
-  afterImage = animatorView.image;
-  
   NSAssert(media1.currentFrame == -1, @"currentFrame");
   NSAssert(media2.currentFrame == 0, @"currentFrame");
   
-  NSAssert(beforeImage != afterImage, @"image");
-  
   // Invoking showFrame again for frame 0 is a no-op
+  
+  UIImage *beforeImage;
   
   beforeImage = animatorView.image;
   
   [media2 showFrame:0];
   
-  afterImage = animatorView.image;
-  
-  NSAssert(beforeImage == afterImage, @"image");
+  NSAssert(beforeImage == animatorView.image, @"image");
   
   NSAssert(media2.currentFrame == 0, @"currentFrame");
   
@@ -1547,10 +1530,6 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   beforeImage = animatorView.image;
   
   [media2 showFrame:1];
-  
-  afterImage = animatorView.image;
-  
-  NSAssert(beforeImage != afterImage, @"image");  
   
   NSAssert(media2.currentFrame == 1, @"currentFrame");
   
@@ -1561,16 +1540,10 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   NSAssert(media2.prevFrame == nil, @"prevFrame");  
   
-  // There are only 2 frames, so doign a show of frame 3
+  // There are only 2 frames, so show of frame 3
   // does nothing.
-  
-  beforeImage = animatorView.image;
 
   [media2 showFrame:2];
-
-  afterImage = animatorView.image;
-  
-  NSAssert(beforeImage == afterImage, @"image");    
   
   NSAssert(media2.currentFrame == 1, @"currentFrame");
     
@@ -1580,10 +1553,6 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   beforeImage = animatorView.image;
   
   [media2 showFrame:0];
-  
-  afterImage = animatorView.image;
-  
-  NSAssert(beforeImage != afterImage, @"image");    
   
   NSAssert(media2.currentFrame == 0, @"currentFrame");
   
@@ -1604,10 +1573,6 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   NSAssert([media1.frameDecoder isResourceUsageLimit] == FALSE, @"isResourceUsageLimit");
   NSAssert([media2.frameDecoder isResourceUsageLimit] == TRUE, @"isResourceUsageLimit");  
-  
-  afterImage = animatorView.image;
-  
-  NSAssert(beforeImage != afterImage, @"image");
   
   NSAssert(media1.currentFrame == 0, @"currentFrame");  
   
@@ -2640,14 +2605,8 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   // Second frame is all black pixels, advancing to the second
   // frame is a no-op since no pixels changed as compared to
   // the first frame.
-
-  UIImage *imageBefore = animatorView.image;
   
   [media showFrame:1];
-
-  UIImage *imageAfter = animatorView.image;
-  
-  NSAssert(imageBefore == imageAfter, @"advancing to 2nd frame changed the image");
   
   [self getPixels16BPP:animatorView.image.CGImage
                 offset:0
@@ -2661,13 +2620,7 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
 
   // Advance to 3rd frame, changes to all blue pixels
   
-  imageBefore = animatorView.image;
-  
   [media showFrame:2];
-  
-  imageAfter = animatorView.image;
-  
-  NSAssert(imageBefore != imageAfter, @"advancing to 3rd frame changed the image");
   
   [self getPixels16BPP:animatorView.image.CGImage
                 offset:0
