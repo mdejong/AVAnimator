@@ -50,6 +50,21 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
 @implementation MaxvidEncodeTests
 
+// Return TRUE if running in the simulator and gmalloc is enabled. Some tests may not
+// be able to pass with full memory debugging turned on.
+
++ (BOOL) util_isSimulatorGmalloc
+{
+  NSString *libsStr = [[[NSProcessInfo processInfo] environment] objectForKey:@"DYLD_INSERT_LIBRARIES"];
+  //NSLog(@"%@", libsStr);
+  if ([libsStr containsString:@"libgmalloc"]) {
+    // This test consumes too much memory to work when malloc debug is enabled.
+    return TRUE;
+  }
+  
+  return FALSE;
+}
+
 // Debug print method for 16 bit codes
 
 + (NSString*) util_printMvidCodes16:(NSData*)codes
@@ -1123,6 +1138,11 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
     return;
   }
   
+  if ([self util_isSimulatorGmalloc]) {
+    // This test consumes too much memory to work when malloc debug is enabled.
+    return;
+  }
+  
   int width = (MV_MAX_22_BITS + 1);
   int height = 1;
   int numBytes = width * height * sizeof(uint32_t);
@@ -1171,6 +1191,11 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 {
   if (!TARGET_IPHONE_SIMULATOR) {
     // This test consumes all memory on the device and results in the app getting killed.
+    return;
+  }
+  
+  if ([self util_isSimulatorGmalloc]) {
+    // This test consumes too much memory to work when malloc debug is enabled.
     return;
   }
   
@@ -1398,6 +1423,11 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
     return;
   }
   
+  if ([self util_isSimulatorGmalloc]) {
+    // This test consumes too much memory to work when malloc debug is enabled.
+    return;
+  }
+  
   int width = (MV_MAX_22_BITS + 2 + 1);
   int height = 1;
   int numBytes = width * height * sizeof(uint32_t);
@@ -1451,6 +1481,11 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 {
   if (!TARGET_IPHONE_SIMULATOR) {
     // This test consumes all memory on the device and results in the app getting killed.
+    return;
+  }
+
+  if ([self util_isSimulatorGmalloc]) {
+    // This test consumes too much memory to work when malloc debug is enabled.
     return;
   }
   

@@ -762,6 +762,11 @@
     NSAssert(numFrames == 575, @"numFrames");    
   }
   
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
   return;
 }
 

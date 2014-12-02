@@ -798,7 +798,10 @@
     NSError *error = nil;
     worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:&error];
     if (!worked) {
-      NSAssert(worked, @"could not remove tmp file: %@", error);
+      // If the file did not actually exist then remove is not really an error
+      if ([[NSFileManager defaultManager] fileExistsAtPath:tmpPath]) {
+        NSAssert(worked, @"could not remove tmp file: %@", error);
+      }
     }
   }
  
