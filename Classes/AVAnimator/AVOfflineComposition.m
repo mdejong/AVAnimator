@@ -611,6 +611,7 @@ CF_RETURNS_RETAINED
     NSString *clipTypeStr = [clipDict objectForKey:@"ClipType"];
     
     if (clipTypeStr == nil) {
+      self.errorString = @"ClipType key missing";
       return FALSE;
     }
     

@@ -45,6 +45,7 @@
 
 #define MV_FILE_VERSION_ZERO 0
 #define MV_FILE_VERSION_ONE 1
+#define MV_FILE_VERSION_TWO 2
 
 // A maxvid file is an "in memory" representation of video data that has been
 // written to a file. The data is always in the native endian format.

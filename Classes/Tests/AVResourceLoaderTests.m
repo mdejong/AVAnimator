@@ -1516,7 +1516,7 @@
     NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
     NSAssert(wroteMvidData, @"could not map .mvid data");
     
-    NSAssert([wroteMvidData length] == 12288, @"length mismatch");
+    NSAssert([wroteMvidData length] == 49152, @"length mismatch");
     
     // Verify that the emitted .mvid file has a valid magic number
     
@@ -1605,7 +1605,7 @@
     NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
     NSAssert(wroteMvidData, @"could not map .mvid data");
     
-    NSAssert([wroteMvidData length] == 12288, @"length mismatch");
+    NSAssert([wroteMvidData length] == 49152, @"length mismatch");
     
     // Verify that the emitted .mvid file has a valid magic number
     

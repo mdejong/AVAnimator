@@ -20,7 +20,7 @@
 
 @end
 
-#define AV_PAGESIZE 4096
+#define AV_PAGESIZE (4096*4)
 
 @implementation SegmentedMappedDataTests
 

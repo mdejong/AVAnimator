@@ -65,6 +65,8 @@
 @synthesize simulateMemoryMapFailure = m_simulateMemoryMapFailure;
 #endif // REGRESSION_TESTS
 
+@synthesize upgradeFromV1 = m_upgradeFromV1;
+
 - (void) dealloc
 {
   [self close];
@@ -794,6 +796,10 @@
         
         uint32_t numBytesToIncludeInAdler;
         
+        if (self.upgradeFromV1 == FALSE && maxvid_file_version(header) < MV_FILE_VERSION_TWO) {
+          NSAssert(FALSE, @"only .mvid files version 2 or newer can be used, you must -upgrade this .mvid from version %d", maxvid_file_version(header));
+        }
+        
         if (maxvid_file_version(header) == MV_FILE_VERSION_ZERO) {
           // File rev 0 will calculate an adler checksum using (width * height * numBytesInPixel)
           // such that an odd sized buffer will not include the zero padding pixels. This logic
@@ -835,7 +841,7 @@
             NSAssert(FALSE, @"framebuffer num bytes");
           }
         }
-        NSAssert(((uint32_t)inputBuffer32 % MV_PAGESIZE) == 0, @"framebuffer num bytes");
+        NSAssert(((uint32_t)inputBuffer32 % getpagesize()) == 0, @"framebuffer num bytes");
 #endif // EXTRA_CHECKS
     
 #if defined(EXTRA_CHECKS) || defined(ALWAYS_CHECK_ADLER)

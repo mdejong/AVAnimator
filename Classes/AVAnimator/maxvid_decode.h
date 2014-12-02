@@ -49,7 +49,13 @@ typedef enum {
 #define MV_MAX_30_BITS 0x3FFFFFFF
 #define MV_MAX_32_BITS 0xFFFFFFFF
 
-#define MV_PAGESIZE 4096
+// Previously, MV_PAGESIZE was 4 kB. This caused a problem on ARM64 because
+// Apple changed the OS pagesize() to 16 kB. So, as of v2 change the default
+// padding to always be 16 kB so that both 32 and 64 runtimes will be
+// exactly page aligned when a keyframe starts.
+
+#define MV_PAGESIZE (4096*4)
+
 #define MV16_NUM_PIXELS_ONE_PAGE (MV_PAGESIZE / sizeof(uint16_t))
 #define MV_NUM_WORDS_ONE_PAGE (MV_PAGESIZE / sizeof(uint32_t))
 

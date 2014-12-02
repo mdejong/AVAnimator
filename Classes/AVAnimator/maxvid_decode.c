@@ -408,11 +408,12 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
 #endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
-    
-#if __LP64__
-#else
+  
   const int pagesize = getpagesize();
-  MAXVID_ASSERT(pagesize == MV_PAGESIZE, "pagesize");
+#if __LP64__
+  MAXVID_ASSERT((MV_PAGESIZE % pagesize) == 0, "pagesize");
+#else
+  MAXVID_ASSERT(pagesize == MV_PAGESIZE/4, "pagesize");
 #endif // __LP64__
 
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
@@ -422,7 +423,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
   // The framebuffer must be word aligned to start out with
   MAXVID_ASSERT(UINTMOD(frameBuffer16, sizeof(uint32_t)) == 0, "frameBuffer16 initial alignment");
   // In addition, the framebuffer must begin on a page boundry
-  MAXVID_ASSERT(UINTMOD(frameBuffer16, MV_PAGESIZE) == 0, "frameBuffer16 initial page alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer16, pagesize) == 0, "frameBuffer16 initial page alignment");
   MAXVID_ASSERT(frameBufferSize > 0, "frameBufferSize");
   uint16_t * restrict inframeBuffer16 = frameBuffer16;
   uint16_t * restrict frameBuffer16Max = frameBuffer16 + frameBufferSize;
@@ -1692,7 +1693,7 @@ COPYBIG_16BPP:
     // is optimized for the specific processor type (A8 vs A9) and as
     // a result it is faster for large copies.
     
-    if (numWords >= (MV_PAGESIZE / sizeof(uint32_t))) {
+    if (numWords >= (MV_PAGESIZE / 4 / sizeof(uint32_t))) {
       memcpy(frameBuffer16, inputBuffer32, numWords << 2);
       frameBuffer16 += numWords << 1;
       inputBuffer32 += numWords;
@@ -2314,13 +2315,14 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
 #endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS
-    
+  
+  const int pagesize = getpagesize();
 #if __LP64__
+  MAXVID_ASSERT((MV_PAGESIZE % pagesize) == 0, "pagesize");
 #else
-    const int pagesize = getpagesize();
-    MAXVID_ASSERT(pagesize == MV_PAGESIZE, "pagesize");
+  MAXVID_ASSERT(pagesize == MV_PAGESIZE/4, "pagesize");
 #endif // __LP64__
-    
+  
   MAXVID_ASSERT(inputBuffer32 != NULL, "inputBuffer32");
   // The input buffer must be word aligned
   MAXVID_ASSERT(UINTMOD(inputBuffer32, sizeof(uint32_t)) == 0, "inputBuffer32 initial alignment");
@@ -2328,7 +2330,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
   // The framebuffer is always word aligned
   MAXVID_ASSERT(UINTMOD(frameBuffer32, sizeof(uint32_t)) == 0, "frameBuffer32 initial alignment");
   // In addition, the framebuffer must begin on a page boundry
-  MAXVID_ASSERT(UINTMOD(frameBuffer32, MV_PAGESIZE) == 0, "frameBuffer32 initial page alignment");
+  MAXVID_ASSERT(UINTMOD(frameBuffer32, pagesize) == 0, "frameBuffer32 initial page alignment");
   MAXVID_ASSERT(frameBufferSize > 0, "frameBufferSize");
   uint32_t * restrict inframeBuffer32 = frameBuffer32;
   uint32_t * restrict frameBuffer32Max = frameBuffer32 + frameBufferSize;
@@ -3491,7 +3493,7 @@ COPYBIG_32BPP:
     // is optimized for the specific processor type (A8 vs A9) and as
     // a result it is faster for large copies.
     
-    if (numPixels >= (MV_PAGESIZE / sizeof(uint32_t))) {
+    if (numPixels >= (MV_PAGESIZE / 4 / sizeof(uint32_t))) {
       memcpy(frameBuffer32, inputBuffer32, numPixels << 2);
       frameBuffer32 += numPixels;
       inputBuffer32 += numPixels;

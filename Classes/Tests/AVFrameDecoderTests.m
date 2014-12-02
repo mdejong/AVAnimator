@@ -952,7 +952,7 @@
 	NSAssert(worked, @"allocateDecodeResources failed");
   
   AVFrame *frame1 = [frameDecoder advanceToFrame:0];
-  NSAssert(frame1, @"frame1"); 
+  NSAssert(frame1, @"frame1");
 
   AVFrame *frame2 = [frameDecoder advanceToFrame:0];
   NSAssert(frame2, @"frame2"); 

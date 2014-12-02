@@ -382,11 +382,9 @@ uint32_t maxvid_file_padding_after_keyframe(FILE *outFile, uint32_t offset) {
   NSAssert(self.totalNumFrames > 1, @"animation must have at least 2 frames, not %d", self.totalNumFrames);  
   mvHeader->numFrames = self.totalNumFrames;
   
-  // This file writer always emits a file with version set to 1, since
-  // the adler checksum change required a binary compatibility change
-  // from the initial version 0.
+  // This file writer always emits a file with version set to 2
   
-  maxvid_file_set_version(mvHeader, MV_FILE_VERSION_ONE);
+  maxvid_file_set_version(mvHeader, MV_FILE_VERSION_TWO);
   
   // If all frames written were keyframes (or nop frames)
   // then set a flag to indicate this special case.

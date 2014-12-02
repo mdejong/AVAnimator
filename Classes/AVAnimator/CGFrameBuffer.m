@@ -13,6 +13,10 @@
 
 #import <MobileCoreServices/UTCoreTypes.h>
 
+#ifndef __OPTIMIZE__
+// Automatically define EXTRA_CHECKS when not optimizing (in debug mode)
+# define EXTRA_CHECKS
+#endif // DEBUG
 
 // Alignment is not an issue, makes no difference in performance
 //#define USE_ALIGNED_VALLOC 1
@@ -590,6 +594,26 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   kern_return_t ret;
   vm_address_t src = (vm_address_t) srcPtr;
   vm_address_t dst = (vm_address_t) self->m_pixels;
+  
+#if defined(EXTRA_CHECKS)
+  // Do extra checking to ensure that the zero copy region is
+  // properly page aligned and that the number of bytes to
+  // copy is an exact multiple of the page size.
+  
+  size_t s = getpagesize();
+
+  if ((self.numBytesAllocated % s) != 0) {
+    assert(0);
+  }
+  
+  if ((dst % s) != 0) {
+    assert(0);
+  }
+  if ((src % s) != 0) {
+    assert(0);
+  }
+#endif // EXTRA_CHECKS
+  
   ret = vm_copy((vm_map_t) mach_task_self(), src, (vm_size_t) self.numBytesAllocated, dst);
   if (ret != KERN_SUCCESS) {
     assert(0);
@@ -707,6 +731,19 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 - (void) zeroCopyPixels:(void*)zeroCopyPtr
              mappedData:(NSData*)mappedData
 {
+#if defined(EXTRA_CHECKS)
+  // Do extra checking to ensure that the zero copy region is
+  // properly page aligned and that the number of bytes to
+  // copy is an exact multiple of the page size.
+  
+  size_t ptr = zeroCopyPtr;
+  size_t s = getpagesize();
+  
+  if ((ptr % s) != 0) {
+    assert(0);
+  }
+#endif // EXTRA_CHECKS
+  
   self->m_zeroCopyPixels = zeroCopyPtr;
   self.zeroCopyMappedData = mappedData;
 }

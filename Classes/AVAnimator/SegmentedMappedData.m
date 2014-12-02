@@ -9,7 +9,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 
-#define SM_PAGESIZE 4096
+#define SM_PAGESIZE ((int)getpagesize())
 
 // This private class is used to implement a ref counted
 // file descriptor container. The held file descriptor
