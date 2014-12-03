@@ -1202,9 +1202,14 @@ CF_RETURNS_RETAINED
           compClip->clipType == AVOfflineCompositionClipTypeH264) {
         AVMvidFrameDecoder *mvidFrameDecoder = compClip.mvidFrameDecoder;
         
+#ifdef LOGGING_CLIP_ACTIVE
+        NSLog(@"allocate decode resources for clip %d at frame %d", (int)clipOffset, (int)frame);
+#endif // LOGGING_CLIP_ACTIVE
+        
         worked = [mvidFrameDecoder allocateDecodeResources];
         
         if (worked == FALSE) {
+          self.errorString = @"failed to allocate decode resources for clip";
           return FALSE;
         }
         
