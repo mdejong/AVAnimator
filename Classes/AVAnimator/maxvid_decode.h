@@ -45,7 +45,6 @@ typedef enum {
 #define MV_MAX_16_BITS 0xFFFF
 #define MV_MAX_22_BITS 0x3FFFFF
 #define MV_MAX_24_BITS 0xFFFFFF
-#define MV_MAX_27_BITS 0x7FFFFFF
 #define MV_MAX_30_BITS 0x3FFFFFFF
 #define MV_MAX_32_BITS 0xFFFFFFFF
 

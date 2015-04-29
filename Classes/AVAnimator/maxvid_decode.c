@@ -132,7 +132,6 @@
 
 #define MAX_5_BITS MV_MAX_5_BITS
 #define MAX_11_BITS MV_MAX_11_BITS
-#define MAX_27_BITS MV_MAX_27_BITS
 
 // The ARM docs indicate that stm is faster when the output buffer is 64 bit
 // aligned since 2 words can be written with each cycle. If the cache line
