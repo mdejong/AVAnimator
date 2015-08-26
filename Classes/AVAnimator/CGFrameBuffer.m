@@ -174,6 +174,25 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
 		return nil;
   }
 
+  // Verify page alignemnt of the image buffer. The self.pixels pointer must be page
+  // aligned to properly support zero copy blit and whole page copy optimizations.
+
+  if (1) {
+    uint32_t i32val = (uint32_t)buffer;
+    uint32_t pagesize = getpagesize();
+    uint32_t mod = i32val % pagesize;
+    
+    if (mod != 0) {
+      NSAssert(0, @"framebuffer is not page aligned : pagesize %d : ptr %p : ptr32 0x%08X : ptr32 mod pagesize %d",
+               pagesize,
+               buffer,
+               i32val,
+               mod);
+      // Just in case NSAssert() was disabled in opt mode
+      assert(0);
+    }
+  }
+  
   if ((self = [super init])) {
     self->m_bitsPerPixel = bitsPerPixel;
     self->m_bytesPerPixel = bytesPerPixel;

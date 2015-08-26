@@ -841,7 +841,7 @@
             NSAssert(FALSE, @"framebuffer num bytes");
           }
         }
-        NSAssert(((uint32_t)inputBuffer32 % getpagesize()) == 0, @"framebuffer num bytes");
+        NSAssert(((uint32_t)inputBuffer32 % getpagesize()) == 0, @"framebuffer num bytes : pagesize %d : addr %p : addr mod pagesize %d", getpagesize(), inputBuffer32, ((uint32_t)inputBuffer32 % getpagesize()));
 #endif // EXTRA_CHECKS
     
 #if defined(EXTRA_CHECKS) || defined(ALWAYS_CHECK_ADLER)
