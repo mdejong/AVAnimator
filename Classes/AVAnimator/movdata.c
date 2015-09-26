@@ -2444,7 +2444,7 @@ uint32_t unpremultiply_bgra(uint32_t premultPixelBGRA)
   } else if (alpha == 0xFF) {
     // Nop
   } else {
-    float alphaMult = 1.0 / (alpha / 255.0);
+    float alphaMult = 1.0f / (alpha / 255.0f);
     
     red = unpremultiply(red, alphaMult, alpha);
     green = unpremultiply(green, alphaMult, alpha);
