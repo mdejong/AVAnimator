@@ -69,10 +69,11 @@
   
 #if defined(REGRESSION_TESTS)
   // Execute regression tests when app is launched
+  self.window.rootViewController = [[UIViewController alloc] init];
   [RegressionTests testApp];
 #else
   NSAssert(self.viewController, @"viewController is nil");
-  [self.window addSubview:self.viewController.view];
+  self.window.rootViewController = self.viewController;
   [self.window makeKeyAndVisible];
   
 //  [self startAnimator];
