@@ -27,9 +27,9 @@
 
 #import "MutableAttrString.h"
 
-#if defined(DEBUG)
-# define LOGGING
-#endif // DEBUG
+//#if defined(DEBUG)
+//# define LOGGING
+//#endif // DEBUG
 
 // Notification name constants
 
@@ -216,25 +216,35 @@ typedef enum
   NSAssert(compDict, @"compDict must not be nil");
 
   NSAssert([NSThread isMainThread] == FALSE, @"isMainThread");
-  
+
+#ifdef LOGGING
+    NSLog(@"parsing properties %p", self);
+#endif
+    
   @autoreleasepool {
     worked = [self parseToplevelProperties:compDict];
   }
-  
+    
   if (worked) {
 #ifdef LOGGING
-    NSLog(@"starting comp");
+    NSLog(@"starting comp %p", self);
 #endif
     worked = [self composeFrames];
 #ifdef LOGGING
-    NSLog(@"finished comp");
+    NSLog(@"finished comp %p", self);
 #endif
   }
 
   if (worked) {
     // Deliver success notification
+#ifdef LOGGING
+    NSLog(@"notifyCompositionCompleted %p", self);
+#endif
     [self notifyCompositionCompleted];
   } else {
+#ifdef LOGGING
+    NSLog(@"notifyCompositionFailed %p", self);
+#endif
     [self notifyCompositionFailed];
   }
   
