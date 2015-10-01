@@ -36,6 +36,12 @@ static
 inline
 uint32_t premultiply_bgra_inline(uint32_t red, uint32_t green, uint32_t blue, uint32_t alpha)
 {
+#if defined(DEBUG)
+  assert(red >= 0 && red <= 255);
+  assert(green >= 0 && green <= 255);
+  assert(blue >= 0 && blue <= 255);
+  assert(alpha >= 0 && alpha <= 255);
+#endif
   const uint8_t* const restrict alphaTable = &extern_alphaTablesPtr[alpha * PREMULT_TABLEMAX];
   uint32_t result = (alpha << 24) | (alphaTable[red] << 16) | (alphaTable[green] << 8) | alphaTable[blue];
   return result;

@@ -387,6 +387,16 @@
     uint32_t pixelAlphaGreen = (pixelAlpha >> 8) & 0xFF;
     uint32_t pixelAlphaBlue = (pixelAlpha >> 0) & 0xFF;
     
+#if defined(DEBUG)
+    if ((0)) {
+      uint32_t pixelRed = (pixelRGB >> 16) & 0xFF;
+      uint32_t pixelGreen = (pixelRGB >> 8) & 0xFF;
+      uint32_t pixelBlue = (pixelRGB >> 0) & 0xFF;
+      
+      NSLog(@"processing pixeli %d : (%3d %3d %3d) : alpha grayscale %3d %3d %3d", pixeli, pixelRed, pixelGreen, pixelBlue, pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue);
+    }
+#endif // DEBUG
+    
 //    if ((pixeli % 256) == 0) {
 //      NSLog(@"processing row %d", (pixeli / 256));
 //    }
@@ -397,7 +407,7 @@
 //    }
     
     if (pixelAlphaRed != pixelAlphaGreen || pixelAlphaRed != pixelAlphaBlue) {
-      //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
+      //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli);
       //return FALSE;
       
       uint32_t sum = pixelAlphaRed + pixelAlphaGreen + pixelAlphaBlue;
@@ -405,6 +415,23 @@
         // If two values are 0 and the other is 1, then assume the alpha value is zero. The iOS h264
         // decoding hardware seems to emit (R=0 G=0 B=1) even when the input is a grayscale black pixel.
         pixelAlpha = 0;
+      } else if (sum == 2 && (pixelAlphaRed == 0 && pixelAlphaGreen == 2 && pixelAlphaBlue == 0)) {
+        // The h.264 decoder seems to generate (R=0 G=2 B=0) for black in some weird cases on ARM64.
+        pixelAlpha = 0;
+#if __LP64__
+      } else if ((pixelAlphaRed == pixelAlphaBlue) && (pixelAlphaRed+1 == pixelAlphaGreen)) {
+        // The h.264 decoder in newer ARM64 devices seems to decode the grayscale values (2 2 2) as
+        // (1 2 1) in certain cases. Choose an output grayscale value of 2 in these cases only
+        // for this specific hardware decoder.
+
+        pixelAlpha = pixelAlphaGreen;
+      } else if ((pixelAlphaRed == pixelAlphaBlue) && (pixelAlphaRed+2 == pixelAlphaGreen)) {
+        // The h.264 decoder in newer ARM64 devices seems to decode the grayscale values (3 3 3) as
+        // (2 4 2) in certain cases. Choose an output grayscale value of 3 in these cases only
+        // for this specific hardware decoder.
+        
+        pixelAlpha = pixelAlphaRed + 1;
+#endif // __LP64__
       } else if (pixelAlphaRed == pixelAlphaBlue) {
         // The R and B pixel values are equal but these two values are not the same as the G pixel.
         // This indicates that the grayscale conversion should have resulted in value between the
@@ -420,7 +447,11 @@
         // Note that in some cases the original values (5, 5, 5) get decoded as (5, 4, 5) and that results in 4 as the
         // alpha value. These cases are few and we just ignore them because the alpha is very close.
         
-        pixelAlpha = pixelAlphaRed - 1;
+        if (pixelAlphaRed == 0) {
+          pixelAlpha = 0;
+        } else {
+          pixelAlpha = pixelAlphaRed - 1;
+        }
         
         //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
         //NSLog(@"Using RED/BLUE Alpha level %d at pixel %d in frame %d", pixelAlpha, pixeli, frameIndex);
@@ -446,13 +477,15 @@
         //NSLog(@"Input Alpha MVID input movie R G B components (%d %d %d) do not match at pixel %d in frame %d", pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue, pixeli, frameIndex);
         //NSLog(@"Using AVE Alpha level %d at pixel %d in frame %d", pixelAlpha, pixeli, frameIndex);
       }
+      
+      //NSLog(@"will use pixelAlpha %d", pixelAlpha);
     } else {
       // All values are equal, does not matter which channel we use as the alpha value
       
       pixelAlpha = pixelAlphaRed;
     }
     
-    // Automatially filter out zero pixel values, because there are just so many
+    // Automatically filter out zero pixel values, because there are just so many
     //if (pixelAlpha != 0) {
     //fprintf(fp, "A[%d][%d] = %d\n", frameIndex, pixeli, pixelAlpha);
     //fprintf(fp, "A[%d][%d] = %d <- (%d, %d, %d)\n", frameIndex, pixeli, pixelAlpha, pixelAlphaRed, pixelAlphaGreen, pixelAlphaBlue);
@@ -465,6 +498,9 @@
     uint32_t pixelBlue = (pixelRGB >> 0) & 0xFF;
     
     uint32_t combinedPixel = premultiply_bgra_inline(pixelRed, pixelGreen, pixelBlue, pixelAlpha);
+    
+    //NSLog(@"output combinedPixel 0x%08X", combinedPixel);
+    
     combinedPixels[pixeli] = combinedPixel;
   }
   

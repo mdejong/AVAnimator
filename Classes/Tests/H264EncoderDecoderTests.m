@@ -1726,6 +1726,8 @@
   
   // Dump frame 1
   
+  @autoreleasepool {
+  
   frame = [frameDecoder advanceToFrame:0];
   NSAssert(frame, @"frame 0");
   img = frame.image;
@@ -1740,8 +1742,12 @@
     NSLog(@"wrote %@", path);
     data = nil;
   }
+    
+  }
   
   // Dump frame 2
+  
+  @autoreleasepool {
   
   img = nil;
   frame = nil;
@@ -1759,9 +1765,13 @@
     NSLog(@"wrote %@", path);
     data = nil;
   }
+    
+  }
 
   // Dump frame 3
 
+  @autoreleasepool {
+  
   img = nil;
   frame = nil;
   frame = [frameDecoder advanceToFrame:2];
@@ -1777,6 +1787,8 @@
     [data writeToFile:path atomically:YES];
     NSLog(@"wrote %@", path);
     data = nil;
+  }
+    
   }
   
   // Check "all keyframes" flag
