@@ -753,21 +753,19 @@
   UIView *view = [[UIView alloc] initWithFrame:frame];
   CALayer *viewLayer = view.layer;
   
-#if __has_feature(objc_arc)
-#else
-  NSAutoreleasePool *inner_pool = [[NSAutoreleasePool alloc] init];
-#endif // objc_arc
+  AVAnimatorLayer *avLayerObj;
   
-  AVAnimatorLayer *avLayerObj = [AVAnimatorLayer aVAnimatorLayer:viewLayer];
+  @autoreleasepool
+  {
+  avLayerObj = [AVAnimatorLayer aVAnimatorLayer:viewLayer];
   NSAssert(avLayerObj, @"avLayerObj");
 
 #if __has_feature(objc_arc)
 #else
   // Explicitly retain the layer
   [avLayerObj retain];
-  
-  [inner_pool drain];
 #endif // objc_arc
+  } // end autoreleasepool
   
   [window addSubview:view];
   
@@ -822,8 +820,7 @@
   NSAssert(avLayerObj.media == nil, @"animatorView connected to media");
   NSAssert(media.renderer == nil, @"media connected to animatorView");
   
-  // Now reattach and then drop the last ref to the view. This should detach
-  // the media from the view as part of the view dealloc method.
+  // Now reattach and then drop the last ref to the view.
   
   [avLayerObj attachMedia:media];
 
@@ -831,6 +828,11 @@
   
   [view removeFromSuperview];
 
+  // The view is not longer part of the view hier, so dropping the
+  // existing ref to the view object should drop the last ref to
+  // the avLayerObj which should in turn invoke dealloc on the
+  // AVAnimatorLayer class and nil out the renderer.
+  
 #if __has_feature(objc_arc)
   avLayerObj = nil;
   view = nil;
