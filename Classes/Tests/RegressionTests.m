@@ -156,6 +156,30 @@
 	return [NSArray arrayWithArray:muArr];
 }
 
+// Wait inside the event loop for a period of time indicated in seconds
+
++ (void) waitFor:(NSTimeInterval)maxWaitTime
+{
+  int numSeconds = (int) round(maxWaitTime);
+  if (numSeconds < 1) {
+    numSeconds = 1;
+  }
+  
+  for ( ; numSeconds > 0 ; numSeconds--) @autoreleasepool {
+    const int maxMS = 1000;
+    const int incrMS = 1;
+    const double seconds = 1.0 / (maxMS / incrMS);
+    
+    for (int ms = 0 ; ms < maxMS; ms += incrMS) @autoreleasepool {
+      // One pass through the run loop for each time interval
+      NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:seconds];
+      [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:maxDate];
+    }
+  }
+  
+  return;
+}
+
 + (BOOL) waitUntilTrue:(id)object
               selector:(SEL)selector
            maxWaitTime:(NSTimeInterval)maxWaitTime
@@ -189,7 +213,7 @@
     numSeconds = 1;
   }
   
-  for ( ; numSeconds > 0 ; numSeconds--) {
+  for ( ; numSeconds > 0 ; numSeconds--) @autoreleasepool {
     NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:1.0];
     [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
 

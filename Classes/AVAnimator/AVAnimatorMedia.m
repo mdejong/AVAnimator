@@ -598,7 +598,18 @@
   // Implicitly rewind before playing, this basically just deallocates any previous
   // play resources in the frame decoder.
   
-  [self rewind];
+  BOOL wasNeverStarted = FALSE;
+  
+  if (self.state <= READY) {
+    // Play was never started successfully
+    wasNeverStarted = TRUE;
+  }
+  
+  if (wasNeverStarted) {
+    // No reason to rewind if not actually started yet
+  } else {
+    [self rewind];
+  }
   
 	// Can only transition from PAUSED to ANIMATING via unpause
   

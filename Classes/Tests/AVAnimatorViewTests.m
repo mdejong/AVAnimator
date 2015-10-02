@@ -2718,19 +2718,13 @@ static int notifiy_testAnimateToLastFrame_flag = 0;
   
   NSAssert(animatorView.image != nil, @"image");
 
-  {
-    NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:0.5];
-    [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
-  }
+  [RegressionTests waitFor:0.5];
   
   // Wait for 2 loops to finish
   
   [media startAnimator];
   
-  {
-  NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:30.0];
-  [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
-  }
+  [RegressionTests waitFor:30.0];
   
   NSAssert(media.state == STOPPED, @"STOPPED");
   

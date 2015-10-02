@@ -18,6 +18,10 @@
 
 + (void) cleanupAfterTest;
 
+// Wait inside the event loop for a period of time indicated in seconds
+
++ (void) waitFor:(NSTimeInterval)maxWaitTime;
+
 // Invoke the indicated selector for the object until it returns TRUE.
 // The maxWaitTime indicates the maximum number of seconds to wait.
 // Each time the selector returns FALSE, the event loop will be entered
