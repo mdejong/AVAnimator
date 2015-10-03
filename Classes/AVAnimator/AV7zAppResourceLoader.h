@@ -21,11 +21,22 @@
   BOOL startedLoading;
 }
 
-// The name of the archive resource file. For example: "XYZ.mov.7z"
+// The name of the archive resource file. Typically: "XYZ.mvid.7z" but
+// any file type can be 7z decoded.
 @property (nonatomic, copy) NSString *archiveFilename;
 
 // The fully qualified filename for the extracted data. For example: "XYZ.mov"
 @property (nonatomic, copy) NSString *outPath;
+
+// Set this property to TRUE to indicate that the file to be decompressed
+// is a .mvid file and that the result should be processed to flatten out
+// all delta frames into keyframes. This typically results in a larger
+// .mvid file when written to disk but it makes possible the use of
+// a mapped memory optimization that can directly blit whole pages
+// into video memory without having to copy data. Setting the property
+// to TRUE while decompressing a .mvid that contains only keyframes is a nop.
+
+@property (nonatomic, assign) BOOL flattenMvid;
 
 + (AV7zAppResourceLoader*) aV7zAppResourceLoader;
 

@@ -1243,9 +1243,6 @@
   resLoader.movieFilename = entryFilename;
   resLoader.outPath = outPath;
   
-  // FIXME: this test and the one above could be converted into a "flatten frames"
-  // test where .mvid is decompressed and then made into a flat .mvid file at runtime.
-  
   // Make sure binary compare matches by forcing adler generation when debugging is off
   //resLoader.alwaysGenerateAdler = TRUE;
   
@@ -1265,6 +1262,59 @@
   NSAssert(worked, @"worked");
   
   NSLog(@"Wrote : %@", outPath);
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file \"%@\"", outPath);
+  }
+  
+  return;
+}
+
+// This test case decompresses 480x320_black_blue_1LD_16BPP.mvid but the frame
+// deltas are converted to flat "zero copy" keyframes. In some cases, this
+// "flatten" operation will reduce the runtime CPU usage because of the
+// optimized whole page blit logic as opposer to runtime application of
+// binary pixel patches.
+
++ (void) testDecodeAndFlattenMVID
+{
+  NSString *archiveFilename = @"480x320_black_blue_1LD_16BPP.mvid.7z";
+  NSString *entryFilename = @"480x320_black_blue_1LD_16BPP.mvid";
+  NSString *outFilename = @"480x320_black_blue_1LD_16BPP.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+
+  // Make sure binary compare matches by forcing adler generation when debugging is off
+//  resLoader.alwaysGenerateAdler = TRUE;
+  
+  resLoader.flattenMvid = TRUE;
+  
+  // If the decode mov path exists currently, delete it so that this test case always
+  // decodes the .mov from the .7z compressed Resource.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file \"%@\"", outPath);
+  }
+  
+  [resLoader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSLog(@"Wrote : %@", outPath);
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file \"%@\"", outPath);
+  }
   
   return;
 }
