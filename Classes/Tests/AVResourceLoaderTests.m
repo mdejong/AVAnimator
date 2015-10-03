@@ -1277,7 +1277,7 @@
 // optimized whole page blit logic as opposer to runtime application of
 // binary pixel patches.
 
-+ (void) testDecodeAndFlattenMVID
++ (void) testDecodeAndFlattenMVID16BPP
 {
   NSString *archiveFilename = @"480x320_black_blue_1LD_16BPP.mvid.7z";
   NSString *entryFilename = @"480x320_black_blue_1LD_16BPP.mvid";
@@ -1310,6 +1310,94 @@
   NSAssert(worked, @"worked");
   
   NSLog(@"Wrote : %@", outPath);
+  
+  // Verify that mvid decoded by this loader has same bpp, num frames, and is all keyframes
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  worked = [frameDecoder openForReading:outPath];
+  NSAssert(worked, @"openForReading failed for \"%@\"", outPath);
+
+  NSAssert([frameDecoder isAllKeyframes] == TRUE, @"isAllKeyframes");
+  
+  NSAssert(frameDecoder.width == 480, @"width");
+  NSAssert(frameDecoder.height == 320, @"height");
+  
+  MVFileHeader *mvidHeader = frameDecoder.header;
+  
+  NSAssert(mvidHeader->bpp == 16, @"bpp");
+  
+  NSAssert(round(mvidHeader->frameDuration * 10.0) == 10, @"frame rate 1.0 FPS");
+  NSAssert(frameDecoder.numFrames == 2, @"numFrames");
+  
+  // cleanup
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file \"%@\"", outPath);
+  }
+  
+  return;
+}
+
+// This test case decompresses 480x320_black_blue_1LD_16BPP.mvid but the frame
+// deltas are converted to flat "zero copy" keyframes. In some cases, this
+// "flatten" operation will reduce the runtime CPU usage because of the
+// optimized whole page blit logic as opposer to runtime application of
+// binary pixel patches.
+
++ (void) testDecodeAndFlattenMVID24BPP
+{
+  NSString *archiveFilename = @"480x320_black_blue_1LD_24BPP.mvid.7z";
+  NSString *entryFilename = @"480x320_black_blue_1LD_24BPP.mvid";
+  NSString *outFilename = @"480x320_black_blue_1LD_24BPP.mvid";
+  NSString *outPath = [AVFileUtil getTmpDirPath:outFilename];
+  
+  AV7zAppResourceLoader *resLoader = [AV7zAppResourceLoader aV7zAppResourceLoader];
+  resLoader.archiveFilename = archiveFilename;
+  resLoader.movieFilename = entryFilename;
+  resLoader.outPath = outPath;
+  
+  // Make sure binary compare matches by forcing adler generation when debugging is off
+  //  resLoader.alwaysGenerateAdler = TRUE;
+  
+  resLoader.flattenMvid = TRUE;
+  
+  // If the decode mov path exists currently, delete it so that this test case always
+  // decodes the .mov from the .7z compressed Resource.
+  
+  if ([AVFileUtil fileExists:outPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];
+    NSAssert(worked, @"could not remove existing file \"%@\"", outPath);
+  }
+  
+  [resLoader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:resLoader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  NSLog(@"Wrote : %@", outPath);
+  
+  // Verify that mvid decoded by this loader has same bpp, num frames, and is all keyframes
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  worked = [frameDecoder openForReading:outPath];
+  NSAssert(worked, @"openForReading failed for \"%@\"", outPath);
+  
+  NSAssert([frameDecoder isAllKeyframes] == TRUE, @"isAllKeyframes");
+  
+  NSAssert(frameDecoder.width == 480, @"width");
+  NSAssert(frameDecoder.height == 320, @"height");
+  
+  MVFileHeader *mvidHeader = frameDecoder.header;
+  
+  NSAssert(mvidHeader->bpp == 24, @"bpp");
+  
+  NSAssert(round(mvidHeader->frameDuration * 10.0) == 10, @"frame rate 1.0 FPS");
+  NSAssert(frameDecoder.numFrames == 2, @"numFrames");
+  
+  // cleanup
   
   if ([AVFileUtil fileExists:outPath]) {
     BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:outPath error:nil];

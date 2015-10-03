@@ -103,94 +103,9 @@
       
       [AVFileUtil renameFile:phonyOutPath toPath:phonyOutMvidPath];
       
-      AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
-      NSAssert(frameDecoder, @"frameDecoder");
+      worked = [self.class flattenMvidImpl:phonyOutMvidPath outputMvidPath:flattenOutPath];
       
-      worked = [frameDecoder openForReading:phonyOutMvidPath];
-      
-      if (!worked) {
-        NSAssert(worked, @"openForReading failed for \"%@\"", phonyOutMvidPath);
-      }
-      
-      // If the input .mvid is already all keyframes then generate a DEBUG assert.
-      
-#if defined(DEBUG)
-      if ([frameDecoder isAllKeyframes]) {
-        NSAssert(FALSE, @"decompressed .mvid contains only keyframes \"%@\"", phonyOutMvidPath);
-      }
-#endif // DEBUG
-      
-      MVFileHeader *mvidHeader = frameDecoder.header;
-      
-      worked = [frameDecoder allocateDecodeResources];
-      
-      if (worked == FALSE) {
-        // Use RETURN in possible fail cases, not assert
-        NSAssert(worked, @"error: cannot allocate decode resources for filename \"%@\"", phonyOutMvidPath);
-//        NSLog(@"error: cannot allocate decode resources for filename \"%@\"", phonyOutMvidPath);
-//        return FALSE;
-      }
-      
-      AVMvidFileWriter *avMvidFileWriter = [AVMvidFileWriter aVMvidFileWriter];
-      
-      // Write to flattenOutPath
-      
-      avMvidFileWriter.mvidPath = flattenOutPath;
-      
-      // 32, 24, or 16 bpp
-      
-      avMvidFileWriter.bpp = mvidHeader->bpp;
-      
-      avMvidFileWriter.frameDuration = frameDecoder.frameDuration;
-      avMvidFileWriter.totalNumFrames = (int) frameDecoder.numFrames;
-      
-      avMvidFileWriter.movieSize = CGSizeMake(frameDecoder.width, frameDecoder.height);
-      
-#if defined(DEBUG)
-      if (1) {
-        avMvidFileWriter.genAdler = TRUE;
-      }
-#endif // DEBUG
-      
-      worked = [avMvidFileWriter open];
-      if (worked == FALSE) {
-        NSAssert(0, @"error: Could not open .mvid output file \"%@\"", avMvidFileWriter.mvidPath);
-      }
-      
-      // Decode each frame and write as keyframes
-      
-      for (NSUInteger frameIndex = 0; frameIndex < avMvidFileWriter.totalNumFrames; frameIndex++) @autoreleasepool {
-#ifdef LOGGING
-        NSLog(@"reading frame %d", (int)frameIndex);
-#endif // LOGGING
-        
-        AVFrame *frame = [frameDecoder advanceToFrame:frameIndex];
-        assert(frame);
-        
-        CGFrameBuffer *cgFrameBuffer = frame.cgFrameBuffer;
-        
-#if defined(DEBUG)
-        NSAssert(cgFrameBuffer.bitsPerPixel == avMvidFileWriter.bpp, @"bpp");
-#endif // DEBUG
-        
-        int numBytesInBuffer = (int) cgFrameBuffer.numBytes;
-        
-        worked = [avMvidFileWriter writeKeyframe:cgFrameBuffer.pixels bufferSize:numBytesInBuffer];
-        
-        if (worked == FALSE) {
-          NSAssert(0, @"error: Could not write keyframe to file \"%@\"", avMvidFileWriter.mvidPath);
-        }
-      }
-      
-      // Update header at front of image data
-      
-      worked = [avMvidFileWriter rewriteHeader];
-
-      if (worked == FALSE) {
-        NSAssert(0, @"error: Could not rewrite header file \"%@\"", avMvidFileWriter.mvidPath);
-      }
-      
-      [avMvidFileWriter close];
+      NSAssert(worked, @"flattenMvid failed for \"%@\"", phonyOutMvidPath);
       
       // Rename flat output file to final output path
       
@@ -271,6 +186,106 @@
 - (NSString*) _getMoviePath
 {
  return self.outPath;
+}
+
+// Util method that will read an input .mvid and write an output .mvid with the same size and BPP
+// settings but with delta frames flattened out as keyframes.
+
++ (BOOL) flattenMvidImpl:(NSString*)inputMvidPath
+          outputMvidPath:(NSString*)outputMvidPath
+{
+  BOOL worked;
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  NSAssert(frameDecoder, @"frameDecoder");
+  
+  worked = [frameDecoder openForReading:inputMvidPath];
+  
+  if (!worked) {
+    NSAssert(worked, @"openForReading failed for \"%@\"", inputMvidPath);
+  }
+  
+  // If the input .mvid is already all keyframes then generate a DEBUG assert.
+  
+#if defined(DEBUG)
+  if ([frameDecoder isAllKeyframes]) {
+    NSAssert(FALSE, @"decompressed .mvid contains only keyframes \"%@\"", inputMvidPath);
+  }
+#endif // DEBUG
+  
+  MVFileHeader *mvidHeader = frameDecoder.header;
+  
+  worked = [frameDecoder allocateDecodeResources];
+  
+  if (worked == FALSE) {
+    // Use RETURN in possible fail cases, not assert
+    NSAssert(worked, @"error: cannot allocate decode resources for filename \"%@\"", inputMvidPath);
+    //        NSLog(@"error: cannot allocate decode resources for filename \"%@\"", inputMvidPath);
+    //        return FALSE;
+  }
+  
+  AVMvidFileWriter *avMvidFileWriter = [AVMvidFileWriter aVMvidFileWriter];
+  
+  // Write to flattenOutPath
+  
+  avMvidFileWriter.mvidPath = outputMvidPath;
+  
+  // 32, 24, or 16 bpp
+  
+  avMvidFileWriter.bpp = mvidHeader->bpp;
+  
+  avMvidFileWriter.frameDuration = frameDecoder.frameDuration;
+  avMvidFileWriter.totalNumFrames = (int) frameDecoder.numFrames;
+  
+  avMvidFileWriter.movieSize = CGSizeMake(frameDecoder.width, frameDecoder.height);
+  
+#if defined(DEBUG)
+  if (1) {
+    avMvidFileWriter.genAdler = TRUE;
+  }
+#endif // DEBUG
+  
+  worked = [avMvidFileWriter open];
+  if (worked == FALSE) {
+    NSAssert(0, @"error: Could not open .mvid output file \"%@\"", avMvidFileWriter.mvidPath);
+  }
+  
+  // Decode each frame and write as keyframes
+  
+  for (NSUInteger frameIndex = 0; frameIndex < avMvidFileWriter.totalNumFrames; frameIndex++) @autoreleasepool {
+#ifdef LOGGING
+    NSLog(@"reading frame %d", (int)frameIndex);
+#endif // LOGGING
+    
+    AVFrame *frame = [frameDecoder advanceToFrame:frameIndex];
+    assert(frame);
+    
+    CGFrameBuffer *cgFrameBuffer = frame.cgFrameBuffer;
+    
+#if defined(DEBUG)
+    NSAssert(cgFrameBuffer.bitsPerPixel == avMvidFileWriter.bpp, @"bpp");
+#endif // DEBUG
+    
+    int numBytesInBuffer = (int) cgFrameBuffer.numBytes;
+    
+    worked = [avMvidFileWriter writeKeyframe:cgFrameBuffer.pixels bufferSize:numBytesInBuffer];
+    
+    if (worked == FALSE) {
+      NSAssert(0, @"error: Could not write keyframe to file \"%@\"", avMvidFileWriter.mvidPath);
+    }
+  }
+  
+  // Update header at front of image data
+  
+  worked = [avMvidFileWriter rewriteHeader];
+  
+  if (worked == FALSE) {
+    NSAssert(0, @"error: Could not rewrite header file \"%@\"", avMvidFileWriter.mvidPath);
+  }
+  
+  [avMvidFileWriter close];
+  
+  return TRUE;
 }
 
 @end

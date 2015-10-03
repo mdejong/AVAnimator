@@ -12,6 +12,7 @@
 		2899E5220DE3E06400AC0155 /* QTFileParserAppViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 2899E5210DE3E06400AC0155 /* QTFileParserAppViewController.xib */; };
 		28AD733F0D9D9553002E5188 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 28AD733E0D9D9553002E5188 /* MainWindow.xib */; };
 		28D7ACF80DDB3853001CB0EB /* QTFileParserAppViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 28D7ACF70DDB3853001CB0EB /* QTFileParserAppViewController.m */; };
+		3C4CF8C41BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = 3C4CF8C31BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z */; settings = {ASSET_TAGS = (); }; };
 		609172EA18BC79AF00BF3C3E /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 609172E918BC79AF00BF3C3E /* Default-568h@2x.png */; };
 		CD02DDA416A32B11008EB661 /* PremultiplyTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD02DDA316A32B11008EB661 /* PremultiplyTests.m */; };
 		CD0ACF29136F927300A203DF /* AV7zApng2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD0ACF28136F927300A203DF /* AV7zApng2MvidResourceLoader.m */; };
@@ -365,6 +366,7 @@
 		28D7ACF70DDB3853001CB0EB /* QTFileParserAppViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = QTFileParserAppViewController.m; sourceTree = "<group>"; };
 		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		32CA4F630368D1EE00C91783 /* QTFileParserApp_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = QTFileParserApp_Prefix.pch; sourceTree = "<group>"; };
+		3C4CF8C31BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = 480x320_black_blue_1LD_24BPP.mvid.7z; sourceTree = "<group>"; };
 		609172E918BC79AF00BF3C3E /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* QTFileParserApp-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "QTFileParserApp-Info.plist"; plistStructureDefinitionIdentifier = "com.apple.xcode.plist.structure-definition.iphone.info-plist"; sourceTree = "<group>"; };
 		CD02DDA316A32B11008EB661 /* PremultiplyTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PremultiplyTests.m; sourceTree = "<group>"; };
@@ -835,6 +837,7 @@
 				CDA2BADA12F0AA4000F299B4 /* Silence3S.wav */,
 				CDD6414216865A0800492B80 /* 480x320_black_blue_16BPP.mvid.7z */,
 				CDD6414416865E7400492B80 /* 480x320_black_blue_1LD_16BPP.mvid.7z */,
+				3C4CF8C31BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z */,
 				CDF1919B13BD893D0008672A /* 1x1.gif */,
 				CD561CA214DF9E41001E4F43 /* 32x32_black_blue_h264.mov */,
 				CDDC5C6315B7EDA700127A37 /* 124x124_black_blue_h264.mov */,
@@ -1221,6 +1224,7 @@
 				CD3F4E6812D8F47D0067FDDF /* QTFileParserAppViewController.xib in Resources */,
 				CD3F4E6A12D8F47D0067FDDF /* MovieTransportBackground.png in Resources */,
 				CD3F4E6B12D8F47D0067FDDF /* pause.png in Resources */,
+				3C4CF8C41BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z in Resources */,
 				CD3F4E6C12D8F47D0067FDDF /* play.png in Resources */,
 				CD3F4E6D12D8F47D0067FDDF /* prevtrack.png in Resources */,
 				CD3F4E6E12D8F47D0067FDDF /* VolumeLeftTall.png in Resources */,
