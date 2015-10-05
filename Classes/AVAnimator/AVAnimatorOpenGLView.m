@@ -251,7 +251,7 @@ enum {
   
   // Attach case
   
-  NSAssert(self.window, @"AVAnimatorOpenGLView must have been added to a window before media can be attached");
+  NSAssert(self.superview, @"AVAnimatorOpenGLView must have been added to a view before media can be attached");
   
   [currentMedia detachFromRenderer:self copyFinalFrame:FALSE];
   self.mediaObj = inMedia;
