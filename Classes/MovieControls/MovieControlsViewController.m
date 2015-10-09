@@ -119,7 +119,15 @@
   CGSize containerSize;
     
   CGRect mainScreenFrame = [UIScreen mainScreen].applicationFrame;
-  if (mainScreenFrame.size.height == 568) {
+  
+  if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad ) {
+    if (portraitMode) {
+      containerSize = mainScreenFrame.size;
+    } else {
+      containerSize.width = mainScreenFrame.size.height;
+      containerSize.height = mainScreenFrame.size.width;
+    }
+  } else if (mainScreenFrame.size.height == 568) {
       if (portraitMode) {
           containerSize.width = 320.0;
           containerSize.height = 568.0;
