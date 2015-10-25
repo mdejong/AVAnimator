@@ -516,6 +516,17 @@
     NSAssert(FALSE, @"%@: %d", @"can't advance past last frame", (int) newFrameIndex);
   }
   
+#if defined(EXTRA_CHECKS)
+  // Verify that input file is mvid version 2. Version 0 and 1 files will not
+  // load properly on ARM64 hardware.
+  
+  MVFileHeader *header = [self header];
+  
+  if (self.upgradeFromV1 == FALSE && maxvid_file_version(header) < MV_FILE_VERSION_TWO) {
+    NSAssert(FALSE, @"only .mvid files version 2 or newer can be used, you must -upgrade this .mvid from version %d", maxvid_file_version(header));
+  }
+#endif // EXTRA_CHECKS
+  
   BOOL changeFrameData = FALSE;
   const int newFrameIndexSigned = (int) newFrameIndex;
   
@@ -795,10 +806,6 @@
         MVFileHeader *header = [self header];
         
         uint32_t numBytesToIncludeInAdler;
-        
-        if (self.upgradeFromV1 == FALSE && maxvid_file_version(header) < MV_FILE_VERSION_TWO) {
-          NSAssert(FALSE, @"only .mvid files version 2 or newer can be used, you must -upgrade this .mvid from version %d", maxvid_file_version(header));
-        }
         
         if (maxvid_file_version(header) == MV_FILE_VERSION_ZERO) {
           // File rev 0 will calculate an adler checksum using (width * height * numBytesInPixel)
