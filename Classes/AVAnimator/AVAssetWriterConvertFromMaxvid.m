@@ -27,7 +27,10 @@
 
 #import "AVFrame.h"
 
+#if __has_feature(objc_arc)
+#else
 #import "AutoPropertyRelease.h"
+#endif // objc_arc
 
 #import "AVMvidFrameDecoder.h"
 

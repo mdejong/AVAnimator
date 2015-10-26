@@ -4,7 +4,6 @@
 //  License terms defined in License.txt.
 
 #import "SegmentedMappedData.h"
-#import "AutoPropertyRelease.h"
 
 #include <sys/mman.h>
 #include <fcntl.h>
