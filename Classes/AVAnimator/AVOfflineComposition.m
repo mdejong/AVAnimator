@@ -1406,7 +1406,7 @@ CF_RETURNS_RETAINED
     screenScale = 1;
   }
   
-  NSAssert(screenScale == 1 || screenScale == 2, @"bad screenScale %d", screenScale);
+  NSAssert(screenScale == 1 || screenScale == 2 || screenScale == 3, @"bad screenScale %d", screenScale);
 }
 
 @end // AVOfflineComposition
