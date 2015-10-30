@@ -120,29 +120,11 @@
     
   CGRect mainScreenFrame = [UIScreen mainScreen].applicationFrame;
   
-  if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad ) {
-    if (portraitMode) {
-      containerSize = mainScreenFrame.size;
-    } else {
-      containerSize.width = mainScreenFrame.size.height;
-      containerSize.height = mainScreenFrame.size.width;
-    }
-  } else if (mainScreenFrame.size.height == 568) {
-      if (portraitMode) {
-          containerSize.width = 320.0;
-          containerSize.height = 568.0;
-      } else {
-          containerSize.width = 568.0;
-          containerSize.height = 320.0;
-      }
+  if (portraitMode) {
+    containerSize = mainScreenFrame.size;
   } else {
-      if (portraitMode) {
-          containerSize.width = 320.0;
-          containerSize.height = 480.0;
-      } else {
-          containerSize.width = 480.0;
-          containerSize.height = 320.0;
-      }
+    containerSize.width = mainScreenFrame.size.height;
+    containerSize.height = mainScreenFrame.size.width;
   }
   
   return containerSize;
