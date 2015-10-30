@@ -440,6 +440,7 @@ CF_RETURNS_RETAINED
   // CompScale
   // 1 indicates normal 1x scale, 1 to 1 ratio between points and pixels (default)
   // 2 indicates 2x scale, 1 pt = 2 px
+  // 3 indicates 3x scale, 1 pt = 3 px
   // 0 indicate that the screen scale will be queried
   
   NSNumber *compScaleNum = [compDict objectForKey:@"CompScale"];
@@ -453,7 +454,7 @@ CF_RETURNS_RETAINED
     if (compScale == 0) {
       NSAssert(screenScale != 0, @"screenScale is zero");
       compScale = screenScale;
-    } else if (compScale == 1 || compScale == 2) {
+    } else if (compScale == 1 || compScale == 2 || compScale == 3) {
       // Nop
     } else {
       self.errorString = @"CompScale invalid";
@@ -1002,12 +1003,19 @@ CF_RETURNS_RETAINED
   
   NSUInteger scaledWidth = width;
   NSUInteger scaledHeight = height;
-  
-  // If the comp scale is actually 2x the double the size of the framebuffer
-  
-  if (self.compScale == 2) {
+
+  if (self.compScale == 1) {
+    // nop
+  } else if (self.compScale == 2) {
+    // If the comp scale is actually 2x the double the size of the framebuffer
     scaledWidth *= 2;
     scaledHeight *= 2;
+  } else if (self.compScale == 3) {
+    // iPhone 6 plus, render at 3x
+    scaledWidth *= 3;
+    scaledHeight *= 3;
+  } else {
+    NSAssert(FALSE, @"unsupported compScale %d", (int)self.compScale);
   }
   
   // Allocate buffer that will contain the rendered frame for each time step
@@ -1031,8 +1039,16 @@ CF_RETURNS_RETAINED
   // If the comp scale is 2x then push a multiply matrix so that coordinates come
   // out twice as large.
   
-  if (self.compScale == 2) {
+  if (self.compScale == 1) {
+    // nop
+  } else if (self.compScale == 2) {
+    // If the comp scale is actually 2x the double the size of the framebuffer
     CGContextScaleCTM(bitmapContext, 2.0f, 2.0f);
+  } else if (self.compScale == 3) {
+    // iPhone 6 plus, render at 3x
+    CGContextScaleCTM(bitmapContext, 3.0f, 3.0f);
+  } else {
+    NSAssert(FALSE, @"unsupported compScale %d", (int)self.compScale);
   }
   
   // Testing on iPhone4 and iPad2 indicates that using Medium interpolation shows
