@@ -342,6 +342,152 @@
   return;
 }
 
+// Specific test case for skipping the initial frame while decoding from h.264
+
++ (void) testDecodeFromH264SkipFirstFrame
+{
+  NSString *resourceName = @"RGB3Frame_mix.m4v";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  
+  // Create frame decoder that will read 1 frame at a time from an asset file.
+  // This type of frame decoder is constrained as compared to a MVID frame
+  // decoder. It can only decode 1 frame at a time as only 1 frame can be
+  // in memory at a time. Also, it only works for sequential frames, so
+  // this frame decoder cannot be used in a media object.
+  
+  AVAssetFrameDecoder *frameDecoder = [AVAssetFrameDecoder aVAssetFrameDecoder];
+  
+  BOOL worked = [frameDecoder openForReading:resPath];
+  NSAssert(worked, @"worked");
+  
+  NSAssert([frameDecoder numFrames] == 3*2, @"numFrames");
+  NSAssert([frameDecoder hasAlphaChannel] == FALSE, @"hasAlphaChannel");
+  
+  worked = [frameDecoder allocateDecodeResources];
+  NSAssert(worked, @"worked");
+  
+  // Skip over first frame
+  
+  AVFrame * frame = [frameDecoder advanceToFrame:1];
+  NSAssert(frame, @"frame");
+  
+  return;
+}
+
+// In this test case an example input file was created from R/G/B frames with
+// alpha channels that are the same as Grayscale256x256.m4v except that the
+// first and last frame contain only half the frame data. This must be encoded
+// with the main profile so that B frame deltas are more than just a delta to
+// the last frame and could go forward or backward. The result is that some
+// parts of the second frame should be constructed with B frames, note that
+// this will not run on and old iPhone 3.
+
++ (void) disabled_testDecodeAlphaGradientFromMainProfileSecondFrame
+{
+  NSString *resourceName = @"RGB3Frame_mix.m4v";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  
+  // Create frame decoder that will read 1 frame at a time from an asset file.
+  // This type of frame decoder is constrained as compared to a MVID frame
+  // decoder. It can only decode 1 frame at a time as only 1 frame can be
+  // in memory at a time. Also, it only works for sequential frames, so
+  // this frame decoder cannot be used in a media object.
+  
+  AVAssetFrameDecoder *frameDecoder = [AVAssetFrameDecoder aVAssetFrameDecoder];
+  
+  BOOL worked = [frameDecoder openForReading:resPath];
+  NSAssert(worked, @"worked");
+  
+  NSAssert([frameDecoder numFrames] == 3*2, @"numFrames");
+  NSAssert([frameDecoder hasAlphaChannel] == FALSE, @"hasAlphaChannel");
+  
+  worked = [frameDecoder allocateDecodeResources];
+  NSAssert(worked, @"worked");
+  
+  AVFrame *frame;
+  UIImage *img;
+  
+  int width = 256;
+  int height = 256;
+  CGSize expectedSize = CGSizeMake(width, height);
+  int numPixels = width * height;
+  
+  // Decode frame 4 (combo frame 2 alpha frame)
+  
+  frame = [frameDecoder advanceToFrame:3];
+  NSAssert(frame, @"frame");
+  img = frame.image;
+  
+  NSAssert(CGSizeEqualToSize(img.size, expectedSize), @"expectedSize");
+  
+  BOOL emitFrames = TRUE;
+  
+  if (emitFrames) {
+    NSString *path;
+    NSData *data;
+    path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame3.png"];
+    data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+    [data writeToFile:path atomically:YES];
+    NSLog(@"wrote %@", path);
+  }
+  
+  // Allocate output buffer and phony RGB buffer with all white pixels
+  
+  uint32_t *rgbPixels = malloc(numPixels * sizeof(uint32_t));
+  assert(rgbPixels);
+  memset(rgbPixels, 0xff, numPixels * sizeof(uint32_t));
+  
+  uint32_t *combinedPixels = malloc(numPixels * sizeof(uint32_t));
+  assert(combinedPixels);
+  memset(combinedPixels, 0x0, numPixels * sizeof(uint32_t));
+  
+  uint32_t *alphaPixels = (uint32_t*) frame.cgFrameBuffer.pixels;
+  assert(frame.cgFrameBuffer.numBytes == (numPixels * sizeof(uint32_t)));
+  
+  [AVAssetJoinAlphaResourceLoader combineRGBAndAlphaPixels:numPixels
+                                            combinedPixels:combinedPixels
+                                                 rgbPixels:rgbPixels
+                                               alphaPixels:alphaPixels];
+  
+  
+  // Alpha = 0 -> (0, 0, 0, 0)
+  // Alpha = 1 -> (1, 1, 1, 1)
+  // Alpha = 255 -> (255, 255, 255, 255)
+  
+  for (int rowi = 0; rowi < height; rowi++) {
+    for (int coli = 0; coli < width; coli++) {
+      uint32_t pixel = combinedPixels[(rowi * width) + coli];
+      NSString *results = [self util_pixelToRGBAStr:pixel];
+      NSString *expectedResults = [NSString stringWithFormat:@"(%d, %d, %d, %d)", rowi, rowi, rowi, rowi];
+      
+      NSString *oneUp = [NSString stringWithFormat:@"(%d, %d, %d, %d)", rowi+1, rowi+1, rowi+1, rowi+1];
+      NSString *oneDown = [NSString stringWithFormat:@"(%d, %d, %d, %d)", rowi-1, rowi-1, rowi-1, rowi-1];
+      
+      // The H264 lossy encoding could be off by 1 step, so make the test a bit fuzzy.
+      // It would be a lot better if the input could be refined to make sure it is
+      // lossless, but this is the best we can do for now. The output would be as
+      // much as 1 step off, but that is not much. As long as the completely transparent
+      // and completely opaque values are exacly correct, this is close enough.
+      
+      if (rowi == 0 || rowi == 255) {
+        NSAssert([results isEqualToString:expectedResults], @"pixel");
+      } else {
+        
+        NSAssert([results isEqualToString:expectedResults] ||
+                 [results isEqualToString:oneUp] ||
+                 [results isEqualToString:oneDown]
+                 , @"pixel");
+        
+      }
+    }
+  }
+  
+  free(combinedPixels);
+  free(rgbPixels);
+  
+  return;
+}
+
 // Read video data from a single track (only one video track is supported anyway)
 // Note that while encoding a 32x32 .mov with H264 is not supported, it is perfectly
 // fine to decode a H264 that is smaller than 128x128.

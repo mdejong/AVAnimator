@@ -850,7 +850,9 @@ typedef enum
         }
         if (skippingAhead) {
           skipAheadLastGoodBufferRef = cvBufferRef;
-          CFRetain(skipAheadLastGoodBufferRef);
+          if (skipAheadLastGoodBufferRef) {
+            CFRetain(skipAheadLastGoodBufferRef);
+          }
         }
         
         doneReadingFrames = FALSE;
