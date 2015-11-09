@@ -372,8 +372,8 @@
 
 + (void) combineRGBAndAlphaPixels:(uint32_t)numPixels
                    combinedPixels:(uint32_t*)combinedPixels
-                   rgbPixels:(uint32_t*)rgbPixels
-                   alphaPixels:(uint32_t*)alphaPixels
+                        rgbPixels:(uint32_t*)rgbPixels
+                      alphaPixels:(uint32_t*)alphaPixels
 {
   for (uint32_t pixeli = 0; pixeli < numPixels; pixeli++) {
     uint32_t pixelAlpha = alphaPixels[pixeli];
@@ -418,7 +418,7 @@
       } else if (sum == 2 && (pixelAlphaRed == 0 && pixelAlphaGreen == 2 && pixelAlphaBlue == 0)) {
         // The h.264 decoder seems to generate (R=0 G=2 B=0) for black in some weird cases on ARM64.
         pixelAlpha = 0;
-#if __LP64__
+#if defined(__arm64__) && __arm64__
       } else if ((pixelAlphaRed == pixelAlphaBlue) && (pixelAlphaRed+1 == pixelAlphaGreen)) {
         // The h.264 decoder in newer ARM64 devices seems to decode the grayscale values (2 2 2) as
         // (1 2 1) in certain cases. Choose an output grayscale value of 2 in these cases only
@@ -431,7 +431,7 @@
         // for this specific hardware decoder.
         
         pixelAlpha = pixelAlphaRed + 1;
-#endif // __LP64__
+#endif // __arm64__
       } else if (pixelAlphaRed == pixelAlphaBlue) {
         // The R and B pixel values are equal but these two values are not the same as the G pixel.
         // This indicates that the grayscale conversion should have resulted in value between the
