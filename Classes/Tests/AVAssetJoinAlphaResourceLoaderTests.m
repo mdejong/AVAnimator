@@ -382,7 +382,7 @@
 // parts of the second frame should be constructed with B frames, note that
 // this will not run on and old iPhone 3.
 
-+ (void) disabled_testDecodeAlphaGradientFromMainProfileSecondFrame
++ (void) testDecodeAlphaGradientFromMainProfileSecondFrame
 {
   NSString *resourceName = @"RGB3Frame_mix.m4v";
   NSString *resPath = [AVFileUtil getResourcePath:resourceName];
@@ -420,7 +420,7 @@
   
   NSAssert(CGSizeEqualToSize(img.size, expectedSize), @"expectedSize");
   
-  BOOL emitFrames = TRUE;
+  BOOL emitFrames = FALSE;
   
   if (emitFrames) {
     NSString *path;
@@ -462,23 +462,20 @@
       
       NSString *oneUp = [NSString stringWithFormat:@"(%d, %d, %d, %d)", rowi+1, rowi+1, rowi+1, rowi+1];
       NSString *oneDown = [NSString stringWithFormat:@"(%d, %d, %d, %d)", rowi-1, rowi-1, rowi-1, rowi-1];
+
+      NSString *twoUp = [NSString stringWithFormat:@"(%d, %d, %d, %d)", rowi+2, rowi+2, rowi+2, rowi+2];
+      NSString *twoDown = [NSString stringWithFormat:@"(%d, %d, %d, %d)", rowi-2, rowi-2, rowi-2, rowi-2];
+
+      NSString *threeUp = [NSString stringWithFormat:@"(%d, %d, %d, %d)", rowi+3, rowi+3, rowi+3, rowi+3];
+      NSString *threeDown = [NSString stringWithFormat:@"(%d, %d, %d, %d)", rowi-3, rowi-3, rowi-3, rowi-3];
       
-      // The H264 lossy encoding could be off by 1 step, so make the test a bit fuzzy.
-      // It would be a lot better if the input could be refined to make sure it is
-      // lossless, but this is the best we can do for now. The output would be as
-      // much as 1 step off, but that is not much. As long as the completely transparent
-      // and completely opaque values are exacly correct, this is close enough.
+      // H.264 with very lossy 23 CRF encoding just needs to be close (+-3)
       
-      if (rowi == 0 || rowi == 255) {
-        NSAssert([results isEqualToString:expectedResults], @"pixel");
-      } else {
-        
-        NSAssert([results isEqualToString:expectedResults] ||
-                 [results isEqualToString:oneUp] ||
-                 [results isEqualToString:oneDown]
-                 , @"pixel");
-        
-      }
+      NSAssert([results isEqualToString:expectedResults] ||
+               [results isEqualToString:oneUp] || [results isEqualToString:oneDown] ||
+               [results isEqualToString:twoUp] || [results isEqualToString:twoDown] ||
+               [results isEqualToString:threeUp] || [results isEqualToString:threeDown]
+               , @"pixel");
     }
   }
   
