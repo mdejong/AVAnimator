@@ -11,6 +11,8 @@
 
 #import "AVAssetJoinAlphaResourceLoader.h"
 
+#import "AVAssetMixAlphaResourceLoader.h"
+
 #import "AVMvidFrameDecoder.h"
 
 #import "AVFileUtil.h"
@@ -481,6 +483,106 @@
   
   free(combinedPixels);
   free(rgbPixels);
+  
+  return;
+}
+
+// This "mix" loader reads frames of RGB/Alpha video from a h.264 encoded file and puts them back
+// together as a .mvid file sitting on disk using the AVAssetMixAlphaResourceLoader loader class.
+
++ (void) testUnmixLoaderRGB3
+{
+  NSString *resourceName = @"RGB3Frame_mix.m4v";
+  NSString *resPath = [AVFileUtil getResourcePath:resourceName];
+  NSURL *fileURL = [NSURL fileURLWithPath:resPath];
+  
+  NSString *tmpFilename = @"RGB3Frame.mvid";
+  NSString *tmpPath = [AVFileUtil getTmpDirPath:tmpFilename];
+  
+  if ([AVFileUtil fileExists:tmpPath]) {
+    BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+    NSAssert(worked, @"rm failed");
+  }
+  
+  AVAssetMixAlphaResourceLoader *loader = [AVAssetMixAlphaResourceLoader aVAssetMixAlphaResourceLoader];
+  loader.movieFilename = [fileURL path];
+  loader.outPath = tmpPath;
+  
+  [loader load];
+  
+  BOOL worked = [RegressionTests waitUntilTrue:loader
+                                      selector:@selector(isReady)
+                                   maxWaitTime:10.0];
+  NSAssert(worked, @"worked");
+  
+  BOOL decodeFrames = TRUE;
+  BOOL emitFrames = FALSE;
+  
+  if (decodeFrames) {
+    // Create MVID frame decoder and iterate over the frames in the mvid file.
+    // This will validate the emitted data via the adler checksum logic
+    // in the decoding process.
+    
+    AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+    
+    BOOL worked = [frameDecoder openForReading:tmpPath];
+    NSAssert(worked, @"worked");
+    
+    NSAssert([frameDecoder numFrames] == 3, @"numFrames");
+    
+    worked = [frameDecoder allocateDecodeResources];
+    NSAssert(worked, @"worked");
+    
+    AVFrame *frame;
+    UIImage *img;
+    NSData *data;
+    NSString *path;
+    
+    CGSize expectedSize = CGSizeMake(256, 256);
+    CGSize imgSize;
+    
+    frame = [frameDecoder advanceToFrame:0];
+    NSAssert(frame, @"frame 0");
+    img = frame.image;
+    
+    imgSize = img.size;
+    NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+    
+    if (emitFrames) {
+      path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame0.png"];
+      data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+      [data writeToFile:path atomically:YES];
+      NSLog(@"wrote %@", path);
+    }
+    
+    frame = [frameDecoder advanceToFrame:1];
+    NSAssert(frame, @"frame 1");
+    img = frame.image;
+    
+    imgSize = img.size;
+    NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+    
+    if (emitFrames) {
+      path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame1.png"];
+      data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+      [data writeToFile:path atomically:YES];
+      NSLog(@"wrote %@", path);
+    }
+    
+    frame = [frameDecoder advanceToFrame:2];
+    NSAssert(frame, @"frame 2");
+    img = frame.image;
+    
+    imgSize = img.size;
+    NSAssert(CGSizeEqualToSize(imgSize, expectedSize), @"size");
+    
+    if (emitFrames) {
+      path = [NSTemporaryDirectory() stringByAppendingPathComponent:@"frame2.png"];
+      data = [NSData dataWithData:UIImagePNGRepresentation(img)];
+      [data writeToFile:path atomically:YES];
+      NSLog(@"wrote %@", path);
+    }
+  }
   
   return;
 }

@@ -13,6 +13,8 @@
 		28AD733F0D9D9553002E5188 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 28AD733E0D9D9553002E5188 /* MainWindow.xib */; };
 		28D7ACF80DDB3853001CB0EB /* QTFileParserAppViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 28D7ACF70DDB3853001CB0EB /* QTFileParserAppViewController.m */; };
 		3C4CF8C41BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = 3C4CF8C31BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z */; settings = {ASSET_TAGS = (); }; };
+		3C4EF06C1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4EF06B1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m */; settings = {ASSET_TAGS = (); }; };
+		3C4EF06D1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4EF06B1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m */; settings = {ASSET_TAGS = (); }; };
 		3CD931231BF091C900322A2A /* RGB3Frame_mix.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CD931221BF091C900322A2A /* RGB3Frame_mix.m4v */; settings = {ASSET_TAGS = (); }; };
 		609172EA18BC79AF00BF3C3E /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 609172E918BC79AF00BF3C3E /* Default-568h@2x.png */; };
 		CD02DDA416A32B11008EB661 /* PremultiplyTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD02DDA316A32B11008EB661 /* PremultiplyTests.m */; };
@@ -368,6 +370,8 @@
 		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		32CA4F630368D1EE00C91783 /* QTFileParserApp_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = QTFileParserApp_Prefix.pch; sourceTree = "<group>"; };
 		3C4CF8C31BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = 480x320_black_blue_1LD_24BPP.mvid.7z; sourceTree = "<group>"; };
+		3C4EF06A1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAssetMixAlphaResourceLoader.h; sourceTree = "<group>"; };
+		3C4EF06B1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAssetMixAlphaResourceLoader.m; sourceTree = "<group>"; };
 		3CD931221BF091C900322A2A /* RGB3Frame_mix.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = RGB3Frame_mix.m4v; sourceTree = "<group>"; };
 		609172E918BC79AF00BF3C3E /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* QTFileParserApp-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "QTFileParserApp-Info.plist"; plistStructureDefinitionIdentifier = "com.apple.xcode.plist.structure-definition.iphone.info-plist"; sourceTree = "<group>"; };
@@ -975,6 +979,8 @@
 				CD70DF7A14F77F3F0029A381 /* AVAsset2MvidResourceLoader.m */,
 				CDC510E51692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.h */,
 				CDC510E61692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m */,
+				3C4EF06A1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.h */,
+				3C4EF06B1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m */,
 				CD93914F15F35B5000E1D7CC /* AVFrame.h */,
 				CD93915015F35B5000E1D7CC /* AVFrame.m */,
 				CD6198BD12CCFC640003AEAA /* AVFrameDecoder.h */,
@@ -1354,6 +1360,7 @@
 				CDECC75A12BC6CA6001A372F /* CGFrameBuffer.m in Sources */,
 				CDECC75D12BC6CBC001A372F /* AutoPropertyRelease.m in Sources */,
 				CD15C2D012BC9BDC00A26588 /* MovieControlsViewController.m in Sources */,
+				3C4EF06C1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m in Sources */,
 				CD83D5EE12CA547300A88ABA /* MovieControlsAdaptor.m in Sources */,
 				CD6198BF12CCFC640003AEAA /* AVFrameDecoder.m in Sources */,
 				CD7A02F012D261A900366AC6 /* AVAnimatorView.m in Sources */,
@@ -1410,6 +1417,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C4EF06D1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m in Sources */,
 				CD3F4E5812D8F4670067FDDF /* main.m in Sources */,
 				CD3F4E5912D8F4670067FDDF /* QTFileParserAppAppDelegate.m in Sources */,
 				CD3F4E5A12D8F4670067FDDF /* QTFileParserAppViewController.m in Sources */,
@@ -1502,7 +1510,7 @@
 				GCC_PREFIX_HEADER = QTFileParserApp_Prefix.pch;
 				GCC_THUMB_SUPPORT = NO;
 				INFOPLIST_FILE = "QTFileParserApp-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
 				OTHER_CFLAGS = "-DDEBUG=1";
 				PRODUCT_NAME = QTFileParserApp;
 			};
@@ -1519,7 +1527,7 @@
 				GCC_PREFIX_HEADER = QTFileParserApp_Prefix.pch;
 				GCC_THUMB_SUPPORT = NO;
 				INFOPLIST_FILE = "QTFileParserApp-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
 				PRODUCT_NAME = QTFileParserApp;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -1575,7 +1583,7 @@
 				GCC_THUMB_SUPPORT = NO;
 				INFOPLIST_FILE = "RegressionTests-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
-				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
 				OTHER_CFLAGS = (
 					"-DREGRESSION_TESTS",
 					"-DDEBUG=1",
@@ -1604,7 +1612,7 @@
 				GCC_THUMB_SUPPORT = NO;
 				INFOPLIST_FILE = "RegressionTests-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
-				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
 				OTHER_CFLAGS = "-DREGRESSION_TESTS";
 				OTHER_LDFLAGS = (
 					"-framework",
