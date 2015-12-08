@@ -673,6 +673,9 @@
 }
 
 -(void)_setAudioSessionCategory {
+#if defined(TARGET_OS_TV)
+	// kAudioSessionCategory_MediaPlayback removed from tvOS 9.1
+#else
 	// Define audio session as MediaPlayback, so that audio output is not silenced
 	// when the silent switch is set. This is a non-mixing mode, so any audio
 	// being played is silenced.
@@ -683,6 +686,7 @@
 	if (result != 0) {
 		NSLog(@"%@", [NSString stringWithFormat:@"AudioSessionSetProperty(kAudioSessionProperty_AudioCategory,kAudioSessionCategory_MediaPlayback) error : %d", (int)result]);
 	}
+#endif // TARGET_OS_TV
 }
 
 // Invoke this method to stop the animator and cancel all callbacks.
