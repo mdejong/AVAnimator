@@ -10,9 +10,7 @@
 #import <QuartzCore/QuartzCore.h>
 
 #import <AVFoundation/AVAudioPlayer.h>
-
-#import <AudioToolbox/AudioFile.h>
-#import "AudioToolbox/AudioServices.h"
+#import <AVFoundation/AVAudioSession.h>
 
 #import "CGFrameBuffer.h"
 #import "AVResourceLoader.h"
@@ -672,21 +670,19 @@
   return;
 }
 
--(void)_setAudioSessionCategory {
-#if defined(TARGET_OS_TV)
-	// kAudioSessionCategory_MediaPlayback removed from tvOS 9.1
-#else
-	// Define audio session as MediaPlayback, so that audio output is not silenced
-	// when the silent switch is set. This is a non-mixing mode, so any audio
-	// being played is silenced.
+- (void) _setAudioSessionCategory {
+  NSError *audioSessionError = nil;
   
-	UInt32 sessionCategory = kAudioSessionCategory_MediaPlayback;
-	OSStatus result =
-	AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(sessionCategory), &sessionCategory);
-	if (result != 0) {
-		NSLog(@"%@", [NSString stringWithFormat:@"AudioSessionSetProperty(kAudioSessionProperty_AudioCategory,kAudioSessionCategory_MediaPlayback) error : %d", (int)result]);
-	}
-#endif // TARGET_OS_TV
+  // Define audio session as AVAudioSessionCategoryPlayback, so that audio output is not silenced
+  // when the silent switch is set. This is a non-mixing mode, so any audio
+  // being played is silenced.
+  
+  NSString *theCategory = AVAudioSessionCategoryPlayback;
+  [[AVAudioSession sharedInstance] setCategory:theCategory error:&audioSessionError];
+  
+  if (audioSessionError) {
+    NSLog(@"%@", [NSString stringWithFormat:@"AVAudioSession.setCategory(%@) error : %ld : %@", theCategory, (long)audioSessionError.code, audioSessionError.localizedDescription]);
+  }
 }
 
 // Invoke this method to stop the animator and cancel all callbacks.
