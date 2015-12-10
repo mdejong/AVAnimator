@@ -1492,7 +1492,7 @@ SzArEx_DictCache_mmap(SzArEx_DictCache *dictCache)
   assert((mapSize % SM_PAGESIZE) == 0);
   dictCache->mapSize = mapSize;
   
-  if (1) {
+  if ((1)) {
     // Seek to the end of the file should create holes in file, but this
     // does not seem to create a writable mapping as the access at the
     // end of this function crashes.

@@ -2310,7 +2310,7 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample32) (
   //register uint32_t WR4;
   register uint32_t WR5;
   uint32_t oneConstRegister = 1;
-  if (0) { oneConstRegister += 0; } // silence warning
+  if ((0)) { oneConstRegister += 0; } // silence warning
 #endif // USE_INLINE_ARM_ASM
   
 #ifdef EXTRA_CHECKS

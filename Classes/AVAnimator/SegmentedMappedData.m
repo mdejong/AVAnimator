@@ -183,7 +183,7 @@
 
   // Calculate number of bytes in mapping in terms of whole pages
   
-  size_t osLength = len + osOffset;
+  size_t osLength = (size_t) (len + osOffset);
   
   size_t offsetToPageBound = SM_PAGESIZE - (osLength % SM_PAGESIZE);
   if (offsetToPageBound == SM_PAGESIZE) {
@@ -266,7 +266,7 @@
   NSAssert(self->m_mappedData != NULL, @"data not mapped");
   
   NSAssert(self->m_mappedOffset >= self->m_mappedOSOffset, @"os offset must be same or smaller than result offset");
-  NSUInteger offset = (self->m_mappedOffset - self->m_mappedOSOffset);
+  NSUInteger offset = (NSUInteger) (self->m_mappedOffset - self->m_mappedOSOffset);
   
   if (offset > 0) {
     char *ptr = (char*)self->m_mappedData;

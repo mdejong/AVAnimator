@@ -136,11 +136,10 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
     numpages++;
   }
   
-  kern_return_t ret;
-  mach_vm_size_t size = (mach_vm_size_t)(numpages * pagesize);
-  allocNumBytes = (size_t)size;
+  vm_size_t m_size = (vm_size_t)(numpages * pagesize);
+  allocNumBytes = (size_t)m_size;
   
-  ret = vm_allocate((vm_map_t) mach_task_self(), (vm_address_t*) &buffer, size, VM_FLAGS_ANYWHERE);
+  kern_return_t ret = vm_allocate((vm_map_t) mach_task_self(), (vm_address_t*) &buffer, m_size, VM_FLAGS_ANYWHERE);
   
   if (ret != KERN_SUCCESS) {
     buffer = NULL;
@@ -755,7 +754,7 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   // properly page aligned and that the number of bytes to
   // copy is an exact multiple of the page size.
   
-  size_t ptr = zeroCopyPtr;
+  size_t ptr = (size_t) zeroCopyPtr;
   size_t s = getpagesize();
   
   if ((ptr % s) != 0) {
