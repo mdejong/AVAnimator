@@ -82,6 +82,10 @@
 
 - (void) attachMedia:(AVAnimatorMedia*)inMedia
 {
+#if defined(DEBUG)
+  assert([NSThread currentThread] == [NSThread mainThread]);
+#endif // DEBUG
+  
   AVAnimatorMedia *currentMedia = self.mediaObj;
   
   if (currentMedia == inMedia) {
