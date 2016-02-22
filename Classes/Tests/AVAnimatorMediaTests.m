@@ -1013,4 +1013,106 @@
   return;
 }
 
+// Load video and then set the backwards playback flag. When
+// the backwards flag is set the first frame is still frame
+// zero and then the next frame is (N - 1).
+
++ (void) testBackwardsFlag
+{
+  id appDelegate = [[UIApplication sharedApplication] delegate];
+  UIWindow *window = [appDelegate window];
+  NSAssert(window, @"window");
+  
+  NSString *resourceName = @"2x2_16BPP_1FPS_3Frames_nop.mvid";
+  
+  // Create view that would be the render destination for the media
+  
+  CGRect frame = CGRectMake(0, 0, 480, 320);
+  AVAnimatorView *animatorView = [AVAnimatorView aVAnimatorViewWithFrame:frame];
+  
+  // Add the view to the containing window and visit the event loop so that the
+  // window system setup is complete.
+  
+  [window addSubview:animatorView];
+  NSAssert(animatorView.window != nil, @"not added to window");
+  
+  // Create Media object
+  
+  AVAnimatorMedia *media = [AVAnimatorMedia aVAnimatorMedia];
+  
+  // Create loader that will attempt to read the phone path from the filesystem
+  
+  AVAppResourceLoader *resLoader = [AVAppResourceLoader aVAppResourceLoader];
+  resLoader.movieFilename = resourceName;
+  media.resourceLoader = resLoader;
+  
+  // Create decoder that will generate frames from Quicktime Animation encoded data
+  
+  AVMvidFrameDecoder *frameDecoder = [AVMvidFrameDecoder aVMvidFrameDecoder];
+  media.frameDecoder = frameDecoder;
+  
+  media.animatorFrameDuration = 1.0;
+  
+  [media prepareToAnimate];
+  
+  // Wait for a moment to see if media object was loaded. Note that the
+  // isReadyToAnimate is TRUE when loading works. In this case, attaching
+  // the media to the view did not work, but that is not the same thing
+  // as failing to load.
+  
+  BOOL worked = [RegressionTests waitUntilTrue:media
+                                      selector:@selector(isReadyToAnimate)
+                                   maxWaitTime:0.5];
+  NSAssert(worked, @"worked");
+  
+  // The media should have been loaded, it would not have been attached to the view
+  // at this point.
+  
+  NSAssert(media.state == READY, @"media.state");
+  
+  NSAssert(animatorView.media == nil, @"animatorView connected to media");
+  NSAssert(media.renderer == nil, @"media connected to animatorView");
+  
+  [animatorView attachMedia:media];
+  
+  NSAssert(animatorView.media == media, @"animatorView not connected to media");
+  NSAssert(media.renderer == animatorView, @"media not connected to animatorView");
+  
+  // The media object should have sent a frame to the view as a result
+  // of the attachMedia call.
+  
+  AVFrame *avFrame1 = animatorView.frameObj;
+  UIImage *img1 = avFrame1.image;
+  
+  NSAssert(avFrame1, @"frame");
+  
+  // Invoking startAnimator for the media should not change the frame data
+  // since the media should be at frame zero already.
+  
+  media.reverse = TRUE;
+  
+  [media startAnimator];
+  
+  AVFrame *avFrame2 = animatorView.frameObj;
+  NSAssert(avFrame2, @"frame");
+  UIImage *img2 = avFrame2.image;
+  
+  // Calling startAnimator should not have changed the image object
+  
+  NSAssert(img1 == img2, @"frame changed by startAnimator");
+  
+  // Frame 2 corresponds to (3 - 2 - 1) = 0
+  
+  [RegressionTests waitFor:2.5];
+  
+  int decoderFrameNum = (int) [frameDecoder frameIndex];
+  NSAssert(decoderFrameNum == 0, @"frame offset");
+  
+  [media stopAnimator];
+  
+  [animatorView removeFromSuperview];
+  
+  return;
+}
+
 @end // AVAnimatorMediaTests

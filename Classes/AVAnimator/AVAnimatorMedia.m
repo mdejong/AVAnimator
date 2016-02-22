@@ -123,6 +123,7 @@
 @synthesize ignoreRepeatedFirstFrameReport = m_ignoreRepeatedFirstFrameReport;
 @synthesize decodedLastFrame = m_decodedLastFrame;
 @synthesize reportTimeFromFallbackClock;
+@synthesize reverse = m_reverse;
 
 - (void) dealloc {
 	// This object can't be deallocated while animating, this could
@@ -654,6 +655,13 @@
     
   // There should be no display timer at this point
   NSAssert(self.animatorDisplayTimer == nil, @"animatorDisplayTimer");
+  
+  // If the reverse flag is set, verify that the deoder supports
+  // random access.
+  
+  if (self.reverse) {
+    NSAssert(self.frameDecoder.isAllKeyframes == true, @"media.reverse flag set for decoder that does not support random frame access");
+  }
   
   // Display the initial frame right away. The initial frame callback logic
   // will decode the second frame when the clock starts running, but the
@@ -1498,8 +1506,18 @@
   @autoreleasepool {
   
   AVFrameDecoder *decoder = self.frameDecoder;
-      
-  AVFrame *frame = [decoder advanceToFrame:nextFrameNum];
+  
+  int actualFrameNum = (int) nextFrameNum;
+  if (self.reverse) {
+    actualFrameNum = (int)self.frameDecoder.numFrames - 1 - (int)nextFrameNum;
+    //NSLog(@"reverse : nextFrameNum %d : actualFrameNum %d", (int)nextFrameNum, (int)actualFrameNum);
+    
+    [decoder rewind];
+  } else {
+    //NSLog(@"nextFrameNum %d : actualFrameNum %d", (int)nextFrameNum, (int)actualFrameNum);
+  }
+  
+  AVFrame *frame = [decoder advanceToFrame:actualFrameNum];
       
   //NSLog(@"decoded frame %@", frame);
   

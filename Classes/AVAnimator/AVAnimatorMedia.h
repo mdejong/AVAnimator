@@ -147,6 +147,8 @@ typedef enum AVAnimatorPlayerState {
 	// in this case.
   
 	BOOL reportTimeFromFallbackClock;
+  
+	BOOL m_reverse;
 }
 
 // public properties
@@ -158,6 +160,11 @@ typedef enum AVAnimatorPlayerState {
 @property (nonatomic, assign) NSUInteger animatorNumFrames;
 
 @property (nonatomic, assign) NSUInteger animatorRepeatCount;
+
+// Set this property to TRUE to play the media backwards.
+// Note that the decoder must support random access.
+
+@property (nonatomic, assign) BOOL reverse;
 
 // TRUE when the animator has an audio track. This property is not set until the
 // resource loaded is done loading and AVAnimatorPreparedToAnimateNotification
