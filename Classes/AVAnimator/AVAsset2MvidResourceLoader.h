@@ -12,6 +12,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <CoreGraphics/CoreGraphics.h>
+
 #import "AVAppResourceLoader.h"
 
 #import "AVAssetConvertCommon.h"
@@ -22,12 +24,15 @@
   NSString *m_outPath;
   BOOL m_alwaysGenerateAdler;
   BOOL startedLoading;
+  CGSize m_movieSize;
 }
 
 // The fully qualified filename for the extracted data. For example: "XYZ.mvid"
 @property (nonatomic, copy) NSString *outPath;
 
 @property (nonatomic, assign) BOOL alwaysGenerateAdler;
+
+@property (nonatomic, assign) CGSize movieSize;
 
 + (AVAsset2MvidResourceLoader*) aVAsset2MvidResourceLoader;
 

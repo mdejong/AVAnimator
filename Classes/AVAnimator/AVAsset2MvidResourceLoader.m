@@ -18,6 +18,7 @@
 
 @synthesize outPath = m_outPath;
 @synthesize alwaysGenerateAdler = m_alwaysGenerateAdler;
+@synthesize movieSize = m_movieSize;
 
 + (AVAsset2MvidResourceLoader*) aVAsset2MvidResourceLoader
 {
@@ -45,15 +46,19 @@
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
   @autoreleasepool {
   
-  NSAssert([arr count] == 5, @"arr count");
+  NSAssert([arr count] == 7, @"arr count");
   
-  // Pass 5 arguments : ASSET_PATH PHONY_PATH TMP_PATH SERIAL ADLER
+  // Pass 5 arguments : ASSET_PATH PHONY_PATH TMP_PATH SERIAL ADLER RENDER_WIDTH RENDER_HEIGHT
   
   NSString *assetPath = [arr objectAtIndex:0];
   NSString *phonyOutPath = [arr objectAtIndex:1];
   NSString *outPath = [arr objectAtIndex:2];
   NSNumber *serialLoadingNum = [arr objectAtIndex:3];
   NSNumber *alwaysGenerateAdler = [arr objectAtIndex:4];
+  NSNumber *renderWidthNum = [arr objectAtIndex:5];
+  NSNumber *renderHeightNum = [arr objectAtIndex:6];
+    
+  CGSize renderSize = CGSizeMake([renderWidthNum intValue], [renderHeightNum intValue]);
   
   if ([serialLoadingNum boolValue]) {
     [self grabSerialResourceLoaderLock];
@@ -79,6 +84,7 @@
     AVAssetReaderConvertMaxvid *obj = [AVAssetReaderConvertMaxvid aVAssetReaderConvertMaxvid];
     obj.assetURL = [NSURL fileURLWithPath:assetPath];
     obj.mvidPath = phonyOutPath;
+    obj.movieSize = renderSize;
     
     if ([alwaysGenerateAdler intValue]) {
       obj.genAdler = TRUE;
@@ -117,8 +123,11 @@
   NSNumber *genAdlerNum = [NSNumber numberWithInt:genAdler];
   NSAssert(genAdlerNum != nil, @"genAdlerNum");
   
-  NSArray *arr = [NSArray arrayWithObjects:assetPath, phonyOutPath, outPath, serialLoadingNum, genAdlerNum, nil];
-  NSAssert([arr count] == 5, @"arr count");
+  int renderWidth = self.movieSize.width;
+  int renderHeight = self.movieSize.height;
+  
+  NSArray *arr = [NSArray arrayWithObjects:assetPath, phonyOutPath, outPath, serialLoadingNum, genAdlerNum, @(renderWidth), @(renderHeight), nil];
+  NSAssert([arr count] == 7, @"arr count");
   
   [NSThread detachNewThreadSelector:@selector(decodeThreadEntryPoint:) toTarget:self.class withObject:arr];  
 }
