@@ -50,7 +50,11 @@
 - (off_t) paddingAfterKeyframe:(FILE*)outFile offset:(off_t)_offset
 {
 #if defined(DEBUG)
-  assert((_offset % 4) == 0);
+  if (self.genV3PageOffsetBlocks) {
+    // Nop
+  } else {
+    assert((_offset % 4) == 0);
+  }
 #endif // DEBUG
   
   const uint32_t boundSize = MV_PAGESIZE;
@@ -58,6 +62,18 @@
   assert(bytesToBound >= 0 && bytesToBound <= boundSize);
   
   bytesToBound = boundSize - bytesToBound;
+  
+  if (self.genV3PageOffsetBlocks) {
+    uint32_t nBytesToWordBound = bytesToBound % sizeof(uint32_t);
+    uint8_t zeroByte = 0;
+    while (nBytesToWordBound != 0) {
+      size_t size = fwrite(&zeroByte, sizeof(zeroByte), 1, outFile);
+      assert(size == 1);
+      nBytesToWordBound--;
+      bytesToBound--;
+    }
+  }
+  
   uint32_t wordsToBound = bytesToBound >> 2;
   wordsToBound &= ((MV_PAGESIZE >> 2) - 1);
   
@@ -67,6 +83,8 @@
     assert(wordsToBound < (boundSize / 4));
   }
 #endif // DEBUG
+  
+  // write aligned words
   
   uint32_t zero = 0;
   while (wordsToBound != 0) {
@@ -570,6 +588,11 @@
   uint32_t length = (uint32_t) lengthOff;
   NSAssert(length > 0, @"length must be larger than zero");
   
+  if (self.genV3PageOffsetBlocks) {
+    // Allow byte or half byte segment length with v3
+    return length;
+  }
+  
   // Typically, the framebuffer is an even number of pixels.
   // There is an odd case though, when emitting 16 bit pixels
   // is is possible that the total number of pixels written
@@ -588,11 +611,7 @@
       assert(size == 1);
       offset = ftello(maxvidOutFile);
       NSAssert(offset != -1, @"ftello returned -1");
-      if (self.genV3PageOffsetBlocks) {
-        // nop
-      } else {
-        NSAssert(offset < 0xFFFFFFFF, @"ftello offset must fit into 32 bits, got %qd", offset);
-      }
+      NSAssert(offset < 0xFFFFFFFF, @"ftello offset must fit into 32 bits, got %qd", offset);
       // Note that length is not recalculated. If a delta frame appears after this
       // one, it must begin on a word bound. The frame length ignores the halfword padding.
       //length = ...;

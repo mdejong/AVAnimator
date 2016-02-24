@@ -729,7 +729,7 @@
       uint32_t *inputBuffer32 = NULL;
       
       NSRange range;
-      range.location = frameStartOffset; // 64 bit
+      range.location = (NSUInteger) frameStartOffset; // 64 bit
       range.length = inputBuffer32NumBytes;
   
       SegmentedMappedData *mappedSeg = [self.mappedData subdataWithRange:range];
