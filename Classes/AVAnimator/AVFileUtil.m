@@ -77,13 +77,24 @@
 + (void) renameFile:(NSString*)path toPath:(NSString*)toPath
 {
   // The temp filename holding the maxvid data is now completely written, rename it to "XYZ.mvid"
+ 
+  NSError *error = nil;
+  BOOL worked;
   
   if ([[NSFileManager defaultManager] fileExistsAtPath:toPath]) {
-    [[NSFileManager defaultManager] removeItemAtPath:toPath error:NULL];
+    worked = [[NSFileManager defaultManager] removeItemAtPath:toPath error:&error];
+    NSAssert(worked, @"removeItemAtPath failed : %@", error);
   }
   
-  NSError *error = nil;
-  BOOL worked = [[NSFileManager defaultManager] moveItemAtPath:path toPath:toPath error:&error];
+#if defined(DEBUG)
+  BOOL existedBefore = [[NSFileManager defaultManager] fileExistsAtPath:path];
+  NSAssert(existedBefore, @"src file does not exist : %@", path);
+  BOOL existedToToPathBefore = [[NSFileManager defaultManager] fileExistsAtPath:toPath];
+  NSAssert(existedToToPathBefore == FALSE, @"dst file must not exist : %@", toPath);
+#endif // DEBUG
+  
+  error = nil;
+  worked = [[NSFileManager defaultManager] moveItemAtPath:path toPath:toPath error:&error];
   if (!worked) {
     BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:path];
     NSAssert(exists, @"src file does not exist : %@", path);
