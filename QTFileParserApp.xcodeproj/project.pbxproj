@@ -12,10 +12,11 @@
 		2899E5220DE3E06400AC0155 /* QTFileParserAppViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 2899E5210DE3E06400AC0155 /* QTFileParserAppViewController.xib */; };
 		28AD733F0D9D9553002E5188 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 28AD733E0D9D9553002E5188 /* MainWindow.xib */; };
 		28D7ACF80DDB3853001CB0EB /* QTFileParserAppViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 28D7ACF70DDB3853001CB0EB /* QTFileParserAppViewController.m */; };
-		3C4CF8C41BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = 3C4CF8C31BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z */; settings = {ASSET_TAGS = (); }; };
-		3C4EF06C1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4EF06B1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m */; settings = {ASSET_TAGS = (); }; };
-		3C4EF06D1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4EF06B1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m */; settings = {ASSET_TAGS = (); }; };
-		3CD931231BF091C900322A2A /* RGB3Frame_mix.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CD931221BF091C900322A2A /* RGB3Frame_mix.m4v */; settings = {ASSET_TAGS = (); }; };
+		3C4CF8C41BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = 3C4CF8C31BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z */; };
+		3C4EF06C1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4EF06B1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m */; };
+		3C4EF06D1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4EF06B1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m */; };
+		3C9A845C1C7E255200977CD3 /* AVMvidFileWriterTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C9A845B1C7E255200977CD3 /* AVMvidFileWriterTests.m */; };
+		3CD931231BF091C900322A2A /* RGB3Frame_mix.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CD931221BF091C900322A2A /* RGB3Frame_mix.m4v */; };
 		609172EA18BC79AF00BF3C3E /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 609172E918BC79AF00BF3C3E /* Default-568h@2x.png */; };
 		CD02DDA416A32B11008EB661 /* PremultiplyTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD02DDA316A32B11008EB661 /* PremultiplyTests.m */; };
 		CD0ACF29136F927300A203DF /* AV7zApng2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD0ACF28136F927300A203DF /* AV7zApng2MvidResourceLoader.m */; };
@@ -372,6 +373,7 @@
 		3C4CF8C31BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = 480x320_black_blue_1LD_24BPP.mvid.7z; sourceTree = "<group>"; };
 		3C4EF06A1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAssetMixAlphaResourceLoader.h; sourceTree = "<group>"; };
 		3C4EF06B1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAssetMixAlphaResourceLoader.m; sourceTree = "<group>"; };
+		3C9A845B1C7E255200977CD3 /* AVMvidFileWriterTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVMvidFileWriterTests.m; sourceTree = "<group>"; };
 		3CD931221BF091C900322A2A /* RGB3Frame_mix.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = RGB3Frame_mix.m4v; sourceTree = "<group>"; };
 		609172E918BC79AF00BF3C3E /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* QTFileParserApp-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "QTFileParserApp-Info.plist"; plistStructureDefinitionIdentifier = "com.apple.xcode.plist.structure-definition.iphone.info-plist"; sourceTree = "<group>"; };
@@ -826,6 +828,7 @@
 				CD1B207C1793283400D83D28 /* MaxvidEncodeDecodeTests.m */,
 				CD5E3C57162335A4002D7374 /* ColorspaceTests.m */,
 				CD02DDA316A32B11008EB661 /* PremultiplyTests.m */,
+				3C9A845B1C7E255200977CD3 /* AVMvidFileWriterTests.m */,
 				CD8265DE1364D5EE00640B94 /* 2x2_black_blue_16BPP.mvid */,
 				CDD641691687B6E500492B80 /* 2x2_black_blue_24BPP.mvid */,
 				CDD6416A1687B6E600492B80 /* 2x2_black_blue_32BPP.mvid */,
@@ -1475,6 +1478,7 @@
 				CDAD8C1C1527965B0089206E /* AVOfflineComposition.m in Sources */,
 				CDAD8C2B15279C130089206E /* AVOfflineCompositionTests.m in Sources */,
 				CDF00A0315AA482C00C654E2 /* AVAssetWriterConvertFromMaxvid.m in Sources */,
+				3C9A845C1C7E255200977CD3 /* AVMvidFileWriterTests.m in Sources */,
 				CDE2B85615B27F450071E2BB /* H264EncoderDecoderTests.m in Sources */,
 				CD93915215F35B5000E1D7CC /* AVFrame.m in Sources */,
 				CD78DC9015F50636007D3EFF /* maxvid_encode.m in Sources */,
