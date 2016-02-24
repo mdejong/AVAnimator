@@ -686,15 +686,49 @@
       }
 # endif // TARGET_OS_IPHONE
 #endif // EXTRA_CHECKS
+      
+      // Calculate offset where frame starts and length of frame
+      off_t frameStartOffset;
+      uint32_t inputBuffer32NumBytes;
+      
+      MVFileHeader *header = [self header];
+      
+      if (maxvid_file_version(header) == MV_FILE_VERSION_THREE) {
+        // File offset and length stored as number of pages
+        
+        frameStartOffset = maxvid_frame_offset(frame);
+        frameStartOffset *= MV_PAGESIZE;
+        
+#if defined(DEBUG)
+        uint32_t numPages = maxvid_frame_length(frame);
+        off_t totalNumBytes = (off_t)numPages * MV_PAGESIZE;
+#endif // DEBUG
+        
+        off_t actualNumBytes;
+        if (bpp == 16) {
+          actualNumBytes = header->width * header->height * sizeof(uint16_t);
+        } else {
+          actualNumBytes = header->width * header->height * sizeof(uint32_t);
+        }
+        
+#if defined(DEBUG)
+        assert(totalNumBytes >= actualNumBytes);
+        assert(totalNumBytes < 0xFFFFFFFF);
+#endif // DEBUG
+        
+        inputBuffer32NumBytes = (uint32_t) actualNumBytes;
+      } else {
+        frameStartOffset = maxvid_frame_offset(frame);
+        inputBuffer32NumBytes = maxvid_frame_length(frame);
+      }
 
 #if defined(USE_SEGMENTED_MMAP)
       // Create a mapped segment using the frame offset and length for this frame.
 
       uint32_t *inputBuffer32 = NULL;
-      uint32_t inputBuffer32NumBytes = maxvid_frame_length(frame);
       
       NSRange range;
-      range.location = maxvid_frame_offset(frame);
+      range.location = frameStartOffset; // 64 bit
       range.length = inputBuffer32NumBytes;
   
       SegmentedMappedData *mappedSeg = [self.mappedData subdataWithRange:range];
@@ -722,8 +756,7 @@
       
       NSData *mappedDataObj = mappedSeg;
 #else
-      uint32_t *inputBuffer32 = (uint32_t*) (mappedPtr + maxvid_frame_offset(frame));
-      uint32_t inputBuffer32NumBytes = maxvid_frame_length(frame);
+      uint32_t *inputBuffer32 = (uint32_t*) (mappedPtr + frameStartOffset);
       NSData *mappedDataObj = self.mappedData;
         
 #if defined(REGRESSION_TESTS)

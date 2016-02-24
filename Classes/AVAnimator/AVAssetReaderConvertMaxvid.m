@@ -54,6 +54,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
 + (AVAssetReaderConvertMaxvid*) aVAssetReaderConvertMaxvid
 {
   AVAssetReaderConvertMaxvid *obj = [[AVAssetReaderConvertMaxvid alloc] init];
+  obj.genV3PageOffsetBlocks = TRUE; // enable extended file size out to 64bit offsets
 #if __has_feature(objc_arc)
   return obj;
 #else

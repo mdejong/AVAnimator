@@ -1081,6 +1081,8 @@ CF_RETURNS_RETAINED
   AVMvidFileWriter *fileWriter = [AVMvidFileWriter aVMvidFileWriter];
   NSAssert(fileWriter, @"fileWriter");
   
+  fileWriter.genV3PageOffsetBlocks = TRUE;
+  
   fileWriter.mvidPath = phonyOutPath;
   fileWriter.bpp = 24;
   fileWriter.movieSize = CGSizeMake(scaledWidth, scaledHeight);

@@ -252,6 +252,8 @@
   AVMvidFileWriter *fileWriter = [AVMvidFileWriter aVMvidFileWriter];
   NSAssert(fileWriter, @"fileWriter");
   
+  fileWriter.genV3PageOffsetBlocks = TRUE;
+  
   fileWriter.mvidPath = joinedMvidPath;
   fileWriter.bpp = 32;
   // Note that we don't know the movie size until the first frame is read

@@ -55,6 +55,15 @@
 
 @property (nonatomic, assign) BOOL          isAllKeyframes;
 
+// Set this property to TRUE when a generated V3 file
+// that contains compressed data blocks at known page
+// offsets should be generated. This type of file need
+// not be memory mapped and it can support much larger
+// sizes that previous versions since all frame sizes
+// are implicitly stored as page offsets.
+
+@property (nonatomic, assign) BOOL          genV3PageOffsetBlocks;
+
 #if MV_ENABLE_DELTAS
 
 // FALSE by default, if the mvid file was created with the

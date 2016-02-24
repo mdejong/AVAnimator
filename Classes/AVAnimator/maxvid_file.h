@@ -41,11 +41,16 @@
 
 // These constants define .mvid file revision constants. For example, AVAnimator 1.0
 // versions made use of the value 0, while AVAnimator 2.0 now emits files with the
-// version set to 1.
+// version set to 1. AVAnimator 3.0 make use of version 3. The special case of
+// MV_FILE_VERSION_THREE is used only for the case of a runtime generated file
+// that contains blocks of encoded data that could be larger than 32bit limit
+// of 2 gigs. The file offset is written as the number of pages, as opposed to
+// the byte offset.
 
 #define MV_FILE_VERSION_ZERO 0
 #define MV_FILE_VERSION_ONE 1
 #define MV_FILE_VERSION_TWO 2
+#define MV_FILE_VERSION_THREE 3
 
 // A maxvid file is an "in memory" representation of video data that has been
 // written to a file. The data is always in the native endian format.

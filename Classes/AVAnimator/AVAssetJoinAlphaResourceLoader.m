@@ -256,6 +256,7 @@
   fileWriter.mvidPath = joinedMvidPath;
   fileWriter.bpp = 32;
   // Note that we don't know the movie size until the first frame is read
+  fileWriter.genV3PageOffsetBlocks = TRUE;
   
   fileWriter.frameDuration = frameRate;
   fileWriter.totalNumFrames = (int) numFrames;

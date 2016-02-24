@@ -237,6 +237,8 @@
   avMvidFileWriter.frameDuration = frameDecoder.frameDuration;
   avMvidFileWriter.totalNumFrames = (int) frameDecoder.numFrames;
   
+  avMvidFileWriter.genV3PageOffsetBlocks = TRUE;
+  
   avMvidFileWriter.movieSize = CGSizeMake(frameDecoder.width, frameDecoder.height);
   
 #if defined(DEBUG)
