@@ -694,26 +694,27 @@
       MVFileHeader *header = [self header];
       
       if (maxvid_file_version(header) == MV_FILE_VERSION_THREE) {
-        // File offset and length stored as number of pages
+        // File offset stored as number of MV_PAGESIZE, frame length is zero.
         
         frameStartOffset = maxvid_frame_offset(frame);
         frameStartOffset *= MV_PAGESIZE;
         
-#if defined(DEBUG)
-        uint32_t numPages = maxvid_frame_length(frame);
-        off_t totalNumBytes = (off_t)numPages * MV_PAGESIZE;
-#endif // DEBUG
+        // The frame length must be zero with V3.
+        uint32_t numBytes = maxvid_frame_length(frame);
+        assert(numBytes == 0);
         
         off_t actualNumBytes;
         if (bpp == 16) {
           actualNumBytes = header->width * header->height * sizeof(uint16_t);
+          if ((actualNumBytes % sizeof(uint32_t)) != 0) {
+            actualNumBytes += sizeof(uint16_t);
+          }
         } else {
           actualNumBytes = header->width * header->height * sizeof(uint32_t);
         }
         
 #if defined(DEBUG)
-        assert(totalNumBytes >= actualNumBytes);
-        assert(totalNumBytes < 0xFFFFFFFF);
+        assert(actualNumBytes < 0xFFFFFFFF);
 #endif // DEBUG
         
         inputBuffer32NumBytes = (uint32_t) actualNumBytes;

@@ -365,25 +365,40 @@
         
     NSAssert(frameNum < self.totalNumFrames, @"totalNumFrames");
     
+    NSAssert(length == bufferSize, @"length");
+    
     MVFrame *mvFrame = &mvFramesArray[frameNum];
     
     if (self.genV3PageOffsetBlocks) {
-      // Write the total number of whole memory pages. Note that
-      // in the case of writing uncompressed pixels the decoder
-      // will be able to figure out the exact actual width
-      // by calculating the number of bytes in the frame.
+      // If the length of the data segment exactly matches the
+      // number of pixels * size of pixel then set the length
+      // to zero so that the decoder can simply assume the
+      // dimensions.
       
-      uint32_t numPages = length / MV_PAGESIZE;
+      uint32_t expectedNumBytes;
       
-      if ((length % MV_PAGESIZE) != 0) {
-        numPages++;
+      if (self.bpp == 16) {
+        expectedNumBytes = self.movieSize.width * self.movieSize.height * sizeof(uint16_t);
+        if ((expectedNumBytes % sizeof(uint32_t)) != 0) {
+          expectedNumBytes += sizeof(uint16_t);
+        }
+      } else {
+        expectedNumBytes = self.movieSize.width * self.movieSize.height * sizeof(uint32_t);
       }
       
+      if (length == expectedNumBytes) {
 #ifdef LOGGING
-      NSLog(@"writeKeyframe %d : bufferSize %d will be written as %d pages", frameNum, bufferSize, numPages);
+        NSLog(@"writeKeyframe %d : bufferSize %d will be written as zero implicit value", frameNum, bufferSize);
 #endif // LOGGING
-      
-      length = numPages;
+        
+        length = 0;
+      } else {
+        // Use passed in length as num bytes
+        
+#ifdef LOGGING
+        NSLog(@"writeKeyframe %d : bufferSize %d will be written as %d num bytes", frameNum, bufferSize, bufferSize);
+#endif // LOGGING
+      }
     }
     
     maxvid_frame_setlength(mvFrame, length);
