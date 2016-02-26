@@ -118,13 +118,13 @@
 {
   CGSize containerSize;
     
-  CGRect mainScreenFrame = [UIScreen mainScreen].applicationFrame;
+  CGRect mainScreenBounds = [UIScreen mainScreen].bounds;
   
   if (portraitMode) {
-    containerSize = mainScreenFrame.size;
+    containerSize = mainScreenBounds.size;
   } else {
-    containerSize.width = mainScreenFrame.size.height;
-    containerSize.height = mainScreenFrame.size.width;
+    containerSize.width = mainScreenBounds.size.height;
+    containerSize.height = mainScreenBounds.size.width;
   }
   
   return containerSize;
@@ -619,7 +619,7 @@
 // a main window.
 
 - (void)loadViewImpl {
-	CGRect frame = [UIScreen mainScreen].applicationFrame;
+  CGRect mainScreenBounds = [UIScreen mainScreen].bounds;
 
 	// MovieControls defaults to full screen landscape mode. If the special portraitMode
   // flag is set before the window is set, then the controls are show in portrait mode.
@@ -628,18 +628,18 @@
   CGSize containerSize = [self _containerSize];
   
   if (portraitMode) {
-    if (frame.size.width != containerSize.width || frame.size.height != containerSize.height) {
+    if (mainScreenBounds.size.width != containerSize.width || mainScreenBounds.size.height != containerSize.height) {
       NSAssert(FALSE, @"movie controls can only be displayed at full screen resolution");
     }    
   } else {
-    if (frame.size.width != containerSize.height || frame.size.height != containerSize.width) {
+    if (mainScreenBounds.size.width != containerSize.height || mainScreenBounds.size.height != containerSize.width) {
       NSAssert(FALSE, @"movie controls can only be displayed at full screen resolution");
     }    
   }
 
 	// Create controls overlay with landscape dimensions
 
-	frame = CGRectMake(0, 0, containerSize.width, containerSize.height);
+	CGRect frame = CGRectMake(0, 0, containerSize.width, containerSize.height);
 
   // overlaySubview completely covers self.view and contains
   // all the movie control widgets.

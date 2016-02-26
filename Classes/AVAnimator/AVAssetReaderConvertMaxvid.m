@@ -169,7 +169,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
                                              bpp:self.bpp
                                        algorithm:COMPRESSION_LZ4];
     
-    int src_size = bufferSize;
+    //int src_size = bufferSize;
     assert(mEncodedData.length < 0xFFFFFFFF);
     int dst_size = (int) mEncodedData.length;
     

@@ -101,7 +101,10 @@
   for ( NSURL* url in urls ) {
     NSData *data;
     if ([url isFileURL]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
       data = [NSData dataWithContentsOfMappedFile:[url path]];
+#pragma clang diagnostic pop
     } else {
       data = [NSData dataWithContentsOfURL:url];
     }

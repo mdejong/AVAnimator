@@ -186,11 +186,11 @@
   if (1) {
     // Compare extracted file data to identical data attached as a project resource
     
-    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSData *wroteMvidData = [NSData dataWithContentsOfFile:outPath];
     NSAssert(wroteMvidData, @"could not map .mov data");
     
     NSString *resPath = [AVFileUtil getResourcePath:entryFilename];
-    NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
+    NSData *resMvidData = [NSData dataWithContentsOfFile:resPath];
     NSAssert(resMvidData, @"could not map .mov data");
     
     uint32_t resByteLength = (uint32_t) [resMvidData length];
@@ -245,11 +245,11 @@
   if (1) {
     // Compare generated mvid file data to identical data attached as a project resource
     
-    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSData *wroteMvidData = [NSData dataWithContentsOfFile:outPath];
     NSAssert(wroteMvidData, @"could not map .mov data");
     
     NSString *resPath = [AVFileUtil getResourcePath:outFilename];
-    NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
+    NSData *resMvidData = [NSData dataWithContentsOfFile:resPath];
     NSAssert(resMvidData, @"could not map .mov data");
     
     uint32_t resByteLength   = (uint32_t) [resMvidData length];
@@ -1470,11 +1470,11 @@
   if (1) {
     // Compare extracted file data to identical data attached as a project resource
     
-    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSData *wroteMvidData = [NSData dataWithContentsOfFile:outPath];
     NSAssert(wroteMvidData, @"could not map .mvid data");
     
     NSString *resPath = [AVFileUtil getResourcePath:entryFilename];
-    NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
+    NSData *resMvidData = [NSData dataWithContentsOfFile:resPath];
     NSAssert(resMvidData, @"could not map .mvid data");
     
     uint32_t resByteLength   = (uint32_t) [resMvidData length];
@@ -1555,11 +1555,11 @@
   if (1) {
     // Compare generated mvid file data to identical data attached as a project resource
     
-    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSData *wroteMvidData = [NSData dataWithContentsOfFile:outPath];
     NSAssert(wroteMvidData, @"could not map .mvid data");
     
     NSString *resPath = [AVFileUtil getResourcePath:outFilename];
-    NSData *resMvidData = [NSData dataWithContentsOfMappedFile:resPath];
+    NSData *resMvidData = [NSData dataWithContentsOfFile:resPath];
     NSAssert(resMvidData, @"could not map .mvid data");
     
     uint32_t resByteLength   = (uint32_t) [resMvidData length];
@@ -1651,7 +1651,7 @@
   if (1) {
     // Compare generated mvid file data to identical data attached as a project resource
     
-    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSData *wroteMvidData = [NSData dataWithContentsOfFile:outPath];
     NSAssert(wroteMvidData, @"could not map .mvid data");
     
     NSAssert([wroteMvidData length] == 49152, @"length mismatch");
@@ -1740,7 +1740,7 @@
   if (1) {
     // Compare generated mvid file data to identical data attached as a project resource
     
-    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:outPath];
+    NSData *wroteMvidData = [NSData dataWithContentsOfFile:outPath];
     NSAssert(wroteMvidData, @"could not map .mvid data");
     
     NSAssert([wroteMvidData length] == 49152, @"length mismatch");
@@ -1780,7 +1780,7 @@
     NSAssert([resourcePathsArr count] == 1, @"expected 1 resource paths");
     NSString *videoPath = [resourcePathsArr objectAtIndex:0];
     
-    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:videoPath];
+    NSData *wroteMvidData = [NSData dataWithContentsOfFile:videoPath];
     
     char *mvidBytes = (char*) [wroteMvidData bytes];
     
@@ -1816,7 +1816,7 @@
     NSAssert([resourcePathsArr count] == 1, @"expected 1 resource paths");
     NSString *videoPath = [resourcePathsArr objectAtIndex:0];
     
-    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:videoPath];
+    NSData *wroteMvidData = [NSData dataWithContentsOfFile:videoPath];
     
     char *mvidBytes = (char*) [wroteMvidData bytes];
     
@@ -1860,7 +1860,7 @@
     NSAssert([resourcePathsArr count] == 1, @"expected 1 resource paths");
     NSString *videoPath = [resourcePathsArr objectAtIndex:0];
     
-    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:videoPath];
+    NSData *wroteMvidData = [NSData dataWithContentsOfFile:videoPath];
     
     char *mvidBytes = (char*) [wroteMvidData bytes];
     
@@ -1905,7 +1905,7 @@
     NSAssert([resourcePathsArr count] == 1, @"expected 1 resource paths");
     NSString *videoPath = [resourcePathsArr objectAtIndex:0];
     
-    NSData *wroteMvidData = [NSData dataWithContentsOfMappedFile:videoPath];
+    NSData *wroteMvidData = [NSData dataWithContentsOfFile:videoPath];
     
     char *mvidBytes = (char*) [wroteMvidData bytes];
     
