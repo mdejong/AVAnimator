@@ -689,15 +689,12 @@
 # endif // TARGET_OS_IPHONE
 #endif // EXTRA_CHECKS
       
-#if defined(HAS_LIB_COMPRESSION_API)
       int isCompressedFrame = 0;
-#endif // HAS_LIB_COMPRESSION_API
       
       // Calculate offset where frame starts and length of frame
       off_t frameStartOffset;
       uint32_t inputBuffer32NumBytes;
       
-#if defined(HAS_LIB_COMPRESSION_API)
       MVFileHeader *header = [self header];
       
       if (maxvid_file_version(header) == MV_FILE_VERSION_THREE) {
@@ -712,7 +709,11 @@
         if (numBytes == 0) {
           isCompressedFrame = 0;
         } else {
+#if defined(HAS_LIB_COMPRESSION_API)
           isCompressedFrame = 1;
+#else
+          assert(0);
+#endif // HAS_LIB_COMPRESSION_API
         }
         
         if (!isCompressedFrame) {
@@ -737,9 +738,7 @@
           
           inputBuffer32NumBytes = numBytes;
         }
-      } else
-#endif // HAS_LIB_COMPRESSION_API
-      {
+      } else {
         frameStartOffset = maxvid_frame_offset(frame);
         inputBuffer32NumBytes = maxvid_frame_length(frame);
       }
