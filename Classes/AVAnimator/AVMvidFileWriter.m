@@ -366,8 +366,13 @@
 
 - (BOOL) writeKeyframe:(char*)ptr bufferSize:(int)bufferSize
 {
+  return [self writeKeyframe:ptr bufferSize:bufferSize adler:0];
+}
+
+- (BOOL) writeKeyframe:(char*)ptr bufferSize:(int)bufferSize adler:(uint32_t)adler
+{
 #ifdef LOGGING
-  NSLog(@"writeKeyframe %d : bufferSize %d", frameNum, bufferSize);
+  NSLog(@"writeKeyframe %d : bufferSize %d : adler %08X", frameNum, bufferSize, adler);
 #endif // LOGGING
   
   [self skipToNextPageBound];
@@ -424,7 +429,10 @@
     // Generate adler32 for pixel data and save into frame data
     
     if (self.genAdler) {
-      mvFrame->adler = maxvid_adler32(0, (unsigned char*)ptr, bufferSize);
+      if (adler == 0) {
+        mvFrame->adler = maxvid_adler32(0, (unsigned char*)ptr, bufferSize);
+      }
+      mvFrame->adler = adler;
       assert(mvFrame->adler != 0);
     }
     

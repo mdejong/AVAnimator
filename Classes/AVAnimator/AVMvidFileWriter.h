@@ -114,6 +114,10 @@
 
 - (BOOL) writeKeyframe:(char*)ptr bufferSize:(int)bufferSize;
 
+// This version of writeKeyframe stores a non-zero adler passed in to the method
+
+- (BOOL) writeKeyframe:(char*)ptr bufferSize:(int)bufferSize adler:(uint32_t)adler;
+
 // Write a delta frame that depends on the previous frame. The adler needs to be
 // generated in the caller since both previous and current frames would need to be
 // decoded in order to generate the adler.
