@@ -25,6 +25,10 @@
   BOOL m_alwaysGenerateAdler;
   BOOL startedLoading;
   CGSize m_movieSize;
+  
+#if defined(HAS_LIB_COMPRESSION_API)
+  BOOL m_compressed;
+#endif // HAS_LIB_COMPRESSION_API
 }
 
 // The fully qualified filename for the extracted data. For example: "XYZ.mvid"
@@ -33,6 +37,10 @@
 @property (nonatomic, assign) BOOL alwaysGenerateAdler;
 
 @property (nonatomic, assign) CGSize movieSize;
+
+#if defined(HAS_LIB_COMPRESSION_API)
+@property (nonatomic, assign) BOOL compressed;
+#endif // HAS_LIB_COMPRESSION_API
 
 + (AVAsset2MvidResourceLoader*) aVAsset2MvidResourceLoader;
 

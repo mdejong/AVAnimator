@@ -15,6 +15,8 @@
 		3C4CF8C41BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z in Resources */ = {isa = PBXBuildFile; fileRef = 3C4CF8C31BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z */; };
 		3C4EF06C1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4EF06B1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m */; };
 		3C4EF06D1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C4EF06B1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m */; };
+		3C673BE61C80E1F500DCA1E7 /* AVStreamEncodeDecode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C673BE51C80E1F500DCA1E7 /* AVStreamEncodeDecode.m */; };
+		3C673BE71C80E1F500DCA1E7 /* AVStreamEncodeDecode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C673BE51C80E1F500DCA1E7 /* AVStreamEncodeDecode.m */; };
 		3C9A845C1C7E255200977CD3 /* AVMvidFileWriterTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C9A845B1C7E255200977CD3 /* AVMvidFileWriterTests.m */; };
 		3CD931231BF091C900322A2A /* RGB3Frame_mix.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CD931221BF091C900322A2A /* RGB3Frame_mix.m4v */; };
 		609172EA18BC79AF00BF3C3E /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 609172E918BC79AF00BF3C3E /* Default-568h@2x.png */; };
@@ -373,6 +375,8 @@
 		3C4CF8C31BC089F400B8BEB3 /* 480x320_black_blue_1LD_24BPP.mvid.7z */ = {isa = PBXFileReference; lastKnownFileType = file; path = 480x320_black_blue_1LD_24BPP.mvid.7z; sourceTree = "<group>"; };
 		3C4EF06A1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAssetMixAlphaResourceLoader.h; sourceTree = "<group>"; };
 		3C4EF06B1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAssetMixAlphaResourceLoader.m; sourceTree = "<group>"; };
+		3C673BE41C80E1F500DCA1E7 /* AVStreamEncodeDecode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVStreamEncodeDecode.h; sourceTree = "<group>"; };
+		3C673BE51C80E1F500DCA1E7 /* AVStreamEncodeDecode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVStreamEncodeDecode.m; sourceTree = "<group>"; };
 		3C9A845B1C7E255200977CD3 /* AVMvidFileWriterTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVMvidFileWriterTests.m; sourceTree = "<group>"; };
 		3CD931221BF091C900322A2A /* RGB3Frame_mix.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = RGB3Frame_mix.m4v; sourceTree = "<group>"; };
 		609172E918BC79AF00BF3C3E /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
@@ -1024,6 +1028,8 @@
 				CDAD8C1A1527965B0089206E /* AVOfflineComposition.m */,
 				CD64781117754882000FDD3A /* MutableAttrString.h */,
 				CD64781217754882000FDD3A /* MutableAttrString.m */,
+				3C673BE41C80E1F500DCA1E7 /* AVStreamEncodeDecode.h */,
+				3C673BE51C80E1F500DCA1E7 /* AVStreamEncodeDecode.m */,
 			);
 			path = AVAnimator;
 			sourceTree = "<group>";
@@ -1369,6 +1375,7 @@
 				CD7A02F012D261A900366AC6 /* AVAnimatorView.m in Sources */,
 				CDECCE7212D30FE80067D2EE /* AVImageFrameDecoder.m in Sources */,
 				CD2F6D4912F0B8AF0022413B /* AVAnimatorMedia.m in Sources */,
+				3C673BE61C80E1F500DCA1E7 /* AVStreamEncodeDecode.m in Sources */,
 				CD6EF5A812F0F7920045659F /* movdata.c in Sources */,
 				CDC38D5C12F1F06C00D55CE8 /* AVAnimatorLayer.m in Sources */,
 				CD922D73136209280024AFBB /* AV7zAppResourceLoader.m in Sources */,
@@ -1490,6 +1497,7 @@
 				CDBDFB1B169E57C000B53613 /* AVAssetFrameDecoder.m in Sources */,
 				CD02DDA416A32B11008EB661 /* PremultiplyTests.m in Sources */,
 				CDCF845517610AFC005FE564 /* AVGIF89A2MvidResourceLoader.m in Sources */,
+				3C673BE71C80E1F500DCA1E7 /* AVStreamEncodeDecode.m in Sources */,
 				CD64781417754882000FDD3A /* MutableAttrString.m in Sources */,
 				CD1B207D1793283400D83D28 /* MaxvidEncodeDecodeTests.m in Sources */,
 				CD57DFA817A38B7C005C77EC /* maxvid_deltas.m in Sources */,

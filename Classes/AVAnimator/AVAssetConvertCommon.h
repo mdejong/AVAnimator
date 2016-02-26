@@ -22,3 +22,13 @@
 #define HAS_AVASSET_READ_COREVIDEO_BUFFER_AS_TEXTURE
 
 #endif // iOS 5.0 or newer
+
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_9_0 // iOS 9.0 or newer (iOS Deployment Target)
+
+// Note that one can comment out this define and then the project would not
+// need to link to GLKit or OpenGLES frameworks. The only class that depends
+// on these two frameworks is AVAnimatorOpenGLView
+
+#define HAS_LIB_COMPRESSION_API
+
+#endif // iOS 9.0 or newer

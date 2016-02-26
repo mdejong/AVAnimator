@@ -17,6 +17,8 @@
 
 #import "CGFrameBuffer.h"
 
+#include "AVStreamEncodeDecode.h"
+
 #if __has_feature(objc_arc)
 #else
 #import "AutoPropertyRelease.h"
@@ -41,6 +43,10 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
 @synthesize assetURL = m_assetURL;
 @synthesize frameDecoder = m_frameDecoder;
 @synthesize wasSuccessful = m_wasSuccessful;
+
+#if defined(HAS_LIB_COMPRESSION_API)
+@synthesize compressed = m_compressed;
+#endif // HAS_LIB_COMPRESSION_API
 
 - (void) dealloc
 {
@@ -103,17 +109,18 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   int bufferSize;
   void *pixelsPtr;
   
-  CGFrameBuffer *resizeFramebuffer;
-  
   // If the frame width and height do not match the expected
   // output width and height then the frame data must be resized
   // before it can be written as pixels.
   
-  BOOL sameWidth = (self.movieSize.width == frameBuffer.width);
-  BOOL sameHeight = (self.movieSize.height == frameBuffer.height);
+  int width = (int) self.movieSize.width;
+  int height = (int) self.movieSize.height;
+  
+  BOOL sameWidth = (width == frameBuffer.width);
+  BOOL sameHeight = (height == frameBuffer.height);
   
   if (!sameWidth || !sameHeight) {
-    resizeFramebuffer = self.resizeFramebuffer;
+    CGFrameBuffer *resizeFramebuffer = self.resizeFramebuffer;
     
     if (resizeFramebuffer == nil) {
       resizeFramebuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:frameBuffer.bitsPerPixel width:self.movieSize.width height:self.movieSize.height];
@@ -145,12 +152,52 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
     pixelsPtr = frameBuffer.pixels;
   }
   
-  // write entire buffer of raw 32bit pixels to the file.
-  // bitmap info is native (kCGImageAlphaNoneSkipFirst|kCGBitmapByteOrder32Little)
+#if defined(HAS_LIB_COMPRESSION_API)
+  // If compression is used, then generate a compressed buffer and write it as
+  // a keyframe.
   
-  worked = [self writeKeyframe:pixelsPtr bufferSize:bufferSize];
+  if (self.compressed) {
+    NSData *pixelData = [NSData dataWithBytesNoCopy:pixelsPtr length:bufferSize freeWhenDone:NO];
+    
+    // FIXME: make this mutable data a member so that it is not allocated
+    // in every loop.
+    
+    NSMutableData *mEncodedData = [NSMutableData data];
+    
+    [AVStreamEncodeDecode streamDeltaAndCompress:pixelData
+                                     encodedData:mEncodedData
+                                             bpp:self.bpp
+                                       algorithm:COMPRESSION_LZ4];
+    
+    int src_size = bufferSize;
+    assert(mEncodedData.length < 0xFFFFFFFF);
+    int dst_size = (int) mEncodedData.length;
+    
+    //printf("compressed frame size %d kB down to %d kB\n", (int)src_size/1000, (int)dst_size/1000);
+    
+    // Calculate adler based on original pixels (not the compressed representation)
+    
+    uint32_t adler = 0;
+    
+    if (self.genAdler) {
+      adler = maxvid_adler32(0, (unsigned char*)pixelsPtr, bufferSize);
+    }
+    
+    worked = [self writeKeyframe:(char*)mEncodedData.bytes bufferSize:(int)dst_size adler:adler];
+  } else
+#endif // HAS_LIB_COMPRESSION_API
+  {
+    // write entire buffer of raw 32bit pixels to the file.
+    // bitmap info is native (kCGImageAlphaNoneSkipFirst|kCGBitmapByteOrder32Little)
+    
+    worked = [self writeKeyframe:pixelsPtr bufferSize:bufferSize];
+  }
   
-  return worked;
+  if (worked) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
 }
 
 // Read video data from a single track (only one video track is supported anyway)

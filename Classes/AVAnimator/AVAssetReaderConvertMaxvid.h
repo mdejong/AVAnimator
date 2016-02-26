@@ -30,11 +30,18 @@ extern NSString * const AVAssetReaderConvertMaxvidCompletedNotification;
   NSURL *m_assetURL;
   AVAssetFrameDecoder *m_frameDecoder;
   BOOL m_wasSuccessful;
+#if defined(HAS_LIB_COMPRESSION_API)
+  BOOL m_compressed;
+#endif // HAS_LIB_COMPRESSION_API
 }
 
 @property (nonatomic, retain) NSURL         *assetURL;
 
 @property (nonatomic, assign) BOOL          wasSuccessful;
+
+#if defined(HAS_LIB_COMPRESSION_API)
+@property (nonatomic, assign) BOOL          compressed;
+#endif // HAS_LIB_COMPRESSION_API
 
 + (AVAssetReaderConvertMaxvid*) aVAssetReaderConvertMaxvid;
 

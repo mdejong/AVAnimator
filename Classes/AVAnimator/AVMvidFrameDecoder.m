@@ -13,6 +13,8 @@
 
 #import "maxvid_file.h"
 
+#include "AVStreamEncodeDecode.h"
+
 #if MV_ENABLE_DELTAS
 #include "maxvid_deltas.h"
 #endif // MV_ENABLE_DELTAS
@@ -687,10 +689,15 @@
 # endif // TARGET_OS_IPHONE
 #endif // EXTRA_CHECKS
       
+#if defined(HAS_LIB_COMPRESSION_API)
+      int isCompressedFrame = 0;
+#endif // HAS_LIB_COMPRESSION_API
+      
       // Calculate offset where frame starts and length of frame
       off_t frameStartOffset;
       uint32_t inputBuffer32NumBytes;
       
+#if defined(HAS_LIB_COMPRESSION_API)
       MVFileHeader *header = [self header];
       
       if (maxvid_file_version(header) == MV_FILE_VERSION_THREE) {
@@ -701,24 +708,38 @@
         
         // The frame length must be zero with V3.
         uint32_t numBytes = maxvid_frame_length(frame);
-        assert(numBytes == 0);
         
-        off_t actualNumBytes;
-        if (bpp == 16) {
-          actualNumBytes = header->width * header->height * sizeof(uint16_t);
-          if ((actualNumBytes % sizeof(uint32_t)) != 0) {
-            actualNumBytes += sizeof(uint16_t);
-          }
+        if (numBytes == 0) {
+          isCompressedFrame = 0;
         } else {
-          actualNumBytes = header->width * header->height * sizeof(uint32_t);
+          isCompressedFrame = 1;
         }
         
+        if (!isCompressedFrame) {
+          off_t actualNumBytes;
+          if (bpp == 16) {
+            actualNumBytes = header->width * header->height * sizeof(uint16_t);
+            if ((actualNumBytes % sizeof(uint32_t)) != 0) {
+              actualNumBytes += sizeof(uint16_t);
+            }
+          } else {
+            actualNumBytes = header->width * header->height * sizeof(uint32_t);
+          }
+          
 #if defined(DEBUG)
-        assert(actualNumBytes < 0xFFFFFFFF);
+          assert(actualNumBytes < 0xFFFFFFFF);
 #endif // DEBUG
-        
-        inputBuffer32NumBytes = (uint32_t) actualNumBytes;
-      } else {
+          
+          inputBuffer32NumBytes = (uint32_t) actualNumBytes;
+        } else {
+          // A compressed frame can be decompressed with the knowledge that the
+          // framebuffer is large enough to store the output.
+          
+          inputBuffer32NumBytes = numBytes;
+        }
+      } else
+#endif // HAS_LIB_COMPRESSION_API
+      {
         frameStartOffset = maxvid_frame_offset(frame);
         inputBuffer32NumBytes = maxvid_frame_length(frame);
       }
@@ -865,6 +886,40 @@
 
         [self assertSameAdler:frame->adler frameBuffer:frameBuffer frameBufferNumBytes:numBytesToIncludeInAdler];
 #endif // EXTRA_CHECKS || ALWAYS_CHECK_ADLER
+        
+#if defined(HAS_LIB_COMPRESSION_API)
+      } else if (isCompressedFrame) {
+        // Input buffer is a compressed keyframe
+        
+        changeFrameData = TRUE;
+        
+        [nextFrameBuffer doneZeroCopyPixels];
+        
+        void *frameBuffer = (void*)nextFrameBuffer.pixels;
+#ifdef EXTRA_CHECKS
+        NSAssert(frameBuffer, @"frameBuffer");
+#endif // EXTRA_CHECKS
+        
+        [AVStreamEncodeDecode streamUnDeltaAndUncompress:mappedDataObj frameBuffer:frameBuffer frameBufferNumBytes:frameBufferNumBytes bpp:bpp algorithm:COMPRESSION_LZ4 expectedDecodedSize:(int)self.width*(int)self.height];
+        
+#if defined(EXTRA_CHECKS) || defined(ALWAYS_CHECK_ADLER)
+        {
+          int numBytesToIncludeInAdler;
+          
+          if (bpp == 16) {
+            numBytesToIncludeInAdler = frameBufferSize * sizeof(uint16_t);
+          } else {
+            numBytesToIncludeInAdler = frameBufferSize * sizeof(uint32_t);
+          }
+          
+          // Calculate the keyframe checksum including the pixels and and zero padding pixels.
+          NSAssert(numBytesToIncludeInAdler == frameBufferNumBytes, @"frameBufferNumBytes");
+          
+          [self assertSameAdler:frame->adler frameBuffer:frameBuffer frameBufferNumBytes:numBytesToIncludeInAdler];
+        }
+#endif // EXTRA_CHECKS
+
+#endif // HAS_LIB_COMPRESSION_API
       } else {
         // Input buffer contains a complete keyframe, use zero copy optimization
         
