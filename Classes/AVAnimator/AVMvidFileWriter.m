@@ -431,8 +431,9 @@
     if (self.genAdler) {
       if (adler == 0) {
         mvFrame->adler = maxvid_adler32(0, (unsigned char*)ptr, bufferSize);
+      } else {
+        mvFrame->adler = adler;
       }
-      mvFrame->adler = adler;
       assert(mvFrame->adler != 0);
     }
     
