@@ -58,16 +58,16 @@ int is_even(uint32_t num) {
   return (num % 2) == 0;
 }
 
-static inline
-int is_black_16bpp(uint16_t pixel) {
-  return (pixel == 0);
-}
+//static inline
+//int is_black_16bpp(uint16_t pixel) {
+//  return (pixel == 0);
+//}
 
-static inline
-int is_white_16bpp(uint16_t pixel) {
-  // (A)RGB555 or RGB565
-  return (pixel == 0x7FFF) || (pixel == 0xFFFF);
-}
+//static inline
+//int is_white_16bpp(uint16_t pixel) {
+//  // (A)RGB555 or RGB565
+//  return (pixel == 0x7FFF) || (pixel == 0xFFFF);
+//}
 
 static inline
 uint32_t num_words_16bpp(uint32_t numPixels) {
@@ -78,16 +78,16 @@ uint32_t num_words_16bpp(uint32_t numPixels) {
 
 // Query open file size, then rewind to start
 
-static
-int fpsize(FILE *fp, uint32_t *filesize) {
-  int retcode;
-  retcode = fseek(fp, 0, SEEK_END);
-  assert(retcode == 0);
-  uint32_t size = (uint32_t) ftell(fp);
-  *filesize = size;
-  fseek(fp, 0, SEEK_SET);
-  return 0;
-}
+//static
+//int fpsize(FILE *fp, uint32_t *filesize) {
+//  int retcode;
+//  retcode = fseek(fp, 0, SEEK_END);
+//  assert(retcode == 0);
+//  uint32_t size = (uint32_t) ftell(fp);
+//  *filesize = size;
+//  fseek(fp, 0, SEEK_SET);
+//  return 0;
+//}
 
 // Util struct/object used only in this module
 
@@ -2135,7 +2135,7 @@ void process_pixel_run(NSMutableData *mvidWordCodes,
     uint32_t dupCount = 0;
     NSMutableArray *copyPixels = [NSMutableArray array];
     
-    uint32_t prevPixelValue;
+    uint32_t prevPixelValue = 0;
     BOOL isFirstPixelInRun = TRUE;
     
     for (DeltaPixel *deltaPixel in mPixelRun) {

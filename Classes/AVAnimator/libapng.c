@@ -581,7 +581,7 @@ libapng_main(FILE *apngFile, libapng_frame_func frame_func, void *userData)
   unsigned int    w, h, seq, w0, h0, x0, y0;
   unsigned int    frames, loops, num_fctl, num_idat;
   unsigned int    outrow, outimg;
-  unsigned short  d1, d2;
+  unsigned short  d1 = 0, d2 = 0;
   unsigned char   c, dop, bop;
   unsigned char   channels, depth, pixeldepth, bpp;
   unsigned char   coltype, compr, filter, interl;

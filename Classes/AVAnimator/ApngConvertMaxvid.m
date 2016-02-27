@@ -93,15 +93,15 @@ uint32_t argb_to_abgr(uint32_t pixel)
 #define TO_ARGB(red, green, blue, alpha) ((alpha << 24)|  (red << 16) | (green << 8) | blue)
 #define TO_ABGR(red, green, blue, alpha) ((alpha << 24)|  (blue << 16) | (green << 8) | red)
 
-static inline
-uint32_t
-fwrite_word(FILE *fp, uint32_t word) {
-  size_t size = fwrite(&word, sizeof(uint32_t), 1, fp);
-  if (size != 1) {
-    return MV_ERROR_CODE_WRITE_FAILED;
-  }
-  return 0;
-}
+//static inline
+//uint32_t
+//fwrite_word(FILE *fp, uint32_t word) {
+//  size_t size = fwrite(&word, sizeof(uint32_t), 1, fp);
+//  if (size != 1) {
+//    return MV_ERROR_CODE_WRITE_FAILED;
+//  }
+//  return 0;
+//}
 
 static inline
 uint32_t
