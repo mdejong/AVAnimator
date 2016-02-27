@@ -51,6 +51,8 @@
 #import <Foundation/Foundation.h>
 #import <QuartzCore/QuartzCore.h>
 
+#import "AVAssetConvertCommon.h"
+
 extern NSString * const AVOfflineCompositionCompletedNotification;
 extern NSString * const AVOfflineCompositionFailedNotification;
 
@@ -80,6 +82,11 @@ extern NSString * const AVOfflineCompositionFailedNotification;
   MutableAttrString *m_mAttrString;
   CGContextRef m_bitmapContext;
   CGRect     m_renderBounds;
+  
+#if defined(HAS_LIB_COMPRESSION_API)
+  BOOL m_compressedIntermediate;
+  BOOL m_compressedOutput;
+#endif // HAS_LIB_COMPRESSION_API
 }
 
 @property (nonatomic, copy) NSString *destination;
@@ -88,6 +95,18 @@ extern NSString * const AVOfflineCompositionFailedNotification;
 // where AVOfflineCompositionFailedNotification is delivered.
 
 @property (nonatomic, copy) NSString *errorString;
+
+#if defined(HAS_LIB_COMPRESSION_API)
+// If set to TRUE then this property will cause the intermediate files
+// generated on disk will use compressed frames.
+
+@property (nonatomic, assign) BOOL compressedIntermediate;
+
+// If set to TRUE then this property will cause the final output comp
+// generated on disk will use compressed frames.
+
+@property (nonatomic, assign) BOOL compressedOutput;
+#endif // HAS_LIB_COMPRESSION_API
 
 + (AVOfflineComposition*) aVOfflineComposition;
 

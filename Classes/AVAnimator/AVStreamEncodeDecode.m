@@ -40,16 +40,20 @@
   // Otherwise base estimate on worst case based on input size.
   
   int numDstBytes = (int) encodedData.length;
-
-  if (numDstBytes != 0) {
-    // nop
-  } else {
-    [encodedData setLength:inputData.length+1024];
-    numDstBytes = (int) encodedData.length;
+  int estInputSize = (int)inputData.length+1024;
+  
+  if (numDstBytes < estInputSize) {
+    numDstBytes = estInputSize;
+    // White this will zero out bytes, the assumption here
+    // is that the capacity is already large enough so that
+    // repeated extension does not require a reallocation.
+    [encodedData setLength:numDstBytes];
   }
   
-  stream.dst_ptr = (uint8_t*) encodedData.bytes;
+  stream.dst_ptr = (uint8_t*) encodedData.mutableBytes;
   stream.dst_size = numDstBytes;
+  
+  assert(stream.dst_size > 0);  
   
   flags = 0;
   
@@ -121,7 +125,6 @@
   int bufferSize = (int) inputData.length;
   
   assert((bufferSize % sizeof(uint32_t)) == 0);
-  
   const int maxOffset = bufferSize / sizeof(uint32_t);
 
   NSData *dataToEncode;
