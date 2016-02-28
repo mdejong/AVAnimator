@@ -173,6 +173,8 @@ static uint32_t r0r1r2r3r4r5r6r8r10r11r12r14[12];
 #endif
 #endif // USE_INLINE_ARM_ASM
 
+#ifndef __OPTIMIZE__
+
 //__attribute__ ((noinline))
 static inline
 void maxvid_test_assert_util_c4(int cond) {
@@ -208,6 +210,7 @@ void maxvid_test_assert_util_c4(int cond) {
   
   return;
 }
+#endif // __OPTIMIZE__
 
 #undef MAXVID_ASSERT
 
@@ -373,10 +376,10 @@ FUNCTION_NAME(MODULE_PREFIX, decode_c4_sample16) (
   uint32_t opCode;
   register uint32_t numPixels;
   register uint32_t numWords;
-  register uint32_t WR1;
+  register uint32_t WR1 = 0;
   register uint32_t WR2;
   register uint32_t WR3;
-  register uint32_t WR4;
+  register uint32_t WR4 = 0;
   register uint32_t WR5;
 #endif // USE_INLINE_ARM_ASM
   
