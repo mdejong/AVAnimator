@@ -44,6 +44,13 @@
 
 @property (nonatomic, retain) AVAssetFrameDecoder *frameDecoder;
 
+// In DEBUG mode, this property can be set to a directory and each rendered
+// output frame will be captured as BGRA and saved in a PNG.
+
+#if defined(DEBUG)
+@property (nonatomic, copy) NSString *captureDir;
+#endif // DEBUG
+
 - (void) startAnimator;
 
 - (void) stopAnimator;
