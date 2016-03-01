@@ -49,6 +49,7 @@
   BOOL m_isReading;
   BOOL m_readingFinished;
   BOOL m_produceCoreVideoPixelBuffers;
+  BOOL m_produceYUV420Buffers;
 }
 
 @property (nonatomic, readonly) NSUInteger  numFrames;
@@ -64,6 +65,12 @@
 // only be set before rendering of frames begins.
 
 @property (nonatomic, assign) BOOL produceCoreVideoPixelBuffers;
+
+// If self.produceCoreVideoPixelBuffers is TRUE and this flag is set then the
+// H264 decoder will produce YUV 4:2:0 buffers as opposed to a flat BGRA buffer.
+// A 4:2:0 features subsampling for the UV components.
+
+@property (nonatomic, assign) BOOL produceYUV420Buffers;
 
 + (AVAssetFrameDecoder*) aVAssetFrameDecoder;
 

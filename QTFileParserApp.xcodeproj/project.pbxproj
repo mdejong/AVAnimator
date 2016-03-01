@@ -19,6 +19,8 @@
 		3C673BE71C80E1F500DCA1E7 /* AVStreamEncodeDecode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C673BE51C80E1F500DCA1E7 /* AVStreamEncodeDecode.m */; };
 		3C9A845C1C7E255200977CD3 /* AVMvidFileWriterTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C9A845B1C7E255200977CD3 /* AVMvidFileWriterTests.m */; };
 		3CD931231BF091C900322A2A /* RGB3Frame_mix.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CD931221BF091C900322A2A /* RGB3Frame_mix.m4v */; };
+		3CF24CCF1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CF24CCE1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m */; };
+		3CF24CD01C863E9B00108968 /* AVAnimatorH264AlphaPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CF24CCE1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m */; };
 		609172EA18BC79AF00BF3C3E /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 609172E918BC79AF00BF3C3E /* Default-568h@2x.png */; };
 		CD02DDA416A32B11008EB661 /* PremultiplyTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CD02DDA316A32B11008EB661 /* PremultiplyTests.m */; };
 		CD0ACF29136F927300A203DF /* AV7zApng2MvidResourceLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = CD0ACF28136F927300A203DF /* AV7zApng2MvidResourceLoader.m */; };
@@ -379,6 +381,8 @@
 		3C673BE51C80E1F500DCA1E7 /* AVStreamEncodeDecode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVStreamEncodeDecode.m; sourceTree = "<group>"; };
 		3C9A845B1C7E255200977CD3 /* AVMvidFileWriterTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVMvidFileWriterTests.m; sourceTree = "<group>"; };
 		3CD931221BF091C900322A2A /* RGB3Frame_mix.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = RGB3Frame_mix.m4v; sourceTree = "<group>"; };
+		3CF24CCD1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorH264AlphaPlayer.h; sourceTree = "<group>"; };
+		3CF24CCE1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorH264AlphaPlayer.m; sourceTree = "<group>"; };
 		609172E918BC79AF00BF3C3E /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* QTFileParserApp-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "QTFileParserApp-Info.plist"; plistStructureDefinitionIdentifier = "com.apple.xcode.plist.structure-definition.iphone.info-plist"; sourceTree = "<group>"; };
 		CD02DDA316A32B11008EB661 /* PremultiplyTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PremultiplyTests.m; sourceTree = "<group>"; };
@@ -998,6 +1002,8 @@
 				CD659D61136390C1008AF6F9 /* AVMvidFrameDecoder.m */,
 				CDA9E74B1697554A00A49AA3 /* AVAssetFrameDecoder.h */,
 				CDA9E74C1697554A00A49AA3 /* AVAssetFrameDecoder.m */,
+				3CF24CCD1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.h */,
+				3CF24CCE1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m */,
 				CD6EF5A712F0F7920045659F /* movdata.h */,
 				CD6EF5A612F0F7920045659F /* movdata.c */,
 				CD0BD0351363523800D8287A /* maxvid_decode.h */,
@@ -1416,6 +1422,7 @@
 				CDC510E71692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m in Sources */,
 				CDA9E751169B6EF200A49AA3 /* AVAssetReaderConvertMaxvid.m in Sources */,
 				CDBDFB1A169E57BF00B53613 /* AVAssetFrameDecoder.m in Sources */,
+				3CF24CCF1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m in Sources */,
 				CDC7B6281760521C00B8E3FF /* AVGIF89A2MvidResourceLoader.m in Sources */,
 				CD64781317754882000FDD3A /* MutableAttrString.m in Sources */,
 				CD57DFA717A38B7C005C77EC /* maxvid_deltas.m in Sources */,
@@ -1497,6 +1504,7 @@
 				CDBDFB1B169E57C000B53613 /* AVAssetFrameDecoder.m in Sources */,
 				CD02DDA416A32B11008EB661 /* PremultiplyTests.m in Sources */,
 				CDCF845517610AFC005FE564 /* AVGIF89A2MvidResourceLoader.m in Sources */,
+				3CF24CD01C863E9B00108968 /* AVAnimatorH264AlphaPlayer.m in Sources */,
 				3C673BE71C80E1F500DCA1E7 /* AVStreamEncodeDecode.m in Sources */,
 				CD64781417754882000FDD3A /* MutableAttrString.m in Sources */,
 				CD1B207D1793283400D83D28 /* MaxvidEncodeDecodeTests.m in Sources */,
