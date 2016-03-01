@@ -75,6 +75,15 @@ static const GLfloat kColorConversion709[] = {
   1.793, -0.533,   0.0,
 };
 
+// FIXME: The input sRGB values need to be moved back to a linear
+// colorspace so that the non-linear undelta result can be operated
+// on with a simple floating point multiplication as opposed to
+// a table based approach in the shaders.
+
+// https://developer.apple.com/library/ios/documentation/Metal/Reference/MetalShadingLanguageGuide/numerical-comp/numerical-comp.html
+// https://www.khronos.org/webgl/public-mailing-list/archives/1009/msg00028.php
+// http://entropymine.com/imageworsener/srgbformula/
+
 const static BOOL renderBGRA = FALSE;
 
 static
@@ -121,14 +130,20 @@ const GLchar *fragShaderYUVCstr =
 "void main()"
 "{"
 "  mediump vec3 yuv;"
+"  mediump vec3 yuv2;"
 "  lowp vec3 rgb;"
+"  lowp vec3 rgb2;"
 "  mediump float alpha;"
-// Subtract constants to map the video range start at 0
+// Subtract constants to map the video range (16, 255) to (0.0, 1.0)
 "  yuv.x = (texture2D(SamplerY, coordinate).r - (16.0/255.0));"
 "  yuv.yz = (texture2D(SamplerUV, coordinate).rg - vec2(0.5, 0.5));"
 "  rgb = colorConversionMatrix * yuv;"
+// Subtract constants to map the video range (16, 255) to (0.0, 1.0)
 "  alpha = texture2D(SamplerA, coordinate).r - (16.0/255.0);"
-"  gl_FragColor = vec4(rgb, alpha);"
+"  yuv2.x = alpha;"
+"  yuv2.yz = vec2(0,0);"
+"  rgb2 = colorConversionMatrix * yuv2;"
+"  gl_FragColor = vec4(rgb, rgb2.r);"
 "}";
 
 enum {
@@ -279,6 +294,9 @@ enum {
   // Set GLKView.context
   self.context = context;
 
+  // FIXME: setting opaque to FALSE significantly changes the color
+  // even when the alpha is set to 1
+  
   // FIXME: The opaque flag should be set to FALSE
   //self.opaque = TRUE;
   self.opaque = FALSE;
@@ -468,6 +486,10 @@ enum {
     // YUV depends on colorspace conversion
     
     CFTypeRef colorAttachments = CVBufferGetAttachment(cvImageBufferRef, kCVImageBufferYCbCrMatrixKey, NULL);
+    
+#if defined(DEBUG)
+    assert(colorAttachments != kCVImageBufferYCbCrMatrix_SMPTE_240M_1995);
+#endif // DEBUG
     
     if (colorAttachments == kCVImageBufferYCbCrMatrix_ITU_R_601_4) {
       _preferredConversion = kColorConversion601;
