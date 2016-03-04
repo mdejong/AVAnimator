@@ -190,7 +190,8 @@
   uint8_t *src_buffer = (uint8_t*) encodedData.bytes;
   
   size_t dst_size;
-  uint64_t *dst_buffer;
+  uint64_t *dst_buffer = NULL;
+  int malloc_dst_buffer = 0;
   
   uint32_t *framebufferPixelPtr = (uint32_t*) frameBuffer;
   
@@ -212,6 +213,7 @@
     dst_buffer = (uint64_t*) malloc(dst_size);
     assert(dst_buffer);
     assert(((int)dst_buffer % sizeof(uint64_t)) == 0);
+    malloc_dst_buffer = 1;
   }
   
   compression_status status = COMPRESSION_STATUS_OK;
@@ -420,6 +422,10 @@
 #if defined(DEBUG)
   assert(((uint8_t*)framebufferPixelPtr - (uint8_t*)frameBuffer) == frameBufferNumBytes);
 #endif // DEBUG
+  
+  if (malloc_dst_buffer) {
+    free(dst_buffer);
+  }
   
   return TRUE;
 }
