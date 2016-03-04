@@ -21,7 +21,7 @@
 
 @property (nonatomic, assign) id<AVAnimatorMediaRendererProtocol> renderer;
 
-@property (nonatomic, retain) NSURL *animatorAudioURL;
+@property (nonatomic,   copy) NSURL *animatorAudioURL;
 
 @property (nonatomic, retain) AVFrame *prevFrame;
 @property (nonatomic, retain) AVFrame *nextFrame;

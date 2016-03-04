@@ -35,7 +35,7 @@ extern NSString * const AVAssetReaderConvertMaxvidCompletedNotification;
 #endif // HAS_LIB_COMPRESSION_API
 }
 
-@property (nonatomic, retain) NSURL         *assetURL;
+@property (nonatomic, copy) NSURL         *assetURL;
 
 @property (nonatomic, assign) BOOL          wasSuccessful;
 
