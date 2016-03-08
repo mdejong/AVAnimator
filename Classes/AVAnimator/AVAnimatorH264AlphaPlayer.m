@@ -11,8 +11,8 @@
 
 #import <QuartzCore/QuartzCore.h>
 
-#include <OpenGLES/ES2/gl.h>
-#include <OpenGLES/ES2/glext.h>
+#import <OpenGLES/ES2/gl.h>
+#import <OpenGLES/ES2/glext.h>
 
 #import "CGFrameBuffer.h"
 
@@ -25,6 +25,8 @@
 #import "AVFileUtil.h"
 
 #import <mach/mach.h>
+
+#import <CoreMedia/CMSampleBuffer.h>
 
 #if __has_feature(objc_arc)
 #else
@@ -152,6 +154,18 @@ enum {
   NUM_ATTRIBUTES
 };
 
+// Debug render from CoreVideo
+
+#if defined(DEBUG)
+
+@interface AVAssetFrameDecoder ()
+
+- (BOOL) renderCVImageBufferRefIntoFramebuffer:(CVImageBufferRef)imageBuffer frameBuffer:(CGFrameBuffer**)frameBufferPtr;
+
+@end
+
+#endif // DEBUG
+
 // class declaration for AVAnimatorOpenGLView
 
 @interface AVAnimatorH264AlphaPlayer () {
@@ -174,6 +188,8 @@ enum {
 	const GLfloat *_preferredConversion;
   
   BOOL didSetupOpenGLMembers;
+  
+  AVAnimatorPlayerState m_state;
 }
 
 @property (nonatomic, assign) CGSize renderSize;
@@ -186,6 +202,8 @@ enum {
 @property (nonatomic, retain) NSTimer *animatorPrepTimer;
 
 @property (nonatomic, assign) BOOL renderYUVFrames;
+
+@property (nonatomic, assign) AVAnimatorPlayerState state;
 
 @end
 
@@ -202,6 +220,7 @@ enum {
 @synthesize frameDecoder = m_frameDecoder;
 @synthesize animatorPrepTimer = m_animatorPrepTimer;
 @synthesize currentFrame = m_currentFrame;
+@synthesize state = m_state;
 
 #if defined(DEBUG)
 @synthesize captureDir = m_captureDir;
@@ -776,7 +795,7 @@ enum {
 
 #if defined(DEBUG)
   
-  if (self.captureDir != nil) {
+  if (self.captureDir != nil) @autoreleasepool {
     glFlush();
     glFinish();
 
@@ -1033,12 +1052,82 @@ enum {
   if (self.rgbFrame == nil || self.alphaFrame == nil) {
     NSAssert(FALSE, @"player must be prepared before startAnimator can be invoked");
   }
+
+  NSAssert(self.state == READY || self.state == STOPPED, @"player must be prepared before startAnimator can be invoked");
+  
+  self.state = ANIMATING;
+  
+  __block int currentFrame = self.currentFrame;
+  __block int maxFrame = (int)self.frameDecoder.numFrames;
+  
+  if (self.currentFrame >= maxFrame) {
+    // In the case of only 2 frames, stop straight away without kicking off background thread, useful for testing
+    self.state = STOPPED;
+    return;
+  }
+  
+  __block Class c = self.class;
+  __block AVAssetFrameDecoder *frameDecoderBlock = self.frameDecoder;
+  __weak AVAnimatorH264AlphaPlayer *weakSelf = self;
+  
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    // Execute on background thread with blocks API invocation
+    
+    AVFrame* rgbFrame;
+    AVFrame* alphaFrame;
+    
+    while (1) @autoreleasepool {
+      if (currentFrame >= maxFrame) {
+        NSLog(@"done processing frames at %d", currentFrame);
+        
+        break;
+      }
+      
+      int nextFrame = [c loadFramesInBackgroundThread:currentFrame
+                                         frameDecoder:frameDecoderBlock
+                                             rgbFrame:&rgbFrame
+                                           alphaFrame:&alphaFrame];
+      
+      dispatch_sync(dispatch_get_main_queue(), ^{
+#if defined(DEBUG)
+        NSAssert(rgbFrame, @"rgbFrame");
+        NSAssert(alphaFrame, @"alphaFrame");
+#endif // DEBUG
+        
+        __strong AVAnimatorH264AlphaPlayer *strongSelf = weakSelf;
+        
+        if (strongSelf.state != ANIMATING) {
+          // stopAnimator invoked after startAnimator
+          currentFrame = maxFrame;
+        } else {
+          [strongSelf delieverRGBAndAlphaFrames:nextFrame rgbFrame:rgbFrame alphaFrame:alphaFrame];
+          
+          currentFrame = nextFrame;
+        }
+      });
+      
+    } // end of while (1) loop
+    
+    // Done with animation loop, deliver AVAnimatorDidStopNotification in main thread
+    
+    // FIXME: should this be a strong self ref?
+    
+    dispatch_sync(dispatch_get_main_queue(), ^{
+      [weakSelf stopAnimator];
+      
+      [[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorDidStopNotification object:weakSelf];
+    });
+    
+  });
+
 }
 
 - (void) stopAnimator
 {
   self.rgbFrame = nil;
   self.alphaFrame = nil;
+  
+  self.state = STOPPED;
 }
 
 // Invoke this method to read from the named asset and being loading initial data
@@ -1054,6 +1143,90 @@ enum {
   [[NSRunLoop currentRunLoop] addTimer: self.animatorPrepTimer forMode: NSDefaultRunLoopMode];
   
   self.currentFrame = -1;
+  
+  self.state = PREPPING;
+}
+
+// This method delivers the RGB and Alpha frames to the view in the main thread
+
+- (void) delieverRGBAndAlphaFrames:(int)nextFrame
+                          rgbFrame:(AVFrame*)rgbFrame
+                        alphaFrame:(AVFrame*)alphaFrame
+{
+  self.rgbFrame = rgbFrame;
+  self.alphaFrame = alphaFrame;
+  self.currentFrame = nextFrame;
+  
+  NSLog(@"set H264AlphaPlayer frames for (%d, %d), advance self.currentFrame to %d", self.currentFrame-2, self.currentFrame-1, self.currentFrame);
+  
+#if defined(DEBUG) && !TARGET_IPHONE_SIMULATOR
+  const int dumpRGBFrame = 1;
+  const int dumpAlphaFrame = 1;
+  
+  if (dumpRGBFrame) {
+    // Dump input frame coming directly from CoreVideo
+    
+    BOOL worked;
+    
+    AVFrame* rgbFrame = self.rgbFrame;
+    
+    CVImageBufferRef cvBufferRef = rgbFrame.cvBufferRef;
+    
+    int width = (int) CVPixelBufferGetWidth(rgbFrame.cvBufferRef);
+    int height = (int) CVPixelBufferGetHeight(rgbFrame.cvBufferRef);
+    
+    CGFrameBuffer *cgFrameBuffer = nil;
+    
+    worked = [self.frameDecoder renderCVImageBufferRefIntoFramebuffer:cvBufferRef frameBuffer:&cgFrameBuffer];
+    
+    assert(worked);
+    
+    NSData *pngData;
+    
+    pngData = [cgFrameBuffer formatAsPNG];
+    
+    NSString *tmpDir = NSTemporaryDirectory();
+    NSString *filename = [NSString stringWithFormat:@"RGBFrame%d.png", (int)(self.currentFrame - 2)/2];
+    NSString *tmpPNGPath = [tmpDir stringByAppendingPathComponent:filename];
+    
+    [pngData writeToFile:tmpPNGPath atomically:YES];
+    
+    NSLog(@"wrote %@ at %d x %d", tmpPNGPath, width, height);
+  }
+  
+  if (dumpAlphaFrame) {
+    // Dump input frame coming directly from CoreVideo
+    
+    BOOL worked;
+    
+    AVFrame* alphaFrame = self.alphaFrame;
+    
+    CVImageBufferRef cvBufferRef = alphaFrame.cvBufferRef;
+    
+    int width = (int) CVPixelBufferGetWidth(alphaFrame.cvBufferRef);
+    int height = (int) CVPixelBufferGetHeight(alphaFrame.cvBufferRef);
+    
+    CGFrameBuffer *cgFrameBuffer = nil;
+    
+    worked = [self.frameDecoder renderCVImageBufferRefIntoFramebuffer:cvBufferRef frameBuffer:&cgFrameBuffer];
+    
+    assert(worked);
+    
+    NSData *pngData;
+    
+    pngData = [cgFrameBuffer formatAsPNG];
+    
+    NSString *tmpDir = NSTemporaryDirectory();
+    NSString *filename = [NSString stringWithFormat:@"AlphaFrame%d.png", (int)(self.currentFrame - 2)/2];
+    NSString *tmpPNGPath = [tmpDir stringByAppendingPathComponent:filename];
+    
+    [pngData writeToFile:tmpPNGPath atomically:YES];
+    
+    NSLog(@"wrote %@ at %d x %d", tmpPNGPath, width, height);
+  }
+#endif // DEBUG
+  
+  [self setNeedsDisplay];
 }
 
 // This timer callback method is invoked after the event loop is up and running in the
@@ -1134,19 +1307,18 @@ enum {
 #endif // objc_arc
       AVAnimatorH264AlphaPlayer *strongSelf = weakSelf;
       
-      strongSelf.rgbFrame = rgbFrame;
-      strongSelf.alphaFrame = alphaFrame;
-      
-      strongSelf.currentFrame = nextFrame;
-
-      NSLog(@"set H264AlphaPlayer frames for (%d, %d), advance self.currentFrame to %d", strongSelf.currentFrame-2, strongSelf.currentFrame-1, strongSelf.currentFrame);
-      
-      [strongSelf setNeedsDisplay];
-      
-      // Deliver AVAnimatorPreparedToAnimateNotification
-      
-      [[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorPreparedToAnimateNotification
-                                                          object:strongSelf];
+      if (strongSelf.state == STOPPED) {
+        // stopAnimator invoked after prepareToAnimate
+      } else {
+        [strongSelf delieverRGBAndAlphaFrames:nextFrame rgbFrame:rgbFrame alphaFrame:alphaFrame];
+        
+        strongSelf.state = READY;
+        
+        // Deliver AVAnimatorPreparedToAnimateNotification
+        
+        [[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorPreparedToAnimateNotification
+                                                            object:strongSelf];
+      }
     });
   });
   
@@ -1160,6 +1332,8 @@ enum {
 {
   AVFrame *rgbFrame;
   AVFrame *alphaFrame;
+  
+  NSLog(@"advanceToFrame %d", currentFrame);
   
   rgbFrame = [frameDecoder advanceToFrame:currentFrame];
   currentFrame++;

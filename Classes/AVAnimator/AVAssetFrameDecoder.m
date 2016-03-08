@@ -71,8 +71,6 @@ typedef enum
 
 @property (nonatomic, retain) AVFrame *lastFrame;
 
-- (BOOL) renderIntoFramebuffer:(CMSampleBufferRef)sampleBuffer frameBuffer:(CGFrameBuffer**)frameBufferPtr;
-
 @end
 
 
@@ -386,7 +384,7 @@ typedef enum
       CFRetain(imageBufferRef);
       *cvBufferRefPtr = imageBufferRef;
     } else {
-      worked = [self renderIntoFramebuffer:sampleBuffer frameBuffer:frameBufferPtr];
+      worked = [self renderCMSampleBufferRefIntoFramebuffer:sampleBuffer frameBuffer:frameBufferPtr];
       NSAssert(worked, @"renderIntoFramebuffer worked");
     }
     
@@ -519,11 +517,81 @@ typedef enum
 // will make use of the same buffer. Note that the returned frameBuffer
 // object is placed in the autorelease pool implicitly.
 
-- (BOOL) renderIntoFramebuffer:(CMSampleBufferRef)sampleBuffer frameBuffer:(CGFrameBuffer**)frameBufferPtr
+- (BOOL) renderCMSampleBufferRefIntoFramebuffer:(CMSampleBufferRef)sampleBuffer frameBuffer:(CGFrameBuffer**)frameBufferPtr
+{
+  CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+  
+  return [self renderCVImageBufferRefIntoFramebuffer:imageBuffer frameBuffer:frameBufferPtr];
+}
+
+// This method will determine if a CoreVideo image buffer contains YUV or BGRX video data and
+// convert from YUV to BGRX if needed.
+
+- (BOOL) renderCVImageBufferRefIntoFramebuffer:(CVImageBufferRef)imageBuffer frameBuffer:(CGFrameBuffer**)frameBufferPtr
+{
+  int numPlanes = (int) CVPixelBufferGetPlaneCount(imageBuffer);
+  
+  if (numPlanes <= 1) {
+    // BGRA contents
+    return [self renderCVBGRAImageBufferRefIntoFramebuffer:imageBuffer frameBuffer:frameBufferPtr];
+  } else {
+    // YUV
+
+    return [self renderCVYUVImageBufferRefIntoFramebuffer:imageBuffer frameBuffer:frameBufferPtr];
+  }
+}
+
+// Render YUV 4:2:0 pixels in a CoreVideo image buffer as a flat BGRA framebuffer
+
+- (BOOL) renderCVYUVImageBufferRefIntoFramebuffer:(CVImageBufferRef)imageBuffer frameBuffer:(CGFrameBuffer**)frameBufferPtr
+{
+#if TARGET_IPHONE_SIMULATOR
+  // CoreImage does not support yuv420 pixels
+  assert(0);
+#else
+  CIContext *context = [CIContext contextWithOptions:nil];
+  NSAssert(context, @"CIContext");
+  
+  CIImage *image = [CIImage imageWithCVPixelBuffer:imageBuffer];
+  
+  CIImage* outputImage = image;
+  
+  CGRect extent = [outputImage extent];
+  
+  CGSize size = extent.size;
+  CVPixelBufferRef conversionBuffer = NULL;
+  CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault,
+                                        size.width,
+                                        size.height,
+                                        kCVPixelFormatType_32BGRA,
+                                        (__bridge CFDictionaryRef) @{
+                                                                     (__bridge NSString *)kCVPixelBufferIOSurfacePropertiesKey: @{},
+                                                                     (__bridge NSString *)kCVPixelFormatOpenGLESCompatibility : @(YES),
+                                                                     },
+                                        &conversionBuffer);
+  
+  if (status == kCVReturnSuccess) {
+    [context render:image toCVPixelBuffer:conversionBuffer];
+  }
+  
+  BOOL worked = [self renderCVBGRAImageBufferRefIntoFramebuffer:conversionBuffer frameBuffer:frameBufferPtr];
+  
+  CVPixelBufferRelease(conversionBuffer);
+  
+  return worked;
+#endif // TARGET_IPHONE_SIMULATOR
+}
+
+// Render BGRA pixels in a CoreVideo image buffer as a flat BGRA framebuffer
+
+- (BOOL) renderCVBGRAImageBufferRefIntoFramebuffer:(CVImageBufferRef)imageBuffer frameBuffer:(CGFrameBuffer**)frameBufferPtr
 {
   CGFrameBuffer *frameBuffer = *frameBufferPtr;
   
-  CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+#if defined(DEBUG)
+  int numPlanes = (int) CVPixelBufferGetPlaneCount(imageBuffer);
+  assert(numPlanes <= 1);
+#endif // DEBUG
   
   CVPixelBufferLockBaseAddress(imageBuffer,0);
   
@@ -564,7 +632,12 @@ typedef enum
   CGDataProviderRef dataProvider =
   CGDataProviderCreateWithData(NULL, baseAddress, bufferSize, NULL);
   
-  CGImageRef cgImageRef = CGImageCreate(width, height, 8, 32, bytesPerRow,
+  size_t bitsPerComponent = 8;
+  size_t bitsPerPixel = 32;
+  
+  // Input should be BGRA pixels represented as a word buffer
+  
+  CGImageRef cgImageRef = CGImageCreate(width, height, bitsPerComponent, bitsPerPixel, bytesPerRow,
                                         colorSpace, kCGBitmapByteOrder32Host | kCGImageAlphaNoneSkipFirst,
                                         dataProvider, NULL, true, kCGRenderingIntentDefault);
   
