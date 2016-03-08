@@ -18,6 +18,8 @@
 		3C673BE61C80E1F500DCA1E7 /* AVStreamEncodeDecode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C673BE51C80E1F500DCA1E7 /* AVStreamEncodeDecode.m */; };
 		3C673BE71C80E1F500DCA1E7 /* AVStreamEncodeDecode.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C673BE51C80E1F500DCA1E7 /* AVStreamEncodeDecode.m */; };
 		3C9A845C1C7E255200977CD3 /* AVMvidFileWriterTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C9A845B1C7E255200977CD3 /* AVMvidFileWriterTests.m */; };
+		3CADC8D31C8EE16400857F62 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3CADC8D21C8EE16400857F62 /* CoreImage.framework */; };
+		3CADC8D41C8EE16E00857F62 /* CoreImage.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3CADC8D21C8EE16400857F62 /* CoreImage.framework */; };
 		3CD931231BF091C900322A2A /* RGB3Frame_mix.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CD931221BF091C900322A2A /* RGB3Frame_mix.m4v */; };
 		3CF24CCF1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CF24CCE1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m */; };
 		3CF24CD01C863E9B00108968 /* AVAnimatorH264AlphaPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CF24CCE1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m */; };
@@ -380,6 +382,7 @@
 		3C673BE41C80E1F500DCA1E7 /* AVStreamEncodeDecode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVStreamEncodeDecode.h; sourceTree = "<group>"; };
 		3C673BE51C80E1F500DCA1E7 /* AVStreamEncodeDecode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVStreamEncodeDecode.m; sourceTree = "<group>"; };
 		3C9A845B1C7E255200977CD3 /* AVMvidFileWriterTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVMvidFileWriterTests.m; sourceTree = "<group>"; };
+		3CADC8D21C8EE16400857F62 /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
 		3CD931221BF091C900322A2A /* RGB3Frame_mix.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = RGB3Frame_mix.m4v; sourceTree = "<group>"; };
 		3CF24CCD1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorH264AlphaPlayer.h; sourceTree = "<group>"; };
 		3CF24CCE1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorH264AlphaPlayer.m; sourceTree = "<group>"; };
@@ -651,6 +654,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3CADC8D41C8EE16E00857F62 /* CoreImage.framework in Frameworks */,
 				CD1616D6180902ED00429AC2 /* MobileCoreServices.framework in Frameworks */,
 				CD8CAB1217C32A61008FB2A1 /* GLKit.framework in Frameworks */,
 				CD8CAB1317C32A61008FB2A1 /* OpenGLES.framework in Frameworks */,
@@ -673,6 +677,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3CADC8D31C8EE16400857F62 /* CoreImage.framework in Frameworks */,
 				CD1616D91809039F00429AC2 /* MobileCoreServices.framework in Frameworks */,
 				CD8CAB1017C32A4E008FB2A1 /* GLKit.framework in Frameworks */,
 				CD8CAB1117C32A4E008FB2A1 /* OpenGLES.framework in Frameworks */,
@@ -781,6 +786,7 @@
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				3CADC8D21C8EE16400857F62 /* CoreImage.framework */,
 				CD1616D5180902ED00429AC2 /* MobileCoreServices.framework */,
 				CD8CAB0E17C32A4E008FB2A1 /* GLKit.framework */,
 				CD8CAB0F17C32A4E008FB2A1 /* OpenGLES.framework */,
