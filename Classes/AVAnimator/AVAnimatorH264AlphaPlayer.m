@@ -105,10 +105,11 @@ const GLchar *fragShaderBGRACstr =
 "uniform sampler2D alphaframe;"
 "void main()"
 "{"
-"  lowp vec4 rgb;"
-"  rgb = texture2D(videoframe, coordinate);"
-"  rgb.a = texture2D(alphaframe, coordinate).r;"
-"  gl_FragColor = rgb;"
+"  lowp vec4 rgba;"
+"  rgba = texture2D(videoframe, coordinate);"
+// premultiply with assumption that rgba.a = 1
+"  rgba = rgba * texture2D(alphaframe, coordinate).r;"
+"  gl_FragColor = rgba;"
 "}";
 
 static
@@ -145,7 +146,9 @@ const GLchar *fragShaderYUVCstr =
 "  yuv2.x = alpha;"
 "  yuv2.yz = vec2(0,0);"
 "  rgb2 = colorConversionMatrix * yuv2;"
-"  gl_FragColor = vec4(rgb, rgb2.r);"
+"  alpha = rgb2.r;"
+"  rgb = rgb * alpha;" // premultiply
+"  gl_FragColor = vec4(rgb, alpha);"
 "}";
 
 enum {
