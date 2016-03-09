@@ -105,9 +105,10 @@ const GLchar *fragShaderBGRACstr =
 "uniform sampler2D alphaframe;"
 "void main()"
 "{"
-"  lowp vec4 rgba;"
+"  mediump vec4 rgba;"
 "  rgba = texture2D(videoframe, coordinate);"
-// premultiply with assumption that rgba.a = 1
+"  rgba.a = 1.0;"
+// premultiply
 "  rgba = rgba * texture2D(alphaframe, coordinate).r;"
 "  gl_FragColor = rgba;"
 "}";
@@ -133,7 +134,7 @@ const GLchar *fragShaderYUVCstr =
 "void main()"
 "{"
 "  mediump vec3 yuv;"
-"  lowp vec3 rgb;"
+"  mediump vec3 rgb;"
 "  mediump float alpha;"
 // Subtract constants to map the video range (16, 255) to (0.0, 1.0)
 "  yuv.x = (texture2D(SamplerY, coordinate).r - (16.0/255.0));"
