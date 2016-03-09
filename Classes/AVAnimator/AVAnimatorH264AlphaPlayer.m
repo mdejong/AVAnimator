@@ -133,9 +133,7 @@ const GLchar *fragShaderYUVCstr =
 "void main()"
 "{"
 "  mediump vec3 yuv;"
-"  mediump vec3 yuv2;"
 "  lowp vec3 rgb;"
-"  lowp vec3 rgb2;"
 "  mediump float alpha;"
 // Subtract constants to map the video range (16, 255) to (0.0, 1.0)
 "  yuv.x = (texture2D(SamplerY, coordinate).r - (16.0/255.0));"
@@ -143,11 +141,10 @@ const GLchar *fragShaderYUVCstr =
 "  rgb = colorConversionMatrix * yuv;"
 // Subtract constants to map the video range (16, 255) to (0.0, 1.0)
 "  alpha = texture2D(SamplerA, coordinate).r - (16.0/255.0);"
-"  yuv2.x = alpha;"
-"  yuv2.yz = vec2(0,0);"
-"  rgb2 = colorConversionMatrix * yuv2;"
-"  alpha = rgb2.r;"
-"  rgb = rgb * alpha;" // premultiply
+// Scale alpha to (0, 255) like colorConversionMatrix
+"  alpha = alpha * colorConversionMatrix[0][0];"
+// premultiply
+"  rgb = rgb * alpha;"
 "  gl_FragColor = vec4(rgb, alpha);"
 "}";
 
@@ -1159,8 +1156,10 @@ enum {
   self.rgbFrame = rgbFrame;
   self.alphaFrame = alphaFrame;
   self.currentFrame = nextFrame;
-  
+
+#if defined(DEBUG)
   NSLog(@"set H264AlphaPlayer frames for (%d, %d), advance self.currentFrame to %d", self.currentFrame-2, self.currentFrame-1, self.currentFrame);
+#endif // DEBUG
   
 #if defined(DEBUG) && !TARGET_IPHONE_SIMULATOR
   const int dumpRGBFrame = 1;
