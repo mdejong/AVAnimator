@@ -191,11 +191,45 @@ enum {
   BOOL didSetupOpenGLMembers;
   
   AVAnimatorPlayerState m_state;
+  
+  // Stores the first time when a display link callback was
+  // delivered. This corresponds to the time for frame 1.
+  
+  CFTimeInterval firstTimeInterval;
+  
+  // This value is set in the main thread when the display
+  // link timer is fired. If the display link is running
+  // behind the wall clock then this value is advanced
+  // so that the decoder can tell things are falling behind.
+  
+  int nextDecodeFrame;
+  
+  // repeating GCD timer
+  
+  dispatch_source_t _dispatchTimer;
+  
+  // Timer set when a repeating dispatch timer is started
+  // but with the knowledge that the value only be accessed
+  // from the secondary thread.
+  
+#if defined(DEBUG)
+  CFTimeInterval dispatchFirstTimeInterval;
+  CFTimeInterval dispatchPrevTimeInterval;
+#endif // DEBUG
+  
+  // The number of frames that can be accessed by the
+  // decoder. This value should be thread safe to access
+  // since it is only set once at load time.
+
+  int dispatchMaxFrame;
 }
 
 @property (nonatomic, assign) CGSize renderSize;
 
-@property (nonatomic, assign) int currentFrame;
+// Must be atomic since this property can be accessed
+// from both the main and decode threads.
+
+@property (atomic, assign) int currentFrame;
 
 @property (nonatomic, retain) AVFrame *rgbFrame;
 @property (nonatomic, retain) AVFrame *alphaFrame;
@@ -205,6 +239,14 @@ enum {
 @property (nonatomic, assign) BOOL renderYUVFrames;
 
 @property (nonatomic, assign) AVAnimatorPlayerState state;
+
+@property (nonatomic, retain) CADisplayLink *displayLink;
+
+// This NSDate object stores a projected optimal frame
+// decode time for the next frame decode operation.
+
++ (uint32_t) timeIntervalToFrameOffset:(CFTimeInterval)elapsed
+                                   fps:(CFTimeInterval)fps;
 
 @end
 
@@ -252,6 +294,8 @@ enum {
     CFRelease(textureCacheRef);
     textureCacheRef = 0;
   }
+  
+  [self cancelDispatchTimer];
   
 #if __has_feature(objc_arc)
 #else
@@ -328,7 +372,9 @@ enum {
   // Use 2x scale factor on Retina displays.
   self.contentScaleFactor = [[UIScreen mainScreen] scale];
   
+  // Set to NO to indicate that application will force redraws
   self.enableSetNeedsDisplay = YES;
+//  self.enableSetNeedsDisplay = NO;
   
   self->passThroughProgram = 0;
   self->textureCacheRef = NULL;
@@ -851,6 +897,7 @@ enum {
 - (void)drawRect:(CGRect)rect
 {
   NSLog(@"drawRect %dx%d", (int)rect.size.width, (int)rect.size.height);
+  //NSLog(@"drawable width x height %dx%d", (int)self.drawableWidth, (int)self.drawableHeight);
   
   if (didSetupOpenGLMembers == FALSE) {
     didSetupOpenGLMembers = TRUE;
@@ -861,7 +908,7 @@ enum {
   if (self.rgbFrame != nil && self.alphaFrame != nil) {
     [self displayFrame];
   } else {
-    glClearColor(0.0, 0.0, 0.0, 1.0);
+    glClearColor(0.0, 0.0, 0.0, 0.0); // Fully transparent
     glClear(GL_COLOR_BUFFER_BIT);
   }
   return;
@@ -1048,8 +1095,393 @@ enum {
   return YES;
 }
 
+#pragma mark -  Animation cycle
+
+// Map a time offset to a number of frames at the end of the next frame interval
+//
+// Assume 2 FPS so that frame duration is 0.5s
+
+// 0.0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.75 0.8 0.9 1.0
+//   1   1   1   1   1   1   1   1    1   2   2   2
+
++ (uint32_t) timeIntervalToFrameOffset:(CFTimeInterval)elapsed
+                                   fps:(CFTimeInterval)fps
+{
+  const BOOL debug = FALSE;
+
+  uint32_t frameOffset;
+
+  float frameF = elapsed * fps;
+  
+  if (debug) {
+    NSLog(@"frameF %0.5f", frameF);
+  }
+  
+  frameOffset = (uint32_t)round(frameF);
+  
+  if (debug) {
+    NSLog(@"elapsed time %0.3f with frameDuration %0.3f -> frame number %d", elapsed, 1.0/fps, frameOffset);
+  }
+  
+  if (frameOffset == 0) {
+    frameOffset = 1;
+  }
+ 
+  if (debug) {
+    NSLog(@"return frame offset %d", frameOffset);
+  }
+  
+  return frameOffset;
+}
+
+// Create GCD repeating timer which is staggered so that decoding of the next
+// frame starts right after the display interval.
+
+- (void) makeDispatchTimer:(double)inInterval
+                     queue:(dispatch_queue_t)queue
+                     block:(dispatch_block_t)block
+{
+  dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+  
+  if (timer)
+  {
+    double firstDelayInterval = (1.0/100.0);
+    
+    dispatch_time_t start = dispatch_time(DISPATCH_TIME_NOW, firstDelayInterval * NSEC_PER_SEC);
+    uint64_t interval = inInterval * NSEC_PER_SEC;
+    uint64_t leeway = (1ull * NSEC_PER_SEC) / 10;
+    
+    dispatch_source_set_timer(timer, start, interval, leeway);
+    dispatch_source_set_event_handler(timer, block);
+    dispatch_resume(timer);
+  }
+  
+  self->_dispatchTimer = timer;
+  
+#if defined(DEBUG)
+  self->dispatchFirstTimeInterval = 0.0;
+#endif // DEBUG
+  
+  return;
+}
+
+- (void) cancelDispatchTimer
+{
+  if (self->_dispatchTimer) {
+    dispatch_source_cancel(self->_dispatchTimer);
+#if OS_OBJECT_HAVE_OBJC_SUPPORT == 0
+    // Remove this if you are on a Deployment Target of iOS6 or OSX 10.8 and above
+    dispatch_release(self->_dispatchTimer);
+#endif // OS_OBJECT_HAVE_OBJC_SUPPORT
+    self->_dispatchTimer = NULL;
+  }
+}
+
+// Invoked on GCD queue at a repeating interval such that the decoding will be finished *AFTER*
+// the next display interval.
+
+- (void) dispatchTimerFired
+{
+#if defined(DEBUG)
+  assert([NSThread currentThread] != [NSThread mainThread]);
+#endif // DEBUG
+  
+#if defined(DEBUG)
+  if (self->dispatchFirstTimeInterval == 0.0) {
+    // Query start of interval only once
+    self->dispatchFirstTimeInterval = self->firstTimeInterval;
+    self->dispatchPrevTimeInterval = 0.0;
+  }
+  
+  CFTimeInterval startTime = self->dispatchFirstTimeInterval; // read from secondary thread
+  
+  CFTimeInterval nowTime = CACurrentMediaTime();
+
+  CFTimeInterval prev = self->dispatchPrevTimeInterval;
+  
+  CFTimeInterval deltaLastTime = nowTime - prev;
+  
+  NSLog(@"dispatchTimerFired : now %0.3f : start %0.3f : elapsed %0.3f : since prev %0.3f", nowTime, startTime, (nowTime - startTime), deltaLastTime);
+  
+  self->dispatchPrevTimeInterval = nowTime;
+#endif // DEBUG
+  
+//  if ((prev != 0) && ((nowTime - startTime) > 10.0)) {
+//    [self stopAnimator];
+//    return;
+//  }
+  
+  BOOL done = [self dispatchDecodeFrame];
+
+  if (done) {
+    [self cancelDispatchTimer];
+    
+    dispatch_sync(dispatch_get_main_queue(), ^{
+      [self stopAnimator];
+      
+      [[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorDidStopNotification object:self];
+    });
+  }
+  
+  return;
+}
+
+// This method implements the tricky thread handoff logic that determines
+// the next frame to display and decodes that frame. This logic has to check
+// in with state from the main thread.
+//
+// Returns TRUE when all frames have been decoded.
+
+- (BOOL) dispatchDecodeFrame
+{
+#if defined(DEBUG)
+  assert([NSThread currentThread] != [NSThread mainThread]);
+#endif // DEBUG
+  
+  const BOOL debugDecodeFrames = FALSE;
+  
+  __block int currentFrame = self.currentFrame; // atomic
+
+  __block int aheadButReallyDone = 0;
+  
+  int maxFrame = self->dispatchMaxFrame;
+  
+  if (currentFrame >= maxFrame) {
+    if (debugDecodeFrames) {
+      NSLog(@"dispatchDecodeFrame : done processing frames at %d", currentFrame);
+    }
+    
+    return TRUE;
+  }
+  
+#if __has_feature(objc_arc)
+  __weak
+#else
+#endif // objc_arc
+  AVAnimatorH264AlphaPlayer *weakSelf = self;
+  
+  AVFrame* rgbFrame;
+  AVFrame* alphaFrame;
+  
+  if (debugDecodeFrames) {
+    NSLog(@"advanceToFrame %d of %d (aka %d in combined frames)", currentFrame, maxFrame, currentFrame/2);
+  }
+  
+  CFTimeInterval beforeTime = CACurrentMediaTime();
+  
+  int nextFrame = [self.class loadFramesInBackgroundThread:currentFrame
+                                     frameDecoder:self.frameDecoder
+                                         rgbFrame:&rgbFrame
+                                       alphaFrame:&alphaFrame];
+  
+  CFTimeInterval afterTime = CACurrentMediaTime();
+  CFTimeInterval delta = afterTime - beforeTime;
+  
+  if ((1)) {
+    NSLog(@"decode start time      : %0.5f", beforeTime);
+    NSLog(@"decode delta %0.3f", delta);
+  }
+  
+  dispatch_sync(dispatch_get_main_queue(), ^{
+#if defined(DEBUG)
+    NSAssert(rgbFrame, @"rgbFrame");
+    NSAssert(alphaFrame, @"alphaFrame");
+#endif // DEBUG
+    
+    __strong AVAnimatorH264AlphaPlayer *strongSelf = weakSelf;
+    
+    if (strongSelf.state != ANIMATING) {
+      // stopAnimator invoked after startAnimator
+      currentFrame = maxFrame;
+    } else {
+      if (debugDecodeFrames) {
+        NSLog(@"deliver to main time      %0.5f", CACurrentMediaTime());
+      }
+      
+      [strongSelf delieverRGBAndAlphaFrames:nextFrame rgbFrame:rgbFrame alphaFrame:alphaFrame];
+      
+      // Check nextDecodeFrame, this value is set in the display callback in the main thread.
+      // Note that the next frame calculated from the main thread maps to 2 frames of RGB/Alpha.
+      
+      int nextRGBAlphaFrame = nextDecodeFrame * 2;
+      
+      if (debugDecodeFrames) {
+        NSLog(@"decoder currentFrame %d compared to nextDecodeFrame %d -> nextRGBAlphaFrame %d", currentFrame, nextDecodeFrame, nextRGBAlphaFrame);
+      }
+      
+      if (nextFrame < nextRGBAlphaFrame) {
+        if (debugDecodeFrames) {
+          NSLog(@"decoder currentFrame is behind by %d frames", (nextRGBAlphaFrame - nextFrame)/2);
+        }
+        
+        currentFrame = nextRGBAlphaFrame;
+        
+        // Skip ahead, but don't skip over the last frame in the interval
+        
+        if (currentFrame >= maxFrame) {
+          int actualLastFrame = maxFrame - 2;
+          if (actualLastFrame != currentFrame) {
+            currentFrame = actualLastFrame;
+          } else {
+            aheadButReallyDone = 1;
+          }
+        }
+      }
+      else {
+        currentFrame = nextFrame;
+      }
+    }
+  });
+  
+  if (aheadButReallyDone) {
+    if (debugDecodeFrames) {
+      NSLog(@"dispatchDecodeFrame : done processing frames at %d", currentFrame);
+    }
+    
+    return TRUE;
+  } else {
+    
+    if (debugDecodeFrames) {
+      NSLog(@"dispatchDecodeFrame : NOT done processing frames at %d", currentFrame);
+    }
+    return FALSE;
+  }
+}
+
+// Kick off repeating GCD timer invocation
+
+- (void) startDispatchRender {
+#if defined(DEBUG)
+  assert([NSThread currentThread] == [NSThread mainThread]);
+#endif // DEBUG
+  
+#if __has_feature(objc_arc)
+  __weak
+#else
+#endif // objc_arc
+  AVAnimatorH264AlphaPlayer *weakSelf = self;
+  
+  // Note that the dispatch time depends on the display framerate
+  // so that the decode event is always just after the frame display
+  
+  const CFTimeInterval kFrameDuration = 1.0 / 30.0; // 30 FPS display refresh rate
+  
+  [self makeDispatchTimer:kFrameDuration
+                    queue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)
+                    block:^{
+                      [weakSelf dispatchTimerFired];
+                    }];
+  
+  // dispatchMaxFrame should have been set at asset load time
+#if defined(DEBUG)
+  assert(self->dispatchMaxFrame > 0);
+#endif // DEBUG
+}
+
+// This display link callback is invoked at fixed interval while animation is running.
+
+- (void) displayLinkCallback:(CADisplayLink*)displayLink {
+  const BOOL debugDisplayLink = FALSE;
+  const BOOL debugDisplayRedrawn = TRUE;
+  
+  // Note that frame duration is 1/60 but the interval is 2 so 1/30 a second refresh rate
+  
+  if (debugDisplayLink) {
+  NSLog(@"displayLinkCallback with timestamp %0.4f and frame duration %0.4f", displayLink.timestamp, displayLink.duration);
+  }
+  
+  // Actualy framerate of video, note that the calculated framerate might
+  // be slightly different than the screen refresh rate.
+  
+  const CFTimeInterval kFramesPerSecond = 29.97;
+  const CFTimeInterval kFrameDuration = 1.0 / kFramesPerSecond;
+  
+  // Note that first image can be visible for 2 cycles since the first
+  // callback is invoked on a screen sync and then decoding starts
+  // after that.
+  
+  if (firstTimeInterval == 0) {
+    firstTimeInterval = displayLink.timestamp;
+    [self startDispatchRender];
+  }
+
+  CFTimeInterval elapsed = (displayLink.timestamp - firstTimeInterval);
+  
+  if (debugDisplayLink) {
+    NSLog(@"elapsed %0.3f", elapsed);
+  }
+  
+  int lastDisplayLinkFrameOffset;
+  
+  lastDisplayLinkFrameOffset = [self.class timeIntervalToFrameOffset:elapsed fps:kFramesPerSecond];
+  
+  // Calculate delta to next display time
+  
+  CFTimeInterval nextDisplayOffset = lastDisplayLinkFrameOffset * kFrameDuration;
+  
+  if (debugDisplayLink) {
+    NSLog(@"nextDisplayOffset %0.3f for frame number %d", nextDisplayOffset, lastDisplayLinkFrameOffset);
+  }
+  
+  if (elapsed < nextDisplayOffset) {
+    // Rounded frame number down from current time
+    nextDisplayOffset = (lastDisplayLinkFrameOffset + 1) * kFrameDuration;
+    nextDecodeFrame = (lastDisplayLinkFrameOffset + 1);
+    
+    if (debugDisplayLink) {
+      NSLog(@"nextDecodeFrame rounded down to %d", nextDecodeFrame);
+    }
+  } else {
+    // Rounded frame number up from current frame
+    nextDecodeFrame = lastDisplayLinkFrameOffset;
+    
+    if (debugDisplayLink) {
+      NSLog(@"nextDecodeFrame rounded up to %d", nextDecodeFrame);
+    }
+  }
+  
+  // Each display link invocation will schedule a redraw, the result is that
+  // a smooth 30 FPS video rate is maintained.
+  
+  if (debugDisplayRedrawn) {
+  NSLog(@"disp now                 %0.5f", displayLink.timestamp);
+  NSLog(@"called setNeedsDisplay");
+  }
+  
+  [self setNeedsDisplay];
+  
+//  if (lastDisplayLinkFrameOffset > 10) {
+//     NSLog(@"10");
+//  }
+  
+  return;
+}
+
+- (void)setupDisplayLink {
+#if defined(DEBUG)
+  assert([NSThread currentThread] == [NSThread mainThread]);
+#endif // DEBUG
+  
+  CADisplayLink *displayLink = self.displayLink;
+  if (displayLink != nil) {
+    [displayLink removeFromRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+  }
+  displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(displayLinkCallback:)];
+  displayLink.frameInterval = 2; // 30 FPS
+  // FIXME : NSDefaultRunLoopMode vs common mode?
+  [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+  self.displayLink = displayLink;
+  
+  firstTimeInterval = 0.0;
+  nextDecodeFrame = 0;
+}
+
 - (void) startAnimator
 {
+#if defined(DEBUG)
+  assert([NSThread currentThread] == [NSThread mainThread]);
+#endif // DEBUG
+  
   if (self.rgbFrame == nil || self.alphaFrame == nil) {
     NSAssert(FALSE, @"player must be prepared before startAnimator can be invoked");
   }
@@ -1059,74 +1491,30 @@ enum {
   self.state = ANIMATING;
   
   __block int currentFrame = self.currentFrame;
-  __block int maxFrame = (int)self.frameDecoder.numFrames;
+  __block int maxFrame = self->dispatchMaxFrame;
   
-  if (self.currentFrame >= maxFrame) {
+  if (currentFrame >= maxFrame) {
     // In the case of only 2 frames, stop straight away without kicking off background thread, useful for testing
     self.state = STOPPED;
     return;
   }
   
-  __block Class c = self.class;
-  __block AVAssetFrameDecoder *frameDecoderBlock = self.frameDecoder;
-  __weak AVAnimatorH264AlphaPlayer *weakSelf = self;
-  
-  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-    // Execute on background thread with blocks API invocation
-    
-    AVFrame* rgbFrame;
-    AVFrame* alphaFrame;
-    
-    while (1) @autoreleasepool {
-      if (currentFrame >= maxFrame) {
-        NSLog(@"done processing frames at %d", currentFrame);
-        
-        break;
-      }
-      
-      int nextFrame = [c loadFramesInBackgroundThread:currentFrame
-                                         frameDecoder:frameDecoderBlock
-                                             rgbFrame:&rgbFrame
-                                           alphaFrame:&alphaFrame];
-      
-      dispatch_sync(dispatch_get_main_queue(), ^{
-#if defined(DEBUG)
-        NSAssert(rgbFrame, @"rgbFrame");
-        NSAssert(alphaFrame, @"alphaFrame");
-#endif // DEBUG
-        
-        __strong AVAnimatorH264AlphaPlayer *strongSelf = weakSelf;
-        
-        if (strongSelf.state != ANIMATING) {
-          // stopAnimator invoked after startAnimator
-          currentFrame = maxFrame;
-        } else {
-          [strongSelf delieverRGBAndAlphaFrames:nextFrame rgbFrame:rgbFrame alphaFrame:alphaFrame];
-          
-          currentFrame = nextFrame;
-        }
-      });
-      
-    } // end of while (1) loop
-    
-    // Done with animation loop, deliver AVAnimatorDidStopNotification in main thread
-    
-    // FIXME: should this be a strong self ref?
-    
-    dispatch_sync(dispatch_get_main_queue(), ^{
-      [weakSelf stopAnimator];
-      
-      [[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorDidStopNotification object:weakSelf];
-    });
-    
-  });
-
+  [self setupDisplayLink];
+  self.displayLink.paused = FALSE;
 }
 
 - (void) stopAnimator
 {
+#if defined(DEBUG)
+  assert([NSThread currentThread] == [NSThread mainThread]);
+#endif // DEBUG
+  
   self.rgbFrame = nil;
   self.alphaFrame = nil;
+  
+  self.displayLink.paused = TRUE;
+  
+  [self cancelDispatchTimer];
   
   self.state = STOPPED;
 }
@@ -1135,6 +1523,10 @@ enum {
 
 - (void) prepareToAnimate
 {
+#if defined(DEBUG)
+  assert([NSThread currentThread] == [NSThread mainThread]);
+#endif // DEBUG
+  
   self.animatorPrepTimer = [NSTimer timerWithTimeInterval: 0.10
                                                    target: self
                                                  selector: @selector(_prepareToAnimateTimer:)
@@ -1229,7 +1621,11 @@ enum {
   }
 #endif // DEBUG
   
-  [self setNeedsDisplay];
+  // [self setNeedsDisplay] when not using the display loop.
+  // [self display] would be invoked when explicitly drawing.
+  
+  //[self setNeedsDisplay];
+  //[self display];
 }
 
 // This timer callback method is invoked after the event loop is up and running in the
@@ -1238,6 +1634,8 @@ enum {
 - (void) _prepareToAnimateTimer:(NSTimer*)timer
 {
   AVAssetFrameDecoder *frameDecoder;
+  
+// FIXME: why is frame decoder init logic not done in background thread?
   
   frameDecoder = [AVAssetFrameDecoder aVAssetFrameDecoder];
   
@@ -1274,6 +1672,24 @@ enum {
     return;
     //    return FALSE;
   }
+  
+  // Verify that the total number of frames is even since RGB and ALPHA frames must be matched.
+
+  int numFrames = (int) self.frameDecoder.numFrames;
+
+  // Set the dispatchMaxFrame field. Note that in some weird cases the
+  // Simulator returns a nonsense result with an odd number of frames,
+  // so set the max to a specific even number of frames so that the
+  // simulator is able to run something.
+  
+#if TARGET_IPHONE_SIMULATOR
+  if ((numFrames % 2) != 0) {
+    numFrames--;
+  }
+#endif // TARGET_IPHONE_SIMULATOR
+  
+  self->dispatchMaxFrame = numFrames;
+  assert((self->dispatchMaxFrame % 2) == 0);
   
   self.currentFrame = 0;
   
@@ -1315,6 +1731,8 @@ enum {
       } else {
         [strongSelf delieverRGBAndAlphaFrames:nextFrame rgbFrame:rgbFrame alphaFrame:alphaFrame];
         
+        [strongSelf setNeedsDisplay];
+        
         strongSelf.state = READY;
         
         // Deliver AVAnimatorPreparedToAnimateNotification
@@ -1335,8 +1753,6 @@ enum {
 {
   AVFrame *rgbFrame;
   AVFrame *alphaFrame;
-  
-  NSLog(@"advanceToFrame %d", currentFrame);
   
   rgbFrame = [frameDecoder advanceToFrame:currentFrame];
   currentFrame++;
