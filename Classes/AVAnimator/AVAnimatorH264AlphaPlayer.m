@@ -207,6 +207,7 @@ enum {
   // repeating GCD timer
   
   dispatch_source_t _dispatchTimer;
+  dispatch_queue_t _highPrioQueue;
   
   // Timer set when a repeating dispatch timer is started
   // but with the knowledge that the value only be accessed
@@ -221,7 +222,7 @@ enum {
   // decoder. This value should be thread safe to access
   // since it is only set once at load time.
 
-  int dispatchMaxFrame;
+  int m_dispatchMaxFrame;
 }
 
 @property (nonatomic, assign) CGSize renderSize;
@@ -230,6 +231,11 @@ enum {
 // from both the main and decode threads.
 
 @property (atomic, assign) int currentFrame;
+
+// This atomic property stores the largest frame
+// number in the RGB+Alpha frames.
+
+@property (atomic, assign) int dispatchMaxFrame;
 
 @property (nonatomic, retain) AVFrame *rgbFrame;
 @property (nonatomic, retain) AVFrame *alphaFrame;
@@ -264,6 +270,7 @@ enum {
 @synthesize animatorPrepTimer = m_animatorPrepTimer;
 @synthesize currentFrame = m_currentFrame;
 @synthesize state = m_state;
+@synthesize dispatchMaxFrame = m_dispatchMaxFrame;
 
 #if defined(DEBUG)
 @synthesize captureDir = m_captureDir;
@@ -1161,6 +1168,10 @@ enum {
                      queue:(dispatch_queue_t)queue
                      block:(dispatch_block_t)block
 {
+#if defined(DEBUG)
+  NSAssert(queue, @"queue");
+#endif // DEBUG
+  
   dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
   
   if (timer)
@@ -1256,17 +1267,17 @@ enum {
 
 - (BOOL) dispatchDecodeFrame
 {
-#if defined(DEBUG)
-  assert([NSThread currentThread] != [NSThread mainThread]);
-#endif // DEBUG
-  
   const BOOL debugDecodeFrames = FALSE;
   
   __block int currentFrame = self.currentFrame; // atomic
 
+  if (debugDecodeFrames) {
+    NSLog(@"dispatchDecodeFrame invoked with currentFrame %d (aka %d in combined frames)", currentFrame, currentFrame/2);
+  }
+  
   __block int aheadButReallyDone = 0;
   
-  int maxFrame = self->dispatchMaxFrame;
+  int maxFrame = self.dispatchMaxFrame;
   
   if (currentFrame >= maxFrame) {
     if (debugDecodeFrames) {
@@ -1401,14 +1412,14 @@ enum {
   const CFTimeInterval kFrameDuration = 1.0 / 30.0; // 30 FPS display refresh rate
   
   [self makeDispatchTimer:kFrameDuration
-                    queue:dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)
+                    queue:self->_highPrioQueue
                     block:^{
                       [weakSelf dispatchTimerFired];
                     }];
   
   // dispatchMaxFrame should have been set at asset load time
 #if defined(DEBUG)
-  assert(self->dispatchMaxFrame > 0);
+  assert(self.dispatchMaxFrame > 0);
 #endif // DEBUG
 }
 
@@ -1525,7 +1536,11 @@ enum {
   self.state = ANIMATING;
   
   __block int currentFrame = self.currentFrame;
-  __block int maxFrame = self->dispatchMaxFrame;
+  __block int maxFrame = self.dispatchMaxFrame;
+
+#if defined(DEBUG)
+  NSAssert(self.dispatchMaxFrame > 0, @"player must be prepared before startAnimator can be invoked");
+#endif // DEBUG
   
   if (currentFrame >= maxFrame) {
     // In the case of only 2 frames, stop straight away without kicking off background thread, useful for testing
@@ -1535,6 +1550,11 @@ enum {
   
   [self setupDisplayLink];
   self.displayLink.paused = FALSE;
+  
+#if defined(DEBUG)
+  CFTimeInterval nowTime = CACurrentMediaTime();
+  NSLog(@"startAnimator : now %0.3f", nowTime);
+#endif // DEBUG
 }
 
 - (void) stopAnimator
@@ -1561,7 +1581,7 @@ enum {
   assert([NSThread currentThread] == [NSThread mainThread]);
 #endif // DEBUG
   
-  self.animatorPrepTimer = [NSTimer timerWithTimeInterval: 0.10
+  self.animatorPrepTimer = [NSTimer timerWithTimeInterval: 1.0/60
                                                    target: self
                                                  selector: @selector(_prepareToAnimateTimer:)
                                                  userInfo: NULL
@@ -1675,69 +1695,16 @@ enum {
 
 - (void) _prepareToAnimateTimer:(NSTimer*)timer
 {
-  AVAssetFrameDecoder *frameDecoder;
-  
-// FIXME: why is frame decoder init logic not done in background thread?
-  
-  frameDecoder = [AVAssetFrameDecoder aVAssetFrameDecoder];
-  
-  // Configure frame decoder flags
-  
-  frameDecoder.produceCoreVideoPixelBuffers = TRUE;
-  
-  if (renderBGRA) {
-  } else {
-    frameDecoder.produceYUV420Buffers = TRUE;
+  if (self->_highPrioQueue == nil) {
+    self->_highPrioQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0);
+    assert(self->_highPrioQueue);
   }
-  
-  self.frameDecoder = frameDecoder;
-  
-  // FIXME: deliver AVAnimatorFailedToLoadNotification in fail case
-  
-  NSAssert(self.assetFilename, @"assetFilename must be defined when prepareToAnimate is invoked");
-  
-  NSString *assetFullPath = [AVFileUtil getQualifiedFilenameOrResource:self.assetFilename];
-  
-  BOOL worked;
-  worked = [frameDecoder openForReading:assetFullPath];
-  
-  if (worked == FALSE) {
-    NSLog(@"error: cannot open RGB+Alpha mixed asset filename \"%@\"", assetFullPath);
-    return;
-    //return FALSE;
-  }
-  
-  worked = [frameDecoder allocateDecodeResources];
-  
-  if (worked == FALSE) {
-    NSLog(@"error: cannot allocate RGB+Alpha mixed decode resources for filename \"%@\"", assetFullPath);
-    return;
-    //    return FALSE;
-  }
-  
-  // Verify that the total number of frames is even since RGB and ALPHA frames must be matched.
-
-  int numFrames = (int) self.frameDecoder.numFrames;
-
-  // Set the dispatchMaxFrame field. Note that in some weird cases the
-  // Simulator returns a nonsense result with an odd number of frames,
-  // so set the max to a specific even number of frames so that the
-  // simulator is able to run something.
-  
-#if TARGET_IPHONE_SIMULATOR
-  if ((numFrames % 2) != 0) {
-    numFrames--;
-  }
-#endif // TARGET_IPHONE_SIMULATOR
-  
-  self->dispatchMaxFrame = numFrames;
-  assert((self->dispatchMaxFrame % 2) == 0);
   
   self.currentFrame = 0;
+  self.frameDecoder = [AVAssetFrameDecoder aVAssetFrameDecoder];
   
   __block int currentFrame = self.currentFrame;
   __block Class c = self.class;
-  __block AVAssetFrameDecoder *frameDecoderBlock = frameDecoder;
 
 #if __has_feature(objc_arc)
   __weak
@@ -1745,14 +1712,75 @@ enum {
 #endif // objc_arc
   AVAnimatorH264AlphaPlayer *weakSelf = self;
   
-  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+  dispatch_async(self->_highPrioQueue, ^{
     // Execute on background thread with blocks API invocation
+    
+#if __has_feature(objc_arc)
+    __strong
+#else
+#endif // objc_arc
+    AVAnimatorH264AlphaPlayer *strongSelf = weakSelf;
+    
+    AVAssetFrameDecoder *frameDecoder = strongSelf.frameDecoder;
+    assert(frameDecoder);
+    
+    // Configure frame decoder flags
+    
+    frameDecoder.produceCoreVideoPixelBuffers = TRUE;
+    
+    if (renderBGRA) {
+    } else {
+      frameDecoder.produceYUV420Buffers = TRUE;
+    }
+    
+    // FIXME: deliver AVAnimatorFailedToLoadNotification in fail case
+    
+    NSAssert(strongSelf.assetFilename, @"assetFilename must be defined when prepareToAnimate is invoked");
+    
+    NSString *assetFullPath = [AVFileUtil getQualifiedFilenameOrResource:strongSelf.assetFilename];
+    
+    BOOL worked;
+    worked = [frameDecoder openForReading:assetFullPath];
+    
+    if (worked == FALSE) {
+      NSLog(@"error: cannot open RGB+Alpha mixed asset filename \"%@\"", assetFullPath);
+      return;
+      //return FALSE;
+    }
+    
+    worked = [frameDecoder allocateDecodeResources];
+    
+    if (worked == FALSE) {
+      NSLog(@"error: cannot allocate RGB+Alpha mixed decode resources for filename \"%@\"", assetFullPath);
+      return;
+      //    return FALSE;
+    }
+    
+    // Verify that the total number of frames is even since RGB and ALPHA frames must be matched.
+    
+    int numFrames = (int) frameDecoder.numFrames;
+    
+    // Set the dispatchMaxFrame field. Note that in some weird cases the
+    // Simulator returns a nonsense result with an odd number of frames,
+    // so set the max to a specific even number of frames so that the
+    // simulator is able to run something.
+    
+#if TARGET_IPHONE_SIMULATOR
+    if ((numFrames % 2) != 0) {
+      numFrames--;
+    }
+#endif // TARGET_IPHONE_SIMULATOR
+    
+    strongSelf.dispatchMaxFrame = numFrames;
+#if defined(DEBUG)
+    assert((strongSelf.dispatchMaxFrame % 2) == 0);
+#endif // DEBUG
     
     AVFrame* rgbFrame;
     AVFrame* alphaFrame;
     
     int nextFrame = [c loadFramesInBackgroundThread:currentFrame
-                                       frameDecoder:frameDecoderBlock
+                                       frameDecoder:frameDecoder
                                            rgbFrame:&rgbFrame
                                          alphaFrame:&alphaFrame];
     

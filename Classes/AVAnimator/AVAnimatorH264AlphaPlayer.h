@@ -40,9 +40,9 @@
 // Set this property to indicate the name of the asset to be
 // loaded as a result of calling startAnimator.
 
-@property (nonatomic, copy) NSString *assetFilename;
+@property (atomic, copy) NSString *assetFilename;
 
-@property (nonatomic, retain) AVAssetFrameDecoder *frameDecoder;
+@property (atomic, retain) AVAssetFrameDecoder *frameDecoder;
 
 // In DEBUG mode, this property can be set to a directory and each rendered
 // output frame will be captured as BGRA and saved in a PNG.
@@ -51,13 +51,18 @@
 @property (nonatomic, copy) NSString *captureDir;
 #endif // DEBUG
 
-- (void) startAnimator;
-
-- (void) stopAnimator;
-
 // Invoke this metho to read from the named asset and being loading initial data
 
 - (void) prepareToAnimate;
+
+// After an animator has been prepared and the AVAnimatorPreparedToAnimateNotification has
+// been delivered this startAnimator API can be invoked to actually kick off the playback loop.
+
+- (void) startAnimator;
+
+// Stop playback of animator, nop is not currently animating
+
+- (void) stopAnimator;
 
 @end
 
