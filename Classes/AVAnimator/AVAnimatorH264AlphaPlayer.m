@@ -932,7 +932,7 @@ enum {
 
 - (void)drawRect:(CGRect)rect
 {
-  NSLog(@"drawRect %dx%d", (int)rect.size.width, (int)rect.size.height);
+  //NSLog(@"drawRect %dx%d", (int)rect.size.width, (int)rect.size.height);
   //NSLog(@"drawable width x height %dx%d", (int)self.drawableWidth, (int)self.drawableHeight);
   
   if (didSetupOpenGLMembers == FALSE) {
@@ -1214,9 +1214,7 @@ enum {
 
 - (void) dispatchTimerFired
 {
-//  NSLog(@"dispatchTimerFired");
-  
-  const BOOL debugPrintTimes = TRUE;
+  const BOOL debugPrintTimes = FALSE;
   
 #if defined(DEBUG)
   assert([NSThread currentThread] != [NSThread mainThread]);
@@ -1331,7 +1329,7 @@ enum {
   
   CFTimeInterval beforeTime = CACurrentMediaTime();
   
-  if ((1)) {
+  if ((0)) {
     NSLog(@"decode start time       %0.5f", beforeTime);
   }
   
@@ -1343,8 +1341,11 @@ enum {
   CFTimeInterval afterTime = CACurrentMediaTime();
   CFTimeInterval delta = afterTime - beforeTime;
   
-  if ((1)) {
+  if ((0)) {
     NSLog(@"decode after time       %0.5f", afterTime);
+  }
+
+  if ((0)) {
     NSLog(@"decode delta %0.3f", delta);
   }
   
@@ -1457,8 +1458,8 @@ enum {
 // This display link callback is invoked at fixed interval while animation is running.
 
 - (void) displayLinkCallback:(CADisplayLink*)displayLink {
-  const BOOL debugDisplayLink = TRUE;
-  const BOOL debugDisplayRedrawn = TRUE;
+  const BOOL debugDisplayLink = FALSE;
+  const BOOL debugDisplayRedrawn = FALSE;
   
   // Note that frame duration is 1/60 but the interval is 2 so 1/30 a second refresh rate
   
@@ -1467,7 +1468,7 @@ enum {
     NSLog(@"displayLinkCallback with timestamp %0.4f and frame duration %0.4f (interval %0.4f)", displayLink.timestamp, effectiveDuration, displayLink.duration);
   }
   
-  // Actualy framerate of video, note that the calculated framerate might
+  // Actual framerate of the video, note that the calculated framerate might
   // be slightly different than the screen refresh rate.
   
   const CFTimeInterval kFramesPerSecond = 29.97;
@@ -1530,7 +1531,9 @@ enum {
     
     nextDecodeFrame = prevNextDecodeFrame + 1;
     
-    NSLog(@"incr frame number to %d", nextDecodeFrame);
+    if (debugDisplayLink) {
+      NSLog(@"incr frame number to %d", nextDecodeFrame);
+    }
   } else if (elapsed < nextDisplayOffset) {
     // Rounded frame number down from current time
     // Note that the case frame 1 at T = 0.0 is handled in the else
@@ -1675,17 +1678,17 @@ enum {
   self.alphaFrame = alphaFrame;
   self.currentFrame = nextFrame;
 
-#if defined(DEBUG)
-  NSLog(@"set H264AlphaPlayer frames for (%d, %d), advance self.currentFrame to %d", self.currentFrame-2, self.currentFrame-1, self.currentFrame);
-#endif // DEBUG
+//#if defined(DEBUG)
+//  NSLog(@"set H264AlphaPlayer frames for (%d, %d), advance self.currentFrame to %d", self.currentFrame-2, self.currentFrame-1, self.currentFrame);
+//#endif // DEBUG
   
 #if defined(DEBUG) && !TARGET_IPHONE_SIMULATOR
-  int dumpRGBFrame = 0;
-  int dumpAlphaFrame = 0;
+  const int dumpRGBFrame = 0;
+  const int dumpAlphaFrame = 0;
   
-  if ((nextFrame % 100) == 0) {
-    dumpRGBFrame = dumpAlphaFrame = 1;
-  }
+//  if ((nextFrame % 100) == 0) {
+//    dumpRGBFrame = dumpAlphaFrame = 1;
+//  }
   
   if (dumpRGBFrame) {
     // Dump input frame coming directly from CoreVideo
