@@ -1267,7 +1267,7 @@ enum {
 
 - (BOOL) dispatchDecodeFrame
 {
-  const BOOL debugDecodeFrames = FALSE;
+  const BOOL debugDecodeFrames = TRUE;
   
   __block int currentFrame = self.currentFrame; // atomic
 
@@ -1337,22 +1337,24 @@ enum {
       
       [strongSelf delieverRGBAndAlphaFrames:nextFrame rgbFrame:rgbFrame alphaFrame:alphaFrame];
       
-      // Check nextDecodeFrame, this value is set in the display callback in the main thread.
-      // Note that the next frame calculated from the main thread maps to 2 frames of RGB/Alpha.
+      // Get the frame number for the next frame in terms of the combined frames
       
-      int nextRGBAlphaFrame = nextDecodeFrame * 2;
+#if defined(DEBUG)
+      assert((nextFrame % 2) == 0);
+#endif // DEBUG
+      int nextCombinedFrameToDecode = nextFrame >> 1; // div 2
       
       if (debugDecodeFrames) {
-        NSLog(@"decoder currentFrame %d compared to nextDecodeFrame %d -> nextRGBAlphaFrame %d", currentFrame, nextDecodeFrame, nextRGBAlphaFrame);
+        NSLog(@"decoder nextCombinedFrameToDecode %d as compared to nextDecodeFrame %d", nextCombinedFrameToDecode, nextDecodeFrame);
       }
       
-      if (nextFrame < nextRGBAlphaFrame) {
+      if (nextCombinedFrameToDecode < nextDecodeFrame) {
         if (debugDecodeFrames) {
-          NSLog(@"decoder currentFrame is behind by %d frames or %d combined frames", (nextRGBAlphaFrame - nextFrame), (nextRGBAlphaFrame - nextFrame)/2);
+          NSLog(@"decoder current combined frame is behind by %d combined frames", nextDecodeFrame - nextCombinedFrameToDecode);
         }
         
         int lastDecodedFrame = currentFrame;
-        currentFrame = nextRGBAlphaFrame;
+        currentFrame = nextDecodeFrame * 2;
         
         // Skip ahead, but don't skip over the last frame in the interval
         
@@ -1426,13 +1428,14 @@ enum {
 // This display link callback is invoked at fixed interval while animation is running.
 
 - (void) displayLinkCallback:(CADisplayLink*)displayLink {
-  const BOOL debugDisplayLink = FALSE;
+  const BOOL debugDisplayLink = TRUE;
   const BOOL debugDisplayRedrawn = TRUE;
   
   // Note that frame duration is 1/60 but the interval is 2 so 1/30 a second refresh rate
   
   if (debugDisplayLink) {
-  NSLog(@"displayLinkCallback with timestamp %0.4f and frame duration %0.4f", displayLink.timestamp, displayLink.duration);
+    CFTimeInterval effectiveDuration = displayLink.duration * displayLink.frameInterval;
+    NSLog(@"displayLinkCallback with timestamp %0.4f and frame duration %0.4f (interval %0.4f)", displayLink.timestamp, effectiveDuration, displayLink.duration);
   }
   
   // Actualy framerate of video, note that the calculated framerate might
@@ -1455,41 +1458,60 @@ enum {
   if (debugDisplayLink) {
     NSLog(@"elapsed %0.3f", elapsed);
   }
+
+  int prevNextDecodeFrame = nextDecodeFrame;
   
-  int lastDisplayLinkFrameOffset;
+  if (debugDisplayLink) {
+    NSLog(@"previous nextDecodeFrame %d", prevNextDecodeFrame);
+  }
   
-  lastDisplayLinkFrameOffset = [self.class timeIntervalToFrameOffset:elapsed fps:kFramesPerSecond];
+  int displayLinkFrameOffset;
+  
+  displayLinkFrameOffset = [self.class timeIntervalToFrameOffset:elapsed fps:kFramesPerSecond];
   
   // Calculate delta to next display time
   
-  CFTimeInterval nextDisplayOffset = lastDisplayLinkFrameOffset * kFrameDuration;
+  CFTimeInterval nextDisplayOffset = displayLinkFrameOffset * kFrameDuration;
   
   if (debugDisplayLink) {
-    NSLog(@"nextDisplayOffset %0.3f for frame number %d", nextDisplayOffset, lastDisplayLinkFrameOffset);
+    NSLog(@"nextDisplayOffset %0.3f for frame number %d", nextDisplayOffset, displayLinkFrameOffset);
   }
   
-  if (elapsed < nextDisplayOffset) {
+  if (displayLinkFrameOffset <= prevNextDecodeFrame) {
+    // Special case where the same frame offset is returned twice in a row,
+    // this is known to happen for frames 0 and 1.
+    
+    nextDecodeFrame = prevNextDecodeFrame + 1;
+    
+    NSLog(@"incr frame number to %d", nextDecodeFrame);
+  } else if (elapsed < nextDisplayOffset) {
     // Rounded frame number down from current time
-    nextDisplayOffset = (lastDisplayLinkFrameOffset + 1) * kFrameDuration;
-    nextDecodeFrame = (lastDisplayLinkFrameOffset + 1);
+    // Note that the case frame 1 at T = 0.0 is handled in the else
+    nextDisplayOffset = (displayLinkFrameOffset + 1) * kFrameDuration;
+    nextDecodeFrame = (displayLinkFrameOffset + 1);
     
     if (debugDisplayLink) {
       NSLog(@"nextDecodeFrame rounded down to %d", nextDecodeFrame);
     }
   } else {
     // Rounded frame number up from current frame
-    nextDecodeFrame = lastDisplayLinkFrameOffset;
+    nextDecodeFrame = displayLinkFrameOffset;
     
     if (debugDisplayLink) {
       NSLog(@"nextDecodeFrame rounded up to %d", nextDecodeFrame);
     }
   }
   
+  if (debugDisplayLink && prevNextDecodeFrame == nextDecodeFrame) {
+    NSLog(@"repeated decoded frame");
+  }
+  
   // Each display link invocation will schedule a redraw, the result is that
   // a smooth 30 FPS video rate is maintained.
   
   if (debugDisplayRedrawn) {
-  NSLog(@"disp now                 %0.5f", displayLink.timestamp);
+  NSLog(@"disp now                %0.5f", displayLink.timestamp);
+  NSLog(@"nextDecodeFrame = %d", nextDecodeFrame);
   NSLog(@"called setNeedsDisplay");
   }
   
