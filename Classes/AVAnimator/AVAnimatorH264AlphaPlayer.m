@@ -213,10 +213,8 @@ enum {
   // but with the knowledge that the value only be accessed
   // from the secondary thread.
   
-#if defined(DEBUG)
   CFTimeInterval dispatchFirstTimeInterval;
   CFTimeInterval dispatchPrevTimeInterval;
-#endif // DEBUG
   
   // The number of frames that can be accessed by the
   // decoder. This value should be thread safe to access
@@ -1178,6 +1176,8 @@ enum {
 #endif // DEBUG
   
   dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+
+  self->dispatchFirstTimeInterval = 0.0;
   
   if (timer)
   {
@@ -1193,10 +1193,6 @@ enum {
   }
   
   self->_dispatchTimer = timer;
-  
-#if defined(DEBUG)
-  self->dispatchFirstTimeInterval = 0.0;
-#endif // DEBUG
   
   return;
 }
@@ -1220,6 +1216,8 @@ enum {
 {
 //  NSLog(@"dispatchTimerFired");
   
+  const BOOL debugPrintTimes = TRUE;
+  
 #if defined(DEBUG)
   assert([NSThread currentThread] != [NSThread mainThread]);
 #endif // DEBUG
@@ -1228,25 +1226,47 @@ enum {
     self.waitingForDecodeToStart = 0;
   }
   
-#if defined(DEBUG)
+  // The first and second timer invocations can be a little odd sometimes.
+  // The spacing between timer callbacks should be about (1.0/30) = 0.03
+  // but sometimes the second invocation is delivered right after the first
+  // one at a delta like 0.01. This would push the decoder one ahead if
+  // not ignored.
+  
+  CFTimeInterval nowTime = CACurrentMediaTime();
+  
   if (self->dispatchFirstTimeInterval == 0.0) {
-    // Query start of interval only once
-    self->dispatchFirstTimeInterval = self->firstTimeInterval;
+    self->dispatchFirstTimeInterval = nowTime;
     self->dispatchPrevTimeInterval = 0.0;
   }
   
-  CFTimeInterval startTime = self->dispatchFirstTimeInterval; // read from secondary thread
-  
-  CFTimeInterval nowTime = CACurrentMediaTime();
+  CFTimeInterval startTime = self->dispatchFirstTimeInterval;
 
   CFTimeInterval prev = self->dispatchPrevTimeInterval;
+  if (prev == 0.0) {
+    prev = nowTime;
+  }
   
   CFTimeInterval deltaLastTime = nowTime - prev;
+  CFTimeInterval elapsedTime = (nowTime - startTime);
   
-  NSLog(@"dispatchTimerFired : now %0.3f : start %0.3f : elapsed %0.3f : since prev %0.3f", nowTime, startTime, (nowTime - startTime), deltaLastTime);
+  if (debugPrintTimes) {
+    NSLog(@"dispatchTimerFired : now %0.3f : start %0.3f : elapsed %0.3f : since prev %0.3f", nowTime, startTime, elapsedTime, deltaLastTime);
+  }
   
   self->dispatchPrevTimeInterval = nowTime;
-#endif // DEBUG
+  
+  const CFTimeInterval halfExpectedInterval = (1.0/30) / 2; // About 60 FPS
+  const CFTimeInterval tooSmallMaxInterval = halfExpectedInterval + (halfExpectedInterval / 8);
+  
+  if (m_currentFrame == 4 && elapsedTime <= tooSmallMaxInterval) {
+    // Interval too small
+    
+    if (debugPrintTimes) {
+      NSLog(@"second callback too soon");
+    }
+    
+    return;
+  }
   
 //  if ((prev != 0) && ((nowTime - startTime) > 10.0)) {
 //    [self stopAnimator];
@@ -1660,8 +1680,12 @@ enum {
 #endif // DEBUG
   
 #if defined(DEBUG) && !TARGET_IPHONE_SIMULATOR
-  const int dumpRGBFrame = 1;
-  const int dumpAlphaFrame = 1;
+  int dumpRGBFrame = 0;
+  int dumpAlphaFrame = 0;
+  
+  if ((nextFrame % 100) == 0) {
+    dumpRGBFrame = dumpAlphaFrame = 1;
+  }
   
   if (dumpRGBFrame) {
     // Dump input frame coming directly from CoreVideo
