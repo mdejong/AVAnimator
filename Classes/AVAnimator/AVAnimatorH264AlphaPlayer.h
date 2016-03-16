@@ -10,6 +10,21 @@
 // data encoded as interleaved frames. This class extends GLKView
 // and provides functionality that decodes video data from a resource
 // file or regular file and then sends the video data to the view.
+// Note that any audio in the asset is ignored.
+//
+// Because of the way iOS implements asset loading, it is not possible
+// to seamlessly loop an asset video. The prepareToAnimate method must be
+// invoked in order to kick off an animation loop, then the startAnimator
+// method should be invoked in the AVAnimatorPreparedToAnimateNotification
+// callback. The asset must be loaded on a background thread to avoid
+// blocking the main thread before each animation cycle can begin.
+//
+// Note that playback on iOS supports only video data encoded at
+// 30 FPS (the standard 29.97 FPS is close enough). Playback will
+// smoothly render at exactly 30 FPS via a display link timed
+// OpenGL render and a high prio background thread. Note that the
+// caller should be careful to invoke stopAnimator when the view
+// is going away or the whole app is going into the background.
 
 #import "AVAssetConvertCommon.h"
 
