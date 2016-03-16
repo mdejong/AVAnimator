@@ -237,6 +237,11 @@ enum {
 
 @property (atomic, assign) int dispatchMaxFrame;
 
+// This property is non-zero when waiting for the display timer
+// and the decoder timer to sync.
+
+@property (atomic, assign) uint32_t waitingForDecodeToStart;
+
 @property (nonatomic, retain) AVFrame *rgbFrame;
 @property (nonatomic, retain) AVFrame *alphaFrame;
 
@@ -1219,6 +1224,10 @@ enum {
   assert([NSThread currentThread] != [NSThread mainThread]);
 #endif // DEBUG
   
+  if (self.waitingForDecodeToStart) {
+    self.waitingForDecodeToStart = 0;
+  }
+  
 #if defined(DEBUG)
   if (self->dispatchFirstTimeInterval == 0.0) {
     // Query start of interval only once
@@ -1451,6 +1460,24 @@ enum {
   if (firstTimeInterval == 0) {
     firstTimeInterval = displayLink.timestamp;
     [self startDispatchRender];
+    
+    // Do not calculate frame offset or redraw on first invocation
+    
+    return;
+  }
+  
+  if (nextDecodeFrame == 0 && self.waitingForDecodeToStart) {
+    // If the first call to dispatchTimerFired has not happened yet then
+    // simply reset the firstTimeInterval and continue to wait for
+    // a sync time between the display callback and decode thread.
+    
+    firstTimeInterval = displayLink.timestamp;
+    
+    if (debugDisplayLink) {
+      NSLog(@"waiting on self.waitingForDecodeToStart");
+    }
+
+    return;
   }
 
   CFTimeInterval elapsed = (displayLink.timestamp - firstTimeInterval);
@@ -1572,6 +1599,8 @@ enum {
   
   [self setupDisplayLink];
   self.displayLink.paused = FALSE;
+  
+  self.waitingForDecodeToStart = 1;
   
 #if defined(DEBUG)
   CFTimeInterval nowTime = CACurrentMediaTime();
