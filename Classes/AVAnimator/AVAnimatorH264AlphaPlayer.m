@@ -1294,7 +1294,7 @@ enum {
 
 - (BOOL) dispatchDecodeFrame
 {
-  const BOOL debugDecodeFrames = TRUE;
+  const BOOL debugDecodeFrames = FALSE;
   
   __block int currentFrame = self.currentFrame; // atomic
 
