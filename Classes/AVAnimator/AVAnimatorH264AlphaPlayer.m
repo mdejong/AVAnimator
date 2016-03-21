@@ -1804,6 +1804,8 @@ enum {
     
     // Configure frame decoder flags
     
+    frameDecoder.dropFrames = FALSE;
+    
     frameDecoder.produceCoreVideoPixelBuffers = TRUE;
     
     if (renderBGRA) {

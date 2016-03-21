@@ -90,6 +90,8 @@ typedef enum
 
 @synthesize produceYUV420Buffers = m_produceYUV420Buffers;
 
+@synthesize dropFrames = m_dropFrames;
+
 - (void) dealloc
 {
 #if __has_feature(objc_arc)
@@ -103,6 +105,7 @@ typedef enum
 {
   AVAssetFrameDecoder *obj = [[AVAssetFrameDecoder alloc] init];
   obj->frameIndex = -1;
+  obj.dropFrames = TRUE;
   
 #if __has_feature(objc_arc)
   return obj;
@@ -423,7 +426,7 @@ typedef enum
     if (frameDisplayTime < expectedFrameDisplayTime) {
       frameDisplayEarly = expectedFrameDisplayTime - frameDisplayTime;
     }
-    if (frameDisplayEarly > frameDurationTooEarly) {
+    if (self.dropFrames && (frameDisplayEarly > frameDurationTooEarly)) {
       // The actual presentation time has drifted too far from the expected presentation time
       
 #ifdef LOGGING
