@@ -10,7 +10,7 @@
 // data encoded as interleaved frames. This class extends GLKView
 // and provides functionality that decodes video data from a resource
 // file or regular file and then sends the video data to the view.
-// Note that any audio in the asset is ignored.
+// Any audio data contained in the asset is ignored.
 //
 // Because of the way iOS implements asset loading, it is not possible
 // to seamlessly loop an asset video. The prepareToAnimate method must be
@@ -37,8 +37,8 @@
 
 // These notifications are delived from the AVAnimatorH264AlphaPlayer
 
-#define AVAnimatorFailedToLoadNotification @"AVAnimatorFailedToLoadNotification"
 #define AVAnimatorPreparedToAnimateNotification @"AVAnimatorPreparedToAnimateNotification"
+#define AVAnimatorFailedToLoadNotification @"AVAnimatorFailedToLoadNotification"
 
 #define AVAnimatorDidStartNotification @"AVAnimatorDidStartNotification"
 #define AVAnimatorDidStopNotification @"AVAnimatorDidStopNotification"

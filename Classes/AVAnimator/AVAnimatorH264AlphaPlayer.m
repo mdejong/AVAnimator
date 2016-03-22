@@ -1824,8 +1824,12 @@ enum {
     
     if (worked == FALSE) {
       NSLog(@"error: cannot open RGB+Alpha mixed asset filename \"%@\"", assetFullPath);
+      
+      // Deliver AVAnimatorFailedToLoadNotification
+      
+      [[NSNotificationCenter defaultCenter] postNotificationName:AVAnimatorFailedToLoadNotification
+                                                          object:strongSelf];
       return;
-      //return FALSE;
     }
     
     worked = [frameDecoder allocateDecodeResources];
