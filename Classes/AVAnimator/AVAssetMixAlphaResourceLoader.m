@@ -203,6 +203,8 @@
   
   AVAssetFrameDecoder *frameDecoder = [AVAssetFrameDecoder aVAssetFrameDecoder];
   
+  frameDecoder.dropFrames = FALSE;
+  
   BOOL worked;
   worked = [frameDecoder openForReading:mixPath];
   
@@ -217,6 +219,10 @@
     NSLog(@"error: cannot allocate RGB+Alpha mixed decode resources for filename \"%@\"", mixPath);
     return FALSE;
   }
+  
+#ifdef LOGGING
+  NSLog(@"log num frames for \"%@\" %d", mixPath, (int)frameDecoder.numFrames);
+#endif // LOGGING
   
   // BPP for decoded asset is always 24 BPP
 
