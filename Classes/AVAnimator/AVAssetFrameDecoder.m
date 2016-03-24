@@ -28,7 +28,7 @@
 
 #if defined(HAS_AVASSET_CONVERT_MAXVID)
 
-//#define LOGGING
+#define LOGGING
 
 typedef enum
 {
@@ -207,7 +207,29 @@ typedef enum
   
   float nominalFrameRate = videoTrack.nominalFrameRate;
   
-  float frameDuration = 1.0 / nominalFrameRate;
+  CMTime minFrameDuration = videoTrack.minFrameDuration;
+  
+  float frameDuration;
+  
+  if (self.dropFrames == TRUE) {
+    // The default setting of dropFrames = TRUE means that some frames
+    // could have been encodec out of order, calculate an estimated
+    // number of frames from nominalFrameRate.
+    
+    frameDuration = 1.0 / nominalFrameRate;
+  } else {    
+    if (CMTIME_IS_INVALID(minFrameDuration)) {
+      frameDuration = 1.0 / nominalFrameRate;
+    } else {
+      // When self.dropFrames is set to FALSE then assume a frame duration
+      // that is consistent and calculate the number of frames based on
+      // the time divided into even duration intervals.
+      
+      frameDuration = CMTimeGetSeconds(minFrameDuration);
+      nominalFrameRate = 1.0 / frameDuration;
+    }
+  }
+  
   self->m_frameDuration = (NSTimeInterval)frameDuration;
   
   float numFramesFloat = duration / frameDuration;
