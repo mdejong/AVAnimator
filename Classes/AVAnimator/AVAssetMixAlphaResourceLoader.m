@@ -1,5 +1,5 @@
 //
-//  AVAssetJoinAlphaResourceLoader.m
+//  AVAssetMixAlphaResourceLoader.m
 //
 //  Created by Moses DeJong on 1/1/13.
 //
