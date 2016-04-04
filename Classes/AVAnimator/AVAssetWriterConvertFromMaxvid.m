@@ -313,7 +313,7 @@ NSString * const AVAssetWriterConvertFromMaxvidCompletedNotification = @"AVAsset
     NSTimeInterval frameDuration = frameDecoder.frameDuration;
     NSAssert(frameDuration != 0.0, @"frameDuration not set in frameDecoder");
     int numerator = frameNum;
-    int denominator = 1.0 / frameDuration;
+    int denominator = (int)round(1.0 / frameDuration);
     CMTime presentationTime = CMTimeMake(numerator, denominator);
     worked = [adaptor appendPixelBuffer:buffer withPresentationTime:presentationTime];
     
