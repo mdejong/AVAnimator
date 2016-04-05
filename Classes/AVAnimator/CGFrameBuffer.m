@@ -708,6 +708,40 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   [self doneZeroCopyPixels];
 }
 
+- (void) copyFromCVPixelBuffer:(CVPixelBufferRef)cVPixelBufferRef
+{
+  int width = (int) self.width;
+  int height = (int) self.height;
+  
+  int cvWidth = (int) CVPixelBufferGetWidth(cVPixelBufferRef);
+  int cvHeight = (int) CVPixelBufferGetHeight(cVPixelBufferRef);
+  
+  // Note that the width and height of the dst of the copy operation
+  // can be smaller that the source. The image data is cropped to
+  // the size of the dst in that case.
+  
+  assert(width <= cvWidth);
+  assert(height <= cvHeight);
+  
+  char *pixels = (char*) self.pixels;
+  
+  CVPixelBufferLockBaseAddress(cVPixelBufferRef, 0);
+  
+  char *baseAddress = (char*) CVPixelBufferGetBaseAddress(cVPixelBufferRef);
+  assert(baseAddress);
+
+  int rowWidthInBytes = width * sizeof(uint32_t);
+  int cvRowWidthInBytes = (int)CVPixelBufferGetBytesPerRow(cVPixelBufferRef);
+  
+  for (int row = 0; row < height; row++) {
+    memcpy(&pixels[row * rowWidthInBytes], &baseAddress[row * cvRowWidthInBytes], rowWidthInBytes);
+  }
+  
+  CVPixelBufferUnlockBaseAddress(cVPixelBufferRef, 0);
+  
+  return;
+}
+
 - (void)dealloc {
 	NSAssert(self.isLockedByDataProvider == FALSE, @"dealloc: buffer still locked by data provider");
   [self doneZeroCopyPixels];

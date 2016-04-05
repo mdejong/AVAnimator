@@ -121,6 +121,12 @@
 - (void) zeroCopyToPixels;
 - (void) doneZeroCopyPixels;
 
+// Copy from the given CoreVideo pixel buffer to this framebuffer. Note
+// that an implicit crop is used in the case where this framebuffer
+// is smaller than the other framebuffer.
+
+- (void) copyFromCVPixelBuffer:(CVPixelBufferRef)cVPixelBufferRef;
+
 // Optional opaque pixel writing logic to clear the alpha channel values when
 // pixels are known to be 24BPP only. This call sets the alpha channel for
 // each pixel to zero.
