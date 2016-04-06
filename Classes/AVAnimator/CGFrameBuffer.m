@@ -716,6 +716,9 @@ void CGFrameBufferProviderReleaseData (void *info, const void *data, size_t size
   int cvWidth = (int) CVPixelBufferGetWidth(cVPixelBufferRef);
   int cvHeight = (int) CVPixelBufferGetHeight(cVPixelBufferRef);
   
+  int numPlanes = (int) CVPixelBufferGetPlaneCount(cVPixelBufferRef);
+  assert(numPlanes <= 1); // exclude YUV buffers
+  
   // Note that the width and height of the dst of the copy operation
   // can be smaller that the source. The image data is cropped to
   // the size of the dst in that case.
