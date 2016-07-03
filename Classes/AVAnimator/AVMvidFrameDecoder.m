@@ -970,6 +970,8 @@
           
           uint32_t adler;
           
+          MVFileHeader *header = [self header];
+          
           if (maxvid_file_version(header) < MV_FILE_VERSION_THREE) {
             adler = framePre3->adler;
           } else {
