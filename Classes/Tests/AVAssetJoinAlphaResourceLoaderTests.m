@@ -664,15 +664,26 @@
     
     // Decode each frame adler
     
-    MVFrame *frames = frameDecoder.mvFrames;
-      
-    for (int frameIndex = 0; frameIndex < [frameDecoder numFrames]; frameIndex++) {      
-      MVFrame *frame = maxvid_file_frame(frames, frameIndex);
-      int adler = frame->adler;
+    int isV3 = (maxvid_file_version([frameDecoder header]) == MV_FILE_VERSION_THREE);
+    
+    if (isV3) {
+      for (int frameIndex = 0; frameIndex < [frameDecoder numFrames]; frameIndex++) {
+        MVV3Frame *frame = maxvid_v3_file_frame(frameDecoder.mvFrames, frameIndex);
+        int adler = frame->adler;
         
-      NSAssert(adler != 0 && adler != 0xFFFFFFFF, @"adler");
+        NSAssert(adler != 0 && adler != 0xFFFFFFFF, @"adler");
         
-      //NSLog(@"adler[%d] = %d", frameIndex, adler);
+        //NSLog(@"adler[%d] = %d", frameIndex, adler);
+      }
+    } else {
+      for (int frameIndex = 0; frameIndex < [frameDecoder numFrames]; frameIndex++) {
+        MVFrame *frame = maxvid_file_frame(frameDecoder.mvFrames, frameIndex);
+        int adler = frame->adler;
+        
+        NSAssert(adler != 0 && adler != 0xFFFFFFFF, @"adler");
+        
+        //NSLog(@"adler[%d] = %d", frameIndex, adler);
+      }
     }
   }
   

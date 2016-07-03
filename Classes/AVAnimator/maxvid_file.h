@@ -36,16 +36,14 @@
 // These flags are set for a specific frame. A keyframe is not a delta. When
 // data does not change from one frame to the next, that is a nop frame.
 
-#define MV_FRAME_IS_KEYFRAME 0x1
-#define MV_FRAME_IS_NOPFRAME 0x2
+#define MV_FRAME_IS_KEYFRAME (1 << 0)
+#define MV_FRAME_IS_NOPFRAME (1 << 1)
+#define MV_FRAME_IS_COMPRESSED (1 << 2)
 
 // These constants define .mvid file revision constants. For example, AVAnimator 1.0
 // versions made use of the value 0, while AVAnimator 2.0 now emits files with the
-// version set to 1. AVAnimator 3.0 make use of version 3. The special case of
-// MV_FILE_VERSION_THREE is used only for the case of a runtime generated file
-// that contains blocks of encoded data that could be larger than 32bit limit
-// of 2 gigs. The file offset is written as the number of pages, as opposed to
-// the byte offset.
+// version set to 1. AVAnimator 3.0 supports version 3 which includes large file
+// support and support for very large video sizes.
 
 #define MV_FILE_VERSION_ZERO 0
 #define MV_FILE_VERSION_ONE 1
@@ -85,14 +83,42 @@ typedef struct {
     uint32_t adler; // adler32 checksum of the decoded framebuffer
 } MVFrame;
 
+// Full support for very large (larger than 2 gigs) files was
+// added for both delta and keyframe files as of version 4.
+// This version requires a larger type of frame since the
+// size in bytes is now stored as a 32 bit unsigned integer.
+
+typedef struct {
+  uint64_t offset64; // file offset where sample data is located (either keyframe or delta)
+  uint32_t length; // length in bytes
+  uint32_t flags; // flags for frame
+  uint32_t adler; // adler32 checksum of the decoded framebuffer
+  uint32_t dummy; // zero to fill out to double word length
+} MVV3Frame;
+
 static inline
 void maxvid_frame_setkeyframe(MVFrame *mvFrame) {
   mvFrame->lengthAndFlags |= MV_FRAME_IS_KEYFRAME;
 }
 
 static inline
+void maxvid_v3_frame_setkeyframe(MVV3Frame *mvFrame) {
+  mvFrame->flags |= MV_FRAME_IS_KEYFRAME;
+}
+
+static inline
 void maxvid_frame_setnopframe(MVFrame *mvFrame) {
   mvFrame->lengthAndFlags |= MV_FRAME_IS_NOPFRAME;
+}
+
+static inline
+void maxvid_v3_frame_setnopframe(MVV3Frame *mvFrame) {
+  mvFrame->flags |= MV_FRAME_IS_NOPFRAME;
+}
+
+static inline
+void maxvid_v3_frame_setcompressed(MVV3Frame *mvFrame) {
+  mvFrame->flags |= MV_FRAME_IS_COMPRESSED;
 }
 
 // Set/Get frame offset and length, both in terms of bytes
@@ -103,10 +129,20 @@ void maxvid_frame_setoffset(MVFrame *mvFrame, uint32_t offset) {
 }
 
 static inline
+void maxvid_v3_frame_setoffset(MVV3Frame *mvFrame, uint64_t offset) {
+  mvFrame->offset64 = offset;
+}
+
+static inline
 void maxvid_frame_setlength(MVFrame *mvFrame, uint32_t size) {
   assert((size & MV_MAX_24_BITS) == size);
   mvFrame->lengthAndFlags &= MV_MAX_8_BITS;
   mvFrame->lengthAndFlags |= (size << 8);
+}
+
+static inline
+void maxvid_v3_frame_setlength(MVV3Frame *mvFrame, uint32_t size) {
+  mvFrame->length = size;
 }
 
 static inline
@@ -115,8 +151,23 @@ uint32_t maxvid_frame_iskeyframe(MVFrame *mvFrame) {
 }
 
 static inline
+uint32_t maxvid_v3_frame_iskeyframe(MVV3Frame *mvFrame) {
+  return ((mvFrame->flags & MV_FRAME_IS_KEYFRAME) != 0);
+}
+
+static inline
 uint32_t maxvid_frame_isnopframe(MVFrame *mvFrame) {
   return ((mvFrame->lengthAndFlags & MV_FRAME_IS_NOPFRAME) != 0);
+}
+
+static inline
+uint32_t maxvid_v3_frame_isnopframe(MVV3Frame *mvFrame) {
+  return ((mvFrame->flags & MV_FRAME_IS_NOPFRAME) != 0);
+}
+
+static inline
+uint32_t maxvid_v3_frame_iscompressed(MVV3Frame *mvFrame) {
+  return ((mvFrame->flags & MV_FRAME_IS_COMPRESSED) != 0);
 }
 
 static inline
@@ -125,8 +176,18 @@ uint32_t maxvid_frame_offset(MVFrame *mvFrame) {
 }
 
 static inline
+uint64_t maxvid_v3_frame_offset(MVV3Frame *mvFrame) {
+  return mvFrame->offset64;
+}
+
+static inline
 uint32_t maxvid_frame_length(MVFrame *mvFrame) {
   return (mvFrame->lengthAndFlags >> 8);
+}
+
+static inline
+uint32_t maxvid_v3_frame_length(MVV3Frame *mvFrame) {
+  return mvFrame->length;
 }
 
 // Return non-zero if the framebuffer is so large that it cannot be stored as a maxvid file.
@@ -147,6 +208,35 @@ int maxvid_frame_check_max_size(uint32_t width, uint32_t height, int bpp) {
   } else {
     return 0;
   }
+}
+
+// Check that the W x H for a specific frame fits into a 32 bit word.
+// This size will basically support any rational size, the upper limit
+// is somethign like (4096*10)^2 which is insane.
+
+static inline
+int maxvid_v3_frame_check_max_size(uint32_t width, uint32_t height, int bpp) {
+  int numBytesInPixel;
+  if (bpp == 16) {
+    numBytesInPixel = 2;
+  } else {
+    // 24 or 32 BPP pixels are both stored in 32 bits
+    numBytesInPixel = 4;
+  }
+  int actualSize = numBytesInPixel * width * height;
+  if (actualSize > MV_MAX_32_BITS) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+// This method returns 1 in the case where a given image is so large
+// that a version 3 format file must be used to represent it.
+
+static inline
+int maxvid_v4_frame_required(uint32_t width, uint32_t height, int bpp) {
+  return maxvid_frame_check_max_size(width, height, bpp);
 }
 
 // Emit a word that represents a nop frame, an empty delta.
@@ -179,7 +269,16 @@ void maxvid_file_map_verify(void *buffer) {
 // Get the MVFrame* that corresponds to the frame at the given index.
 
 static inline
-MVFrame* maxvid_file_frame(MVFrame *mvFrames, uint32_t index) {
+MVFrame* maxvid_file_frame(void *framesPtr, uint32_t index) {
+  MVFrame *mvFrames = (MVFrame*) framesPtr;
+  return &(mvFrames[index]);
+}
+
+// Get the MVV3Frame* that corresponds to the frame at the given index.
+
+static inline
+MVV3Frame* maxvid_v3_file_frame(void *framesPtr, uint32_t index) {
+  MVV3Frame *mvFrames = (MVV3Frame*) framesPtr;
   return &(mvFrames[index]);
 }
 

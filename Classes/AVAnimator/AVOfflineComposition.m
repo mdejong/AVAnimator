@@ -1097,7 +1097,7 @@ CF_RETURNS_RETAINED
   AVMvidFileWriter *fileWriter = [AVMvidFileWriter aVMvidFileWriter];
   NSAssert(fileWriter, @"fileWriter");
   
-  fileWriter.genV3PageOffsetBlocks = TRUE;
+  fileWriter.genV3 = TRUE;
   
   fileWriter.mvidPath = phonyOutPath;
   fileWriter.bpp = 24;
@@ -1165,7 +1165,7 @@ CF_RETURNS_RETAINED
         adler = maxvid_adler32(0, (unsigned char*)pixelData.bytes, (int)pixelData.length);
       }
       
-      worked = [fileWriter writeKeyframe:(char*)mEncodedData.bytes bufferSize:(int)dst_size adler:adler];
+      worked = [fileWriter writeKeyframe:(char*)mEncodedData.bytes bufferSize:(int)dst_size adler:adler isCompressed:TRUE];
     } else
 #endif // HAS_LIB_COMPRESSION_API
     {

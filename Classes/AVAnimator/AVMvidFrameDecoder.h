@@ -10,16 +10,11 @@
 #import "AVFrameDecoder.h"
 #import "maxvid_file.h"
 
-// If USE_SEGMENTED_MMAP is defined, then each frame will be contained in a separate
-// mmap segment. Otherwise, a single memory map will be used for the entire mvid file.
-// This segmented mapping is only needed on iOS since memory usage limits are very
-// strict. MacOSX fully supports swapping with virtual memory so segmenting is not important.
+// Define USE_SEGMENTED_MMAP for both iOS and MacOSX to support very large files
 
-#if TARGET_OS_IPHONE
-
+//#if TARGET_OS_IPHONE
 # define USE_SEGMENTED_MMAP
-
-#endif // TARGET_OS_IPHONE
+//#endif // TARGET_OS_IPHONE
 
 #if defined(USE_SEGMENTED_MMAP)
 @class SegmentedMappedData;
@@ -28,7 +23,7 @@
 @interface AVMvidFrameDecoder : AVFrameDecoder {
   NSString *m_filePath;
   MVFileHeader m_mvHeader;
-  MVFrame *m_mvFrames;
+  void *m_mvFrames;
   BOOL m_isOpen;
   
 #if defined(USE_SEGMENTED_MMAP)

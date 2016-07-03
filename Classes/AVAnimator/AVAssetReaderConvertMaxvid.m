@@ -60,7 +60,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
 + (AVAssetReaderConvertMaxvid*) aVAssetReaderConvertMaxvid
 {
   AVAssetReaderConvertMaxvid *obj = [[AVAssetReaderConvertMaxvid alloc] init];
-  obj.genV3PageOffsetBlocks = TRUE; // enable extended file size out to 64bit offsets
+  obj.genV3 = TRUE; // enable extended file size out to 64bit offsets
 #if __has_feature(objc_arc)
   return obj;
 #else
@@ -183,7 +183,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
       adler = maxvid_adler32(0, (unsigned char*)pixelsPtr, bufferSize);
     }
     
-    worked = [self writeKeyframe:(char*)mEncodedData.bytes bufferSize:(int)dst_size adler:adler];
+    worked = [self writeKeyframe:(char*)mEncodedData.bytes bufferSize:(int)dst_size adler:adler isCompressed:TRUE];
   } else
 #endif // HAS_LIB_COMPRESSION_API
   {

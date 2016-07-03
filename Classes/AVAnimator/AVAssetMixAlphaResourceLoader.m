@@ -258,7 +258,7 @@
   AVMvidFileWriter *fileWriter = [AVMvidFileWriter aVMvidFileWriter];
   NSAssert(fileWriter, @"fileWriter");
   
-  fileWriter.genV3PageOffsetBlocks = TRUE;
+  fileWriter.genV3 = TRUE;
   
   fileWriter.mvidPath = joinedMvidPath;
   fileWriter.bpp = 32;

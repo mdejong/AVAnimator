@@ -25,7 +25,7 @@
   int   frameNum;
   int   m_totalNumFrames;
   MVFileHeader *mvHeader;
-  MVFrame *mvFramesArray;
+  void *mvFramesArray;
   uint32_t framesArrayNumBytes;
   uint32_t m_bpp;
   
@@ -37,6 +37,7 @@
   BOOL  isOpen;
   BOOL  m_genAdler;
   BOOL  m_isAllKeyframes;
+  BOOL  m_genV3;
 #if MV_ENABLE_DELTAS
   BOOL  m_isDeltas;
 #endif // MV_ENABLE_DELTAS
@@ -62,7 +63,7 @@
 // sizes that previous versions since all frame sizes
 // are implicitly stored as page offsets.
 
-@property (nonatomic, assign) BOOL          genV3PageOffsetBlocks;
+@property (nonatomic, assign) BOOL          genV3;
 
 #if MV_ENABLE_DELTAS
 
@@ -116,7 +117,7 @@
 
 // This version of writeKeyframe stores a non-zero adler passed in to the method
 
-- (BOOL) writeKeyframe:(char*)ptr bufferSize:(int)bufferSize adler:(uint32_t)adler;
+- (BOOL) writeKeyframe:(char*)ptr bufferSize:(int)bufferSize adler:(uint32_t)adler isCompressed:(BOOL)isCompressed;
 
 // Write a delta frame that depends on the previous frame. The adler needs to be
 // generated in the caller since both previous and current frames would need to be

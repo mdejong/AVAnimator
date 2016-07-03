@@ -32,7 +32,7 @@
   // are returned by the bytes and length methods.
   
   off_t               m_mappedOffset;
-  size_t              m_mappedLen;
+  off_t               m_mappedLen;
   
   // In addition, the actual page starting offset
   // and the actual length of the mapping are
@@ -40,7 +40,7 @@
   // begin on a page bound, then these values+  // Indicate the OS level values.
     
   off_t               m_mappedOSOffset;
-  size_t              m_mappedOSLen;
+  off_t               m_mappedOSLen;
   
   RefCountedFD       *m_refCountedFD;
   
@@ -49,10 +49,10 @@
 }
 
 @property (nonatomic, readonly) off_t mappedOffset;
-@property (nonatomic, readonly) size_t mappedLen;
+@property (nonatomic, readonly) off_t mappedLen;
 
 @property (nonatomic, readonly) off_t mappedOSOffset;
-@property (nonatomic, readonly) size_t mappedOSLen;
+@property (nonatomic, readonly) off_t mappedOSLen;
 
 
 + (SegmentedMappedData*) segmentedMappedData:(NSString*)filename;
@@ -62,14 +62,14 @@
 + (SegmentedMappedData*) segmentedMappedDataWithWriteMapping:(NSString*)filePath
                                                         file:(FILE*)file
                                                       offset:(off_t)offset
-                                                         len:(size_t)len;
+                                                         len:(off_t)len;
 
 // This API will create a mapped segment subrange. A segment can be mapped
 // and unmapped as needed and will automatically be unmapped when the last
 // ref is dropped. Note that the actual mapping is not created until the
 // mapSegment API is invoked on a specific segment.
 
-- (SegmentedMappedData*) subdataWithRange:(NSRange)range;
+- (SegmentedMappedData*) subdataWithOffset:(off_t)offset len:(off_t)len;
 
 // This method will invoke mmap to actually map a segment into a memory buffer.
 // If the memory was successfully mapped, then TRUE is returned. Otherwise FALSE.
@@ -90,6 +90,6 @@
 // For a segment this returns the number of bytes in a segment.
 // For the container, this returns the length of the whole file in bytes.
 
-- (NSUInteger) length;
+- (off_t) length;
 
 @end

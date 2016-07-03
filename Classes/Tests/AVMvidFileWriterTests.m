@@ -113,7 +113,7 @@
   
   // Frame offset and size are in terms of bytes
   
-  MVFrame *framesPtr = (MVFrame *) (fileData + sizeof(MVFileHeader));
+  void *framesPtr = (void *) (fileData + sizeof(MVFileHeader));
   
   MVFrame* frame = maxvid_file_frame(framesPtr, 0);
   
@@ -154,7 +154,7 @@
   
   avMvidFileWriter.genAdler = TRUE;
   
-  avMvidFileWriter.genV3PageOffsetBlocks = TRUE;
+  avMvidFileWriter.genV3 = TRUE;
   
   avMvidFileWriter.movieSize = CGSizeMake(3, 1);
   
@@ -203,13 +203,13 @@
   
   // Frame offset should be 1, frame size should be zero
   
-  MVFrame *framesPtr = (MVFrame *) (fileData + sizeof(MVFileHeader));
+  void *framesPtr = (void *) (fileData + sizeof(MVFileHeader));
   
-  MVFrame* frame = maxvid_file_frame(framesPtr, 0);
+  MVV3Frame* frame = maxvid_v3_file_frame(framesPtr, 0);
   
-  NSAssert(maxvid_frame_offset(frame) == 1, @"maxvid_frame_offset");
+  NSAssert(maxvid_v3_frame_offset(frame) == 16384, @"maxvid_frame_offset");
   
-  NSAssert(maxvid_frame_length(frame) == 0, @"maxvid_frame_length");
+  NSAssert(maxvid_v3_frame_length(frame) == 12, @"maxvid_frame_length");
   
   [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
   
@@ -244,7 +244,7 @@
   
   avMvidFileWriter.genAdler = TRUE;
   
-  avMvidFileWriter.genV3PageOffsetBlocks = TRUE;
+  avMvidFileWriter.genV3 = TRUE;
   
   avMvidFileWriter.movieSize = CGSizeMake(3, 1);
   
@@ -293,13 +293,13 @@
   
   // Frame offset should be 1, frame size should be zero
   
-  MVFrame *framesPtr = (MVFrame *) (fileData + sizeof(MVFileHeader));
+  void *framesPtr = (MVFrame *) (fileData + sizeof(MVFileHeader));
   
-  MVFrame* frame = maxvid_file_frame(framesPtr, 0);
+  MVV3Frame* frame = maxvid_v3_file_frame(framesPtr, 0);
   
-  NSAssert(maxvid_frame_offset(frame) == 1, @"maxvid_frame_offset");
+  NSAssert(maxvid_v3_frame_offset(frame) == 16384, @"maxvid_frame_offset");
   
-  NSAssert(maxvid_frame_length(frame) == 0, @"maxvid_frame_length");
+  NSAssert(maxvid_v3_frame_length(frame) == 8, @"maxvid_frame_length");
   
   [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
   

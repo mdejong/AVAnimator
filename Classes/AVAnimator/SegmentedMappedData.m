@@ -83,7 +83,7 @@
 + (SegmentedMappedData*) segmentedMappedDataWithDeferredMapping:(NSString*)filePath
                                                    refCountedFD:(RefCountedFD*)refCountedFD
                                                          offset:(off_t)offset
-                                                            len:(size_t)len;
+                                                            len:(off_t)len;
 
 @end
 
@@ -110,8 +110,8 @@
     return nil;
   }
   unsigned long long fileSize = [attrs fileSize];
-  size_t fileSizeT = (size_t) fileSize;
-  NSAssert(fileSize == fileSizeT, @"assignment from unsigned long long to size_t lost bits");
+  off_t fileSizeT = (off_t) fileSize;
+  NSAssert(fileSize == fileSizeT, @"assignment from unsigned long long to size_t lost bits : %llu != %llu", fileSizeT, fileSize);
   
   // The length of the file can't be zero bytes
   
@@ -162,7 +162,7 @@
 + (SegmentedMappedData*) segmentedMappedDataWithDeferredMapping:(NSString*)filePath
                                                    refCountedFD:(RefCountedFD*)refCountedFD
                                                          offset:(off_t)offset
-                                                            len:(size_t)len
+                                                            len:(off_t)len
 {
   SegmentedMappedData *obj = [[SegmentedMappedData alloc] init];
 
@@ -183,7 +183,7 @@
 
   // Calculate number of bytes in mapping in terms of whole pages
   
-  size_t osLength = (size_t) (len + osOffset);
+  off_t osLength = len + osOffset;
   
   size_t offsetToPageBound = SM_PAGESIZE - (osLength % SM_PAGESIZE);
   if (offsetToPageBound == SM_PAGESIZE) {
@@ -210,7 +210,7 @@
 + (SegmentedMappedData*) segmentedMappedDataWithWriteMapping:(NSString*)filePath
                                                         file:(FILE*)file
                                                       offset:(off_t)offset
-                                                         len:(size_t)len
+                                                         len:(off_t)len
 {
   NSAssert(file, @"file");
   int fd = fileno(file);
@@ -279,7 +279,7 @@
 // Note that it is perfectly fine to query the mapping length even if the file range
 // has not actually be mapped into memory at this point.
 
-- (NSUInteger) length
+- (off_t) length
 {
   return self->m_mappedLen;
 }
@@ -295,7 +295,7 @@
   
   int fd = self.refCountedFD->m_fd;
   off_t offset = self->m_mappedOSOffset;
-  size_t len = self->m_mappedOSLen;
+  off_t len = self->m_mappedOSLen;
   
   NSAssert((offset % SM_PAGESIZE) == 0, @"offset");
   NSAssert((len % SM_PAGESIZE) == 0, @"len");
@@ -314,7 +314,11 @@
     flags = MAP_FILE | MAP_SHARED | MAP_NOCACHE;
   }
   
-  void *mappedData = mmap(NULL, len, protection, flags, fd, offset);
+  // Map length must be smaller than 32bit in length
+  size_t lenT = (size_t) len;
+  assert(lenT == len);
+  
+  void *mappedData = mmap(NULL, lenT, protection, flags, fd, offset);
   
   if (mappedData == MAP_FAILED) {
     int errnoVal = errno;
@@ -359,8 +363,9 @@
     return;
   }
 
-  size_t len = self->m_mappedOSLen;
-  int result = munmap(self->m_mappedData, len);
+  size_t lenT = (size_t) self->m_mappedOSLen;
+  assert(lenT == self->m_mappedOSLen);
+  int result = munmap(self->m_mappedData, lenT);
   if (result != 0) {
     int errnoVal = errno;
     if (errnoVal == EINVAL) {
@@ -374,15 +379,15 @@
   return;
 }
 
-- (NSData *)subdataWithRange:(NSRange)range
+// This API will create a mapped segment subrange with 64 bit support.
+
+- (SegmentedMappedData*) subdataWithOffset:(off_t)offset len:(off_t)len
 {
-  NSAssert(isContainer == TRUE, @"subdataWithRange can only be invoked on container");
+  NSAssert(isContainer == TRUE, @"subdataWithOffset can only be invoked on container");
   
   NSAssert(m_refCountedFD, @"refCountedFD");
   
-  NSUInteger offset = range.location;
-  NSUInteger len = range.length;
-  NSUInteger lastByteOffset = offset + len;
+  off_t lastByteOffset = offset + len;
   
   if ((len == 0) || (lastByteOffset > m_mappedLen)) {
     return nil;
@@ -399,10 +404,10 @@
 - (NSString*) description
 {
   NSString *name = self.filePath.lastPathComponent;
-  NSString *formatted = [NSString stringWithFormat:@"%@: (%d %d) [%d %d] at %p",
+  NSString *formatted = [NSString stringWithFormat:@"%@: (%llu %llu) [%llu %llu] at %p",
                          name,
-                         (int)m_mappedOffset, (int)m_mappedLen,
-                         (int)m_mappedOSOffset, (int)m_mappedOSLen,
+                         m_mappedOffset, m_mappedLen,
+                         m_mappedOSOffset, m_mappedOSLen,
                          m_mappedData];
   return formatted;
 }
