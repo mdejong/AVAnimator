@@ -520,8 +520,6 @@
   // This file writer always emits a file with version set to 2
   
   if (self.genV3) {
-    NSAssert(self.isAllKeyframes, @"isAllKeyframes must be TRUE when genV3 is set");
-    
     maxvid_file_set_version(mvHeader, MV_FILE_VERSION_THREE);
   } else {
     maxvid_file_set_version(mvHeader, MV_FILE_VERSION_TWO);
@@ -577,11 +575,7 @@
 #ifdef LOGGING
   NSLog(@"writeDeltaframe %d : bufferSize %d", frameNum, bufferSize);
 #endif // LOGGING
-  
-  if (self.genV3) {
-    NSAssert(self.isAllKeyframes, @"writeDeltaframe can only emit keyframes in V3 mode");
-  }
-  
+    
   self.isAllKeyframes = FALSE;
   
   [self saveOffset];
