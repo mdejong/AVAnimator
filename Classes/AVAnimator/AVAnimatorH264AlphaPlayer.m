@@ -1365,7 +1365,7 @@ enum {
         NSLog(@"deliver to main time      %0.5f", CACurrentMediaTime());
       }
       
-      [strongSelf delieverRGBAndAlphaFrames:nextFrame rgbFrame:rgbFrame alphaFrame:alphaFrame];
+      [strongSelf deliverRGBAndAlphaFrames:nextFrame rgbFrame:rgbFrame alphaFrame:alphaFrame];
       
       // Get the frame number for the next frame in terms of the combined frames
       
@@ -1670,9 +1670,9 @@ enum {
 
 // This method delivers the RGB and Alpha frames to the view in the main thread
 
-- (void) delieverRGBAndAlphaFrames:(int)nextFrame
-                          rgbFrame:(AVFrame*)rgbFrame
-                        alphaFrame:(AVFrame*)alphaFrame
+- (void) deliverRGBAndAlphaFrames:(int)nextFrame
+                         rgbFrame:(AVFrame*)rgbFrame
+                       alphaFrame:(AVFrame*)alphaFrame
 {
   self.rgbFrame = rgbFrame;
   self.alphaFrame = alphaFrame;
@@ -1883,7 +1883,7 @@ enum {
       if (strongSelf.state == STOPPED) {
         // stopAnimator invoked after prepareToAnimate
       } else {
-        [strongSelf delieverRGBAndAlphaFrames:nextFrame rgbFrame:rgbFrame alphaFrame:alphaFrame];
+        [strongSelf deliverRGBAndAlphaFrames:nextFrame rgbFrame:rgbFrame alphaFrame:alphaFrame];
         
         [strongSelf setNeedsDisplay];
         
