@@ -943,7 +943,10 @@
           numBytesToIncludeInAdler = frameBufferNumBytes;
           adler = framePre3->adler;
         } else if (maxvid_file_version(header) == MV_FILE_VERSION_THREE) {
+          numBytesToIncludeInAdler = frameBufferNumBytes;
           adler = frame->adler;
+        } else {
+          assert(0);
         }
 
         [self assertSameAdler:adler frameBuffer:frameBuffer frameBufferNumBytes:numBytesToIncludeInAdler];
