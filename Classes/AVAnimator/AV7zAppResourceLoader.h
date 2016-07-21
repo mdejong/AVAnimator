@@ -15,10 +15,16 @@
 
 #import "AVAppResourceLoader.h"
 
+#import "AVAssetConvertCommon.h"
+
 @interface AV7zAppResourceLoader : AVAppResourceLoader {
   NSString *m_archiveFilename;
   NSString *m_outPath;
   BOOL startedLoading;
+  
+#if defined(HAS_LIB_COMPRESSION_API)
+  BOOL m_compressed;
+#endif // HAS_LIB_COMPRESSION_API
 }
 
 // The name of the archive resource file. Typically: "XYZ.mvid.7z" but
@@ -37,6 +43,13 @@
 // to TRUE while decompressing a .mvid that contains only keyframes is a nop.
 
 @property (nonatomic, assign) BOOL flattenMvid;
+
+// Set this property to TRUE to enable keyframe compression, if this property
+// is set then flattenMvid is implicitly TRUE.
+
+#if defined(HAS_LIB_COMPRESSION_API)
+@property (nonatomic, assign) BOOL compressed;
+#endif // HAS_LIB_COMPRESSION_API
 
 + (AV7zAppResourceLoader*) aV7zAppResourceLoader;
 

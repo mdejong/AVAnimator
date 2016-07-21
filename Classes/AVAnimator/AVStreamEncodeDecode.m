@@ -420,7 +420,10 @@
   compression_stream_destroy(&stream);
   
 #if defined(DEBUG)
-  assert(((uint8_t*)framebufferPixelPtr - (uint8_t*)frameBuffer) == frameBufferNumBytes);
+  if (bpp == 24) {
+    int numBytesWritten = (int) ((uint8_t*)framebufferPixelPtr - (uint8_t*)frameBuffer);
+    assert(numBytesWritten == frameBufferNumBytes);
+  }
 #endif // DEBUG
   
   if (malloc_dst_buffer) {

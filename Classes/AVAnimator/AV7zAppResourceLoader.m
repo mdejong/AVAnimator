@@ -17,6 +17,8 @@
 #import "AVFrame.h"
 #import "CGFramebuffer.h"
 
+#include "AVStreamEncodeDecode.h"
+
 #define LOGGING
 
 @implementation AV7zAppResourceLoader
@@ -24,6 +26,10 @@
 @synthesize archiveFilename = m_archiveFilename;
 @synthesize outPath = m_outPath;
 @synthesize flattenMvid = m_flattenMvid;
+
+#if defined(HAS_LIB_COMPRESSION_API)
+@synthesize compressed = m_compressed;
+#endif // HAS_LIB_COMPRESSION_API
 
 - (void) dealloc
 {
@@ -51,9 +57,9 @@
 + (void) decodeThreadEntryPoint:(NSArray*)arr {  
   @autoreleasepool {
   
-  NSAssert([arr count] == 6, @"arr count");
+  NSAssert([arr count] == 7, @"arr count");
   
-  // Pass 6 arguments : ARCHIVE_PATH ARCHIVE_ENTRY_NAME PHONY_PATH TMP_PATH SERIAL
+  // Pass 7 arguments : ARCHIVE_PATH ARCHIVE_ENTRY_NAME PHONY_PATH TMP_PATH SERIAL FLATTEN_PATH COMPRESS
   
   NSString *archivePath = [arr objectAtIndex:0];
   NSString *archiveEntry = [arr objectAtIndex:1];
@@ -61,6 +67,9 @@
   NSString *outPath = [arr objectAtIndex:3];
   NSNumber *serialLoadingNum = [arr objectAtIndex:4];
   NSString *flattenOutPath = [arr objectAtIndex:5];
+  NSNumber *compressNum = [arr objectAtIndex:6];
+    
+  BOOL compress = [compressNum boolValue];
   
   if ([serialLoadingNum boolValue]) {
     [self grabSerialResourceLoaderLock];
@@ -103,18 +112,18 @@
       
       [AVFileUtil renameFile:phonyOutPath toPath:phonyOutMvidPath];
       
-      worked = [self.class flattenMvidImpl:phonyOutMvidPath outputMvidPath:flattenOutPath];
+      worked = [self.class flattenMvidImpl:phonyOutMvidPath outputMvidPath:flattenOutPath compress:compress];
       
       NSAssert(worked, @"flattenMvid failed for \"%@\"", phonyOutMvidPath);
-      
-      // Rename flat output file to final output path
-      
-      [AVFileUtil renameFile:flattenOutPath toPath:outPath];
       
       // Delete phony .mvid file
       
       worked = [[NSFileManager defaultManager] removeItemAtPath:phonyOutMvidPath error:nil];
       NSAssert(worked, @"could not remove tmp file");
+      
+      // Rename flat output file to final output path
+      
+      [AVFileUtil renameFile:flattenOutPath toPath:outPath];
     }
 #ifdef LOGGING
     NSLog(@"wrote %@", outPath);
@@ -133,11 +142,14 @@
             phonyOutPath:(NSString*)phonyOutPath
                  outPath:(NSString*)outPath
            flattenOutPath:(NSString*)flattenOutPath
+                 compress:(BOOL)compress
 {
   NSNumber *serialLoadingNum = [NSNumber numberWithBool:self.serialLoading];
   
-  NSArray *arr = [NSArray arrayWithObjects:archivePath, archiveEntry, phonyOutPath, outPath, serialLoadingNum, flattenOutPath, nil];
-  NSAssert([arr count] == 6, @"arr count");
+  NSNumber *compressNum = [NSNumber numberWithBool:compress];
+  
+  NSArray *arr = [NSArray arrayWithObjects:archivePath, archiveEntry, phonyOutPath, outPath, serialLoadingNum, flattenOutPath, compressNum, nil];
+  NSAssert([arr count] == 7, @"arr count");
   
   [NSThread detachNewThreadSelector:@selector(decodeThreadEntryPoint:) toTarget:self.class withObject:arr];  
 }
@@ -172,11 +184,16 @@
   
   NSString *flattenOutPath = @"";
   
-  if (self.flattenMvid) {
+  BOOL isCompressed = FALSE;
+#if defined(HAS_LIB_COMPRESSION_API)
+  isCompressed = self.compressed;
+#endif // HAS_LIB_COMPRESSION_API
+  
+  if (self.flattenMvid || isCompressed) {
     flattenOutPath = [AVFileUtil generateUniqueTmpPath];
   }
 
-  [self _detachNewThread:qualPath archiveEntry:archiveEntry phonyOutPath:phonyOutPath outPath:outPath flattenOutPath:flattenOutPath];
+  [self _detachNewThread:qualPath archiveEntry:archiveEntry phonyOutPath:phonyOutPath outPath:outPath flattenOutPath:flattenOutPath compress:isCompressed];
   
   return;
 }
@@ -193,6 +210,7 @@
 
 + (BOOL) flattenMvidImpl:(NSString*)inputMvidPath
           outputMvidPath:(NSString*)outputMvidPath
+                compress:(BOOL)compress
 {
   BOOL worked;
   
@@ -208,7 +226,7 @@
   // If the input .mvid is already all keyframes then generate a DEBUG assert.
   
 #if defined(DEBUG)
-  if ([frameDecoder isAllKeyframes]) {
+  if ((compress == FALSE) && [frameDecoder isAllKeyframes]) {
     NSAssert(FALSE, @"decompressed .mvid contains only keyframes \"%@\"", inputMvidPath);
   }
 #endif // DEBUG
@@ -270,7 +288,44 @@
     
     int numBytesInBuffer = (int) cgFrameBuffer.numBytes;
     
-    worked = [avMvidFileWriter writeKeyframe:cgFrameBuffer.pixels bufferSize:numBytesInBuffer];
+    char *pixelsPtr = (char*)cgFrameBuffer.pixels;
+    
+#if defined(HAS_LIB_COMPRESSION_API)
+    // If compression is used, then generate a compressed buffer and write it as
+    // a keyframe.
+    
+    if (compress) {
+      NSData *pixelData = [NSData dataWithBytesNoCopy:pixelsPtr length:numBytesInBuffer freeWhenDone:NO];
+      
+      // FIXME: make this mutable data a member so that it is not allocated
+      // in every loop.
+      
+      NSMutableData *mEncodedData = [NSMutableData data];
+      
+      [AVStreamEncodeDecode streamDeltaAndCompress:pixelData
+                                       encodedData:mEncodedData
+                                               bpp:avMvidFileWriter.bpp
+                                         algorithm:COMPRESSION_LZ4];
+      
+      //int src_size = bufferSize;
+      assert(mEncodedData.length > 0);
+      assert(mEncodedData.length < 0xFFFFFFFF);
+      int dst_size = (int) mEncodedData.length;
+      
+      //printf("compressed frame size %d kB down to %d kB\n", (int)src_size/1000, (int)dst_size/1000);
+      
+      // Calculate adler based on original pixels (not the compressed representation)
+      
+      uint32_t adler = 0;
+      adler = maxvid_adler32(0, (unsigned char*)pixelsPtr, numBytesInBuffer);
+      
+      worked = [avMvidFileWriter writeKeyframe:(char*)mEncodedData.bytes bufferSize:(int)dst_size adler:adler isCompressed:TRUE];
+    } else {
+      worked = [avMvidFileWriter writeKeyframe:pixelsPtr bufferSize:numBytesInBuffer];
+    }
+#else
+    worked = [avMvidFileWriter writeKeyframe:pixelsPtr bufferSize:numBytesInBuffer];
+#endif // HAS_LIB_COMPRESSION_API
     
     if (worked == FALSE) {
       NSAssert(0, @"error: Could not write keyframe to file \"%@\"", avMvidFileWriter.mvidPath);

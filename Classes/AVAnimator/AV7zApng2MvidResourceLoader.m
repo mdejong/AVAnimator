@@ -126,6 +126,7 @@
              phonyOutPath:(NSString*)phonyOutPath
                   outPath:(NSString*)outPath
            flattenOutPath:(NSString*)flattenOutPath
+                 compress:(BOOL)compress
 {
   // Use the same paths defined in the superclass, but pass 1 additional temp filename that will contain
   // the intermediate results of the conversion.
