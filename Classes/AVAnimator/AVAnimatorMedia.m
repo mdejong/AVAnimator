@@ -9,6 +9,7 @@
 
 #import <QuartzCore/QuartzCore.h>
 
+#import <AudioToolbox/AudioToolbox.h>
 #import <AVFoundation/AVAudioPlayer.h>
 #import <AVFoundation/AVAudioSession.h>
 
