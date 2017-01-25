@@ -294,7 +294,7 @@
     // If compression is used, then generate a compressed buffer and write it as
     // a keyframe.
     
-    if (compress) {
+    if (compress) @autoreleasepool {
       NSData *pixelData = [NSData dataWithBytesNoCopy:pixelsPtr length:numBytesInBuffer freeWhenDone:NO];
       
       // FIXME: make this mutable data a member so that it is not allocated

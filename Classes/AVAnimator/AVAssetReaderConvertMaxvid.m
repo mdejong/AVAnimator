@@ -156,7 +156,7 @@ NSString * const AVAssetReaderConvertMaxvidCompletedNotification = @"AVAssetRead
   // If compression is used, then generate a compressed buffer and write it as
   // a keyframe.
   
-  if (self.compressed) {
+  if (self.compressed) @autoreleasepool {
     NSData *pixelData = [NSData dataWithBytesNoCopy:pixelsPtr length:bufferSize freeWhenDone:NO];
     
     // FIXME: make this mutable data a member so that it is not allocated
