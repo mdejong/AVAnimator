@@ -15,7 +15,7 @@
 #import "AVMvidFrameDecoder.h"
 #import "AVMvidFileWriter.h"
 #import "AVFrame.h"
-#import "CGFramebuffer.h"
+#import "CGFrameBuffer.h"
 
 #include "AVStreamEncodeDecode.h"
 
