@@ -19,6 +19,8 @@
 
 #import "AVMvidFrameDecoder.h"
 
+#import "AVAssetFrameDecoder.h"
+
 #import <QuartzCore/QuartzCore.h>
 
 #import "AVAssetReaderConvertMaxvid.h"
@@ -46,6 +48,7 @@ typedef enum
 {
   AVOfflineCompositionClipTypeMvid = 0,
   AVOfflineCompositionClipTypeH264,
+  AVOfflineCompositionClipTypeH264Reader,
   AVOfflineCompositionClipTypeImage,
   AVOfflineCompositionClipTypeText,
 } AVOfflineCompositionClipType;
@@ -57,6 +60,7 @@ typedef enum
   NSString   *m_clipSource;
   UIImage    *m_image;
   AVMvidFrameDecoder *m_mvidFrameDecoder;
+  AVAssetFrameDecoder *m_assetFrameDecoder;
 @public
   AVOfflineCompositionClipType clipType;
   NSInteger clipX;
@@ -78,6 +82,8 @@ typedef enum
 @property (nonatomic, retain) UIImage *image;
 
 @property (nonatomic, retain) AVMvidFrameDecoder *mvidFrameDecoder;
+
+@property (nonatomic, retain) AVAssetFrameDecoder *assetFrameDecoder;
 
 @property (nonatomic, copy) NSString *font;
 
@@ -643,6 +649,8 @@ CF_RETURNS_RETAINED
       clipType = AVOfflineCompositionClipTypeMvid;
     } else if ([clipTypeStr isEqualToString:@"h264"]) {
       clipType = AVOfflineCompositionClipTypeH264;
+    } else if ([clipTypeStr isEqualToString:@"h264r"]) {
+      clipType = AVOfflineCompositionClipTypeH264Reader;
     } else if ([clipTypeStr isEqualToString:@"image"]) {
       clipType = AVOfflineCompositionClipTypeImage;
     } else if ([clipTypeStr isEqualToString:@"text"]) {
@@ -787,7 +795,8 @@ CF_RETURNS_RETAINED
     compClip->clipStartSeconds = clipStartSeconds;
     compClip->clipEndSeconds = clipEndSeconds;    
 
-    NSString *mvidPath= nil;
+    NSString *mvidPath = nil;
+    NSString *h264Path = nil;
     
     // FIXME: add support for compressed .mvid res attached to project file
     
@@ -862,6 +871,11 @@ CF_RETURNS_RETAINED
           return FALSE;
         }
       }
+    } else if (clipType == AVOfflineCompositionClipTypeH264Reader) {
+      // Reading frame from H264 .m4v video file
+      
+      NSString *movPath = compClip.clipSource;
+      h264Path = movPath;
     }
   
     if (clipType == AVOfflineCompositionClipTypeText) {
@@ -945,6 +959,37 @@ CF_RETURNS_RETAINED
       
       compClip->clipFrameDuration = mvidFrameDecoder.frameDuration;
       compClip->clipNumFrames = mvidFrameDecoder.numFrames;
+      
+      if (clipScaleFramePerSecond) {
+        // Calculate a new clipFrameDuration based on duration that this clip will
+        // be rendered for on the global timeline.
+        
+        float totalClipTime = (compClip->clipEndSeconds - compClip->clipStartSeconds);
+        float clipFrameDuration = totalClipTime / compClip->clipNumFrames;
+        
+        compClip->clipFrameDuration = clipFrameDuration;
+      }
+    } else if (clipType == AVOfflineCompositionClipTypeH264Reader) {
+      // Decode image frames directly from RGB video frames
+      
+      AVAssetFrameDecoder *assetFrameDecoder = [AVAssetFrameDecoder aVAssetFrameDecoder];
+      
+      // Prepare to decode by opening the asset and checking the dimensions
+      
+      worked = [assetFrameDecoder openForReading:h264Path];
+      if (worked == FALSE) {
+        // Opening H264 video file from app resources or tmp dir failed
+        self.errorString = [NSString stringWithFormat:@"open of h264 ClipSource file failed: %@", h264Path];
+        return FALSE;
+      }
+      
+      compClip.assetFrameDecoder = assetFrameDecoder;
+      
+      // Grab the clip's frame duration out of the mvid header. This frame duration may
+      // not match the frame rate of the whole comp.
+      
+      compClip->clipFrameDuration = assetFrameDecoder.frameDuration;
+      compClip->clipNumFrames = assetFrameDecoder.numFrames;
       
       if (clipScaleFramePerSecond) {
         // Calculate a new clipFrameDuration based on duration that this clip will
@@ -1257,7 +1302,7 @@ CF_RETURNS_RETAINED
       
       NSUInteger clipFrame = 0;
       
-      if (compClip->clipType == AVOfflineCompositionClipTypeMvid || compClip->clipType == AVOfflineCompositionClipTypeH264) {
+      if (compClip->clipType == AVOfflineCompositionClipTypeMvid || compClip->clipType == AVOfflineCompositionClipTypeH264 || compClip->clipType == AVOfflineCompositionClipTypeH264Reader) {
         float clipFrameDuration = compClip->clipFrameDuration;
         clipFrame = (NSUInteger) (clipTime / clipFrameDuration);
         
@@ -1268,7 +1313,7 @@ CF_RETURNS_RETAINED
         if (clipFrame >= compClip->clipNumFrames) {
           // If the calculate frame is larger than the last frame in the clip, continue
           // to display the last frame. This can happen when a clip is shorter than
-          // the display lenght, so the final frame continues to display.
+          // the display length, so the final frame continues to display.
           
           clipFrame = (compClip->clipNumFrames - 1);
           
@@ -1301,6 +1346,37 @@ CF_RETURNS_RETAINED
         // care if the frame returned is a duplicate since we just render it.
         
         AVFrame *frame = [mvidFrameDecoder advanceToFrame:clipFrame];
+        UIImage *image = frame.image;
+        NSAssert(image, @"image");
+        cgImageRef = image.CGImage;
+      } else if (compClip->clipType == AVOfflineCompositionClipTypeH264Reader) {
+        AVAssetFrameDecoder *assetFrameDecoder = compClip.assetFrameDecoder;
+        
+#ifdef LOGGING_CLIP_ACTIVE
+        NSLog(@"allocate decode resources for clip %d at frame %d", (int)clipOffset, (int)frame);
+#endif // LOGGING_CLIP_ACTIVE
+        
+        worked = [assetFrameDecoder allocateDecodeResources];
+        
+        if (worked == FALSE) {
+          self.errorString = @"failed to allocate decode resources for clip";
+          return FALSE;
+        }
+        
+        // While this advanceToFrame returns a UIImage, we are not actually using
+        // and UI layer rendering functions, so it should be thread safe to just
+        // hold on to a UIImage and the CGImageRef it contains. Note that we don't
+        // care if the frame returned is a duplicate since we just render it.
+        
+        AVFrame *frame;
+        
+        if (assetFrameDecoder.frameIndex == clipFrame) {
+          // Cannot advance to same frame, grab last one again
+          frame = [assetFrameDecoder duplicateCurrentFrame];
+        } else {
+          frame = [assetFrameDecoder advanceToFrame:clipFrame];
+        }
+
         UIImage *image = frame.image;
         NSAssert(image, @"image");
         cgImageRef = image.CGImage;
@@ -1439,6 +1515,8 @@ CF_RETURNS_RETAINED
         NSString *tmpPath = compClip.mvidFrameDecoder.filePath;
         BOOL worked = [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
         NSAssert(worked, @"could not remove tmp file");
+      } else if (clipType == AVOfflineCompositionClipTypeH264Reader) {
+        // nop
       } else {
         assert(0);
       }
@@ -1493,6 +1571,8 @@ CF_RETURNS_RETAINED
 @synthesize image = m_image;
 
 @synthesize mvidFrameDecoder = m_mvidFrameDecoder;
+
+@synthesize assetFrameDecoder = m_assetFrameDecoder;
 
 @synthesize font = m_font;
 

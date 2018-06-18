@@ -1141,6 +1141,8 @@ typedef enum
 - (AVFrame*) duplicateCurrentFrame
 {
   AVFrame *frame = [AVFrame aVFrame];
+  frame.image = self.lastFrame.image;
+  //frame.cgFrameBuffer = self.lastFrame.cgFrameBuffer;
   frame.cvBufferRef = self.lastFrame.cvBufferRef;
   return frame;
 }
