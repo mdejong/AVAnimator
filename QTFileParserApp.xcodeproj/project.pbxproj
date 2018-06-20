@@ -24,6 +24,8 @@
 		3CD931231BF091C900322A2A /* RGB3Frame_mix.m4v in Resources */ = {isa = PBXBuildFile; fileRef = 3CD931221BF091C900322A2A /* RGB3Frame_mix.m4v */; };
 		3CEC98E320D8EBCC00D78DAA /* libcompression.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 3CEC98E220D8EBCC00D78DAA /* libcompression.tbd */; };
 		3CEC98E420D8EBCC00D78DAA /* libcompression.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 3CEC98E220D8EBCC00D78DAA /* libcompression.tbd */; };
+		3CEC98EA20D9FA8A00D78DAA /* AVAssetAlphaFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CEC98E920D9FA8900D78DAA /* AVAssetAlphaFrameDecoder.m */; };
+		3CEC98EB20D9FA9300D78DAA /* AVAssetAlphaFrameDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CEC98E920D9FA8900D78DAA /* AVAssetAlphaFrameDecoder.m */; };
 		3CF24CCF1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CF24CCE1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m */; };
 		3CF24CD01C863E9B00108968 /* AVAnimatorH264AlphaPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CF24CCE1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m */; };
 		609172EA18BC79AF00BF3C3E /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 609172E918BC79AF00BF3C3E /* Default-568h@2x.png */; };
@@ -389,6 +391,8 @@
 		3CADC8D21C8EE16400857F62 /* CoreImage.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreImage.framework; path = System/Library/Frameworks/CoreImage.framework; sourceTree = SDKROOT; };
 		3CD931221BF091C900322A2A /* RGB3Frame_mix.m4v */ = {isa = PBXFileReference; lastKnownFileType = file; path = RGB3Frame_mix.m4v; sourceTree = "<group>"; };
 		3CEC98E220D8EBCC00D78DAA /* libcompression.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libcompression.tbd; path = usr/lib/libcompression.tbd; sourceTree = SDKROOT; };
+		3CEC98E820D9FA8800D78DAA /* AVAssetAlphaFrameDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAssetAlphaFrameDecoder.h; sourceTree = "<group>"; };
+		3CEC98E920D9FA8900D78DAA /* AVAssetAlphaFrameDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAssetAlphaFrameDecoder.m; sourceTree = "<group>"; };
 		3CF24CCD1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AVAnimatorH264AlphaPlayer.h; sourceTree = "<group>"; };
 		3CF24CCE1C863E9A00108968 /* AVAnimatorH264AlphaPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AVAnimatorH264AlphaPlayer.m; sourceTree = "<group>"; };
 		609172E918BC79AF00BF3C3E /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
@@ -1007,6 +1011,8 @@
 				CDC510E61692C26F0069C891 /* AVAssetJoinAlphaResourceLoader.m */,
 				3C4EF06A1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.h */,
 				3C4EF06B1BF31AE700C2A73B /* AVAssetMixAlphaResourceLoader.m */,
+				3CEC98E820D9FA8800D78DAA /* AVAssetAlphaFrameDecoder.h */,
+				3CEC98E920D9FA8900D78DAA /* AVAssetAlphaFrameDecoder.m */,
 				CD93914F15F35B5000E1D7CC /* AVFrame.h */,
 				CD93915015F35B5000E1D7CC /* AVFrame.m */,
 				CD6198BD12CCFC640003AEAA /* AVFrameDecoder.h */,
@@ -1403,6 +1409,7 @@
 				CD6198BF12CCFC640003AEAA /* AVFrameDecoder.m in Sources */,
 				CD7A02F012D261A900366AC6 /* AVAnimatorView.m in Sources */,
 				CDECCE7212D30FE80067D2EE /* AVImageFrameDecoder.m in Sources */,
+				3CEC98EA20D9FA8A00D78DAA /* AVAssetAlphaFrameDecoder.m in Sources */,
 				CD2F6D4912F0B8AF0022413B /* AVAnimatorMedia.m in Sources */,
 				3C673BE61C80E1F500DCA1E7 /* AVStreamEncodeDecode.m in Sources */,
 				CD6EF5A812F0F7920045659F /* movdata.c in Sources */,
@@ -1488,6 +1495,7 @@
 				CD922DB413620A310024AFBB /* Alloc.c in Sources */,
 				CD922DB513620A310024AFBB /* CpuArch.c in Sources */,
 				CD922DB613620A310024AFBB /* Delta.c in Sources */,
+				3CEC98EB20D9FA9300D78DAA /* AVAssetAlphaFrameDecoder.m in Sources */,
 				CD922DB713620A310024AFBB /* Lzma2Dec.c in Sources */,
 				CD922DB813620A310024AFBB /* LzmaDec.c in Sources */,
 				CD922DB913620A310024AFBB /* LZMAExtractor.m in Sources */,

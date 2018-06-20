@@ -21,6 +21,8 @@
 
 #import "AVAssetFrameDecoder.h"
 
+#import "AVAssetAlphaFrameDecoder.h"
+
 #import <QuartzCore/QuartzCore.h>
 
 #import "AVAssetReaderConvertMaxvid.h"
@@ -49,6 +51,7 @@ typedef enum
   AVOfflineCompositionClipTypeMvid = 0,
   AVOfflineCompositionClipTypeH264,
   AVOfflineCompositionClipTypeH264Reader,
+  AVOfflineCompositionClipTypeH264AReader,
   AVOfflineCompositionClipTypeImage,
   AVOfflineCompositionClipTypeText,
 } AVOfflineCompositionClipType;
@@ -58,9 +61,10 @@ typedef enum
 @interface AVOfflineCompositionClip : NSObject
 {
   NSString   *m_clipSource;
+  NSString   *m_clipASource;
   UIImage    *m_image;
   AVMvidFrameDecoder *m_mvidFrameDecoder;
-  AVAssetFrameDecoder *m_assetFrameDecoder;
+  AVFrameDecoder *m_assetFrameDecoder;
 @public
   AVOfflineCompositionClipType clipType;
   NSInteger clipX;
@@ -78,12 +82,13 @@ typedef enum
 }
 
 @property (nonatomic, copy) NSString *clipSource;
+@property (nonatomic, copy) NSString *clipASource;
 
 @property (nonatomic, retain) UIImage *image;
 
 @property (nonatomic, retain) AVMvidFrameDecoder *mvidFrameDecoder;
 
-@property (nonatomic, retain) AVAssetFrameDecoder *assetFrameDecoder;
+@property (nonatomic, retain) AVFrameDecoder *assetFrameDecoder;
 
 @property (nonatomic, copy) NSString *font;
 
@@ -651,6 +656,8 @@ CF_RETURNS_RETAINED
       clipType = AVOfflineCompositionClipTypeH264;
     } else if ([clipTypeStr isEqualToString:@"h264r"]) {
       clipType = AVOfflineCompositionClipTypeH264Reader;
+    } else if ([clipTypeStr isEqualToString:@"h264ar"]) {
+      clipType = AVOfflineCompositionClipTypeH264AReader;
     } else if ([clipTypeStr isEqualToString:@"image"]) {
       clipType = AVOfflineCompositionClipTypeImage;
     } else if ([clipTypeStr isEqualToString:@"text"]) {
@@ -664,6 +671,7 @@ CF_RETURNS_RETAINED
     // Note that for a "text" type, there is no source.
     
     NSString *clipSource = nil;
+    NSString *clipSourceAlpha = nil;
     
     if (clipType == AVOfflineCompositionClipTypeText) {
       // Store literal text in "clip source"
@@ -712,7 +720,33 @@ CF_RETURNS_RETAINED
           self.errorString = @"ClipSource file not found in tmp dir or resources";
           return FALSE;
         }
-      }      
+      }
+      
+      // If clipSourceAlpha is not null, lookup resource path and then check tmp dir
+      
+      if (clipType == AVOfflineCompositionClipTypeH264AReader) {
+        clipSourceAlpha = [clipDict objectForKey:@"ClipSourceAlpha"];
+        NSString *resAPath = [[NSBundle mainBundle] pathForResource:clipSourceAlpha ofType:@""];
+        
+        if (resAPath != nil) {
+          // ClipSource is the name of a resource file
+          clipSourceAlpha = resAPath;
+        } else {
+          // If ClipSourceAlpha is not a resource file, check for a file with that name in the tmp dir
+          NSString *tmpDir = NSTemporaryDirectory();
+          NSString *tmpPath = [tmpDir stringByAppendingPathComponent:clipSourceAlpha];
+          if ([[NSFileManager defaultManager] fileExistsAtPath:tmpPath]) {
+            clipSourceAlpha = tmpPath;
+          } else {
+            // Either a mvid or h264 video but the file cannot be found in the
+            // tmp dir or in the project resources.
+            
+            self.errorString = @"ClipSourceAlpha file not found in tmp dir or resources";
+            return FALSE;
+          }
+        }
+    }
+      
     }
     
     // ClipX, ClipY : signed int
@@ -787,6 +821,10 @@ CF_RETURNS_RETAINED
     // Fill in fields of AVOfflineCompositionClip
     
     compClip.clipSource = clipSource;
+    if (clipType == AVOfflineCompositionClipTypeH264AReader) {
+      // Clip Alpha used only with RGB+A split type
+      compClip.clipASource = clipSourceAlpha;
+    }
     compClip->clipType = clipType;
     compClip->clipX = clipX;
     compClip->clipY = clipY;
@@ -797,6 +835,7 @@ CF_RETURNS_RETAINED
 
     NSString *mvidPath = nil;
     NSString *h264Path = nil;
+    NSString *h264APath = nil;
     
     // FIXME: add support for compressed .mvid res attached to project file
     
@@ -876,6 +915,11 @@ CF_RETURNS_RETAINED
       
       NSString *movPath = compClip.clipSource;
       h264Path = movPath;
+    } else if (clipType == AVOfflineCompositionClipTypeH264AReader) {
+      // Read RGB and Alpha video and combine
+      
+      h264Path = compClip.clipSource;
+      h264APath = compClip.clipASource;
     }
   
     if (clipType == AVOfflineCompositionClipTypeText) {
@@ -980,6 +1024,40 @@ CF_RETURNS_RETAINED
       if (worked == FALSE) {
         // Opening H264 video file from app resources or tmp dir failed
         self.errorString = [NSString stringWithFormat:@"open of h264 ClipSource file failed: %@", h264Path];
+        return FALSE;
+      }
+      
+      compClip.assetFrameDecoder = assetFrameDecoder;
+      
+      // Grab the clip's frame duration out of the mvid header. This frame duration may
+      // not match the frame rate of the whole comp.
+      
+      compClip->clipFrameDuration = assetFrameDecoder.frameDuration;
+      compClip->clipNumFrames = assetFrameDecoder.numFrames;
+      
+      if (clipScaleFramePerSecond) {
+        // Calculate a new clipFrameDuration based on duration that this clip will
+        // be rendered for on the global timeline.
+        
+        float totalClipTime = (compClip->clipEndSeconds - compClip->clipStartSeconds);
+        float clipFrameDuration = totalClipTime / compClip->clipNumFrames;
+        
+        compClip->clipFrameDuration = clipFrameDuration;
+      }
+    } else if (clipType == AVOfflineCompositionClipTypeH264AReader) {
+      // Decode image frames directly from RGB video frames
+      
+      AVAssetAlphaFrameDecoder *assetFrameDecoder = [AVAssetAlphaFrameDecoder aVAssetAlphaFrameDecoder];
+      
+      assetFrameDecoder.movieRGBFilename = h264Path;
+      assetFrameDecoder.movieAlphaFilename = h264APath;
+      
+      // Prepare to decode by opening the asset and checking the dimensions
+      
+      worked = [assetFrameDecoder openForReading];
+      if (worked == FALSE) {
+        // Opening H264 video file from app resources or tmp dir failed
+        self.errorString = [NSString stringWithFormat:@"open of h264a ClipSource file failed: %@ or %@", h264Path, h264APath];
         return FALSE;
       }
       
@@ -1165,6 +1243,7 @@ CF_RETURNS_RETAINED
   for (NSUInteger frame = 0; retcode && (frame < maxFrame); frame++) {
     // Clear the entire frame to the background color with a simple fill
     
+    CGContextSetBlendMode(bitmapContext, kCGBlendModeNormal);
     CGContextSetFillColorWithColor(bitmapContext, self->m_backgroundColor);
     CGContextFillRect(bitmapContext, CGRectMake(0, 0, width, height));
     
@@ -1172,6 +1251,13 @@ CF_RETURNS_RETAINED
     
     worked = [self composeClips:frame bitmapContext:bitmapContext];
     
+    // Explicitly set alpha channel values to 0xFF since drawing an alpha
+    // channel image could have blended an alpha value even though the
+    // buffer is explicitly 24 BPP. This will make sure the adler includes
+    // all 0xFF alpha values.
+    
+    [cgFrameBuffer resetAlphaChannel];
+
     CGContextRestoreGState(bitmapContext);
     
     if (worked == FALSE) {
@@ -1211,6 +1297,32 @@ CF_RETURNS_RETAINED
       }
       
       worked = [fileWriter writeKeyframe:(char*)mEncodedData.bytes bufferSize:(int)dst_size adler:adler isCompressed:TRUE];
+      
+#if defined(DEBUG)
+      {
+        // Decode encoded data back to original and verify adler
+        
+        CGFrameBuffer *decodeCgFrameBuffer = [CGFrameBuffer cGFrameBufferWithBppDimensions:24
+                                                                               width:scaledWidth
+                                                                              height:scaledHeight];
+
+        
+        BOOL worked = [AVStreamEncodeDecode streamUnDeltaAndUncompress:mEncodedData
+                                                           frameBuffer:decodeCgFrameBuffer.pixels
+                                                   frameBufferNumBytes:(uint32_t)decodeCgFrameBuffer.numBytes
+                                                                   bpp:(int)decodeCgFrameBuffer.bitsPerPixel
+                                                             algorithm:COMPRESSION_LZ4];
+        NSAssert(worked, @"streamUnDeltaAndUncompress");
+        
+        uint32_t decoded_adler = 0;
+        if (fileWriter.genAdler) {
+          decoded_adler = maxvid_adler32(0, (unsigned char*)decodeCgFrameBuffer.pixels, (int)cgFrameBuffer.numBytes);
+          NSAssert(decoded_adler == adler, @"adler");
+        }
+      }
+#endif // DEBUG
+      
+      pixelData = nil;
     } else
 #endif // HAS_LIB_COMPRESSION_API
     {
@@ -1302,7 +1414,10 @@ CF_RETURNS_RETAINED
       
       NSUInteger clipFrame = 0;
       
-      if (compClip->clipType == AVOfflineCompositionClipTypeMvid || compClip->clipType == AVOfflineCompositionClipTypeH264 || compClip->clipType == AVOfflineCompositionClipTypeH264Reader) {
+      if (compClip->clipType == AVOfflineCompositionClipTypeMvid ||
+          compClip->clipType == AVOfflineCompositionClipTypeH264 ||
+          compClip->clipType == AVOfflineCompositionClipTypeH264Reader ||
+          compClip->clipType == AVOfflineCompositionClipTypeH264AReader) {
         float clipFrameDuration = compClip->clipFrameDuration;
         clipFrame = (NSUInteger) (clipTime / clipFrameDuration);
         
@@ -1349,8 +1464,9 @@ CF_RETURNS_RETAINED
         UIImage *image = frame.image;
         NSAssert(image, @"image");
         cgImageRef = image.CGImage;
-      } else if (compClip->clipType == AVOfflineCompositionClipTypeH264Reader) {
-        AVAssetFrameDecoder *assetFrameDecoder = compClip.assetFrameDecoder;
+      } else if (compClip->clipType == AVOfflineCompositionClipTypeH264Reader ||
+                 compClip->clipType == AVOfflineCompositionClipTypeH264AReader) {
+        AVFrameDecoder *assetFrameDecoder = compClip.assetFrameDecoder;
         
 #ifdef LOGGING_CLIP_ACTIVE
         NSLog(@"allocate decode resources for clip %d at frame %d", (int)clipOffset, (int)frame);
@@ -1517,6 +1633,8 @@ CF_RETURNS_RETAINED
         NSAssert(worked, @"could not remove tmp file");
       } else if (clipType == AVOfflineCompositionClipTypeH264Reader) {
         // nop
+      } else if (clipType == AVOfflineCompositionClipTypeH264AReader) {
+        // nop
       } else {
         assert(0);
       }
@@ -1567,6 +1685,7 @@ CF_RETURNS_RETAINED
 @implementation AVOfflineCompositionClip
 
 @synthesize clipSource = m_clipSource;
+@synthesize clipASource = m_clipASource;
 
 @synthesize image = m_image;
 

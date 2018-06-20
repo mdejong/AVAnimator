@@ -33,7 +33,8 @@
 //
 // CLIP SETTINGS:
 //   "ClipSource" string name of H264 or MVID file, image name for "image", literal text for "text" type
-//   "ClipType" string type ("mvid", "h264", "image", "text")
+//   "ClipSource" string name of alpha channel H264 input, used only with "h264ar" type)
+//   "ClipType" string type ("mvid", "h264", "h264r", "h264ar", "image", "text")
 //   "ClipX" int X coordinate of clip where 0,0 is in upper left corner of comp
 //   "ClipY" int Y coordinate of clip where 0,0 is in upper left corner of comp
 //   "ClipWidth" int width of the rectangular bounding box for the clip
@@ -47,6 +48,10 @@
 
 // For a "Font", indicate the name of an iOS font from one of the support font names:
 // http://daringfireball.net/misc/2007/07/iphone-osx-fonts.pdf
+//
+// The "h264" type is converted from H264 video to MVID file format.
+// The "h264r" type reads directly from H264 video when compositing.
+// The "h264ar" type reads RGB and Alpha channel data from a pair of input files when compositing.
 
 #import <Foundation/Foundation.h>
 #import <QuartzCore/QuartzCore.h>
