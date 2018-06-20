@@ -133,28 +133,12 @@
   return TRUE;
 }
 
-// Restart the decoder. Sadly, the asset reader API only seems to want to read data once.
-// As soon as it is finished playing, it is dead.
+// Rewind to begining of the rendered frames
 
-- (BOOL) restart
+- (void) rewind
 {
-  /*
-#ifdef LOGGING
-  NSLog(@"restart");
-#endif // LOGGING
-
-  [self close];
-  
-  BOOL worked;
-
-  worked = [self openForReading:[self.assetURL path]];
-
-  if (worked == FALSE) {
-    return FALSE;
-  }
-
-   */
-  return TRUE;
+  [self.rgbAssetDecoder rewind];
+  [self.alphaAssetDecoder rewind];
 }
 
 - (AVFrame*) advanceToFrame:(NSUInteger)newFrameIndex
