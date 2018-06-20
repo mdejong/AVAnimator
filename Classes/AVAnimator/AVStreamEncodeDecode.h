@@ -36,8 +36,7 @@
                         frameBuffer:(void*)frameBuffer
                 frameBufferNumBytes:(uint32_t)frameBufferNumBytes
                                 bpp:(int)bpp
-                          algorithm:(compression_algorithm)algorithm
-                expectedDecodedSize:(int)expectedDecodedSize;
+                          algorithm:(compression_algorithm)algorithm;
 
 @end
 

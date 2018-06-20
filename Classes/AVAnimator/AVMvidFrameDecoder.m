@@ -965,7 +965,7 @@
         NSAssert(frameBuffer, @"frameBuffer");
 #endif // EXTRA_CHECKS
         
-        [AVStreamEncodeDecode streamUnDeltaAndUncompress:mappedDataObj frameBuffer:frameBuffer frameBufferNumBytes:frameBufferNumBytes bpp:bpp algorithm:COMPRESSION_LZ4 expectedDecodedSize:(int)self.width*(int)self.height];
+        [AVStreamEncodeDecode streamUnDeltaAndUncompress:mappedDataObj frameBuffer:frameBuffer frameBufferNumBytes:frameBufferNumBytes bpp:bpp algorithm:COMPRESSION_LZ4];
         
 #if defined(EXTRA_CHECKS) || defined(ALWAYS_CHECK_ADLER)
         {

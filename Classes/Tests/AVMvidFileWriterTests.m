@@ -30,6 +30,8 @@
 
 #import "AVMvidFileWriter.h"
 
+#import "AVStreamEncodeDecode.h"
+
 @interface AVMvidFileWriterTests : NSObject {
 }
 @end
@@ -302,6 +304,275 @@
   NSAssert(maxvid_v3_frame_length(frame) == 8, @"maxvid_frame_length");
   
   [[NSFileManager defaultManager] removeItemAtPath:tmpPath error:nil];
+  
+  return;
+}
+
+// With a special flag, the file writer can emit BGRA pixels as BGR data that is further
+// compressed with a from of lz compression. Check that writing bytes and decoding them
+// works as expected.
+
++ (void) testAVStreamEncodeDecode1
+{
+  uint32_t pixels[] = {
+    0xFF000000,
+    0xFF010101,
+    0xFF020202,
+    0xFF030303,
+    0xFF040404,
+    0xFF050505,
+    0xFF060606,
+    0xFF070707,
+    0xFF080808,
+    0xFF090909,
+    0xFF0A0A0A,
+    0xFF0B0B0B,
+    0xFF0C0C0C,
+    0xFF0D0D0D,
+  };
+  
+  NSData *pixelData = [NSData dataWithBytes:pixels length:sizeof(pixels)];
+  NSMutableData *mEncodedData = [NSMutableData data];
+
+  int bpp = 24;
+  
+  // Note that the compression method is self checking
+  
+  BOOL worked = [AVStreamEncodeDecode streamDeltaAndCompress:pixelData
+                                   encodedData:mEncodedData
+                                           bpp:bpp
+                                     algorithm:COMPRESSION_LZ4];
+  
+  NSAssert(worked == TRUE, @"worked");
+
+  return;
+}
+
++ (void) testAVStreamEncodeDecode2
+{
+  uint32_t pixels[] = {
+    0xFF000000,
+    0xFF010101,
+    0xFF020202,
+    0xFF030303,
+    0xFF040404,
+    0xFF050505,
+    0xFF060606,
+    0xFF070707,
+    0xFF080808,
+    0xFF090909,
+    0xFF0A0A0A,
+    0xFF0B0B0B,
+    0xFF0C0C0C,
+    0xFF0D0D0D,
+    0xFF0E0E0E,
+    0xFF0F0F0F,
+  };
+  
+  NSData *pixelData = [NSData dataWithBytes:pixels length:sizeof(pixels)];
+  NSMutableData *mEncodedData = [NSMutableData data];
+  
+  int bpp = 24;
+  
+  // Note that the compression method is self checking
+  
+  BOOL worked = [AVStreamEncodeDecode streamDeltaAndCompress:pixelData
+                                   encodedData:mEncodedData
+                                           bpp:bpp
+                                     algorithm:COMPRESSION_LZ4];
+  
+  NSAssert(worked == TRUE, @"worked");
+  
+  return;
+}
+
+// Test with a series of input pixel buffer sizes that repeat
+// an input pattern of (0 -> 15) values stores as pixels.
+
++ (void) testAVStreamEncodeDecode3
+{
+  uint32_t pixels[] = {
+    0xFF000000,
+    0xFF010101,
+    0xFF020202,
+    0xFF030303,
+    0xFF040404,
+    0xFF050505,
+    0xFF060606,
+    0xFF070707,
+    0xFF080808,
+    0xFF090909,
+    0xFF0A0A0A,
+    0xFF0B0B0B,
+    0xFF0C0C0C,
+    0xFF0D0D0D,
+    0xFF0E0E0E,
+    0xFF0F0F0F,
+  };
+  
+  for (int i = 0; i < 128; i++) @autoreleasepool {
+    NSMutableData *mPixelData = [NSMutableData data];
+
+    int numPixelsOutput = 16 + i;
+    
+    [mPixelData setLength:numPixelsOutput*sizeof(uint32_t)];
+    
+    uint32_t *mPixelPtr = (uint32_t *) mPixelData.mutableBytes;
+    
+    for (int pi = 0; pi < numPixelsOutput; pi++) {
+      int piMod = pi % 16;
+      uint32_t pixel = pixels[piMod];
+      mPixelPtr[pi] = pixel;
+    }
+    
+    NSMutableData *mEncodedData = [NSMutableData data];
+    
+    int bpp = 24;
+    
+    // Note that the compression method is self checking
+    
+    BOOL worked = [AVStreamEncodeDecode streamDeltaAndCompress:mPixelData
+                                     encodedData:mEncodedData
+                                             bpp:bpp
+                                       algorithm:COMPRESSION_LZ4];
+    
+    NSAssert(worked == TRUE, @"worked");
+  }
+  
+  return;
+}
+
+// Test a large number of very large buffers
+
++ (void) testAVStreamEncodeDecode4
+{
+  uint32_t pixels[] = {
+    0xFF000000,
+    0xFF010101,
+    0xFF020202,
+    0xFF030303,
+    0xFF040404,
+    0xFF050505,
+    0xFF060606,
+    0xFF070707,
+    0xFF080808,
+    0xFF090909,
+    0xFF0A0A0A,
+    0xFF0B0B0B,
+    0xFF0C0C0C,
+    0xFF0D0D0D,
+    0xFF0E0E0E,
+    0xFF0F0F0F,
+  };
+  
+  for (int i = 1024; i < (1024 * 10); i++) @autoreleasepool {
+    NSMutableData *mPixelData = [NSMutableData data];
+    
+    int numPixelsOutput = 16 + i;
+    
+    [mPixelData setLength:numPixelsOutput*sizeof(uint32_t)];
+    
+    uint32_t *mPixelPtr = (uint32_t *) mPixelData.mutableBytes;
+    
+    for (int pi = 0; pi < numPixelsOutput; pi++) {
+      int piMod = pi % 16;
+      uint32_t pixel = pixels[piMod];
+      mPixelPtr[pi] = pixel;
+    }
+    
+    NSMutableData *mEncodedData = [NSMutableData data];
+    
+    int bpp = 24;
+    
+    // Note that the compression method is self checking
+    
+    BOOL worked = [AVStreamEncodeDecode streamDeltaAndCompress:mPixelData
+                                     encodedData:mEncodedData
+                                             bpp:bpp
+                                       algorithm:COMPRESSION_LZ4];
+    
+    NSAssert(worked == TRUE, @"worked");
+  }
+  
+  return;
+}
+
++ (void) testAVStreamEncodeDecode5
+{
+  uint32_t pixels[] = {
+    0xFF000000,
+    0xFF010101,
+    0xFF000000,
+    0xFF000000,
+    0xFF020202,
+    0xFF000000,
+    0xFF000000,
+    0xFF000000,
+    0xFF030303,
+    0xFF000000,
+    0xFF000000,
+    0xFF000000,
+    0xFF000000,
+    0xFF000000,
+    0xFF000000,
+    0xFF0F0F0F,
+  };
+  
+  for (int i = 0; i < 1024; i++) @autoreleasepool {
+    NSMutableData *mPixelData = [NSMutableData data];
+    
+    int numPixelsOutput = 16 + i;
+    
+    [mPixelData setLength:numPixelsOutput*sizeof(uint32_t)];
+    
+    uint32_t *mPixelPtr = (uint32_t *) mPixelData.mutableBytes;
+    
+    for (int pi = 0; pi < numPixelsOutput; pi++) {
+      int piMod = pi % 16;
+      uint32_t pixel = pixels[piMod];
+      mPixelPtr[pi] = pixel;
+    }
+    
+    NSMutableData *mEncodedData = [NSMutableData data];
+    
+    int bpp = 24;
+    
+    // Note that the compression method is self checking
+    
+    BOOL worked = [AVStreamEncodeDecode streamDeltaAndCompress:mPixelData
+                                     encodedData:mEncodedData
+                                             bpp:bpp
+                                       algorithm:COMPRESSION_LZ4];
+    
+    NSAssert(worked == TRUE, @"worked");
+  }
+  
+  return;
+}
+
+// Util method will fail if passed 24 BPP but one of the input pixels
+// actually contains an alpha channel value other than 0x00 or 0xFF
+
++ (void) testAVStreamEncodeDecode6
+{
+  uint32_t pixels[] = {
+    0xFF000000,
+    0x01010101
+  };
+  
+  NSData *pixelData = [NSData dataWithBytes:pixels length:sizeof(pixels)];
+  NSMutableData *mEncodedData = [NSMutableData data];
+  
+  int bpp = 24;
+  
+  // Note that the compression method is self checking
+  
+  BOOL worked = [AVStreamEncodeDecode streamDeltaAndCompress:pixelData
+                                   encodedData:mEncodedData
+                                           bpp:bpp
+                                     algorithm:COMPRESSION_LZ4];
+  
+  NSAssert(worked == FALSE, @"!worked");
   
   return;
 }

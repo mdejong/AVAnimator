@@ -121,6 +121,8 @@
                             bpp:(int)bpp
                       algorithm:(compression_algorithm)algorithm
 {
+  const BOOL debug = FALSE;
+  
   uint32_t *pixelsPtr = (uint32_t*) inputData.bytes;
   int bufferSize = (int) inputData.length;
   
@@ -131,7 +133,7 @@
   
   NSMutableData *mInputData = [NSMutableData data];
   
-  if (bpp == 24 && (1)) {
+  if (bpp == 24) {
     // Generate buffer of BGR bytes without A byte
     
     uint32_t *inPixelsPtr = (uint32_t*) pixelsPtr;
@@ -145,9 +147,18 @@
     for ( int i = 0; i < maxOffset; i++ ) {
       uint32_t inPixel = inPixelsPtr[i];
       
-      uint8_t B = inPixel & 0XFF;
-      uint8_t G = (inPixel >> 8) & 0XFF;
-      uint8_t R = (inPixel >> 16) & 0XFF;
+      uint8_t B = inPixel & 0xFF;
+      uint8_t G = (inPixel >> 8) & 0xFF;
+      uint8_t R = (inPixel >> 16) & 0xFF;
+      uint8_t A = (inPixel >> 24) & 0xFF;
+      
+      if (A == 0 || A == 255) {
+        // Acceptable values
+      } else {
+        //NSAssert(0, @"input pixel 0x%08X has invalid alpha channel value %d at offset %d", inPixel, A, i);
+        
+        return FALSE;
+      }
       
       // Binary Layout : B G R B G R
       
@@ -158,6 +169,65 @@
       outPtr += 3;
     }
     
+    if (debug) {
+      printf("encoded %d pixel bytes and %d BGR bytes\n", (int)inputData.length, (int)mInputData.length);
+    }
+    
+#if defined(DEBUG)
+    // Verify that a simple expansion loop for every 3 bytes produces the original input pixels
+    {
+      int numBytesOriginal = (int)inputData.length;
+      
+      NSAssert((numBytesOriginal % sizeof(uint32_t)) == 0, @"bufferSize");
+      
+      NSMutableData *expandedTmp = [NSMutableData data];
+      [expandedTmp setLength:numBytesOriginal];
+      
+      uint32_t *expandedPixelsPtr = (uint32_t *) expandedTmp.mutableBytes;
+      int expandedi = 0;
+      
+      uint32_t A = (inPixelsPtr[0] >> 24) & 0xFF;
+      
+      int numBytesEncoded = (int) mInputData.length;
+      uint8_t *encodedBytesPtr = (uint8_t*) mInputData.bytes;
+      
+      for ( int numBytesProcessed = 0; numBytesProcessed < numBytesEncoded; numBytesProcessed += 3 ) {
+        // Consume 3 bytes and write word to output
+        
+        uint32_t B = encodedBytesPtr[numBytesProcessed];
+        uint32_t G = encodedBytesPtr[numBytesProcessed+1];
+        uint32_t R = encodedBytesPtr[numBytesProcessed+2];
+        
+        uint32_t pixel = (A << 24) | (R << 16) |(G << 8) | B;
+        
+        expandedPixelsPtr[expandedi++] = pixel;
+      }
+      
+      NSAssert(expandedi == (numBytesOriginal / sizeof(uint32_t)), @"ptr size");
+      
+      // Compare expandedTmp and inputData
+      
+      NSAssert(expandedTmp.length == inputData.length, @"lengths %d != %d", (int)expandedTmp.length, (int)inputData.length);
+      
+      uint32_t *originalPixelsPtr = (uint32_t*) inputData.bytes;
+      
+      for ( int i = 0; i < maxOffset; i++ ) {
+        // Compare words
+        
+        uint32_t pixel1 = originalPixelsPtr[i];
+        uint32_t pixel2 = expandedPixelsPtr[i];
+        
+        if (pixel1 != pixel2) {
+          printf("0x%08X != 0x%08X at offset %d\n", pixel1, pixel2, i);
+        }
+        
+        NSAssert(pixel1 == pixel2, @"pixel match");
+      }
+      
+      NSAssert([expandedTmp isEqualToData:inputData], @"matches input pixels");
+    }
+#endif // DEBUG
+    
     dataToEncode = mInputData;
   } else {
     // Encode 16 or 32 BPP pixels directly
@@ -166,6 +236,39 @@
   }
   
   [AVStreamEncodeDecode streamCompress:dataToEncode encodedData:encodedData algorithm:algorithm];
+  
+  if (debug) {
+    printf("encoded %d BGR bytes as %d compressed bytes\n", (int)dataToEncode.length, (int)encodedData.length);
+  }
+  
+#if defined(DEBUG)
+  @autoreleasepool {
+    // Decode encoded data back to original and verify
+    
+    NSMutableData *decodedData = [NSMutableData data];
+    [decodedData setLength:inputData.length];
+    
+    BOOL worked = [AVStreamEncodeDecode streamUnDeltaAndUncompress:encodedData
+                                                       frameBuffer:(void*)decodedData.bytes
+                                               frameBufferNumBytes:(uint32_t)decodedData.length
+                                                               bpp:bpp
+                                                         algorithm:algorithm];
+    NSAssert(worked, @"streamUnDeltaAndUncompress failed");
+    
+    int numPixels = (int)decodedData.length / sizeof(uint32_t);
+    uint32_t *decodedPixelsPtr = (uint32_t *) decodedData.bytes;
+    uint32_t *originalPixelsPtr = (uint32_t *) inputData.bytes;
+    
+    for ( int pi = 0; pi < numPixels; pi++) {
+      uint32_t decodedPixel = decodedPixelsPtr[pi];
+      uint32_t originalPixel = originalPixelsPtr[pi];
+      if (decodedPixel != originalPixel) {
+        printf("offset %d : 0x%08X != 0x%08X\n", pi, decodedPixel, originalPixel);
+      }
+      NSAssert(decodedPixel == originalPixel, @"0x%08X != 0x%08X\n", decodedPixel, originalPixel);
+    }
+  }
+#endif // DEBUG
   
   return TRUE;
 }
@@ -180,11 +283,9 @@
                 frameBufferNumBytes:(uint32_t)frameBufferNumBytes
                                 bpp:(int)bpp
                           algorithm:(compression_algorithm)algorithm
-                expectedDecodedSize:(int)expectedDecodedSize
 {
   const BOOL debug = FALSE;
-  
-  int outputBufferNumBytesLeft = frameBufferNumBytes;
+  const BOOL debugReadSizes = FALSE;
   
   size_t src_size = (int) encodedData.length;
   uint8_t *src_buffer = (uint8_t*) encodedData.bytes;
@@ -193,7 +294,9 @@
   uint64_t *dst_buffer = NULL;
   int malloc_dst_buffer = 0;
   
-  uint32_t *framebufferPixelPtr = (uint32_t*) frameBuffer;
+  uint32_t * const framebufferPixelPtr = (uint32_t*) frameBuffer;
+  int framebufferWritei = 0;
+  const int framebufferWriteiMax = frameBufferNumBytes / sizeof(uint32_t);
   
   const int numWordsIn24BPPInputBuffer = 12;
   
@@ -246,11 +349,15 @@
   
   flags = 0;
   
-  do {    
+  do {
     if (stream.src_size == 0) {
       // Read all input data
       
       flags = COMPRESSION_STREAM_FINALIZE;
+      
+      if (debugReadSizes) {
+        printf("COMPRESSION_STREAM_FINALIZE: passed in as flag\n");
+      }
     }
     
     status = compression_stream_process(&stream, flags);
@@ -262,6 +369,10 @@
         // We are going to call compression_stream_process at least once more, so we prepare for that.
         
         numBytesDecoded = (int) (dst_size - stream.dst_size);
+        
+        if (debugReadSizes) {
+          printf("COMPRESSION_STATUS_OK: numBytesDecoded %d\n", (int)numBytesDecoded);
+        }
         
         if (numBytesDecoded == 0) {
           // No bytes returned by decompression operation
@@ -280,7 +391,9 @@
         
         numBytesDecoded = (int) (dst_size - stream.dst_size);
         
-        //printf("COMPRESSION_STATUS_END : decoded %d bytes\n", numBytesDecoded);
+        if (debugReadSizes) {
+          printf("COMPRESSION_STATUS_END : decoded %d bytes\n", (int)numBytesDecoded);
+        }
         
         break;
       }
@@ -297,12 +410,13 @@
       
       if (bpp == 24) {
 #if defined(DEBUG)
-        assert(numBytesDecoded == dst_size);
+        if (status != COMPRESSION_STATUS_END) {
+          assert(numBytesDecoded == dst_size);
+        }
         assert((numBytesDecoded % 3) == 0);
-        assert((numBytesDecoded % 4) == 0);
 #endif // DEBUG
         
-        if ((numBytesDecoded == dst_size) && (1)) {
+        if ((numBytesDecoded == dst_size) && (status == COMPRESSION_STATUS_OK)) {
           // Full buffer of known fixed size
           
           if (debug) {
@@ -317,7 +431,7 @@
             
             printf("\n");
           }
-
+          
           // Consume 3 words of input at a time and write 4 pixels
           // 3 words contains 4 condensed pixels, 12 word decode buffer is 48 bytes
           
@@ -351,7 +465,10 @@
             outWord = (0xFF << 24);
             outWord |= inputWord0 & 0x00FFFFFF; // -RGB
             
-            *framebufferPixelPtr++ = outWord;
+#if defined(DEBUG)
+            assert(framebufferWritei < framebufferWriteiMax);
+#endif // DEBUG
+            framebufferPixelPtr[framebufferWritei++] = outWord;
             
             if (debug) {
               printf("out word 1 : 0x%08X\n", outWord);
@@ -361,7 +478,10 @@
             outWord |= (inputWord0 >> 24); // ---B
             outWord |= (inputWord1 & 0x0000FFFF) << 8; // -RG-
             
-            *framebufferPixelPtr++ = outWord;
+#if defined(DEBUG)
+            assert(framebufferWritei < framebufferWriteiMax);
+#endif // DEBUG
+            framebufferPixelPtr[framebufferWritei++] = outWord;
             
             if (debug) {
               printf("out word 2 : 0x%08X\n", outWord);
@@ -371,7 +491,10 @@
             outWord |= (inputWord1 >> 16); // --GB
             outWord |= (inputWord2 & 0x000000FF) << 16; // -R--
             
-            *framebufferPixelPtr++ = outWord;
+#if defined(DEBUG)
+            assert(framebufferWritei < framebufferWriteiMax);
+#endif // DEBUG
+            framebufferPixelPtr[framebufferWritei++] = outWord;
             
             if (debug) {
               printf("out word 3 : 0x%08X\n", outWord);
@@ -380,7 +503,10 @@
             outWord = (0xFF << 24);
             outWord |= (inputWord2 >> 8); // -RGB
             
-            *framebufferPixelPtr++ = outWord;
+#if defined(DEBUG)
+            assert(framebufferWritei < framebufferWriteiMax);
+#endif // DEBUG
+            framebufferPixelPtr[framebufferWritei++] = outWord;
             
             if (debug) {
               printf("out word 4 : 0x%08X\n", outWord);
@@ -401,17 +527,22 @@
             
             // Word write to framebuffer
             
-            *framebufferPixelPtr++ = pixel;
+            framebufferPixelPtr[framebufferWritei++] = pixel;
+            
+            if (framebufferWritei == framebufferWriteiMax) {
+              // Break out of write to framebuffer logic at this point
+              // since more bytes can be returned than were originally
+              // passed into the compression.
+              break;
+            }
           }
         }
         
         stream.dst_ptr = (uint8_t*) dst_buffer;
         stream.dst_size = dst_size;
       } else {
-        // NOP since Words or halfwords already written to framebuffer
+        // NOP: Words or halfwords already written to framebuffer
       }
-      
-      outputBufferNumBytesLeft -= numBytesDecoded;
     }
   } while (status == COMPRESSION_STATUS_OK);
   
@@ -421,7 +552,7 @@
   
 #if defined(DEBUG)
   if (bpp == 24) {
-    int numBytesWritten = (int) ((uint8_t*)framebufferPixelPtr - (uint8_t*)frameBuffer);
+    int numBytesWritten = framebufferWritei * sizeof(uint32_t);
     assert(numBytesWritten == frameBufferNumBytes);
   }
 #endif // DEBUG
